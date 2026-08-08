@@ -30,6 +30,14 @@ Ein versiegelter Pack mit genau einer goldgestempelten Siegerkarte darin. Ein
 `PrizeItem`, also eine Sache — nie eine Person.
 _Avoid_: Winner (allein), Siegerkarte als Bezeichnung für einen Menschen
 
+**PackEnvelope**:
+Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine feste Anzahl
+`TournamentPack`s plus ein `WinnerPack`. Der `WinnerPack` gehört erst zum
+`PrizePool`, wenn genug `TournamentPack`s daraus angebrochen sind — diese
+Schwelle ist der einzige Ort, an dem zwei `PrizeItem`-Typen aneinander hängen.
+Wie `Display` eine Verpackungs-, keine Verteilungseinheit.
+_Avoid_: Briefchen (nur Umgangssprache), ParticipationPack
+
 ## Pools
 
 **PrizePool**:
@@ -92,6 +100,11 @@ _Avoid_: Organisator, Veranstalter
 
 **Shop**:
 Der Laden, der den `PrizePool` stellt und das `Tournament` ausrichtet.
+
+**TwoMoons**:
+Der `Shop`, für den diese App zuerst gebaut wird, und dessen Hausregeln die
+Defaults prägen. Kurzform im Gespräch: TM. Kein Begriff für die Oberfläche und
+kein Identifier — die App kennt `Shop`, nicht diesen einen Laden.
 
 **Display**:
 Verkaufseinheit aus einer festen Anzahl `Booster`.
