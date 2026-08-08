@@ -1,4 +1,4 @@
-# TCG Price Calculator
+# TCG Prizing
 
 A web interface for working out how to distribute tournament prize support across
 placements — built for TCG community leads who receive a fixed pool of prize
