@@ -1,5 +1,23 @@
 # tcg-price-calc
 
+## Language
+
+**English** — everything an agent or a compiler reads:
+
+- Source code, identifiers, code comments, docblocks
+- `AGENTS.md`, `CLAUDE.md`, `docs/agents/*`, skill and agent definitions
+- Commit messages, branch names
+- UI copy is decided per feature and is not covered by this rule
+
+**German** — everything the maintainer reads while planning:
+
+- Wayfinder maps and tickets, GitHub issue titles and bodies, specs, task lists
+- ADR prose, review notes, PR descriptions
+
+`CONTEXT.md` is mixed on purpose: each **term** is the English one the code
+uses, its **explanation** is German. A glossary whose terms don't match the
+identifiers is worse than no glossary.
+
 ## Commit conventions
 
 Standard [Conventional Commits](https://www.conventionalcommits.org/): `<type>[optional scope]: <description>`.
