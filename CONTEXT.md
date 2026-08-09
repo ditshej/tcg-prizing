@@ -31,10 +31,13 @@ Ein versiegelter Pack mit genau einer goldgestempelten Siegerkarte darin. Ein
 _Avoid_: Winner (allein), Siegerkarte als Bezeichnung für einen Menschen
 
 **PackEnvelope**:
-Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine feste Anzahl
-`TournamentPack`s plus ein `WinnerPack`. Der `WinnerPack` gehört erst zum
-`PrizePool`, wenn genug `TournamentPack`s daraus angebrochen sind — diese
-Schwelle ist der einzige Ort, an dem zwei `PrizeItem`-Typen aneinander hängen.
+Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine Anzahl
+`TournamentPack`s plus ein `WinnerPack`. Die Anzahl ist pro `Tournament`
+einstellbar, mit einem Default am `Game` — sie wechselt von Event zu Event
+innerhalb desselben `Game`. Der `WinnerPack` gehört erst zum `PrizePool`, wenn
+mindestens zwei Drittel der `TournamentPack`s daraus angebrochen sind; diese
+Schwelle wird aus der Grösse abgeleitet und nicht eingestellt. Sie ist der
+einzige Ort, an dem zwei `PrizeItem`-Typen aneinander hängen.
 Wie `Display` eine Verpackungs-, keine Verteilungseinheit.
 _Avoid_: Briefchen (nur Umgangssprache), ParticipationPack
 
@@ -67,16 +70,16 @@ Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
 `Pool`s übrig bleibt.
 
 **RankPoolDepth**:
-Wie tief der `RankPool` ins `Ranking` reicht: Anzahl der Ränge ab `Rank` 1, die
-etwas daraus bekommen — lückenlos, mindestens 1. Nach oben begrenzt sie nicht
-nur die Zahl der `Player`, sondern auch der `RankPool` selbst: jeder bediente
-`Rank` bekommt mindestens einen `Booster` und `Rank` 1 mindestens einen mehr als
-`Rank` 2, also bleibt die Tiefe unter der Zahl der `Booster` im `RankPool`. Die
-preisberechtigte Gruppe ist damit vollständig beschrieben und
-braucht keinen eigenen Begriff — es sind die `Player` mit `Rank` ≤
-`RankPoolDepth`. Ob das `Tournament` eine K.-o.-Runde gespielt hat, spielt keine
-Rolle.
-_Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die preisberechtigte Gruppe), PrizeDepth, Preisränge
+Wie tief die **geformte** Verteilung des `RankPool` ins `Ranking` reicht: Anzahl
+der Ränge ab `Rank` 1, die aus der `DistributionCurve` etwas bekommen —
+lückenlos, mindestens 1. Sie betrifft nur die teilbaren Mengen, also die
+`Booster`; knappe unteilbare `PrizeItem`s laufen den `RankCycle` und reichen
+tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
+`RankPool` selbst: jeder bediente `Rank` bekommt mindestens einen `Booster` und
+`Rank` 1 mindestens einen mehr als `Rank` 2, also bleibt die Tiefe unter der
+Zahl der `Booster` im `RankPool`. Ob das `Tournament` eine K.-o.-Runde gespielt
+hat, spielt keine Rolle.
+_Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die geformte Verteilung), PrizeDepth, Preisränge
 
 **DistributionCurve**:
 Die Form, in der der `RankPool` über die bedienten Ränge abfällt: benannte
@@ -85,6 +88,18 @@ bekommt, was der `Rank` über ihm bekommt. Es gibt keine flache Stufe — ein
 `RankPool`, der nicht nach `Rank` unterscheidet, ist ein `ParticipationPool`.
 Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
 _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
+
+**RankCycle**:
+Die Reihenfolge, in der knappe unteilbare `PrizeItem`s aus dem `RankPool`
+vergeben werden: ein Kreis über alle Ränge von 1 bis zur Zahl der `Player`, je
+ein `PrizeItem` pro `Rank` und Umlauf, bis der Vorrat leer ist. Er beginnt beim
+obersten `Rank`, der auf dieser Achse noch nichts hat — hat `Rank` 1 und 2 je
+einen `WinnerPack`, startet der Kreis der `TournamentPack`s bei `Rank` 3, läuft
+über den letzten `Rank` hinaus zurück auf `Rank` 1 und weiter. Ein `Rank` mit
+`WinnerPack` bekommt damit erst dann ein `TournamentPack`, wenn alle anderen
+eines haben. Das Gegenstück zur `DistributionCurve`: die Kurve formt, was teilbar
+ist, der Kreis läuft ab, was es nicht ist. `RankPoolDepth` begrenzt ihn nicht.
+_Avoid_: Round Robin (Verfahren, nicht Domäne), Umlauf, Restverteilung
 
 **DisplayReservation**:
 Die Anzahl `Display`s, die ein einzelner `Rank` aus dem `RankPool` vorab
