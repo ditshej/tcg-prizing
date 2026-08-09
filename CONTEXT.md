@@ -54,8 +54,17 @@ Hängt nicht vom Turnierverlauf ab und kann vor dem Turnier ausgeteilt werden.
 Ein `Player` erhält diesen Anteil zusätzlich zu allem, was ihm über den
 `RankPool` zusteht.
 
+**JudgePool**:
+Der `Pool`, der die `Judge`s abfindet. Anonymer Block ohne Bezug zur Anzahl
+`Judge`s — er hält fest, wieviel für die Turnierleitung beiseite liegt, nicht wer
+es bekommt. Als einziger `Pool` absolut eingestellt statt als Menge pro `Player`,
+weil ein `Judge` keine `PrizeItem`s in den `PrizePool` bringt, sondern nur
+abgreift. Steht meist auf null: solange der `Shop` die `Judge`s von aussen
+abfindet, berührt die Rechnung sie nicht.
+
 **RankPool**:
-Der `Pool`, der nach `Rank` verteilt wird.
+Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
+`Pool`s übrig bleibt.
 
 **DistributionPlan**:
 Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
