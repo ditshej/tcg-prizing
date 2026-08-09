@@ -273,11 +273,44 @@ const Prizing = (() => {
     },
   ];
 
+  /**
+   * Every served Rank gets at least one Booster — otherwise RankPoolDepth would
+   * not mean what it says. Reserving one each up front, then shaping only the
+   * remainder, keeps the sum exact without a repair pass afterwards.
+   * Corollary: RankPoolDepth can never exceed the Boosters in the RankPool.
+   */
+  function apportionWithFloor(total, weights) {
+    const depth = weights.length;
+    if (total < depth) return apportion(total, weights); // guarded by the cap
+    return apportion(total - depth, weights).map(s => s + 1);
+  }
+
+  /**
+   * Same trick once more, for the second floor: Rank 1 must end up strictly
+   * ahead of Rank 2. Reserving its lead up front makes it structural — weights
+   * are non-increasing, so shaping can only preserve the gap, never close it.
+   * Corollary: RankPoolDepth can never exceed the Boosters in the RankPool - 1.
+   */
+  function apportionWithFloorAndLead(total, weights) {
+    const depth = weights.length;
+    if (depth < 2) return apportionWithFloor(total, weights);
+    if (total < depth + 1) return apportionWithFloor(total, weights); // guarded by the cap
+    const shares = apportionWithFloor(total - 1, weights);
+    shares[0] += 1;
+    return shares;
+  }
+
+  /** Scarce and indivisible: hand down the Ranking, wrapping back to Rank 1. */
+  function dealRoundRobin(total, depth) {
+    return Array.from({ length: depth }, (_, i) =>
+      Math.floor(total / depth) + (i < total % depth ? 1 : 0));
+  }
+
   /** Both candidates end here: weights in, a DistributionPlan out. */
   function distribute(rankPool, depth, weights) {
-    const boosters = apportion(rankPool.booster, weights);
-    const tournamentPacks = apportion(rankPool.tournamentPack, weights);
-    const winnerPacks = dealTopDown(rankPool.winnerPack, depth);
+    const boosters = apportionWithFloorAndLead(rankPool.booster, weights);
+    const tournamentPacks = dealRoundRobin(rankPool.tournamentPack, depth);
+    const winnerPacks = dealRoundRobin(rankPool.winnerPack, depth);
     return Array.from({ length: depth }, (_, i) => ({
       rank: i + 1,
       booster: boosters[i],
