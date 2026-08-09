@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototyp — Verteilungsmodell auf die Ränge</title>
+<style>
+  :root {
+    --accent: #0e6f5c;
+    --accent-soft: #e6f2ef;
+    --ink: #16191c;
+    --muted: #626a72;
+    --line: #dfe3e7;
+    --bg: #fbfbfa;
+    --warn: #9a4a12;
+    --warn-soft: #fdf1e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 24px 96px;
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink); background: var(--bg);
+  }
+  main { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 27px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+       margin: 40px 0 14px; font-weight: 600; }
+  h3 { font-size: 15px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); max-width: 68ch; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
+         background: #eef1f3; padding: 1px 5px; border-radius: 3px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 860px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  label.ctl { display: block; margin: 0 0 16px; }
+  label.ctl .name { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px; }
+  label.ctl .name span:last-child { font-weight: 400; color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .seg button {
+    font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 600; font-size: 12px;
+             text-transform: uppercase; letter-spacing: 0.05em; }
+  tbody tr.empty td { color: var(--warn); }
+  tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
+
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 14px; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+  .flag { background: var(--warn-soft); color: var(--warn); border-radius: 7px;
+          padding: 9px 12px; font-size: 13px; margin-top: 12px; }
+  .ok { background: var(--accent-soft); color: var(--accent); border-radius: 7px;
+        padding: 9px 12px; font-size: 13px; margin-top: 12px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tabs button { font: inherit; font-size: 13px; padding: 7px 13px; border-radius: 7px;
+                 border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .steps { list-style: none; padding: 0; margin: 14px 0 0; }
+  .steps li { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .steps button { font: inherit; font-size: 14px; padding: 7px 13px; border-radius: 7px;
+                  border: 1px solid var(--accent); background: #fff; color: var(--accent);
+                  cursor: pointer; text-align: left; }
+  .steps button[disabled] { opacity: 0.4; cursor: default; }
+  .steps li.done button { background: var(--accent-soft); }
+  .steps li.current button { background: var(--accent); color: #fff; }
+  .steps .n { color: var(--muted); font-size: 13px; width: 1.4em; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Verteilungsmodell auf die Ränge</h1>
+<p class="lede">
+  Wegwerf-Prototyp zu <strong>Ticket #6</strong> der Karte <em>Prizing-Rechner für TCG-Turniere</em>.
+  Die Frage: Wird der <code>RankPool</code> über <strong>eine Verteilungskurve mit
+  Abstufungen von flach bis extrem</strong> aufgeteilt, oder über <strong>mehrere benannte
+  Berechnungs-Typen</strong>, zwischen denen man wählt? Beides ist unten gleichzeitig gerechnet
+  und liegt Tabelle neben Tabelle. Beurteilt wird an echten Zahlen — dieselbe Turniersituation
+  bei 16, 24 und 32 <code>Player</code>n. Randbedingungen: ganzzahlige <code>PrizeItem</code>s,
+  die Summe muss exakt aufgehen.
+</p>
+<p class="lede">
+  Herleitung des <code>PrizePool</code> und die Aufteilung auf <code>ParticipationPool</code>,
+  <code>JudgePool</code> und <code>RankPool</code> sind aus den geschlossenen Tickets #3 und #4
+  übernommen und hier nicht mehr zur Debatte — sie sind nur der Boden, auf dem die Rangverteilung steht.
+</p>
+
+<h2>Turniersituation</h2>
+<div class="grid2">
+  <div class="card">
+    <label class="ctl">
+      <span class="name"><span>Spielerzahl</span><span id="v-players">32</span></span>
+      <input type="range" id="players" min="4" max="64" step="1" value="32">
+    </label>
+    <label class="ctl">
+      <span class="name"><span>RankPoolDepth — bediente Ränge</span><span id="v-depth">8</span></span>
+      <input type="range" id="depth" min="1" max="64" step="1" value="8">
+      <span class="hint">Lückenloses Präfix ab <code>Rank</code> 1, hart auf 1 … Spielerzahl gedeckelt (#5).</span>
+    </label>
+    <label class="ctl">
+      <span class="name"><span>Booster pro <code>Player</code> (PrizePool)</span><span id="v-brate">3</span></span>
+      <input type="range" id="brate" min="0" max="6" step="1" value="3">
+    </label>
+    <label class="ctl">
+      <span class="name"><span>Booster pro <code>Player</code> (ParticipationPool)</span><span id="v-prate">2</span></span>
+      <input type="range" id="prate" min="0" max="6" step="1" value="2">
+      <span class="hint">Bewegliches Maximum: nie mehr als die Rate des <code>PrizePool</code>.</span>
+    </label>
+    <label class="ctl">
+      <span class="name"><span><code>JudgePool</code>: Booster absolut</span><span id="v-judge">0</span></span>
+      <input type="range" id="judge" min="0" max="24" step="1" value="0">
+    </label>
+  </div>
+
+  <div class="card">
+    <h3>Was daraus folgt</h3>
+    <dl class="facts" id="facts"></dl>
+    <div id="poolflags"></div>
+  </div>
+</div>
+
+<h2>Die zwei Kandidaten, nebeneinander</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>A — eine Kurve, ein Regler</h3>
+    <div class="seg" id="curve-seg"></div>
+    <p class="hint" id="curve-desc"></p>
+    <table id="tbl-curve"></table>
+    <div id="curve-flags"></div>
+  </div>
+
+  <div class="card">
+    <h3>B — benannte Berechnungs-Typen</h3>
+    <div class="seg" id="named-seg"></div>
+    <p class="hint" id="named-desc"></p>
+    <table id="tbl-named"></table>
+    <div id="named-flags"></div>
+  </div>
+</div>
+
+<h2>Geführte Durchgänge</h2>
+<div class="card">
+  <div class="tabs" id="tabs"></div>
+  <p id="scenario-desc" class="lede" style="margin-bottom:0"></p>
+  <ol class="steps" id="steps"></ol>
+</div>
+
+<h2>Offene Annahme in diesem Prototyp</h2>
+<div class="card">
+  <p style="margin:0">
+    <code>WinnerPack</code>s sind hier <strong>nicht</strong> Teil der Kurve. Es sind zu wenige und sie
+    sind unteilbar, deshalb gehen sie stur von oben nach unten, einer je <code>Rank</code>. Ob das so
+    bleibt oder von Hand zugeteilt wird, entscheidet Ticket #17 — dieser Prototyp setzt es nur als
+    einfachste Annahme, damit die Booster-Verteilung isoliert beurteilbar ist.
+  </p>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Portable module — pure, no DOM. This is the part worth lifting into the real
+// codebase once the question is settled. Identifiers follow CONTEXT.md.
+// ---------------------------------------------------------------------------
+const Prizing = (() => {
+
+  const GAME_ONE_PIECE = { envelopeSize: 9, winnerThreshold: 6 };
+
+  /** #3: the PrizePool is fully derived from the player count — no stock input. */
+  function derivePrizePool(input) {
+    const booster = input.playerCount * input.boosterPerPlayer;
+    const tournamentPack = input.playerCount * input.tournamentPackPerPlayer;
+    return { booster, tournamentPack, winnerPack: deriveWinnerPacks(tournamentPack, input.game) };
+  }
+
+  /** #3: the one coupling between PrizeItem types, a swappable Game rule. */
+  function deriveWinnerPacks(tournamentPacks, game) {
+    const full = Math.floor(tournamentPacks / game.envelopeSize);
+    const rest = tournamentPacks % game.envelopeSize;
+    return full + (rest >= game.winnerThreshold ? 1 : 0);
+  }
+
+  /** #4: PrizePool = ParticipationPool + JudgePool + RankPool, exactly. */
+  function splitPools(prizePool, input) {
+    const participation = {
+      booster: input.playerCount * input.participationBoosterPerPlayer,
+      tournamentPack: input.playerCount * input.participationTournamentPackPerPlayer,
+      winnerPack: 0,
+    };
+    const judge = { booster: input.judgeBooster, tournamentPack: 0, winnerPack: input.judgeWinnerPack };
+    const rank = {
+      booster: prizePool.booster - participation.booster - judge.booster,
+      tournamentPack: prizePool.tournamentPack - participation.tournamentPack - judge.tournamentPack,
+      winnerPack: prizePool.winnerPack - participation.winnerPack - judge.winnerPack,
+    };
+    return { participation, judge, rank };
+  }
+
+  /**
+   * Largest-remainder apportionment. The only way weights can meet the hard rule
+   * "the sum must come out exactly" while every share stays a whole PrizeItem.
+   */
+  function apportion(total, weights) {
+    const sum = weights.reduce((a, w) => a + w, 0);
+    if (total <= 0 || sum <= 0) return weights.map(() => 0);
+    const exact = weights.map(w => (total * w) / sum);
+    const shares = exact.map(Math.floor);
+    let remainder = total - shares.reduce((a, s) => a + s, 0);
+    const byFraction = exact
+      .map((e, i) => ({ i, frac: e - Math.floor(e) }))
+      .sort((a, b) => b.frac - a.frac || a.i - b.i);
+    for (let k = 0; k < remainder; k++) shares[byFraction[k].i]++;
+    return shares;
+  }
+
+  /** Indivisible and scarce: hand them down the Ranking, one each, until gone. */
+  function dealTopDown(total, depth) {
+    return Array.from({ length: depth }, (_, i) => (i < total ? 1 : 0));
+  }
+
+  // --- Candidate A: one curve, one slider -----------------------------------
+
+  const CURVE_STEPS = [
+    { key: 'flat',    label: 'flach',   ratio: 1.00, desc: 'Alle bedienten Ränge gleich viel.' },
+    { key: 'gentle',  label: 'sanft',   ratio: 0.85, desc: 'Jeder Rang bekommt gut vier Fünftel des Rangs über ihm.' },
+    { key: 'medium',  label: 'mittel',  ratio: 0.65, desc: 'Jeder Rang bekommt rund zwei Drittel des Rangs über ihm.' },
+    { key: 'steep',   label: 'steil',   ratio: 0.45, desc: 'Knapp die Hälfte pro Stufe abwärts.' },
+    { key: 'extreme', label: 'extrem',  ratio: 0.25, desc: 'Ein Viertel pro Stufe abwärts — die Spitze schluckt fast alles.' },
+  ];
+
+  function curveWeights(depth, ratio) {
+    return Array.from({ length: depth }, (_, i) => Math.pow(ratio, i));
+  }
+
+  // --- Candidate B: named calculation types ---------------------------------
+
+  const NAMED_TYPES = [
+    {
+      key: 'even', label: 'Gleichmässig',
+      desc: 'Alle bedienten Ränge gleich viel; was nicht aufgeht, wandert von oben nach unten.',
+      weights: depth => Array.from({ length: depth }, () => 1),
+    },
+    {
+      key: 'halving', label: 'Halbierung',
+      desc: 'Jeder Rang bekommt die Hälfte des Rangs über ihm.',
+      weights: depth => Array.from({ length: depth }, (_, i) => Math.pow(0.5, i)),
+    },
+    {
+      key: 'plateau', label: 'Plateaus',
+      desc: 'Blöcke wie im Turnierbaum — 1., 2., 3.–4., 5.–8., 9.–16.: innerhalb eines Blocks alle gleich, je Block halbiert.',
+      weights: depth => Array.from({ length: depth }, (_, i) => {
+        const block = Math.floor(Math.log2(i + 1)); // 0 | 1 | 2 2 | 3 3 3 3 | …
+        return Math.pow(0.5, block) / Math.pow(2, block);
+      }),
+    },
+    {
+      key: 'topHeavy', label: 'Spitze zuerst',
+      desc: 'Rang 1 nimmt rund die Hälfte, der Rest teilt gleichmässig.',
+      weights: depth => Array.from({ length: depth }, (_, i) =>
+        i === 0 ? Math.max(1, depth - 1) : 1),
+    },
+  ];
+
+  /** Both candidates end here: weights in, a DistributionPlan out. */
+  function distribute(rankPool, depth, weights) {
+    const boosters = apportion(rankPool.booster, weights);
+    const tournamentPacks = apportion(rankPool.tournamentPack, weights);
+    const winnerPacks = dealTopDown(rankPool.winnerPack, depth);
+    return Array.from({ length: depth }, (_, i) => ({
+      rank: i + 1,
+      booster: boosters[i],
+      tournamentPack: tournamentPacks[i],
+      winnerPack: winnerPacks[i],
+    }));
+  }
+
+  function planTotals(plan) {
+    return plan.reduce((a, r) => ({
+      booster: a.booster + r.booster,
+      tournamentPack: a.tournamentPack + r.tournamentPack,
+      winnerPack: a.winnerPack + r.winnerPack,
+    }), { booster: 0, tournamentPack: 0, winnerPack: 0 });
+  }
+
+  return {
+    GAME_ONE_PIECE, CURVE_STEPS, NAMED_TYPES,
+    derivePrizePool, splitPools, distribute, planTotals, curveWeights, apportion,
+  };
+})();
+
+// ---------------------------------------------------------------------------
+// Throwaway page shell below. Calls into the module; nothing flows back.
+// ---------------------------------------------------------------------------
+
+const state = {
+  playerCount: 32,
+  rankPoolDepth: 8,
+  boosterPerPlayer: 3,
+  participationBoosterPerPlayer: 2,
+  judgeBooster: 0,
+  curve: 'medium',
+  named: 'plateau',
+};
+
+const el = id => document.getElementById(id);
+
+function inputs() {
+  return {
+    playerCount: state.playerCount,
+    boosterPerPlayer: state.boosterPerPlayer,
+    tournamentPackPerPlayer: 1,
+    participationBoosterPerPlayer: Math.min(state.participationBoosterPerPlayer, state.boosterPerPlayer),
+    participationTournamentPackPerPlayer: 1,
+    judgeBooster: state.judgeBooster,
+    judgeWinnerPack: 0,
+    game: Prizing.GAME_ONE_PIECE,
+  };
+}
+
+function renderFacts(prizePool, pools) {
+  el('facts').innerHTML = [
+    ['PrizePool — Booster', prizePool.booster],
+    ['PrizePool — TournamentPacks', prizePool.tournamentPack],
+    ['PrizePool — WinnerPacks', prizePool.winnerPack],
+    ['ParticipationPool — Booster', pools.participation.booster],
+    ['ParticipationPool — TournamentPacks', pools.participation.tournamentPack],
+    ['JudgePool — Booster', pools.judge.booster],
+    ['<strong>RankPool — Booster</strong>', `<strong>${pools.rank.booster}</strong>`],
+    ['<strong>RankPool — TournamentPacks</strong>', `<strong>${pools.rank.tournamentPack}</strong>`],
+    ['<strong>RankPool — WinnerPacks</strong>', `<strong>${pools.rank.winnerPack}</strong>`],
+  ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+
+  const flags = [];
+  const perRank = pools.rank.booster / state.rankPoolDepth;
+  if (pools.rank.booster < state.rankPoolDepth) {
+    flags.push(`Weniger Booster im <code>RankPool</code> (${pools.rank.booster}) als bediente Ränge
+                (${state.rankPoolDepth}) — es kann gar nicht jeder etwas bekommen.`);
+  } else if (perRank < 2) {
+    flags.push(`Nur ${perRank.toFixed(1)} Booster je bedientem Rang — bei dieser Dichte
+                unterscheiden sich flach und steil kaum noch.`);
+  }
+  el('poolflags').innerHTML = flags.map(f => `<div class="flag">${f}</div>`).join('');
+}
+
+function renderPlan(tableEl, flagsEl, plan, rankPool) {
+  const rows = plan.map(r => {
+    const empty = r.booster === 0 && r.tournamentPack === 0 && r.winnerPack === 0;
+    return `<tr class="${empty ? 'empty' : ''}">
+      <td>Rang ${r.rank}</td><td>${r.booster}</td><td>${r.tournamentPack}</td><td>${r.winnerPack}</td>
+    </tr>`;
+  }).join('');
+  const t = Prizing.planTotals(plan);
+  tableEl.innerHTML = `
+    <thead><tr><th>Rank</th><th>Booster</th><th>TournPacks</th><th>WinnerPacks</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td>Summe</td><td>${t.booster}</td><td>${t.tournamentPack}</td><td>${t.winnerPack}</td></tr></tfoot>`;
+
+  const flags = [];
+  const exact = t.booster === rankPool.booster
+    && t.tournamentPack === rankPool.tournamentPack
+    && t.winnerPack === rankPool.winnerPack;
+  flags.push(exact
+    ? `<div class="ok">Summe geht restlos auf.</div>`
+    : `<div class="flag">Summe geht <strong>nicht</strong> auf — im <code>RankPool</code> lagen
+       ${rankPool.booster} Booster, verteilt sind ${t.booster}.</div>`);
+
+  const emptyRanks = plan.filter(r => r.booster === 0 && r.tournamentPack === 0 && r.winnerPack === 0);
+  if (emptyRanks.length) {
+    flags.push(`<div class="flag">${emptyRanks.length} bediente Ränge gehen leer aus
+      (ab Rang ${emptyRanks[0].rank}) — sie stehen im <code>DistributionPlan</code>, bekommen aber nichts.</div>`);
+  }
+  const ties = new Set(plan.map(r => r.booster)).size;
+  if (plan.length > 2 && ties <= 2) {
+    flags.push(`<div class="flag">Nur ${ties} verschiedene Beträge über ${plan.length} Ränge —
+      die Abstufung ist in dieser Turniergrösse nicht mehr fühlbar.</div>`);
+  }
+  flagsEl.innerHTML = flags.join('');
+}
+
+function render() {
+  state.rankPoolDepth = Math.min(state.rankPoolDepth, state.playerCount);
+  el('depth').max = state.playerCount;
+  el('depth').value = state.rankPoolDepth;
+  el('players').value = state.playerCount;
+  el('brate').value = state.boosterPerPlayer;
+  el('prate').max = state.boosterPerPlayer;
+  state.participationBoosterPerPlayer = Math.min(state.participationBoosterPerPlayer, state.boosterPerPlayer);
+  el('prate').value = state.participationBoosterPerPlayer;
+  el('judge').value = state.judgeBooster;
+
+  el('v-players').textContent = state.playerCount;
+  el('v-depth').textContent = state.rankPoolDepth;
+  el('v-brate').textContent = state.boosterPerPlayer;
+  el('v-prate').textContent = state.participationBoosterPerPlayer;
+  el('v-judge').textContent = state.judgeBooster;
+
+  const input = inputs();
+  const prizePool = Prizing.derivePrizePool(input);
+  const pools = Prizing.splitPools(prizePool, input);
+  renderFacts(prizePool, pools);
+
+  const curve = Prizing.CURVE_STEPS.find(c => c.key === state.curve);
+  el('curve-seg').innerHTML = Prizing.CURVE_STEPS.map(c =>
+    `<button data-curve="${c.key}" aria-pressed="${c.key === state.curve}">${c.label}</button>`).join('');
+  el('curve-desc').textContent = curve.desc;
+  renderPlan(el('tbl-curve'), el('curve-flags'),
+    Prizing.distribute(pools.rank, state.rankPoolDepth,
+      Prizing.curveWeights(state.rankPoolDepth, curve.ratio)), pools.rank);
+
+  const named = Prizing.NAMED_TYPES.find(n => n.key === state.named);
+  el('named-seg').innerHTML = Prizing.NAMED_TYPES.map(n =>
+    `<button data-named="${n.key}" aria-pressed="${n.key === state.named}">${n.label}</button>`).join('');
+  el('named-desc').textContent = named.desc;
+  renderPlan(el('tbl-named'), el('named-flags'),
+    Prizing.distribute(pools.rank, state.rankPoolDepth, named.weights(state.rankPoolDepth)), pools.rank);
+}
+
+// --- Free play ---------------------------------------------------------------
+
+const bind = (id, key) => el(id).addEventListener('input', e => {
+  state[key] = Number(e.target.value); render();
+});
+bind('players', 'playerCount');
+bind('depth', 'rankPoolDepth');
+bind('brate', 'boosterPerPlayer');
+bind('prate', 'participationBoosterPerPlayer');
+bind('judge', 'judgeBooster');
+
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-curve]');
+  if (c) { state.curve = c.dataset.curve; render(); }
+  const n = e.target.closest('[data-named]');
+  if (n) { state.named = n.dataset.named; render(); }
+});
+
+// --- Guided walkthroughs -----------------------------------------------------
+
+const BASE = { playerCount: 32, rankPoolDepth: 8, boosterPerPlayer: 3,
+               participationBoosterPerPlayer: 2, judgeBooster: 0,
+               curve: 'medium', named: 'plateau' };
+
+const SCENARIOS = [
+  {
+    title: '32 Spieler — der Normalfall',
+    desc: `Das Standardturnier bei TwoMoons. 32 Booster im RankPool auf 8 Ränge. Achte darauf, wie
+           weit die Kurve überhaupt spreizen kann, bevor die unteren Ränge auf 1 oder 0 fallen —
+           und ob "sanft" und "mittel" sich im Ergebnis noch unterscheiden.`,
+    steps: [
+      ['Situation setzen: 32 Spieler, 8 bediente Ränge', { ...BASE }],
+      ['Kurve auf flach', { curve: 'flat' }],
+      ['Kurve auf mittel', { curve: 'medium' }],
+      ['Kurve auf extrem', { curve: 'extreme' }],
+      ['Typ B daneben: Plateaus', { named: 'plateau' }],
+    ],
+  },
+  {
+    title: '24 Spieler — die Schwelle kippt',
+    desc: `Bei 24 Spielern reicht der Rest von 6 TournamentPacks genau an die WinnerPack-Schwelle
+           heran: es sind 3 WinnerPacks, gleich viele wie bei 32 Spielern. Weniger Turnier, gleich
+           viel Spitze. Sieh zu, was das mit der gefühlten Steilheit macht.`,
+    steps: [
+      ['Auf 24 Spieler', { ...BASE, playerCount: 24, rankPoolDepth: 8 }],
+      ['Tiefe auf 6 Ränge zurücknehmen', { rankPoolDepth: 6 }],
+      ['Kurve auf steil', { curve: 'steep' }],
+      ['Typ B: Halbierung', { named: 'halving' }],
+    ],
+  },
+  {
+    title: '16 Spieler — dünner RankPool',
+    desc: `16 Booster auf die Ränge. Hier zeigt sich, ob eine feine Kurve bei kleinen Turnieren
+           überhaupt noch etwas ausdrücken kann, oder ob ganzzahlige Booster jede Abstufung
+           plattwalzen.`,
+    steps: [
+      ['Auf 16 Spieler, 4 bediente Ränge', { ...BASE, playerCount: 16, rankPoolDepth: 4 }],
+      ['Tiefe auf 8 aufziehen', { rankPoolDepth: 8 }],
+      ['Kurve auf sanft', { curve: 'gentle' }],
+      ['Kurve auf extrem', { curve: 'extreme' }],
+    ],
+  },
+  {
+    title: 'Was die Kurve nicht kann',
+    desc: `Die Plateau-Form — 1., 2., 3.–4., 5.–8. — ist die, die man aus Turnieren kennt. Stell
+           beide nebeneinander und such die Kurvenstufe, die sie trifft. Wenn es keine gibt, sind
+           es nicht zwei Bedienformen derselben Sache, sondern zwei verschiedene Modelle.`,
+    steps: [
+      ['Situation setzen: 32 Spieler, 8 Ränge', { ...BASE }],
+      ['Typ B auf Plateaus', { named: 'plateau' }],
+      ['Kurve: sanft', { curve: 'gentle' }],
+      ['Kurve: mittel', { curve: 'medium' }],
+      ['Kurve: steil', { curve: 'steep' }],
+    ],
+  },
+  {
+    title: 'Ränder ausreizen',
+    desc: `Ein Rang bekommt alles; dann bekommt jeder Spieler einen Rangpreis. Beide Enden sind
+           laut #5 erlaubte Reglerstellungen — sehen sie auch nach etwas aus, das man ausgeben kann?`,
+    steps: [
+      ['Situation setzen', { ...BASE }],
+      ['Tiefe auf 1 — alles an Rang 1', { rankPoolDepth: 1 }],
+      ['Tiefe auf 32 — jeder Rang bedient', { rankPoolDepth: 32 }],
+      ['Participation auf 0 Booster: fetter RankPool', { participationBoosterPerPlayer: 0 }],
+      ['JudgePool greift 12 Booster ab', { judgeBooster: 12 }],
+    ],
+  },
+];
+
+let scenarioIndex = 0;
+let stepIndex = 0;
+
+function renderTabs() {
+  el('tabs').innerHTML = SCENARIOS.map((s, i) =>
+    `<button data-scenario="${i}" aria-selected="${i === scenarioIndex}">${s.title}</button>`).join('');
+  const s = SCENARIOS[scenarioIndex];
+  el('scenario-desc').textContent = s.desc.replace(/\s+/g, ' ');
+  el('steps').innerHTML = s.steps.map(([label], i) => {
+    const cls = i < stepIndex ? 'done' : i === stepIndex ? 'current' : '';
+    return `<li class="${cls}"><span class="n">${i + 1}</span>
+      <button data-step="${i}" ${i > stepIndex ? 'disabled' : ''}>${label}</button></li>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-scenario]');
+  if (t) {
+    scenarioIndex = Number(t.dataset.scenario); stepIndex = 0;
+    Object.assign(state, BASE); render(); renderTabs(); return;
+  }
+  const s = e.target.closest('[data-step]');
+  if (s) {
+    const i = Number(s.dataset.step);
+    Object.assign(state, SCENARIOS[scenarioIndex].steps[i][1]);
+    stepIndex = Math.max(stepIndex, i + 1);
+    render(); renderTabs();
+  }
+});
+
+render();
+renderTabs();
+</script>
+</main>
+</body>
+</html>
