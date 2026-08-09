@@ -68,12 +68,23 @@ Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
 
 **RankPoolDepth**:
 Wie tief der `RankPool` ins `Ranking` reicht: Anzahl der Ränge ab `Rank` 1, die
-etwas daraus bekommen. Lückenlos, mindestens 1, höchstens so viele wie `Player`
-da sind. Die preisberechtigte Gruppe ist damit vollständig beschrieben und
+etwas daraus bekommen — lückenlos, mindestens 1. Nach oben begrenzt sie nicht
+nur die Zahl der `Player`, sondern auch der `RankPool` selbst: jeder bediente
+`Rank` bekommt mindestens einen `Booster` und `Rank` 1 mindestens einen mehr als
+`Rank` 2, also bleibt die Tiefe unter der Zahl der `Booster` im `RankPool`. Die
+preisberechtigte Gruppe ist damit vollständig beschrieben und
 braucht keinen eigenen Begriff — es sind die `Player` mit `Rank` ≤
 `RankPoolDepth`. Ob das `Tournament` eine K.-o.-Runde gespielt hat, spielt keine
 Rolle.
 _Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die preisberechtigte Gruppe), PrizeDepth, Preisränge
+
+**DistributionCurve**:
+Die Form, in der der `RankPool` über die bedienten Ränge abfällt: benannte
+Stufen von sanft bis extrem, bei denen jeder `Rank` einen festen Anteil dessen
+bekommt, was der `Rank` über ihm bekommt. Es gibt keine flache Stufe — ein
+`RankPool`, der nicht nach `Rank` unterscheidet, ist ein `ParticipationPool`.
+Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
+_Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
 
 **DistributionPlan**:
 Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
