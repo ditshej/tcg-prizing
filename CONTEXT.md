@@ -86,6 +86,13 @@ bekommt, was der `Rank` über ihm bekommt. Es gibt keine flache Stufe — ein
 Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
 _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
 
+**DisplayReservation**:
+Die Anzahl `Display`s, die ein einzelner `Rank` aus dem `RankPool` vorab
+zugeteilt bekommt, bevor die `DistributionCurve` den Rest formt. Nach oben
+begrenzt durch den `Rank` darüber, sodass sie über die Ränge nie steigt. Betrifft
+nur `Booster`.
+_Avoid_: Full-Display-Win, DisplayPrize, DisplayPool (es ist kein `Pool`, sondern eine Reservation innerhalb des `RankPool`)
+
 **DistributionPlan**:
 Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
 bekommt.
@@ -136,4 +143,6 @@ Defaults prägen. Kurzform im Gespräch: TM. Kein Begriff für die Oberfläche u
 kein Identifier — die App kennt `Shop`, nicht diesen einen Laden.
 
 **Display**:
-Verkaufseinheit aus einer festen Anzahl `Booster`.
+Verkaufseinheit aus einer festen Anzahl `Booster`. Die Anzahl ist pro
+`Tournament` einstellbar, mit einem Default am `Game`. Nur `Booster` gibt es in
+dieser Einheit.
