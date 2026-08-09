@@ -66,6 +66,15 @@ abfindet, berührt die Rechnung sie nicht.
 Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
 `Pool`s übrig bleibt.
 
+**RankPoolDepth**:
+Wie tief der `RankPool` ins `Ranking` reicht: Anzahl der Ränge ab `Rank` 1, die
+etwas daraus bekommen. Lückenlos, mindestens 1, höchstens so viele wie `Player`
+da sind. Die preisberechtigte Gruppe ist damit vollständig beschrieben und
+braucht keinen eigenen Begriff — es sind die `Player` mit `Rank` ≤
+`RankPoolDepth`. Ob das `Tournament` eine K.-o.-Runde gespielt hat, spielt keine
+Rolle.
+_Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die preisberechtigte Gruppe), PrizeDepth, Preisränge
+
 **DistributionPlan**:
 Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
 bekommt.
