@@ -45,7 +45,10 @@ _Avoid_: Briefchen (nur Umgangssprache), ParticipationPack
 
 **PrizePool**:
 Alles, was der `Shop` für ein `Tournament` stellt. Die Summe über alle `Pool`s
-ergibt restlos den `PrizePool` — diese Rechnung muss immer exakt aufgehen.
+ergibt restlos den `PrizePool` — diese Rechnung muss immer exakt aufgehen. Die
+Regel bindet die **`Pool`-Ebene**, nicht die Empfänger-Ebene: innerhalb eines
+`Pool` darf ein `PrizeItem` ohne Empfänger bleiben, ohne dass die Summe verletzt
+ist (siehe `open` in der `WinnerPackAllocation`).
 
 **Pool**:
 Eine benannte Teilmenge des `PrizePool` mit einer eigenen Verteilungsregel. Ein
@@ -90,16 +93,36 @@ Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
 _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
 
 **RankCycle**:
-Die Reihenfolge, in der knappe unteilbare `PrizeItem`s aus dem `RankPool`
-vergeben werden: ein Kreis über alle Ränge von 1 bis zur Zahl der `Player`, je
-ein `PrizeItem` pro `Rank` und Umlauf, bis der Vorrat leer ist. Er beginnt beim
-obersten `Rank`, der auf dieser Achse noch nichts hat — hat `Rank` 1 und 2 je
-einen `WinnerPack`, startet der Kreis der `TournamentPack`s bei `Rank` 3, läuft
-über den letzten `Rank` hinaus zurück auf `Rank` 1 und weiter. Ein `Rank` mit
-`WinnerPack` bekommt damit erst dann ein `TournamentPack`, wenn alle anderen
-eines haben. Das Gegenstück zur `DistributionCurve`: die Kurve formt, was teilbar
-ist, der Kreis läuft ab, was es nicht ist. `RankPoolDepth` begrenzt ihn nicht.
+Die Reihenfolge, in der knappe `TournamentPack`s aus dem `RankPool` vergeben
+werden: ein Kreis über alle Ränge von 1 bis zur Zahl der `Player`, je ein
+`TournamentPack` pro `Rank` und Umlauf, bis der Vorrat leer ist. Er beginnt beim
+ersten `Rank` nach dem `ranked`-Anteil der `WinnerPackAllocation` — sind zwei
+`WinnerPack`s automatisch vergeben, startet der Kreis bei `Rank` 3, läuft über
+den letzten `Rank` hinaus zurück auf `Rank` 1 und weiter. Ein `Rank` mit
+automatischem `WinnerPack` bekommt damit erst dann ein `TournamentPack`, wenn
+alle anderen eines haben. Handzuteilungen (`manual`) und noch offene
+`WinnerPack`s verschieben den Startpunkt **nicht** — die `TournamentPack`s
+bleiben stehen, während der Lead Siegerkarten setzt. Das Gegenstück zur
+`DistributionCurve`: die Kurve formt, was teilbar ist, der Kreis läuft ab, was es
+nicht ist. `RankPoolDepth` begrenzt ihn nicht.
 _Avoid_: Round Robin (Verfahren, nicht Domäne), Umlauf, Restverteilung
+
+**WinnerPackAllocation**:
+Wie die vorhandenen `WinnerPack`s zu Empfängern kommen — der einzige Ort, an dem
+der `CommunityLead` von Hand zuteilt, weil die Empfängerwahl hier eine soziale
+und keine rechnerische ist. Drei Anteile: **`ranked`** geht als lückenloses
+Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
+`Rank`s zu — mehrere pro `Rank` erlaubt, auch auf einem `Rank` mit
+`ranked`-Anteil, frei über das ganze `Ranking` und unabhängig von
+`RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
+sie keine Aussage macht. `ranked` und `manual` sind Regler mit einer Staffel als
+Default (`ranked` = ⌊n/2⌋ + 1, gedeckelt auf die vorhandene Zahl), die nachzieht,
+bis der Lead sie anfasst; ihre Summe ist nach oben durch die vorhandene Zahl
+gedeckelt. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
+aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
+`WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
+`JudgePool`.
+_Avoid_: fix (heisst auf Englisch „reparieren"), WinnerAssignment, ManualPool (es ist kein `Pool`)
 
 **DisplayReservation**:
 Die Anzahl `Display`s, die ein einzelner `Rank` aus dem `RankPool` vorab
