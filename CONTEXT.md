@@ -115,7 +115,8 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 `Rank`s zu — mehrere pro `Rank` erlaubt, auch auf einem `Rank` mit
 `ranked`-Anteil, frei über das ganze `Ranking` und unabhängig von
 `RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
-sie keine Aussage macht. `ranked` und `manual` sind Regler mit einer Staffel als
+sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
+ihn per `Raffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
 Default (`ranked` = ⌊n/2⌋ + 1, gedeckelt auf die vorhandene Zahl), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch die vorhandene Zahl
 gedeckelt. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
@@ -123,6 +124,40 @@ aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
 `WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
 `JudgePool`.
 _Avoid_: fix (heisst auf Englisch „reparieren"), WinnerAssignment, ManualPool (es ist kein `Pool`)
+
+**Raffle**:
+Der Bedienschritt, mit dem der `CommunityLead` einen `manual`-`WinnerPack` aus
+der `WinnerPackAllocation` auslosen lässt statt ihn selbst zu setzen: ein
+Auslösen vergibt genau einen `WinnerPack` an einen gleichverteilt gezogenen
+`Rank` aus dem `RafflePot`. Das Ergebnis landet in denselben `manual`-Zählern,
+die der Lead auch von Hand setzt; die App führt nicht mit, woher eine Zuteilung
+kam, und merkt sich frühere Ziehungen nicht — wird eine Zuteilung entfernt, ist
+dieser `Rank` sofort wieder ziehbar. Ein Bedienschritt, kein Rechenschritt: der
+Zufall sitzt in der Eingabe, nicht in der Berechnung, deshalb ändert Neurechnen
+nie einen Gewinner. Steht neben der Handzuteilung, ersetzt sie nicht. Nicht
+auslösbar, wenn kein `manual`-`WinnerPack` mehr offen oder der `RafflePot` leer
+ist.
+_Avoid_: Draw (heisst im TCG das Ziehen einer Karte), Lottery (klingt nach Geld und Recht), Verlosung als Name für den Bereich
+
+**RaffleRange**:
+Der `Rank`-Bereich, aus dem eine `Raffle` zieht — neun benannte Stufen über der
+Spielerzahl: alle, Top 8, Top 16, oberes Drittel, obere Hälfte, obere zwei
+Drittel, untere zwei Drittel, untere Hälfte, unterstes Drittel. Der obere Teil
+umfasst `⌈n × Anteil⌉` Ränge, der untere ist dessen Komplement, sodass sich die
+Paare lückenlos und überlappungsfrei ergänzen; absolute Stufen werden auf die
+Spielerzahl gekappt. Bemessungsgrundlage ist immer die Spielerzahl, nie
+`RankPoolDepth`. Default ist „alle".
+_Avoid_: RaffleMode (es ist ein Bereich, kein zweiter Rechenweg), Lostopf (das ist der `RafflePot`)
+
+**RafflePot**:
+Die `Rank`s, die bei einer `Raffle` wirklich im Topf liegen: die `RaffleRange`
+abzüglich aller `Rank`s, die schon einen `WinnerPack` haben — `ranked` wie
+`manual`. Dieser Ausschluss ist eine Invariante und kein Bedienelement, eine
+Siegerkarte gewinnt niemand zweimal. Über `open` gebliebene `WinnerPack`s sagt er
+nichts, weil sie keinen Empfänger haben. Er hängt am laufenden Zuteilstand und
+kann leer sein, während die `RaffleRange` es nicht ist — genau dann ist die
+`Raffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind.
+_Avoid_: RafflePool (kein `Pool`, er verteilt nichts, sondern begrenzt die Empfängerwahl), RaffleGroup, Lostopf als Identifier
 
 **DisplayReservation**:
 Die Anzahl `Display`s, die ein einzelner `Rank` aus dem `RankPool` vorab
