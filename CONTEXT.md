@@ -38,8 +38,18 @@ innerhalb desselben `Game`. Der `WinnerPack` gehört erst zum `PrizePool`, wenn
 mindestens zwei Drittel der `TournamentPack`s daraus angebrochen sind; diese
 Schwelle wird aus der Grösse abgeleitet und nicht eingestellt. Sie ist der
 einzige Ort, an dem zwei `PrizeItem`-Typen aneinander hängen.
-Wie `Display` eine Verpackungs-, keine Verteilungseinheit.
+Die `PackagingUnit` für `TournamentPack`s. Lose Einzelpacks, die im Laden aus
+einem früheren `PackEnvelope` übrig sind, kennt die App nicht — die zählt der
+`CommunityLead` selbst.
 _Avoid_: Briefchen (nur Umgangssprache), ParticipationPack
+
+**PackagingUnit**:
+Die Einheit, in der ein `PrizeItem` geliefert wird, im Unterschied zur Einheit,
+in der es verteilt wird: `Display` für `Booster`, `PackEnvelope` für
+`TournamentPack`s. Sie bindet die Beschaffung, nie die Verteilung — angebrochen
+werden darf immer, und der `PrizePool` wird nie auf ganze Einheiten gerundet.
+Sie ist die Achse, entlang der die `PreparationList` zerlegt.
+_Avoid_: Verpackung, Gebinde, SKU
 
 ## Pools
 
@@ -171,6 +181,21 @@ Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
 bekommt.
 _Avoid_: Payout
 
+**PreparationList**:
+Die Sicht auf den `PrizePool`, die zeigt, was der `CommunityLead` beim `Shop`
+holen muss: je `PackagingUnit` die Zerlegung der Menge in ganze Einheiten plus
+lose `PrizeItem`s, dazu genau **ein** Beschaffungshinweis auf dem Total, der
+aufrundet und die angebrochene Einheit benennt. Holen ist eine Total-Sache,
+Sortieren eine `Pool`-Sache: die `Pool`s erscheinen als reine Stückzahlen ohne
+eigenen Beschaffungshinweis, weil die Booster einer angebrochenen Einheit in
+mehrere `Pool`s fliessen. Sie rechnet nichts Eigenes und fügt nichts hinzu —
+auch der `JudgePool` ist eine Umschichtung innerhalb des `PrizePool`, keine
+Zusatzbestellung. Eine `DisplayReservation` teilt die Beschaffungszahl in
+„ungeöffnet" und „zum Anbrechen", erhöht sie nie. Kein Zustand und kein
+Bedienmodus, sondern eine Ableitung, die schon vollständig ist, bevor es ein
+`Ranking` gibt.
+_Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
+
 ## Turnier und Personen
 
 **Tournament**:
@@ -218,4 +243,4 @@ kein Identifier — die App kennt `Shop`, nicht diesen einen Laden.
 **Display**:
 Verkaufseinheit aus einer festen Anzahl `Booster`. Die Anzahl ist pro
 `Tournament` einstellbar, mit einem Default am `Game`. Nur `Booster` gibt es in
-dieser Einheit.
+dieser Einheit. Die `PackagingUnit` für `Booster`.
