@@ -44,6 +44,35 @@ lesen: Die sanfteste Stufe liegt **nahe** an einer Gleichverteilung, ist aber
 keine. Das Argument gegen den benannten Typ bleibt — er ist kein eigenes Modell,
 sondern ein Punkt auf derselben Kurve.
 
+Nachtrag: Aus der Zusicherung „jeder bediente `Rank` bekommt mindestens einen
+`Booster`" ist ein Regler geworden — der `RankFloor`, Startwert 2. Reserviert
+wird damit `RankFloor · RankPoolDepth + 1` statt `RankPoolDepth + 1`. Der zweite
+Vorsprung, `Rank` 1 vor `Rank` 2, bleibt ausdrücklich **absolut 1** und skaliert
+nicht mit: er sichert bloss die Unterscheidbarkeit an der Spitze, während der
+`RankFloor` das untere Ende der bedienten Ränge trägt. Zwischen `Rank` 2 und 3
+gibt es weiterhin keinen zugesicherten Vorsprung — die Form ist Sache der Kurve.
+
+Damit entsteht eine **Vorrangkette** unter den Reglern, die in denselben
+`RankPool` greifen: `RankFloor` → `RankPoolDepth` → `DisplayReservation`. Der
+`RankFloor` wird von keinem gedeckelt, die Tiefe von ihm
+(`⌊(Booster im RankPool − 1) / RankFloor⌋`), die `DisplayReservation` über die
+Machbarkeit von beiden (ADR 0002 und die Resolution zu #7). Die Kette ist wörtlich
+die Verallgemeinerung des Deckels oben mit `RankFloor` statt 1, und sie ist
+azyklisch — deckelten sich zwei gegenseitig, sässe der Lead fest, sobald er beide
+von Hand angefasst hat. Die Richtung ist bewusst so gewählt: die Tiefe ist der
+nachziehende Regler, der `RankFloor` eine Zusicherung über die Qualität einer
+Zuteilung. Im Konflikt werden **wenige Ränge anständig** bedient statt viele mit
+Krümeln.
+
+Der Preis ist, dass der `RankFloor` das Formmasse der Kurve frisst. Was übrig
+bleibt, heisst `ShapedRemainder` und wird ausgewiesen; er kann null werden, dann
+ist die Stufenwahl ohne Wirkung. Gekoppelt werden `RankFloor` und Kurve trotzdem
+nicht — der Zustand ist arithmetisch einwandfrei und genau das, was ein hoher
+`RankFloor` bestellt. Unangenehm ist dabei, dass eine **nachziehende** Tiefe den
+`ShapedRemainder` systematisch verhungert: „so tief wie möglich" ist per
+Definition der Wert, der den Boden maximiert. Wer der Kurve Material lassen will,
+muss die Tiefe selbst senken.
+
 Knappe `PrizeItem`s laufen an der Kurve vorbei. `WinnerPack`s und
 `TournamentPack`s im `RankPool` werden von `Rank` 1 an durchgereicht und
 beginnen wieder oben, wenn mehr davon da sind als bediente Ränge — sonst gehen

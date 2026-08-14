@@ -88,27 +88,54 @@ der Ränge ab `Rank` 1, die aus der `DistributionCurve` etwas bekommen —
 lückenlos, mindestens 1. Sie betrifft nur die teilbaren Mengen, also die
 `Booster`; knappe unteilbare `PrizeItem`s laufen den `RankCycle` und reichen
 tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
-`RankPool` selbst: jeder bediente `Rank` bekommt mindestens einen `Booster` und
-`Rank` 1 mindestens einen mehr als `Rank` 2, also bleibt die Tiefe unter der
-Zahl der `Booster` im `RankPool`. Ob das `Tournament` eine K.-o.-Runde gespielt
+`RankPool` selbst: jeder bediente `Rank` bekommt mindestens den `RankFloor` und
+`Rank` 1 einen mehr, also gilt
+`Tiefe ≤ ⌊(Booster im RankPool − 1) / RankFloor⌋`. Der `RankFloor` deckelt die
+Tiefe, nie umgekehrt. Ob das `Tournament` eine K.-o.-Runde gespielt
 hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
 als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
 (siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
 Stufen unbrauchbar. Der Regler selbst bleibt absolut: die Stufe liefert nur den
-Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst.
+Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nie
+angefasster Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
+sobald der Deckel wieder steigt.
 _Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die geformte Verteilung), PrizeDepth, Preisränge
+
+**RankFloor**:
+Die Mindestzahl teilbarer `PrizeItem`s, die jeder bediente `Rank` aus dem
+`RankPool` bekommt, bevor die `DistributionCurve` den Rest formt — heute also
+`Booster`. Er bindet die teilbare Achse und nennt bewusst keinen `PrizeItem`-Typ:
+`Booster` aus einer `DisplayReservation` zählen an, `TournamentPack`s aus dem
+`RankCycle` nicht. `Rank` 1 bekommt einen mehr, also `RankFloor + 1` — der
+Vorsprung aus ADR 0001 bleibt absolut 1 und skaliert nicht mit. Reserviert wird
+damit `RankFloor · RankPoolDepth + 1`; was übrig bleibt, ist der
+`ShapedRemainder`. Ein Regler mit Startwert im `DefaultSet`, der über keinen
+anderen gedeckelt wird und selbst die `RankPoolDepth` deckelt.
+_Avoid_: Minimum (allein), BoosterFloor (nagelt einen Typ fest, der heute nur zufällig der einzige teilbare ist), Trostpreisgrenze
 
 **DistributionCurve**:
 Die Form, in der der `RankPool` über die bedienten Ränge abfällt: benannte
 Stufen von sanft bis extrem, bei denen jeder `Rank` einen festen Anteil dessen
 bekommt, was der `Rank` über ihm bekommt. Es gibt keine flache Stufe — ein
 `RankPool`, der nicht nach `Rank` unterscheidet, ist ein `ParticipationPool`.
-Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
+Greift nur auf teilbare Mengen, und dort nur auf den `ShapedRemainder`; knappe
+`PrizeItem`s laufen an ihr vorbei.
 Die sieben Stufen, mit dem Anteil, den ein `Rank` von dem über ihm bekommt:
 `gentle` 0.85, `mild` 0.75, `moderate` 0.65, `firm` 0.55, `steep` 0.45,
 `severe` 0.35, `extreme` 0.25. Die Namen sind Etiketten über den Verhältnissen —
 massgeblich ist die Zahl. Auch die sanfteste Stufe ist keine Gleichverteilung.
 _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
+
+**ShapedRemainder**:
+Was von den teilbaren `PrizeItem`s im `RankPool` übrig ist, nachdem alle
+Reservationen abgezogen sind — `RankFloor`, der Vorsprung für `Rank` 1 und jede
+`DisplayReservation` — und damit die einzige Menge, auf die die
+`DistributionCurve` überhaupt greift. Er kann null sein: dann ist der
+`DistributionPlan` der reine Boden und die Stufenwahl ohne Wirkung. Das ist kein
+Fehler, sondern die Folge eines hohen `RankFloor` — wer jedem bedienten `Rank`
+dasselbe zusichert, hat eine flache Verteilung verlangt. Er wird ausgewiesen,
+damit sichtbar ist, warum die Stufe verstummt; gekoppelt werden die beiden nie.
+_Avoid_: Rest (allein), CurveBudget, ShapedPool (kein `Pool`, er verteilt nichts)
 
 **RankCycle**:
 Die Reihenfolge, in der knappe `TournamentPack`s aus dem `RankPool` vergeben
