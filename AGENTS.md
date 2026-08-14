@@ -7,7 +7,7 @@
 - Source code, identifiers, code comments, docblocks
 - `AGENTS.md`, `CLAUDE.md`, `docs/agents/*`, skill and agent definitions
 - Commit messages, branch names
-- UI copy is decided per feature and is not covered by this rule
+- UI copy — the app is English throughout, labels included
 
 **German** — everything the maintainer reads while planning:
 

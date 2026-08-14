@@ -37,6 +37,13 @@ Daraus folgt ein zweiter, engerer Deckel auf `RankPoolDepth`: sie bleibt unter
 der Zahl der `Booster` im `RankPool`. Das korrigiert die ursprüngliche Grenze
 „höchstens so viele wie `Player`".
 
+Nachtrag: Die Stufen sind inzwischen benannt und mit Verhältnissen belegt
+(`gentle` 0.85 bis `extreme` 0.25, siehe `CONTEXT.md`). Damit ist der Satz oben,
+„gleichmässig" sei rechnerisch identisch mit der flachsten Stufe, genauer zu
+lesen: Die sanfteste Stufe liegt **nahe** an einer Gleichverteilung, ist aber
+keine. Das Argument gegen den benannten Typ bleibt — er ist kein eigenes Modell,
+sondern ein Punkt auf derselben Kurve.
+
 Knappe `PrizeItem`s laufen an der Kurve vorbei. `WinnerPack`s und
 `TournamentPack`s im `RankPool` werden von `Rank` 1 an durchgereicht und
 beginnen wieder oben, wenn mehr davon da sind als bediente Ränge — sonst gehen

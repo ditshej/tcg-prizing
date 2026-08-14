@@ -91,7 +91,11 @@ tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
 `RankPool` selbst: jeder bediente `Rank` bekommt mindestens einen `Booster` und
 `Rank` 1 mindestens einen mehr als `Rank` 2, also bleibt die Tiefe unter der
 Zahl der `Booster` im `RankPool`. Ob das `Tournament` eine K.-o.-Runde gespielt
-hat, spielt keine Rolle.
+hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
+als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
+(siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
+Stufen unbrauchbar. Der Regler selbst bleibt absolut: die Stufe liefert nur den
+Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst.
 _Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die geformte Verteilung), PrizeDepth, Preisränge
 
 **DistributionCurve**:
@@ -100,6 +104,10 @@ Stufen von sanft bis extrem, bei denen jeder `Rank` einen festen Anteil dessen
 bekommt, was der `Rank` über ihm bekommt. Es gibt keine flache Stufe — ein
 `RankPool`, der nicht nach `Rank` unterscheidet, ist ein `ParticipationPool`.
 Greift nur auf teilbare Mengen; knappe `PrizeItem`s laufen an ihr vorbei.
+Die sieben Stufen, mit dem Anteil, den ein `Rank` von dem über ihm bekommt:
+`gentle` 0.85, `mild` 0.75, `moderate` 0.65, `firm` 0.55, `steep` 0.45,
+`severe` 0.35, `extreme` 0.25. Die Namen sind Etiketten über den Verhältnissen —
+massgeblich ist die Zahl. Auch die sanfteste Stufe ist keine Gleichverteilung.
 _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
 
 **RankCycle**:
@@ -127,7 +135,8 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 `RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
 ihn per `Raffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
-Default (`ranked` = ⌊n/2⌋ + 1, gedeckelt auf die vorhandene Zahl), die nachzieht,
+Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die vorhandene Zahl `WinnerPack`s** ist
+und der Wert auf ebendiese gedeckelt wird), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch die vorhandene Zahl
 gedeckelt. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
 aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
@@ -150,13 +159,16 @@ ist.
 _Avoid_: Draw (heisst im TCG das Ziehen einer Karte), Lottery (klingt nach Geld und Recht), Verlosung als Name für den Bereich
 
 **RaffleRange**:
-Der `Rank`-Bereich, aus dem eine `Raffle` zieht — neun benannte Stufen über der
-Spielerzahl: alle, Top 8, Top 16, oberes Drittel, obere Hälfte, obere zwei
-Drittel, untere zwei Drittel, untere Hälfte, unterstes Drittel. Der obere Teil
-umfasst `⌈n × Anteil⌉` Ränge, der untere ist dessen Komplement, sodass sich die
-Paare lückenlos und überlappungsfrei ergänzen; absolute Stufen werden auf die
-Spielerzahl gekappt. Bemessungsgrundlage ist immer die Spielerzahl, nie
-`RankPoolDepth`. Default ist „alle".
+Der `Rank`-Bereich, aus dem eine `Raffle` zieht — dreizehn benannte Stufen über
+der Spielerzahl. Obere acht: `all`, `top8`, `top16`, `topQuarter`, `topThird`,
+`topHalf`, `topTwoThirds`, `topThreeQuarters`. Untere fünf als deren
+Komplemente: `bottomThreeQuarters`, `bottomTwoThirds`, `bottomHalf`,
+`bottomThird`, `bottomQuarter`. Der obere Teil umfasst `⌈n × Anteil⌉` Ränge, der
+untere ist dessen Komplement, sodass sich die Paare lückenlos und
+überlappungsfrei ergänzen; absolute Stufen werden auf die Spielerzahl gekappt.
+Dieselbe Liste liefert die Startwerte für `RankPoolDepth`, dort auf die oberen
+acht beschränkt. Bemessungsgrundlage ist immer die Spielerzahl, nie
+`RankPoolDepth`. Default ist `all`.
 _Avoid_: RaffleMode (es ist ein Bereich, kein zweiter Rechenweg), Lostopf (das ist der `RafflePot`)
 
 **RafflePot**:
@@ -203,11 +215,35 @@ Ein einzelnes Turnier — die Einheit, für die genau ein `DistributionPlan`
 entsteht.
 
 **Game**:
-Das TCG, für das ein `Tournament` läuft, und Träger der Defaults.
+Das TCG, für das ein `Tournament` läuft, und Träger eines **vollständigen**
+Blatts Startwerte: jede Variable, die überhaupt vorbelegt werden kann, hat auf
+dieser Ebene einen Wert. Ein unvollständiges `Game` ist ein Fehler und kein
+zulässiger Zustand, weil der Rückfall eines `TournamentType` sonst ins Leere
+zeigt. Diese Werte sind zugleich die des ersten `TournamentType` — keine
+neutrale Grundlinie, sondern der häufigste Fall.
 _Avoid_: TCG, System; „Game" nie im Sinn einer einzelnen Partie
 
 **TournamentType**:
-Das Turnierformat, das eigene Defaults mitbringt.
+Das Turnierformat innerhalb eines `Game` — ein Weekly ist anders eingestellt als
+ein Wochenendturnier. Trägt nur die **Abweichungen** vom `Game`; was er nicht
+nennt, erbt er. Es ist immer genau einer gewählt, einen Leerzustand „kein Typ"
+gibt es nicht: der **erste** einer Liste ist die Startwahl und trägt ausser dem
+Titel nichts, seine Werte sind die des `Game`. Damit ist die Reihenfolge der
+Liste bedeutungstragend und keine Sortierung für die Oberfläche.
+_Avoid_: Format (bezeichnet im TCG die Kartenpool-Regel), Preset
+
+**DefaultSet**:
+Der vollständige Satz Startwerte, auf denen die Regler eines `Tournament`
+stehen, bevor der `CommunityLead` etwas anfasst: das Blatt des `Game`,
+überschrieben von dem des gewählten `TournamentType`. Ein Eintrag ist entweder
+eine Konstante oder die **Wahl** einer im Rechenkern benannten Regel — eine
+Stufe der `DistributionCurve`, ein Bereich für `RankPoolDepth` — und trägt damit
+Daten, nie Logik. Es belegt nie etwas vor, das einen `Rank` benennt: die
+`DisplayReservation` und der `manual`-Anteil der `WinnerPackAllocation` starten
+immer neutral, weil ein vorbelegter Empfänger eine Zuteilung ohne Entscheid
+wäre. Ein Wechsel von `Game` oder `TournamentType` ersetzt das ganze
+`DefaultSet` und setzt alle Regler zurück, auch die von Hand gesetzten.
+_Avoid_: Preset (Oberflächensprache), Config, Profile, Defaults (allein)
 
 **Ranking**:
 Die fertige Reihenfolge der `Player`, geliefert vom Turniertool des `Game`.
