@@ -217,8 +217,26 @@ _Avoid_: Full-Display-Win, DisplayPrize, DisplayPool (es ist kein `Pool`, sonder
 
 **DistributionPlan**:
 Das Ergebnis der Berechnung: wer aus diesem `Tournament` welche `PrizeItem`s
-bekommt.
+bekommt. Er umfasst **alle** Ränge bis zur Spielerzahl, nicht nur die von der
+`RankPoolDepth` bedienten — der `RankCycle` und `manual`-`WinnerPack`s reichen
+tiefer, eine bei der Tiefe abgeschnittene Darstellung würde Zuteilungen
+verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
+Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
+`PrizePool` prüfbar bleibt.
 _Avoid_: Payout
+
+**CombinedHandout**:
+Ob der `ParticipationPool` zusammen mit dem `RankPool` ausgeteilt wird oder
+vorher. Ein Bit am `Tournament` und kein Rechenschritt: es verschiebt die
+Teilnahmeanteile in die Rangzeilen des `DistributionPlan`, statt sie als eigenen
+Block auszuweisen — dieselben Zahlen, anders gruppiert, und der Block
+verschwindet dabei, damit kein `PrizeItem` zweimal auf dem Schirm steht. Steht
+im Normalfall auf aus, weil die Teilnahmepreise meist beim Einchecken rausgehen.
+Startwert im `DefaultSet`, weil eine Konstante keinen `Rank` benennt. Es ist der
+einzige Ort, an dem ein Zeitpunkt im Modell überhaupt vorkommt — als ein Bit,
+nicht als Achse: die App kennt kein `Ranking` als Eingabe, also wird kein Teil
+des `DistributionPlan` später wahr als ein anderer.
+_Avoid_: Zeitpunkt, PlanStage (es ist keine Achse, sondern ein Bit), MergedView
 
 **PreparationList**:
 Die Sicht auf den `PrizePool`, die zeigt, was der `CommunityLead` beim `Shop`
@@ -269,8 +287,22 @@ Daten, nie Logik. Es belegt nie etwas vor, das einen `Rank` benennt: die
 `DisplayReservation` und der `manual`-Anteil der `WinnerPackAllocation` starten
 immer neutral, weil ein vorbelegter Empfänger eine Zuteilung ohne Entscheid
 wäre. Ein Wechsel von `Game` oder `TournamentType` ersetzt das ganze
-`DefaultSet` und setzt alle Regler zurück, auch die von Hand gesetzten.
+`DefaultSet` und setzt alle Regler zurück, auch die von Hand gesetzten. Ein
+`SetupLink` legt sich als dritte Ebene darüber — er trägt keine Startwerte,
+sondern setzt die Regler, die er nennt, auf angefasst.
 _Avoid_: Preset (Oberflächensprache), Config, Profile, Defaults (allein)
+
+**SetupLink**:
+Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
+Abweichungen vom `DefaultSet` trägt. Dritte Ebene der Kette `Game` →
+`TournamentType` → `SetupLink`, und wie die zweite trägt sie **nur
+Abweichungen** — was sie nicht nennt, ist nicht angefasst und zieht mit der
+Spielerzahl nach. Weil „abweichend" und „angefasst" ein und dasselbe Bit sind,
+ist das keine zusätzliche Angabe, sondern dieselbe. Sie schreibt sich beim Ziehen
+mit, ohne Browser-Historie zu erzeugen; Neuladen ändert nichts. Eingabe, nicht
+Persistenz: die App schreibt nichts weg, sie liest einen Link — Accounts, Storage
+und Caching bleiben ausgeschlossen.
+_Avoid_: Preset (Oberflächensprache, siehe `DefaultSet`), Permalink, State, Snapshot (sie trägt keinen vollständigen Zustand, nur die Abweichungen)
 
 **Ranking**:
 Die fertige Reihenfolge der `Player`, geliefert vom Turniertool des `Game`.
