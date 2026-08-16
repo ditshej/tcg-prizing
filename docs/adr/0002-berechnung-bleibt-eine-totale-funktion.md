@@ -36,3 +36,32 @@ beide sind sichtbar.
 Die Reglergrenzen bleiben davon unberührt: Sie verhindern weiterhin, dass solche
 Zustände durch die Eingabe *entstehen*. Erreichbar sind sie nur noch dadurch,
 dass ein zweiter Regler einen bereits gesetzten Wert nachträglich ungültig macht.
+
+Nachtrag: Die Totalität ist nicht nur eine Anzeigefrage — sie ist die Bedingung
+dafür, dass die Meldung **Vorschläge rechnen** kann. Weil `distribute()` für jede
+Eingabekombination ein Ergebnis liefert und keinen Zustand mit sich führt, lässt
+sich jeder Ausweg zurückrechnen: einen Regler über seinen Bereich variieren, die
+Rechnung je Wert neu laufen lassen, den nächstliegenden Wert nehmen, der die
+Bedingung räumt. Das sind einige hundert Durchläufe einer Funktion ohne
+DOM-Berührung und im Browser nicht messbar. Eine partielle Funktion könnte das
+nicht: Sie gäbe für Kandidatenwerte „kein Plan" zurück, ohne dass sich sagen
+liesse, ob das besser oder schlechter ist als der Ausgangszustand.
+
+Dasselbe Verfahren deckt drei Fälle ab, die vorher wie drei Mechanismen aussahen:
+den Widerspruch zweier `pinned` Regler, die Überholung ohne Verlierer, und die
+verpasste Gelegenheit (den `WinnerPack`-Hinweis, wo die `TournamentPack`-Zahl
+nach oben variiert wird, bis die Schwelle fällt). Beispiel für den zweiten Fall,
+Weekend mit 96 `Booster` im `RankPool`, `DisplayReservation` 1 `Display` für
+`Rank` 1, Tiefe 8, `RankFloor` 2, Kurve `severe`: `Rank` 1 hat 24, `Rank` 2
+bekommt 40. Zurückgerechnet sind es drei Wege — Kurve auf `moderate` (`Rank` 2
+fällt auf 23), Reservation auf 2 `Display`s (`Rank` 1 auf 48), oder Reservation
+entfernen, womit `Rank` 1 in die Kurve zurückkehrt und die Überholung strukturell
+unmöglich wird.
+
+Variiert wird dabei **immer nur ein Regler**. Zwei gleichzeitig wären ein Produkt
+statt einer Summe, vor allem aber unlesbar: „Kurve auf `moderate` *und* Tiefe auf
+11" ist kein Vorschlag, den jemand abwägt. Die Meldung zeigt alle einzeln
+gangbaren Wege, geordnet nach der Vorrangkette aus ADR 0001, und jeder ist mit
+einem Klick übernehmbar — was den betroffenen Regler `pinned` setzt (ADR 0006).
+Der Sonderfall ist der Vorschlag „Regler X zurück auf automatisch": er *ist* der
+Reset-Knopf und entfernt den Pin, statt einen zu setzen.

@@ -59,3 +59,12 @@ und liegt als eigenes Ticket auf der Karte.
 **Der Kopierknopf ist eine Abkürzung, kein Export.** Er legt die Adresszeile in
 die Zwischenablage und erzeugt kein zweites Format — die Entscheidung gegen
 Ausgaben neben dem Bildschirm bleibt dadurch unangetastet.
+
+Nachtrag: „Abweichungen" ist inzwischen präziser gefasst. ADR 0006 hat den
+Zustand `Pinned` genannt und festgelegt, dass er bei der Bedienhandlung gesetzt
+wird statt aus einem Vergleich abgeleitet. Die URL trägt damit die **`pinned`
+Regler**, und die sind eine Obermenge der abweichenden: ein Regler darf im Link
+stehen mit demselben Wert, den sein Default ohnehin liefert. Der Satz oben, die
+Menge der Abweichungen *sei* die Menge der angefassten Regler, ist entsprechend
+zu lesen — es bleibt **ein** Bit je Regler, wie ADR 0003 verlangt, aber die
+Gleichsetzung der beiden Mengen gilt nicht mehr. Am Format ändert das nichts.
