@@ -8,8 +8,11 @@ Identifiern, Pfaden und Prosa zu vermeiden; wo es noch auftaucht, ist es Altlast
 
 ## Prize-Elemente
 
-_`Booster`, `TournamentPack` und `WinnerPack` sind die Ausprägung für das `Game`
-One Piece — keine feste Liste, die für jedes `Game` gilt._
+_Die Typenliste ist **fest** — `Booster`, `TournamentPack` und `WinnerPack`, samt
+Namen. Sie steht im Rechenkern, nicht im `DefaultSet`: ein `Game` trägt Zahlen und
+Regelwahlen, nie Typen und nie Etiketten. Die Namen kommen von Bandai, die drei
+Wege dahinter sind allgemein — teilbar (`DistributionCurve`), knapp (`RankCycle`),
+handzugeteilt (`WinnerPackAllocation`)._
 
 **PrizeItem**:
 Ein einzelnes, unteilbares Stück aus dem `PrizePool` — das, was einmal über den
@@ -96,9 +99,11 @@ hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
 als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
 (siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
 Stufen unbrauchbar. Der Regler selbst bleibt absolut: die Stufe liefert nur den
-Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nie
-angefasster Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
-sobald der Deckel wieder steigt.
+Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nicht
+`pinned` Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
+sobald der Deckel wieder steigt. Ein `pinned` Wert dagegen wird vom sinkenden
+Deckel nie gekappt — er bleibt stehen, und die Meldung benennt ihn als den
+Verlierer der Vorrangkette.
 _Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die geformte Verteilung), PrizeDepth, Preisränge
 
 **RankFloor**:
@@ -287,18 +292,35 @@ Daten, nie Logik. Es belegt nie etwas vor, das einen `Rank` benennt: die
 `DisplayReservation` und der `manual`-Anteil der `WinnerPackAllocation` starten
 immer neutral, weil ein vorbelegter Empfänger eine Zuteilung ohne Entscheid
 wäre. Ein Wechsel von `Game` oder `TournamentType` ersetzt das ganze
-`DefaultSet` und setzt alle Regler zurück, auch die von Hand gesetzten. Ein
+`DefaultSet` und setzt alle Regler zurück, auch die `pinned` gesetzten. Ein
 `SetupLink` legt sich als dritte Ebene darüber — er trägt keine Startwerte,
-sondern setzt die Regler, die er nennt, auf angefasst.
+sondern setzt die Regler, die er nennt, auf `pinned`.
 _Avoid_: Preset (Oberflächensprache), Config, Profile, Defaults (allein)
+
+**Pinned**:
+Der Zustand eines Reglers, den der `CommunityLead` selbst gesetzt hat: er folgt
+keiner Rechnung mehr, steht im `SetupLink` und ist in der Oberfläche markiert.
+Gesetzt wird er durch die **Bedienhandlung**, nicht durch den Wert — wer einen
+Regler verstellt und wieder auf den Ausgangswert zurückzieht, hat entschieden und
+lässt ihn `pinned`. Aufgehoben wird er allein über den Knopf neben dem Regler,
+der ihn auf das `DefaultSet` zurückstellt, sowie über einen Wechsel von `Game`
+oder `TournamentType`. Die Markierung sagt deshalb „folgt der Rechnung nicht
+mehr", nicht „weicht ab": beides fällt meist zusammen, aber ein `pinned` Regler
+darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
+gleich, auch wenn er nur bei den dreien beisst, deren Startwert eine Rechnung
+statt einer Zahl ist — `RankPoolDepth`, die absolute `TournamentPack`-Zahl und
+der `ranked`-Anteil der `WinnerPackAllocation`. Ein `pinned` Wert wird nie
+nachträglich gekappt: sinkt ein Deckel unter ihn, bleibt er stehen und die App
+zeigt die Lage (ADR 0002).
+_Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), Touched (beschreibt die Geste, nicht den Zustand), Locked (klingt nach Schutz vor dem Nutzer), Dirty
 
 **SetupLink**:
 Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
-Abweichungen vom `DefaultSet` trägt. Dritte Ebene der Kette `Game` →
-`TournamentType` → `SetupLink`, und wie die zweite trägt sie **nur
-Abweichungen** — was sie nicht nennt, ist nicht angefasst und zieht mit der
-Spielerzahl nach. Weil „abweichend" und „angefasst" ein und dasselbe Bit sind,
-ist das keine zusätzliche Angabe, sondern dieselbe. Sie schreibt sich beim Ziehen
+`pinned` Regler trägt. Dritte Ebene der Kette `Game` → `TournamentType` →
+`SetupLink`, und wie die zweite trägt sie **nur den Unterschied** — was sie nicht
+nennt, ist nicht `pinned` und zieht mit der Spielerzahl nach. Ein Bit je Regler
+genügt dafür, weil der Wert selbst die Aussage ist; dass die genannten Regler
+meist auch abweichen, ist Folge und nicht Definition. Sie schreibt sich beim Ziehen
 mit, ohne Browser-Historie zu erzeugen; Neuladen ändert nichts. Eingabe, nicht
 Persistenz: die App schreibt nichts weg, sie liest einen Link — Accounts, Storage
 und Caching bleiben ausgeschlossen.
