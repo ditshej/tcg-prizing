@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototyp — UI-Aufbau und Regler-Layout</title>
+<style>
+  :root {
+    --accent: #0e6f5c;
+    --accent-soft: #e6f2ef;
+    --ink: #16191c;
+    --muted: #626a72;
+    --line: #dfe3e7;
+    --bg: #fbfbfa;
+    --paper: #fff;
+    --warn: #9a4a12;
+    --warn-soft: #fdf1e6;
+    --pin: #7b3fb5;
+    --pin-soft: #f2ebfa;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink); background: #eceeef; padding-bottom: 40px;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+
+  /* ── Prototype chrome (deutsch, nicht Teil des Entwurfs) ───────────── */
+  .chrome { max-width: 700px; margin: 0 auto; padding: 14px 20px 8px; }
+  .chrome h1 { font-size: 18px; margin: 0 0 5px; letter-spacing: -0.01em; }
+  .chrome p { color: #4a5158; margin: 0 0 7px; font-size: 13px; }
+  .chrome summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+  .chrome .note { background: #fff; border: 1px solid var(--line); border-radius: 9px;
+                  padding: 11px 13px; font-size: 13px; color: #4a5158; margin-top: 7px; }
+
+  #stagewrap { display: flex; justify-content: center; padding: 8px 12px 0; }
+  #stage { background: var(--bg); width: 100%; }
+  body.phone #stage {
+    width: 375px; height: 812px; overflow: hidden; border: 9px solid #23262a;
+    border-radius: 34px; box-shadow: 0 18px 44px rgba(0,0,0,.22); flex: none;
+  }
+  body.wide #stage { max-width: 1180px; border: 1px solid var(--line); border-radius: 12px;
+                     min-height: 720px; overflow: hidden; }
+
+  /* ── Switcher ──────────────────────────────────────────────────────── */
+  /* Oben rechts statt unten mittig: unten sitzt in Variante A die Daumenleiste,
+     die der Umschalter sonst genau verdeckt. */
+  #switch {
+    position: fixed; right: 14px; top: 14px;
+    display: flex; align-items: center; gap: 4px; z-index: 99;
+    background: #16191c; color: #fff; border-radius: 999px; padding: 5px 6px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.34); font-size: 13px;
+  }
+  #switch button { font: inherit; color: #fff; background: transparent; border: 0;
+                   padding: 7px 10px; border-radius: 999px; cursor: pointer; }
+  #switch button:hover { background: #ffffff22; }
+  #switch .name { padding: 0 10px; white-space: nowrap; font-weight: 600; }
+  #switch .sep { width: 1px; height: 20px; background: #ffffff33; margin: 0 4px; }
+  #switch .dev[aria-pressed="true"] { background: #fff; color: #16191c; }
+
+  /* ── Shared app-ish primitives ─────────────────────────────────────── */
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .grow { flex: 1; }
+  .muted { color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  .tiny { font-size: 12px; }
+  .sheetbtn { font: inherit; border: 1px solid var(--line); background: #fff; color: var(--ink);
+              border-radius: 8px; padding: 7px 11px; cursor: pointer; }
+
+  .pindot { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--pin); vertical-align: middle; margin-right: 5px; }
+  .reset { font: inherit; font-size: 12px; border: 0; background: transparent;
+           color: var(--pin); cursor: pointer; padding: 2px 5px; border-radius: 6px; }
+  .reset:hover { background: var(--pin-soft); }
+
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+  .step { display: flex; gap: 4px; flex-wrap: wrap; }
+  .step button { font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 7px;
+                 border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .step button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pm { display: flex; align-items: center; gap: 0; }
+  .pm button { font: inherit; width: 40px; height: 40px; font-size: 19px; border: 1px solid var(--line);
+               background: #fff; cursor: pointer; }
+  .pm button:first-child { border-radius: 9px 0 0 9px; }
+  .pm button:last-child { border-radius: 0 9px 9px 0; }
+  .pm .val { min-width: 46px; text-align: center; border-top: 1px solid var(--line);
+             border-bottom: 1px solid var(--line); height: 40px; line-height: 38px;
+             background: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px;
+          padding: 9px 11px; font-size: 12.5px; }
+  .flag button { font: inherit; font-size: 12px; border: 1px solid currentColor; background: #fff;
+                 color: inherit; border-radius: 6px; padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
+
+  table.plan { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  table.plan th, table.plan td { padding: 5px 8px; font-size: 13.5px; text-align: right;
+                                 border-bottom: 1px solid var(--line); }
+  table.plan th:first-child, table.plan td:first-child { text-align: left; }
+  table.plan thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+                        color: var(--muted); font-weight: 600; }
+  table.plan tr.unserved td { color: #9aa1a8; }
+
+  .sheet { position: absolute; inset: 0; background: var(--paper); overflow: auto;
+           display: none; z-index: 20; }
+  .sheet.open { display: block; }
+  .sheet header { position: sticky; top: 0; background: var(--paper); border-bottom: 1px solid var(--line);
+                  padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .sheet .body { padding: 14px 16px 40px; }
+  .grouphead { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+               color: var(--muted); margin: 20px 0 8px; font-weight: 700; }
+
+  .ctl { margin: 0 0 14px; }
+  .ctl .top { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; }
+  .ctl .lbl { font-size: 13.5px; }
+  .ctl .v { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ctl.pinned .lbl { font-weight: 700; }
+
+  .segbar { display: flex; height: 9px; border-radius: 5px; overflow: hidden; background: var(--line); }
+  .segbar i { display: block; height: 100%; }
+
+  .strip { display: flex; align-items: flex-end; gap: 2px; height: 100%; }
+  .strip .col { flex: 1; min-width: 3px; height: 100%; display: flex; flex-direction: column;
+                justify-content: flex-end; }
+  .strip .b { background: var(--accent); border-radius: 2px 2px 0 0; position: relative; }
+  .strip .b.un { background: #cfd6da; }
+  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: #78b3a6; border-radius: 0 0 2px 2px; }
+  .strip .b .wp { position: absolute; left: 50%; top: 3px; width: 5px; height: 5px; margin-left: -2.5px;
+                  border-radius: 50%; background: #f0c419; }
+  .strip .cap { font-size: 10px; text-align: center; line-height: 1.3; }
+</style>
+</head>
+<body class="phone">
+
+<div class="chrome">
+  <h1>UI-Aufbau und Regler-Layout</h1>
+  <p>
+    Wegwerf-Prototyp zu <strong>Ticket #15</strong> der Karte <em>Prizing-Rechner für TCG-Turniere</em>.
+    Vier Anordnungen derselben Regler, umschaltbar unten. Alle rechnen <strong>echt</strong> — Weekly-Defaults,
+    One Piece, geprüft gegen die dokumentierten Fälle aus #20.
+  </p>
+  <details>
+    <summary>Wonach schauen, und was der Entwurf bewusst nicht tut</summary>
+    <div class="note">
+      Du machst das Prizing am Handy, direkt nach dem Weekly: Spielendenzahl rein, Verteilung anschauen,
+      meistens passt sie, sonst an <em>Kurvenstufe</em> und <em>bediente Ränge</em> drehen. Die Frage ist,
+      welche Anordnung das trägt — und ob du dabei siehst, was mit den unteren Rängen passiert.<br><br>
+      Die Verteilungsansicht ist absichtlich <strong>schlicht</strong>, damit sie Ticket #23 (Ausgabebänder)
+      nicht vorwegnimmt. Die App ist englisch, die Erklärtexte hier sind es nicht. Jede Variante beantwortet
+      die vier Nebenfragen des Tickets <em>anders</em> — Pin-Markierung, Reset-Knopf, Ort der Konfliktmeldung,
+      und ob bei der Kurvenstufe das Verhältnis mitläuft. Der lila Punkt heisst überall
+      „folgt der Rechnung nicht mehr“, nie „weicht ab“.
+    </div>
+  </details>
+</div>
+
+<div id="stagewrap"><div id="stage"></div></div>
+
+<div id="switch">
+  <button data-nav="-1" title="vorherige Variante">◀</button>
+  <span class="name" id="vname">A</span>
+  <button data-nav="1" title="nächste Variante">▶</button>
+  <span class="sep"></span>
+  <button class="dev" data-dev="phone">📱 375</button>
+  <button class="dev" data-dev="wide">🖥 breit</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   Rechenkern — rein, DOM-frei. Regeln aus #3 #4 #5 #6 #7 #8 #12 #17 #10 #20,
+   ADR 0001 (Reservieren dann Formen) und ADR 0002 (totale Funktion).
+   ══════════════════════════════════════════════════════════════════════ */
+const CURVES = [
+  { id: 'gentle', ratio: 0.85 }, { id: 'mild', ratio: 0.75 },
+  { id: 'moderate', ratio: 0.65 }, { id: 'firm', ratio: 0.55 },
+  { id: 'steep', ratio: 0.45 }, { id: 'severe', ratio: 0.35 },
+  { id: 'extreme', ratio: 0.25 },
+];
+const RANGES = [
+  { id: 'top8', abs: 8 }, { id: 'top16', abs: 16 },
+  { id: 'topQuarter', frac: 0.25 }, { id: 'topThird', frac: 1 / 3 },
+  { id: 'topHalf', frac: 0.5 }, { id: 'topTwoThirds', frac: 2 / 3 },
+  { id: 'topThreeQuarters', frac: 0.75 }, { id: 'all', frac: 1 },
+  { id: 'bottomThreeQuarters', comp: 'topQuarter' }, { id: 'bottomTwoThirds', comp: 'topThird' },
+  { id: 'bottomHalf', comp: 'topHalf' }, { id: 'bottomThird', comp: 'topTwoThirds' },
+  { id: 'bottomQuarter', comp: 'topThreeQuarters' },
+];
+function rangeSize(id, players) {
+  const r = RANGES.find((x) => x.id === id);
+  if (!r) return players;
+  if (r.abs != null) return Math.min(r.abs, players);
+  if (r.frac != null) return Math.min(players, Math.ceil(players * r.frac));
+  return players - rangeSize(r.comp, players);
+}
+function largestRemainder(weights, total) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0 || sum <= 0) return weights.map(() => 0);
+  const exact = weights.map((w) => (w / sum) * total);
+  const out = exact.map(Math.floor);
+  const left = total - out.reduce((a, b) => a + b, 0);
+  const order = exact.map((v, i) => ({ i, f: v - Math.floor(v) }))
+                     .sort((a, b) => b.f - a.f || a.i - b.i);
+  for (let k = 0; k < left; k++) out[order[k % order.length].i]++;
+  return out;
+}
+function distribute(s) {
+  const n = Math.max(1, s.players);
+  const boosterTotal = s.boosterRate * n;
+  const tpTotal = s.tournamentPacks == null ? n : s.tournamentPacks;
+  const wpThreshold = Math.ceil((2 * s.envelopeSize) / 3);
+  const wpTotal = Math.floor(tpTotal / s.envelopeSize) +
+                  ((tpTotal % s.envelopeSize) >= wpThreshold ? 1 : 0);
+
+  const pbRate = Math.min(s.participationBooster, Math.floor(boosterTotal / n));
+  const ppRate = Math.min(s.participationPack, Math.floor(tpTotal / n));
+  const partB = pbRate * n, partTP = ppRate * n;
+  const judgeB = Math.min(s.judgeBooster, boosterTotal - partB);
+  const judgeWP = Math.min(s.judgeWinner, wpTotal);
+
+  const rankB = boosterTotal - partB - judgeB;
+  const rankTP = tpTotal - partTP;
+  const rankWP = wpTotal - judgeWP;
+
+  const rankedAuto = Math.min(Math.floor(rankWP / 2) + 1, rankWP);
+  const ranked = Math.min(s.ranked == null ? rankedAuto : s.ranked, rankWP);
+  const manual = {}; let manualCount = 0;
+  for (const [rank, cnt] of Object.entries(s.manualWinner || {})) {
+    const r = Number(rank);
+    if (r >= 1 && r <= n && cnt > 0) { manual[r] = cnt; manualCount += cnt; }
+  }
+  const openWP = Math.max(0, rankWP - ranked - manualCount);
+
+  const m = s.rankFloor;
+  const depthStepValue = rangeSize(s.depthStep, n);
+  const depthCap = Math.max(1, Math.min(n, Math.floor((rankB - 1) / Math.max(1, m))));
+  const depth = s.depth == null ? Math.min(depthStepValue, depthCap)
+                                : Math.max(1, Math.min(n, s.depth));
+
+  const d = [];
+  for (let i = 0; i < depth; i++) d.push((s.displays || [])[i] || 0);
+  const reservedB = d.reduce((a, b) => a + b, 0) * s.displaySize;
+
+  let k = 0;
+  while (k < depth && d[k] > 0 && (k + 1 === depth || d[k] > d[k + 1])) k++;
+  const strictPrefix = k > 0 && d[0] > 0;
+  const curveFrom = strictPrefix ? k : 0;
+  const curveCount = depth - curveFrom;
+  const lead = strictPrefix ? 0 : 1;
+
+  const available = rankB - reservedB;
+  const floorNeed = m * curveCount + lead;
+  const shaped = available - floorNeed;
+
+  const booster = new Array(n).fill(0);
+  for (let i = 0; i < depth; i++) booster[i] += d[i] * s.displaySize;
+
+  let conflict = null;
+  if (shaped >= 0) {
+    for (let i = curveFrom; i < depth; i++) booster[i] += m;
+    if (lead) booster[0] += 1;
+    const ratio = (CURVES.find((c) => c.id === s.curve) || CURVES[1]).ratio;
+    const w = []; for (let j = 0; j < curveCount; j++) w.push(Math.pow(ratio, j));
+    const add = largestRemainder(w, shaped);
+    for (let j = 0; j < curveCount; j++) booster[curveFrom + j] += add[j];
+  } else {
+    let left = Math.max(0, available);
+    if (lead && left > 0) { booster[0] += 1; left -= 1; }
+    for (let i = curveFrom; i < depth && left > 0; i++) {
+      const give = Math.min(m, left); booster[i] += give; left -= give;
+    }
+    conflict = { need: floorNeed, have: available };
+  }
+
+  const packs = new Array(n).fill(0);
+  const start = ranked >= n ? 0 : ranked;
+  for (let g = 0; g < rankTP; g++) packs[(start + g) % n]++;
+
+  const winners = new Array(n).fill(0);
+  for (let i = 0; i < ranked; i++) winners[i]++;
+  for (const [r, c] of Object.entries(manual)) winners[Number(r) - 1] += c;
+
+  const S = s.displaySize;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    rows.push({
+      rank: i + 1,
+      booster: booster[i] + (s.combinedHandout ? pbRate : 0),
+      packs: packs[i] + (s.combinedHandout ? ppRate : 0),
+      winners: winners[i],
+      floor: Math.min(booster[i], i < depth ? m + (i === 0 ? lead : 0) : 0),
+      served: i < depth,
+    });
+  }
+  return {
+    players: n,
+    pool: { booster: boosterTotal, packs: tpTotal, winners: wpTotal },
+    participation: { rate: { booster: pbRate, packs: ppRate }, booster: partB, packs: partTP },
+    judge: { booster: judgeB, winners: judgeWP },
+    rank: { booster: rankB, packs: rankTP, winners: rankWP },
+    depth, depthCap, depthStepValue, rankFloor: m,
+    floorReserved: floorNeed, displayReserved: reservedB,
+    shapedRemainder: Math.max(0, shaped), curveSilent: shaped <= 0, curveCount,
+    allocation: { ranked, rankedAuto, manual, manualCount, open: openWP },
+    prep: {
+      fetchDisplays: Math.ceil(boosterTotal / S), looseBooster: boosterTotal % S,
+      fetchEnvelopes: Math.ceil(tpTotal / s.envelopeSize), winnerYield: wpTotal,
+      threshold: wpThreshold,
+    },
+    rows, conflict,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DefaultSet, Zustand, Pins
+   ══════════════════════════════════════════════════════════════════════ */
+const GAME = {                       // vollständiges Blatt (#12)
+  boosterRate: 3, envelopeSize: 9, displaySize: 24,
+  participationBooster: 2, participationPack: 1,
+  judgeBooster: 0, judgeWinner: 0,
+  rankFloor: 2, depthStep: 'top8', curve: 'mild',
+  raffleRange: 'all', combinedHandout: false,
+};
+const TYPES = {                      // nur Abweichungen (#12)
+  weekly: { title: 'Weekly', over: {} },
+  weekend: { title: 'Weekend', over: { curve: 'severe' } },
+};
+
+const st = {
+  type: 'weekly', players: 32,
+  pin: {}, val: {},                  // Pinned ist gespeichert, nicht abgeleitet (ADR 0006)
+  manualWinner: {}, displays: [],
+};
+
+function def(key) {
+  const t = TYPES[st.type].over;
+  return key in t ? t[key] : GAME[key];
+}
+function get(key) {
+  if (st.pin[key]) return st.val[key];
+  if (key === 'tournamentPacks' || key === 'depth' || key === 'ranked') return null; // nachziehend
+  return def(key);
+}
+function setVal(key, v) { st.pin[key] = true; st.val[key] = v; render(); }
+function reset(key) { delete st.pin[key]; delete st.val[key]; render(); }
+
+function settings() {
+  return {
+    players: st.players,
+    boosterRate: get('boosterRate'),
+    tournamentPacks: get('tournamentPacks'),
+    envelopeSize: get('envelopeSize'),
+    displaySize: get('displaySize'),
+    participationBooster: get('participationBooster'),
+    participationPack: get('participationPack'),
+    judgeBooster: get('judgeBooster'),
+    judgeWinner: get('judgeWinner'),
+    rankFloor: get('rankFloor'),
+    depthStep: get('depthStep'),
+    depth: get('depth'),
+    curve: get('curve'),
+    ranked: get('ranked'),
+    manualWinner: st.manualWinner,
+    displays: st.displays,
+    combinedHandout: get('combinedHandout'),
+  };
+}
+// Der wirksame Wert eines nachziehenden Reglers, für die Anzeige.
+function eff(key, plan) {
+  if (st.pin[key]) return st.val[key];
+  if (key === 'depth') return plan.depth;
+  if (key === 'ranked') return plan.allocation.ranked;
+  if (key === 'tournamentPacks') return plan.pool.packs;
+  return def(key);
+}
+
+/* Vorschläge (#19): einen Regler über seinen Bereich variieren und den
+   nächstliegenden Wert nehmen, der die Bedingung räumt. Die Totalität aus
+   ADR 0002 ist genau die Bedingung, die das rechenbar macht. */
+function suggestions(plan) {
+  if (!plan.conflict) return [];
+  const out = [];
+  const base = settings();
+  const tryKey = (key, lo, hi, label) => {
+    const cur = eff(key, plan);
+    let best = null;
+    for (let v = lo; v <= hi; v++) {
+      if (v === cur) continue;
+      const t = { ...base }; t[key] = v;
+      if (!distribute(t).conflict) {
+        if (best == null || Math.abs(v - cur) < Math.abs(best - cur)) best = v;
+      }
+    }
+    if (best != null) out.push({ key, value: best, label: label(best) });
+  };
+  // Reihenfolge: der Verlierer der Vorrangkette zuerst (#19).
+  // RankFloor deckelt RankPoolDepth deckelt DisplayReservation.
+  tryKey('depth', 1, st.players, (v) => `Serve ${v} ranks`);
+  tryKey('rankFloor', 0, 8, (v) => `Floor down to ${v}`);
+  tryKey('participationBooster', 0, 8, (v) => `Participation boosters to ${v}`);
+  return out;
+}
+
+/* Raffle (#10) — Zufall in der Eingabe, nicht in der Berechnung. */
+function rafflePot(plan) {
+  const size = rangeSize(get('raffleRange'), st.players);
+  const r = RANGES.find((x) => x.id === get('raffleRange'));
+  const isBottom = r && r.comp;
+  const pot = [];
+  for (let i = 1; i <= st.players; i++) {
+    const inRange = isBottom ? i > st.players - size : i <= size;
+    if (inRange && plan.rows[i - 1].winners === 0) pot.push(i);
+  }
+  return pot;
+}
+function doRaffle(plan) {
+  if (plan.allocation.open <= 0) return;
+  const pot = rafflePot(plan);
+  if (!pot.length) return;
+  const pick = pot[Math.floor(Math.random() * pot.length)];
+  st.manualWinner[pick] = (st.manualWinner[pick] || 0) + 1;
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Bausteine, die alle Varianten teilen
+   ══════════════════════════════════════════════════════════════════════ */
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LABEL = {
+  players: 'Players', depth: 'Served ranks', curve: 'Curve', rankFloor: 'Boosters per served rank',
+  participationBooster: 'Boosters per player', participationPack: 'Packs per player',
+  tournamentPacks: 'Tournament packs available', ranked: 'Winner packs by rank',
+  raffleRange: 'Raffle range', combinedHandout: 'Hand out with rank prizes',
+  boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
+  envelopeSize: 'Packs per envelope', judgeBooster: 'Judge boosters', judgeWinner: 'Judge winner packs',
+};
+const RANGE_OF = {
+  players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
+  participationPack: () => [0, 4], boosterRate: () => [0, 8], displaySize: () => [6, 36],
+  envelopeSize: () => [4, 36], judgeBooster: () => [0, 48], judgeWinner: () => [0, 8],
+  tournamentPacks: () => [0, 200],
+};
+
+function pinMark(key, style) {
+  if (!st.pin[key]) return '';
+  if (style === 'dot') return '<span class="pindot" title="folgt der Rechnung nicht mehr"></span>';
+  if (style === 'badge') return ' <span class="tiny" style="color:var(--pin)">gesetzt</span>';
+  return '';
+}
+function resetBtn(key, always) {
+  if (!st.pin[key] && !always) return '';
+  const dim = st.pin[key] ? '' : ' style="opacity:.28"';
+  return `<button class="reset" data-reset="${key}"${dim} title="zurück auf automatisch">↺</button>`;
+}
+
+// Ein Schieberegler mit Beschriftung, Wert, Pin-Markierung und Reset.
+function slider(key, plan, opts) {
+  opts = opts || {};
+  const [lo, hiDefault] = (RANGE_OF[key] || (() => [0, 10]))();
+  const hi = opts.max != null ? opts.max : hiDefault;
+  const v = key === 'players' ? st.players : eff(key, plan);
+  const cls = st.pin[key] ? 'ctl pinned' : 'ctl';
+  const auto = !st.pin[key] && (key === 'depth' || key === 'ranked' || key === 'tournamentPacks')
+    ? ' <span class="tiny muted">auto</span>' : '';
+  return `<div class="${cls}">
+    <div class="top">${pinMark(key, opts.mark || 'dot')}<span class="lbl">${esc(LABEL[key])}</span>${auto}
+      <span class="v">${v}</span>${resetBtn(key, opts.alwaysReset)}</div>
+    <input type="range" data-key="${key}" min="${lo}" max="${hi}" step="1" value="${v}">
+    ${opts.hint ? `<div class="tiny muted">${opts.hint}</div>` : ''}
+  </div>`;
+}
+
+// Plus/Minus-Stepper — für den Daumen.
+function stepper(key, plan, opts) {
+  opts = opts || {};
+  const v = key === 'players' ? st.players : eff(key, plan);
+  return `<div class="bar" style="margin-bottom:8px">
+    <div style="flex:1;font-size:13px">${pinMark(key, 'dot')}${esc(LABEL[key])}</div>
+    <div class="pm">
+      <button data-delta="-1" data-key="${key}">−</button>
+      <div class="val">${v}</div>
+      <button data-delta="1" data-key="${key}">+</button>
+    </div>${resetBtn(key, opts.alwaysReset)}
+  </div>`;
+}
+
+// Kurvenwahl in drei Geschmacksrichtungen — die Varianten sollen sich streiten.
+function curvePicker(plan, style) {
+  const cur = eff('curve', plan);
+  const ratio = CURVES.find((c) => c.id === cur).ratio;
+  if (style === 'arrows') {
+    return `<div class="bar" style="margin-bottom:8px">
+      <div style="flex:1;font-size:13px">${pinMark('curve', 'dot')}Curve</div>
+      <div class="pm">
+        <button data-curve="-1">◀</button>
+        <div class="val" style="min-width:96px;font-size:13px">${cur}</div>
+        <button data-curve="1">▶</button>
+      </div>${resetBtn('curve')}</div>`;
+  }
+  if (style === 'ratio') {
+    return `<div class="ctl${st.pin.curve ? ' pinned' : ''}">
+      <div class="top">${pinMark('curve', 'dot')}<span class="lbl">Curve</span>
+        <span class="v">${cur} · ×${ratio}</span>${resetBtn('curve', true)}</div>
+      <div class="step">${CURVES.map((c) =>
+        `<button data-set-curve="${c.id}" aria-pressed="${c.id === cur}">${c.id}</button>`).join('')}</div>
+      <div class="tiny muted">Each rank gets ${Math.round(ratio * 100)}% of the rank above.</div>
+    </div>`;
+  }
+  // 'glyph' — Form statt Wort
+  const glyphs = CURVES.map((c) => {
+    const bars = [0, 1, 2, 3].map((j) => {
+      const h = Math.round(14 * Math.pow(c.ratio, j)) + 2;
+      return `<i style="display:inline-block;width:3px;height:${h}px;background:currentColor;
+              margin-right:1px;vertical-align:bottom"></i>`;
+    }).join('');
+    return `<button data-set-curve="${c.id}" aria-pressed="${c.id === cur}"
+            style="padding:5px 6px;line-height:0">${bars}</button>`;
+  }).join('');
+  return `<div class="bar" style="gap:8px;margin-bottom:6px">
+    <div class="step" style="flex-wrap:nowrap">${glyphs}</div>
+    <div class="tiny muted num" style="margin-left:auto">${cur}</div>${resetBtn('curve')}</div>`;
+}
+
+function planTable(plan, limit) {
+  const rows = plan.rows.slice(0, limit || plan.rows.length).map((r) => `
+    <tr class="${r.served ? '' : 'unserved'}">
+      <td>${r.rank}</td><td class="num">${r.booster || '·'}</td>
+      <td class="num">${r.packs || '·'}</td><td class="num">${r.winners || '·'}</td>
+    </tr>`).join('');
+  const more = plan.rows.length > (limit || plan.rows.length)
+    ? `<tr><td colspan="4" class="tiny muted">… ${plan.rows.length - limit} weitere Ränge</td></tr>` : '';
+  return `<table class="plan"><thead><tr>
+      <th>Rank</th><th>Booster</th><th>Packs</th><th>Winner</th>
+    </tr></thead><tbody>${rows}${more}</tbody></table>`;
+}
+
+function rankStrip(plan) {
+  const max = Math.max(1, ...plan.rows.map((r) => r.booster));
+  const show = plan.rows.slice(0, Math.min(plan.players, 40));
+  const wide = show.length <= 18;   // genug Platz, um jeden Balken zu beschriften
+  return `<div class="strip">${show.map((r) => {
+    const h = Math.round((r.booster / max) * 100);
+    const f = r.booster ? Math.round((r.floor / r.booster) * 100) : 0;
+    return `<div class="col">
+      ${wide && r.booster ? `<span class="cap num">${r.booster}</span>` : ''}
+      <div class="b ${r.served ? '' : 'un'}" style="height:${Math.max(2, h)}%">
+        <i style="height:${f}%"></i>${r.winners ? '<b class="wp"></b>' : ''}</div>
+      ${wide ? `<span class="cap num muted">${r.rank}</span>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// Die zwei Zahlen aus #20: Boden und Formmasse, als eine Leiste.
+function floorBar(plan) {
+  const tot = Math.max(1, plan.rank.booster);
+  const fl = Math.round((plan.floorReserved / tot) * 100);
+  const dr = Math.round((plan.displayReserved / tot) * 100);
+  return `<div>
+    <div class="segbar">
+      <i style="width:${dr}%;background:#b08bd6"></i>
+      <i style="width:${fl}%;background:var(--accent)"></i>
+      <i style="width:${100 - fl - dr}%;background:#8fc9bd"></i>
+    </div>
+    <div class="tiny muted" style="margin-top:4px">
+      RankPool ${plan.rank.booster} booster = ${plan.floorReserved} floor
+      + ${plan.shapedRemainder} shaped by the curve
+      ${plan.curveSilent ? ' — <strong style="color:var(--warn)">curve has nothing to shape</strong>' : ''}
+    </div></div>`;
+}
+
+function prepLine(plan) {
+  return `<span class="tiny muted">Fetch ${plan.prep.fetchDisplays} displays`
+    + (plan.prep.looseBooster ? ` (one opened, ${plan.prep.looseBooster} loose)` : '')
+    + ` · ${plan.prep.fetchEnvelopes} pack envelopes → ${plan.prep.winnerYield} winner packs</span>`;
+}
+
+function conflictBox(plan, sugg) {
+  if (!plan.conflict) return '';
+  return `<div class="flag"><strong>${plan.conflict.have} boosters can't carry a floor of
+    ${plan.conflict.need}.</strong><br>
+    ${sugg.map((s) => `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
+  </div>`;
+}
+
+function winnerBlock(plan, compact) {
+  const pot = rafflePot(plan);
+  const can = plan.allocation.open > 0 && pot.length > 0;
+  const list = Object.keys(plan.allocation.manual).sort((a, b) => a - b)
+    .map((r) => `<button class="sheetbtn tiny" data-unmanual="${r}">Rank ${r} ✕</button>`).join(' ');
+  return `<div style="border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff">
+    <div class="bar tiny" style="margin-bottom:6px">
+      <strong>Winner packs</strong>
+      <span class="muted grow">${plan.allocation.ranked} by rank ·
+        ${plan.allocation.manualCount} by hand · ${plan.allocation.open} open</span>
+    </div>
+    ${compact ? '' : `<div class="step" style="margin-bottom:8px">${RANGES.slice(0, 8).map((r) =>
+      `<button data-set-range="${r.id}" aria-pressed="${r.id === get('raffleRange')}">${r.id}</button>`).join('')}</div>`}
+    <div class="bar">
+      <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}>🎲 Raffle one</button>
+      <span class="tiny muted">${pot.length} ranks in the pot</span>
+    </div>
+    ${list ? `<div style="margin-top:8px">${list}</div>` : ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Die vier Varianten
+   ══════════════════════════════════════════════════════════════════════ */
+const VARIANTS = {};
+
+/* ── A — Daumen-Leiste ────────────────────────────────────────────────
+   Der Plan hat den ganzen Schirm. Die zwei bis drei heissen Regler kleben
+   unten im Daumenbereich, als Stepper statt Schieber. Alles andere hinter
+   einem Blatt. Wette: am Handy zählt Erreichbarkeit mehr als Übersicht.  */
+VARIANTS.A = {
+  name: 'A — Daumen-Leiste',
+  render(plan, sugg) {
+    const wide = document.body.classList.contains('wide');
+    const controls = `
+      <div style="padding:10px 12px;background:#fff;border-top:1px solid var(--line)">
+        ${conflictBox(plan, sugg)}
+        <div class="tiny muted" style="margin:2px 0 8px">${
+          plan.shapedRemainder} of ${plan.rank.booster} booster shaped${
+          plan.curveSilent ? ' — curve silent' : ''}</div>
+        ${stepper('players', plan)}
+        ${stepper('depth', plan)}
+        ${curvePicker(plan, 'arrows')}
+        <div class="bar">
+          <button class="sheetbtn grow" data-sheet="open">More…</button>
+        </div>
+      </div>`;
+    return `
+      <div style="height:100%;display:flex;flex-direction:${wide ? 'row' : 'column'};position:relative">
+        <div style="flex:1;overflow:auto;padding:12px 14px">
+          <div class="bar" style="margin-bottom:8px">
+            <strong>${TYPES[st.type].title}</strong>
+            <span class="tiny muted grow">${st.players} players</span>
+          </div>
+          <div style="margin-bottom:10px">${prepLine(plan)}</div>
+          ${planTable(plan, wide ? 999 : 40)}
+        </div>
+        <div style="${wide ? 'width:330px;border-left:1px solid var(--line);overflow:auto' : ''}">${controls}</div>
+        ${sheet(plan)}
+      </div>`;
+  },
+};
+
+/* ── B — Ein Fluss ────────────────────────────────────────────────────
+   Eine Rolle in Rechenreihenfolge, kalte Gruppen zugeklappt. Eine klebende
+   Kopfzeile hält die Kennzahlen im Blick, egal wo man gerade schraubt.
+   Wette: nichts verstecken schlägt kurze Wege, wenn der Kopf mitläuft.   */
+VARIANTS.B = {
+  name: 'B — Ein Fluss',
+  render(plan, sugg) {
+    const wide = document.body.classList.contains('wide');
+    const flow = `
+      <div style="padding:12px 14px">
+        ${conflictBox(plan, sugg)}
+        <div class="grouphead">Tournament</div>
+        ${slider('players', plan, { alwaysReset: true })}
+        <div class="bar tiny" style="gap:6px;margin-bottom:6px">
+          ${Object.entries(TYPES).map(([id, t]) =>
+            `<button class="sheetbtn tiny" data-type="${id}"
+             style="${id === st.type ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : ''}"
+             >${t.title}</button>`).join('')}
+        </div>
+
+        <div class="grouphead">Shape the rank pool</div>
+        ${slider('depth', plan, { max: st.players, alwaysReset: true,
+          hint: `cap ${plan.depthCap} · step ${get('depthStep')} would give ${plan.depthStepValue}` })}
+        ${slider('rankFloor', plan, { alwaysReset: true })}
+        ${curvePicker(plan, 'ratio')}
+
+        <div class="grouphead">Winner packs</div>
+        ${winnerBlock(plan)}
+
+        <details style="margin-top:18px"><summary class="grouphead" style="cursor:pointer">Split the pool</summary>
+          ${slider('participationBooster', plan, { alwaysReset: true })}
+          ${slider('participationPack', plan, { alwaysReset: true })}
+          ${slider('ranked', plan, { max: plan.rank.winners, alwaysReset: true })}
+          ${slider('judgeBooster', plan, { alwaysReset: true })}
+          ${slider('judgeWinner', plan, { alwaysReset: true })}
+        </details>
+        <details style="margin-top:8px"><summary class="grouphead" style="cursor:pointer">Supply</summary>
+          ${slider('boosterRate', plan, { alwaysReset: true })}
+          ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
+          ${slider('displaySize', plan, { alwaysReset: true })}
+          ${slider('envelopeSize', plan, { alwaysReset: true })}
+        </details>
+        <div style="height:20px"></div>
+      </div>`;
+    const planPane = `<div style="padding:12px 14px">
+        <div class="grouphead" style="margin-top:0">Plan</div>
+        <div style="margin-bottom:8px">${prepLine(plan)}</div>
+        ${planTable(plan, wide ? 999 : 40)}
+      </div>`;
+    return `
+      <div style="height:100%;display:flex;flex-direction:column;position:relative">
+        <div style="position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);
+                    padding:9px 14px">${floorBar(plan)}</div>
+        <div style="flex:1;overflow:auto;display:${wide ? 'grid' : 'block'};
+                    grid-template-columns:1fr 1fr">
+          ${flow}${wide ? planPane : planPane}
+        </div>
+      </div>`;
+  },
+};
+
+/* ── C — Der Plan ist die Seite ───────────────────────────────────────
+   Kein Reglerblock. Die Tiefe ist eine Schnittlinie in der Tabelle, der
+   Boden ein Band in jedem Balken, die Kurve eine Form über der Tabelle.
+   Wette: man stellt nicht Regler ein, man stellt den Plan ein.          */
+VARIANTS.C = {
+  name: 'C — Der Plan ist die Seite',
+  render(plan, sugg) {
+    const max = Math.max(1, ...plan.rows.map((r) => r.booster));
+    // Bis zum letzten Rang, an dem wirklich etwas ankommt — RankCycle und
+    // manual reichen tiefer als die Tiefe (#16), leere Schwänze aber nicht.
+    let last = plan.depth;
+    plan.rows.forEach((r, i) => { if (r.booster || r.packs || r.winners) last = i + 1; });
+    const hidden = plan.players - last;
+    const rows = plan.rows.slice(0, last).map((r) => {
+      const w = Math.round((r.booster / max) * 100);
+      const f = r.booster ? Math.round((r.floor / r.booster) * 100) : 0;
+      const cut = r.rank === plan.depth
+        ? `<div data-cut="1" style="display:flex;align-items:center;gap:6px;cursor:ns-resize;
+             padding:3px 0;color:var(--accent);font-size:11px;border-bottom:2px dashed var(--accent)">
+             <button class="sheetbtn tiny" data-delta="-1" data-key="depth">▲</button>
+             <span>served to rank ${plan.depth}${st.pin.depth ? '' : ' · auto'}</span>
+             <button class="sheetbtn tiny" data-delta="1" data-key="depth">▼</button>
+             ${resetBtn('depth')}</div>` : '';
+      return `<div style="padding:1px 0">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span class="tiny num muted" style="width:20px;text-align:right">${r.rank}</span>
+            <div style="flex:1;height:15px;background:#eef1f2;border-radius:3px;overflow:hidden">
+              <div style="width:${w}%;height:100%;background:${r.served ? 'var(--accent)' : '#c3cbd0'};
+                   position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:${f}%;
+                   background:#79b8aa"></i></div>
+            </div>
+            <span class="tiny num" style="width:56px">${r.booster || '·'}${
+              r.packs ? ` <span class="muted">+${r.packs}p</span>` : ''}${
+              r.winners ? ' 🏅'.repeat(Math.min(3, r.winners)) : ''}</span>
+          </div>${cut}</div>`;
+    }).join('');
+    return `
+      <div style="height:100%;overflow:auto;position:relative">
+        <div style="padding:12px 14px 0" class="bar">
+          <div class="pm">
+            <button data-delta="-1" data-key="players">−</button>
+            <div class="val">${st.players}</div>
+            <button data-delta="1" data-key="players">+</button>
+          </div>
+          <span class="tiny muted">players · ${TYPES[st.type].title}</span>
+          <button class="sheetbtn tiny" data-sheet="open" style="margin-left:auto">⚙</button>
+        </div>
+        <div style="padding:10px 14px 0">${conflictBox(plan, sugg)}</div>
+        <div style="padding:8px 14px 0">${curvePicker(plan, 'glyph')}</div>
+        <div style="padding:4px 14px 14px">${rows}
+          ${hidden > 0 ? `<div class="tiny muted" style="padding:6px 0 0;text-align:center">
+            ranks ${last + 1}–${plan.players} get nothing</div>` : ''}</div>
+        <div style="padding:0 14px 20px">
+          <div class="bar tiny" style="background:#fff;border:1px solid var(--line);
+               border-radius:9px;padding:8px 10px">
+            <span style="width:12px;height:12px;background:#79b8aa;border-radius:3px"></span>
+            <span>floor ${plan.rankFloor}/rank — ${plan.floorReserved} of ${plan.rank.booster}</span>
+            <button class="sheetbtn tiny" data-delta="-1" data-key="rankFloor">−</button>
+            <button class="sheetbtn tiny" data-delta="1" data-key="rankFloor">+</button>
+            ${resetBtn('rankFloor')}
+            <span class="muted" style="margin-left:auto">${plan.shapedRemainder} shaped</span>
+          </div>
+          <div style="margin-top:10px">${winnerBlock(plan, true)}</div>
+          <div style="margin-top:10px">${prepLine(plan)}</div>
+        </div>
+        ${sheet(plan)}
+      </div>`;
+  },
+};
+
+/* ── D — Cockpit ──────────────────────────────────────────────────────
+   Alles auf einem Schirm, nichts scrollt. Die Verteilung schrumpft zu
+   einem Balkenstreifen, dafür sind alle heissen Regler gleichzeitig da.
+   Wette: „sofort sichtbar" schlägt Lesbarkeit der Einzelzahl.           */
+VARIANTS.D = {
+  name: 'D — Cockpit',
+  render(plan, sugg) {
+    return `
+      <div style="height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div class="bar" style="padding:9px 12px;border-bottom:1px solid var(--line);background:#fff">
+          <strong class="num">${st.players}</strong><span class="tiny muted">players ·
+          ${TYPES[st.type].title}</span>
+          <button class="sheetbtn tiny" data-sheet="open" style="margin-left:auto">⚙</button>
+        </div>
+        <div style="padding:8px 12px 0">${prepLine(plan)}</div>
+        <div style="height:132px;padding:10px 12px 0" data-expand="1">${rankStrip(plan)}</div>
+        <div style="padding:8px 12px 0;display:flex;flex-wrap:wrap;gap:3px" data-expand="1">
+          ${plan.rows.filter((r) => r.booster || r.packs || r.winners).slice(0, 24).map((r) =>
+            `<span class="tiny num" style="background:#fff;border:1px solid var(--line);
+             border-radius:6px;padding:2px 6px"><span class="muted">${r.rank}</span>
+             <strong>${r.booster}</strong>${r.packs ? `+${r.packs}p` : ''}${r.winners ? '🏅' : ''}</span>`
+          ).join('')}
+        </div>
+        <div style="padding:10px 12px 0">${floorBar(plan)}</div>
+        <div style="padding:8px 12px 0">${conflictBox(plan, sugg)}</div>
+        <div style="flex:1;min-height:0"></div>
+        <div style="padding:8px 12px 14px;background:#fff;border-top:1px solid var(--line)">
+          ${slider('players', plan)}
+          ${slider('depth', plan, { max: st.players, hint:
+            `cap ${plan.depthCap}${st.pin.depth ? '' : ' · auto'}` })}
+          ${slider('rankFloor', plan)}
+          ${curvePicker(plan, 'glyph')}
+          <div class="bar tiny" style="margin-top:6px">
+            <button class="sheetbtn tiny" data-raffle="1"
+              ${plan.allocation.open > 0 && rafflePot(plan).length ? '' : 'disabled style="opacity:.4"'}>🎲</button>
+            <span class="muted">${plan.allocation.ranked} ranked ·
+              ${plan.allocation.manualCount} hand · ${plan.allocation.open} open</span>
+            <button class="sheetbtn tiny" data-expand="1" style="margin-left:auto">Full table</button>
+          </div>
+        </div>
+        ${sheet(plan)}
+      </div>`;
+  },
+};
+
+/* Ein Blatt mit allem, was nicht in den Hauptweg gehört. */
+function sheet(plan) {
+  return `<div class="sheet${sheetOpen ? ' open' : ''}">
+    <header><button class="sheetbtn" data-sheet="close">✕</button> Everything else</header>
+    <div class="body">
+      <div class="grouphead" style="margin-top:0">Tournament type</div>
+      <div class="bar" style="gap:6px">${Object.entries(TYPES).map(([id, t]) =>
+        `<button class="sheetbtn" data-type="${id}"
+         style="${id === st.type ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : ''}"
+         >${t.title}</button>`).join('')}</div>
+      <div class="grouphead">Rank pool</div>
+      ${slider('rankFloor', plan, { alwaysReset: true })}
+      ${slider('depth', plan, { max: st.players, alwaysReset: true })}
+      ${curvePicker(plan, 'ratio')}
+      <div class="grouphead">Split</div>
+      ${slider('participationBooster', plan, { alwaysReset: true })}
+      ${slider('participationPack', plan, { alwaysReset: true })}
+      ${slider('judgeBooster', plan, { alwaysReset: true })}
+      ${slider('judgeWinner', plan, { alwaysReset: true })}
+      <div class="grouphead">Winner packs</div>
+      ${slider('ranked', plan, { max: plan.rank.winners, alwaysReset: true })}
+      ${winnerBlock(plan)}
+      <div class="grouphead">Supply</div>
+      ${slider('boosterRate', plan, { alwaysReset: true })}
+      ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
+      ${slider('displaySize', plan, { alwaysReset: true })}
+      ${slider('envelopeSize', plan, { alwaysReset: true })}
+      <div class="grouphead">Handout</div>
+      <label class="bar" style="gap:8px"><input type="checkbox" data-toggle="combinedHandout"
+        ${get('combinedHandout') ? 'checked' : ''}> <span>Hand participation prizes out
+        together with rank prizes</span>${resetBtn('combinedHandout')}</label>
+      <div style="height:40px"></div>
+    </div></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Rahmen: Umschalter, Ereignisse, Rendern
+   ══════════════════════════════════════════════════════════════════════ */
+const KEYS = ['A', 'B', 'C', 'D'];
+let current = new URLSearchParams(location.search).get('variant');
+if (!KEYS.includes(current)) current = 'A';
+let sheetOpen = false;
+let tableOpen = false;
+const stage = document.getElementById('stage');
+
+function render() {
+  const plan = distribute(settings());
+  const sugg = suggestions(plan);
+  stage.innerHTML = VARIANTS[current].render(plan, sugg)
+    + (tableOpen ? `<div class="sheet open"><header>
+        <button class="sheetbtn" data-expand="close">✕</button> Full plan</header>
+        <div class="body">${planTable(plan)}</div></div>` : '');
+  document.getElementById('vname').textContent = VARIANTS[current].name;
+}
+
+function clampKey(key, v, plan) {
+  const [lo, hi] = (RANGE_OF[key] || (() => [0, 999]))();
+  return Math.max(lo, Math.min(hi, v));
+}
+
+stage.addEventListener('input', (e) => {
+  const key = e.target.dataset.key;
+  if (!key) return;
+  const v = Number(e.target.value);
+  if (key === 'players') { st.players = v; render(); return; }
+  setVal(key, v);
+});
+stage.addEventListener('change', (e) => {
+  if (e.target.dataset.toggle) setVal(e.target.dataset.toggle, e.target.checked);
+});
+stage.addEventListener('click', (e) => {
+  const t = e.target.closest('button, [data-expand]');
+  if (!t) return;
+  const plan = distribute(settings());
+  const d = t.dataset;
+  if (d.sheet) { sheetOpen = d.sheet === 'open'; render(); return; }
+  if (d.expand) { tableOpen = d.expand !== 'close'; render(); return; }
+  if (d.reset) { reset(d.reset); return; }
+  if (d.type) { st.type = d.type; st.pin = {}; st.val = {}; render(); return; }
+  if (d.setCurve) { setVal('curve', d.setCurve); return; }
+  if (d.setRange) { setVal('raffleRange', d.setRange); return; }
+  if (d.raffle) { doRaffle(plan); return; }
+  if (d.unmanual) { delete st.manualWinner[d.unmanual]; render(); return; }
+  if (d.apply) { setVal(d.apply, Number(d.v)); return; }
+  if (d.curve) {
+    const i = CURVES.findIndex((c) => c.id === eff('curve', plan));
+    const j = Math.max(0, Math.min(CURVES.length - 1, i + Number(d.curve)));
+    setVal('curve', CURVES[j].id); return;
+  }
+  if (d.delta && d.key) {
+    const key = d.key, step = Number(d.delta);
+    if (key === 'players') { st.players = clampKey('players', st.players + step); render(); return; }
+    setVal(key, Math.max(0, eff(key, plan) + step));
+    return;
+  }
+});
+
+document.getElementById('switch').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.nav) {
+    const i = (KEYS.indexOf(current) + Number(b.dataset.nav) + KEYS.length) % KEYS.length;
+    current = KEYS[i];
+    history.replaceState(null, '', '?variant=' + current);
+    sheetOpen = false; tableOpen = false; render();
+  }
+  if (b.dataset.dev) {
+    document.body.className = b.dataset.dev;
+    document.querySelectorAll('#switch .dev').forEach((x) =>
+      x.setAttribute('aria-pressed', x.dataset.dev === b.dataset.dev));
+    render();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const i = (KEYS.indexOf(current) + (e.key === 'ArrowRight' ? 1 : -1) + KEYS.length) % KEYS.length;
+  current = KEYS[i];
+  history.replaceState(null, '', '?variant=' + current);
+  sheetOpen = false; tableOpen = false; render();
+});
+
+document.querySelector('#switch .dev[data-dev="phone"]').setAttribute('aria-pressed', 'true');
+render();
+</script>
+</body>
+</html>
