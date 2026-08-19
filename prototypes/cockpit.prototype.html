@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototyp — Cockpit, Runde 2</title>
+<style>
+  :root {
+    --accent: #0e6f5c;
+    --accent-soft: #e6f2ef;
+    --ink: #16191c;
+    --muted: #626a72;
+    --line: #dfe3e7;
+    --bg: #fbfbfa;
+    --paper: #fff;
+    --warn: #9a4a12;
+    --warn-soft: #fdf1e6;
+    --pin: #7b3fb5;
+    --pin-soft: #f2ebfa;
+    --gold: #e0b230;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink); background: #eceeef; padding-bottom: 40px;
+  }
+
+  /* ── Prototype chrome (deutsch, nicht Teil des Entwurfs) ───────────── */
+  .chrome { max-width: 720px; margin: 0 auto; padding: 14px 20px 8px; }
+  .chrome h1 { font-size: 18px; margin: 0 0 5px; letter-spacing: -0.01em; }
+  .chrome p { color: #4a5158; margin: 0 0 7px; font-size: 13px; }
+  .chrome summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+  .chrome .note { background: #fff; border: 1px solid var(--line); border-radius: 9px;
+                  padding: 11px 13px; font-size: 13px; color: #4a5158; margin-top: 7px; }
+
+  #stagewrap { display: flex; justify-content: center; padding: 8px 12px 0; }
+  #stage { background: var(--bg); width: 100%; }
+  body.phone #stage, body.land #stage {
+    overflow: hidden; border: 9px solid #23262a; border-radius: 34px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.22); flex: none;
+  }
+  body.phone #stage { width: 375px; height: 812px; }
+  body.land  #stage { width: 812px; height: 375px; border-radius: 28px; }
+  body.wide  #stage { max-width: 1180px; border: 1px solid var(--line); border-radius: 12px;
+                      height: 760px; overflow: hidden; }
+  /* Auf einem echten Handy ist der Rahmen verschwendete Fläche. */
+  body.bare #stagewrap { padding: 0; }
+  body.bare .chrome { display: none; }
+  body.bare #stage { height: calc(100vh - 46px); overflow: hidden; }
+
+  /* ── Switcher ──────────────────────────────────────────────────────── */
+  /* Oben rechts: unten sitzt die Reglerleiste, die der Umschalter sonst verdeckt. */
+  #switch {
+    position: fixed; right: 10px; top: 10px;
+    display: flex; align-items: center; gap: 3px; z-index: 99; flex-wrap: wrap;
+    justify-content: flex-end; max-width: 340px;
+    background: #16191c; color: #fff; border-radius: 16px; padding: 5px 6px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.34); font-size: 13px;
+  }
+  #switch button { font: inherit; color: #fff; background: transparent; border: 0;
+                   padding: 6px 9px; border-radius: 999px; cursor: pointer; }
+  #switch button:hover { background: #ffffff22; }
+  #switch .name { padding: 0 8px; white-space: nowrap; font-weight: 600; font-size: 12px; }
+  #switch .sep { width: 1px; height: 18px; background: #ffffff33; margin: 0 3px; }
+  #switch [aria-pressed="true"] { background: #fff; color: #16191c; }
+
+  /* ── Shared app primitives ─────────────────────────────────────────── */
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .grow { flex: 1; }
+  .muted { color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  .tiny { font-size: 12px; }
+  .sheetbtn { font: inherit; border: 1px solid var(--line); background: #fff; color: var(--ink);
+              border-radius: 8px; padding: 7px 11px; cursor: pointer; }
+  .sheetbtn.tiny { padding: 4px 8px; }
+
+  .pindot { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--pin); vertical-align: middle; margin-right: 5px; }
+  .manual { font-size: 10px; color: var(--pin); background: var(--pin-soft);
+            border-radius: 5px; padding: 1px 5px; }
+  .reset { font: inherit; font-size: 12px; border: 0; background: transparent;
+           color: var(--pin); cursor: pointer; padding: 2px 5px; border-radius: 6px; }
+  .reset:hover { background: var(--pin-soft); }
+
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 1px 0; }
+
+  /* Vorauswahl-Stufen als Icon-Zeile: Pfeil plus Anteil. */
+  .preset { display: flex; gap: 3px; flex-wrap: wrap; }
+  .preset button { font: inherit; font-size: 13px; min-width: 36px; padding: 4px 5px;
+                   border-radius: 7px; border: 1px solid var(--line); background: #fff;
+                   cursor: pointer; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .preset button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
+                                        color: #fff; }
+  .preset .ar { font-size: 10px; opacity: .5; }
+  .preset button[aria-pressed="true"] .ar { opacity: .85; }
+
+  .pm { display: flex; align-items: center; }
+  .pm button { font: inherit; width: 38px; height: 34px; font-size: 18px; border: 1px solid var(--line);
+               background: #fff; cursor: pointer; }
+  .pm button:first-child { border-radius: 9px 0 0 9px; }
+  .pm button:last-child { border-radius: 0 9px 9px 0; }
+  .pm .val { min-width: 44px; text-align: center; border-top: 1px solid var(--line);
+             border-bottom: 1px solid var(--line); height: 34px; line-height: 32px;
+             background: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pm.sm button { width: 30px; height: 28px; font-size: 15px; }
+  .pm.sm .val { height: 28px; line-height: 26px; min-width: 34px; font-size: 13px; }
+
+  .flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px;
+          padding: 8px 10px; font-size: 12.5px; }
+  .flag button { font: inherit; font-size: 12px; border: 1px solid currentColor; background: #fff;
+                 color: inherit; border-radius: 6px; padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
+
+  table.plan { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  table.plan th, table.plan td { padding: 5px 8px; font-size: 13.5px; text-align: right;
+                                 border-bottom: 1px solid var(--line); }
+  table.plan th:first-child, table.plan td:first-child { text-align: left; }
+  table.plan thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+                        color: var(--muted); font-weight: 600; }
+  table.plan tr.unserved td { color: #9aa1a8; }
+
+  .sheet { position: absolute; inset: 0; background: var(--paper); overflow: auto;
+           display: none; z-index: 20; }
+  .sheet.open { display: block; }
+  .sheet header { position: sticky; top: 0; background: var(--paper); border-bottom: 1px solid var(--line);
+                  padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+                  font-weight: 600; font-size: 14px; }
+  .sheet .body { padding: 12px 14px 40px; }
+  .grouphead { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+               color: var(--muted); margin: 18px 0 7px; font-weight: 700; }
+
+  .ctl { margin: 0 0 10px; }
+  .ctl .top { display: flex; align-items: center; gap: 6px; margin-bottom: 1px; }
+  .ctl .lbl { font-size: 13px; }
+  .ctl .v { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ctl.pinned .lbl { font-weight: 700; }
+
+  .segbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); }
+  .segbar i { display: block; height: 100%; }
+
+  /* Balkenstreifen. Ränge ohne Prizing sind schmaler — sie sollen nicht
+     genauso viel Fläche belegen wie die, die etwas bekommen. */
+  .strip { display: flex; align-items: flex-end; gap: 2px; height: 100%; }
+  .strip .col { flex: 1; min-width: 3px; height: 100%; display: flex; flex-direction: column;
+                justify-content: flex-end; }
+  .strip .col.empty { flex: .22; }
+  .strip .b { background: var(--accent); border-radius: 2px 2px 0 0; position: relative; }
+  .strip .b.un { background: #cfd6da; }
+  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: #78b3a6;
+                border-radius: 0 0 2px 2px; }
+  .strip .b .wp { position: absolute; left: 50%; top: 3px; width: 5px; height: 5px; margin-left: -2.5px;
+                  border-radius: 50%; background: var(--gold); }
+  .strip .cap { font-size: 10px; text-align: center; line-height: 1.25; }
+
+  /* Feste Slots statt Fluss: das Raster hat eine Spaltenzahl, kein Umbruch nach Breite. */
+  .slots { display: grid; gap: 5px; }
+  .slot { background: var(--paper); border: 1px solid var(--line); border-radius: 9px;
+          aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center;
+          justify-content: center; position: relative; }
+  .slot .rk { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; line-height: 16px;
+              text-align: center; border-radius: 50%; background: var(--accent-soft);
+              color: var(--accent); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .slot .n { font-size: var(--sn, 21px); font-weight: 600; line-height: 1;
+             font-variant-numeric: tabular-nums; }
+  .slot .ex { font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1;
+              font-variant-numeric: tabular-nums; }
+  .slot.win { border-color: var(--gold); }
+  .slot .wp { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
+              border-radius: 50%; background: var(--gold); }
+  .slot .wp b { position: absolute; left: 9px; top: -4px; font-size: 9px; color: #7a5c07;
+                font-weight: 700; }
+  .slots.dense .slot .ex { display: none; }
+  .slots.dense .slot .rk { width: 13px; height: 13px; line-height: 13px; font-size: 8px; }
+</style>
+</head>
+<body class="phone">
+
+<div class="chrome">
+  <h1>Cockpit — Runde 2 zu Ticket #15</h1>
+  <p>
+    Aufbau ist entschieden: Kopf mit Turniertyp, Verteilung oben, alle Regler unten.
+    Offen ist die <strong>Zahleneingabe</strong> — darüber streiten sich die drei Varianten.
+    Alles rechnet echt, Weekly-Defaults, geprüft gegen die Fälle aus #20.
+  </p>
+  <details>
+    <summary>Was hier neu ist, und wonach zu schauen</summary>
+    <div class="note">
+      Neu: Kopf aus A mit dem Turniertyp als Überschrift · <em>Min boosters per rank</em> statt
+      „boosters per served rank" · Vorauswahl-Stufen als Icon-Zeile bei <em>Served ranks</em> und
+      beim <em>Raffle</em>-Bereich · Kurvenglyphen jetzt auch im Blatt · leere Ränge im Streifen
+      schmaler · Ränge als <strong>feste Slots</strong> (6 / 8 / 10 pro Zeile, oben rechts umschaltbar)
+      · Vollbild mit Querformat am Raster.<br><br>
+      Die drei Varianten unterscheiden sich <strong>nur</strong> darin, wie man eine Zahl setzt:
+      <strong>E</strong> Stufen steuern den Regler · <strong>F</strong> Stufen und Zählwerk, ohne
+      Schieber · <strong>G</strong> Schieber mit ± an jedem Wert. Auf dem Handy fühlen, nicht lesen.
+    </div>
+  </details>
+</div>
+
+<div id="stagewrap"><div id="stage"></div></div>
+
+<div id="switch">
+  <button data-nav="-1" title="vorherige Variante">◀</button>
+  <span class="name" id="vname">E</span>
+  <button data-nav="1" title="nächste Variante">▶</button>
+  <span class="sep"></span>
+  <button data-dev="phone">📱</button>
+  <button data-dev="land">📱↻</button>
+  <button data-dev="wide">🖥</button>
+  <button data-dev="bare">⬜</button>
+  <span class="sep"></span>
+  <button data-cols="6">▦6</button>
+  <button data-cols="8">▦8</button>
+  <button data-cols="10">▦10</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   Rechenkern — rein, DOM-frei. Unverändert aus Runde 1 übernommen und
+   dort gegen die dokumentierten Fälle aus #20 geprüft.
+   ══════════════════════════════════════════════════════════════════════ */
+const CURVES = [
+  { id: 'gentle', ratio: 0.85 }, { id: 'mild', ratio: 0.75 },
+  { id: 'moderate', ratio: 0.65 }, { id: 'firm', ratio: 0.55 },
+  { id: 'steep', ratio: 0.45 }, { id: 'severe', ratio: 0.35 },
+  { id: 'extreme', ratio: 0.25 },
+];
+const RANGES = [
+  { id: 'top8', abs: 8 }, { id: 'top16', abs: 16 },
+  { id: 'topQuarter', frac: 0.25 }, { id: 'topThird', frac: 1 / 3 },
+  { id: 'topHalf', frac: 0.5 }, { id: 'topTwoThirds', frac: 2 / 3 },
+  { id: 'topThreeQuarters', frac: 0.75 }, { id: 'all', frac: 1 },
+  { id: 'bottomThreeQuarters', comp: 'topQuarter' }, { id: 'bottomTwoThirds', comp: 'topThird' },
+  { id: 'bottomHalf', comp: 'topHalf' }, { id: 'bottomThird', comp: 'topTwoThirds' },
+  { id: 'bottomQuarter', comp: 'topThreeQuarters' },
+];
+function rangeSize(id, players) {
+  const r = RANGES.find((x) => x.id === id);
+  if (!r) return players;
+  if (r.abs != null) return Math.min(r.abs, players);
+  if (r.frac != null) return Math.min(players, Math.ceil(players * r.frac));
+  return players - rangeSize(r.comp, players);
+}
+function largestRemainder(weights, total) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0 || sum <= 0) return weights.map(() => 0);
+  const exact = weights.map((w) => (w / sum) * total);
+  const out = exact.map(Math.floor);
+  const left = total - out.reduce((a, b) => a + b, 0);
+  const order = exact.map((v, i) => ({ i, f: v - Math.floor(v) }))
+                     .sort((a, b) => b.f - a.f || a.i - b.i);
+  for (let k = 0; k < left; k++) out[order[k % order.length].i]++;
+  return out;
+}
+function distribute(s) {
+  const n = Math.max(1, s.players);
+  const boosterTotal = s.boosterRate * n;
+  const tpTotal = s.tournamentPacks == null ? n : s.tournamentPacks;
+  const wpThreshold = Math.ceil((2 * s.envelopeSize) / 3);
+  const wpTotal = Math.floor(tpTotal / s.envelopeSize) +
+                  ((tpTotal % s.envelopeSize) >= wpThreshold ? 1 : 0);
+
+  const pbRate = Math.min(s.participationBooster, Math.floor(boosterTotal / n));
+  const ppRate = Math.min(s.participationPack, Math.floor(tpTotal / n));
+  const partB = pbRate * n, partTP = ppRate * n;
+  const judgeB = Math.min(s.judgeBooster, boosterTotal - partB);
+  const judgeWP = Math.min(s.judgeWinner, wpTotal);
+
+  const rankB = boosterTotal - partB - judgeB;
+  const rankTP = tpTotal - partTP;
+  const rankWP = wpTotal - judgeWP;
+
+  const rankedAuto = Math.min(Math.floor(rankWP / 2) + 1, rankWP);
+  const ranked = Math.min(s.ranked == null ? rankedAuto : s.ranked, rankWP);
+  const manual = {}; let manualCount = 0;
+  for (const [rank, cnt] of Object.entries(s.manualWinner || {})) {
+    const r = Number(rank);
+    if (r >= 1 && r <= n && cnt > 0) { manual[r] = cnt; manualCount += cnt; }
+  }
+  const openWP = Math.max(0, rankWP - ranked - manualCount);
+
+  const m = s.rankFloor;
+  const depthStepValue = rangeSize(s.depthStep, n);
+  const depthCap = Math.max(1, Math.min(n, Math.floor((rankB - 1) / Math.max(1, m))));
+  const depth = s.depth == null ? Math.min(depthStepValue, depthCap)
+                                : Math.max(1, Math.min(n, s.depth));
+
+  const d = [];
+  for (let i = 0; i < depth; i++) d.push((s.displays || [])[i] || 0);
+  const reservedB = d.reduce((a, b) => a + b, 0) * s.displaySize;
+
+  let k = 0;
+  while (k < depth && d[k] > 0 && (k + 1 === depth || d[k] > d[k + 1])) k++;
+  const strictPrefix = k > 0 && d[0] > 0;
+  const curveFrom = strictPrefix ? k : 0;
+  const curveCount = depth - curveFrom;
+  const lead = strictPrefix ? 0 : 1;
+
+  const available = rankB - reservedB;
+  const floorNeed = m * curveCount + lead;
+  const shaped = available - floorNeed;
+
+  const booster = new Array(n).fill(0);
+  for (let i = 0; i < depth; i++) booster[i] += d[i] * s.displaySize;
+
+  let conflict = null;
+  if (shaped >= 0) {
+    for (let i = curveFrom; i < depth; i++) booster[i] += m;
+    if (lead) booster[0] += 1;
+    const ratio = (CURVES.find((c) => c.id === s.curve) || CURVES[1]).ratio;
+    const w = []; for (let j = 0; j < curveCount; j++) w.push(Math.pow(ratio, j));
+    const add = largestRemainder(w, shaped);
+    for (let j = 0; j < curveCount; j++) booster[curveFrom + j] += add[j];
+  } else {
+    let left = Math.max(0, available);
+    if (lead && left > 0) { booster[0] += 1; left -= 1; }
+    for (let i = curveFrom; i < depth && left > 0; i++) {
+      const give = Math.min(m, left); booster[i] += give; left -= give;
+    }
+    conflict = { need: floorNeed, have: available };
+  }
+
+  const packs = new Array(n).fill(0);
+  const start = ranked >= n ? 0 : ranked;
+  for (let g = 0; g < rankTP; g++) packs[(start + g) % n]++;
+
+  const winners = new Array(n).fill(0);
+  for (let i = 0; i < ranked; i++) winners[i]++;
+  for (const [r, c] of Object.entries(manual)) winners[Number(r) - 1] += c;
+
+  const S = s.displaySize;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    rows.push({
+      rank: i + 1,
+      booster: booster[i] + (s.combinedHandout ? pbRate : 0),
+      packs: packs[i] + (s.combinedHandout ? ppRate : 0),
+      winners: winners[i],
+      floor: Math.min(booster[i], i < depth ? m + (i === 0 ? lead : 0) : 0),
+      served: i < depth,
+    });
+  }
+  return {
+    players: n,
+    pool: { booster: boosterTotal, packs: tpTotal, winners: wpTotal },
+    participation: { rate: { booster: pbRate, packs: ppRate }, booster: partB, packs: partTP },
+    judge: { booster: judgeB, winners: judgeWP },
+    rank: { booster: rankB, packs: rankTP, winners: rankWP },
+    depth, depthCap, depthStepValue, rankFloor: m,
+    floorReserved: floorNeed, displayReserved: reservedB,
+    shapedRemainder: Math.max(0, shaped), curveSilent: shaped <= 0, curveCount,
+    allocation: { ranked, rankedAuto, manual, manualCount, open: openWP },
+    prep: {
+      fetchDisplays: Math.ceil(boosterTotal / S), looseBooster: boosterTotal % S,
+      fetchEnvelopes: Math.ceil(tpTotal / s.envelopeSize), winnerYield: wpTotal,
+      threshold: wpThreshold,
+    },
+    rows, conflict,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DefaultSet, Zustand, Pins
+   ══════════════════════════════════════════════════════════════════════ */
+const GAME = {
+  boosterRate: 3, envelopeSize: 9, displaySize: 24,
+  participationBooster: 2, participationPack: 1,
+  judgeBooster: 0, judgeWinner: 0,
+  rankFloor: 2, depthStep: 'top8', curve: 'mild',
+  raffleRange: 'all', combinedHandout: false,
+};
+const TYPES = {
+  weekly: { title: 'Weekly', over: {} },
+  weekend: { title: 'Weekend', over: { curve: 'severe' } },
+};
+
+const st = {
+  type: 'weekly', players: 32,
+  pin: {}, val: {},                  // Pinned ist gespeichert, nicht abgeleitet (ADR 0006)
+  manualWinner: {}, displays: [],
+  cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
+};
+
+function def(key) {
+  const t = TYPES[st.type].over;
+  return key in t ? t[key] : GAME[key];
+}
+function get(key) {
+  if (st.pin[key]) return st.val[key];
+  if (key === 'tournamentPacks' || key === 'depth' || key === 'ranked') return null; // nachziehend
+  return def(key);
+}
+function setVal(key, v) { st.pin[key] = true; st.val[key] = v; render(); }
+function reset(key) { delete st.pin[key]; delete st.val[key]; render(); }
+
+function settings() {
+  return {
+    players: st.players,
+    boosterRate: get('boosterRate'),
+    tournamentPacks: get('tournamentPacks'),
+    envelopeSize: get('envelopeSize'),
+    displaySize: get('displaySize'),
+    participationBooster: get('participationBooster'),
+    participationPack: get('participationPack'),
+    judgeBooster: get('judgeBooster'),
+    judgeWinner: get('judgeWinner'),
+    rankFloor: get('rankFloor'),
+    depthStep: get('depthStep'),
+    depth: get('depth'),
+    curve: get('curve'),
+    ranked: get('ranked'),
+    manualWinner: st.manualWinner,
+    displays: st.displays,
+    combinedHandout: get('combinedHandout'),
+  };
+}
+function eff(key, plan) {
+  if (st.pin[key]) return st.val[key];
+  if (key === 'depth') return plan.depth;
+  if (key === 'ranked') return plan.allocation.ranked;
+  if (key === 'tournamentPacks') return plan.pool.packs;
+  return def(key);
+}
+
+/* Vorschläge (#19): den Verlierer der Vorrangkette zuerst. */
+function suggestions(plan) {
+  if (!plan.conflict) return [];
+  const out = [];
+  const base = settings();
+  const tryKey = (key, lo, hi, label) => {
+    const cur = eff(key, plan);
+    let best = null;
+    for (let v = lo; v <= hi; v++) {
+      if (v === cur) continue;
+      const t = { ...base }; t[key] = v;
+      if (!distribute(t).conflict) {
+        if (best == null || Math.abs(v - cur) < Math.abs(best - cur)) best = v;
+      }
+    }
+    if (best != null) out.push({ key, value: best, label: label(best) });
+  };
+  tryKey('depth', 1, st.players, (v) => `Serve ${v} ranks`);
+  tryKey('rankFloor', 0, 8, (v) => `Floor down to ${v}`);
+  tryKey('participationBooster', 0, 8, (v) => `Participation boosters to ${v}`);
+  return out;
+}
+
+/* Raffle (#10) — Zufall in der Eingabe, nicht in der Berechnung. */
+function rafflePot(plan) {
+  const size = rangeSize(get('raffleRange'), st.players);
+  const r = RANGES.find((x) => x.id === get('raffleRange'));
+  const isBottom = r && r.comp;
+  const pot = [];
+  for (let i = 1; i <= st.players; i++) {
+    const inRange = isBottom ? i > st.players - size : i <= size;
+    if (inRange && plan.rows[i - 1].winners === 0) pot.push(i);
+  }
+  return pot;
+}
+function doRaffle(plan) {
+  if (plan.allocation.open <= 0) return;
+  const pot = rafflePot(plan);
+  if (!pot.length) return;
+  const pick = pot[Math.floor(Math.random() * pot.length)];
+  st.manualWinner[pick] = (st.manualWinner[pick] || 0) + 1;
+  render();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Bausteine
+   ══════════════════════════════════════════════════════════════════════ */
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const LABEL = {
+  players: 'Players', depth: 'Served ranks', curve: 'Curve',
+  rankFloor: 'Min boosters per rank',       // war „Boosters per served rank" — #15-Rückmeldung
+  participationBooster: 'Boosters per player', participationPack: 'Packs per player',
+  tournamentPacks: 'Tournament packs available', ranked: 'Winner packs by rank',
+  raffleRange: 'Raffle range', combinedHandout: 'Hand out with rank prizes',
+  boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
+  envelopeSize: 'Packs per envelope', judgeBooster: 'Judge boosters',
+  judgeWinner: 'Judge winner packs',
+};
+const RANGE_OF = {
+  players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
+  participationPack: () => [0, 4], boosterRate: () => [0, 8], displaySize: () => [6, 36],
+  envelopeSize: () => [4, 36], judgeBooster: () => [0, 48], judgeWinner: () => [0, 8],
+  tournamentPacks: () => [0, 200],
+};
+
+/* Eine Icon-Sprache für beide Bereichslisten: Pfeil plus Anteil.
+   ↑ = Präfix ab Rang 1, ↓ = Suffix am unteren Ende, ▮ = das ganze Ranking. */
+const RANGE_ICON = {
+  top8: '8', top16: '16', topQuarter: '¼', topThird: '⅓', topHalf: '½',
+  topTwoThirds: '⅔', topThreeQuarters: '¾', all: '▮',
+  bottomThreeQuarters: '¾', bottomTwoThirds: '⅔', bottomHalf: '½',
+  bottomThird: '⅓', bottomQuarter: '¼',
+};
+const RANGE_NAME = {
+  top8: 'top 8', top16: 'top 16', topQuarter: 'top quarter', topThird: 'top third',
+  topHalf: 'top half', topTwoThirds: 'top two thirds', topThreeQuarters: 'top three quarters',
+  all: 'all ranks', bottomThreeQuarters: 'bottom three quarters',
+  bottomTwoThirds: 'bottom two thirds', bottomHalf: 'bottom half',
+  bottomThird: 'bottom third', bottomQuarter: 'bottom quarter',
+};
+function rangeChips(ids, activeId, attr) {
+  return `<div class="preset">${ids.map((id) => {
+    const arrow = id === 'all' ? '' : id.startsWith('bottom') ? '↓' : '↑';
+    return `<button ${attr}="${id}" aria-pressed="${id === activeId}"
+      title="${esc(RANGE_NAME[id])}"><span class="ar">${arrow}</span>${RANGE_ICON[id]}</button>`;
+  }).join('')}</div>`;
+}
+
+function pinMark(key) {
+  return st.pin[key] ? '<span class="pindot" title="folgt der Rechnung nicht mehr"></span>' : '';
+}
+function resetBtn(key, always) {
+  if (!st.pin[key] && !always) return '';
+  const dim = st.pin[key] ? '' : ' style="opacity:.28"';
+  return `<button class="reset" data-reset="${key}"${dim} title="zurück auf automatisch">↺</button>`;
+}
+function numChip(key, plan, small) {
+  const v = key === 'players' ? st.players : eff(key, plan);
+  return `<div class="pm${small ? ' sm' : ''}">
+    <button data-delta="-1" data-key="${key}">−</button>
+    <div class="val">${v}</div>
+    <button data-delta="1" data-key="${key}">+</button></div>`;
+}
+
+/* Ein Regler. `pm` hängt ein Zählwerk an — Ziehen grob, Tippen genau. */
+function slider(key, plan, opts) {
+  opts = opts || {};
+  const [lo, hiDefault] = (RANGE_OF[key] || (() => [0, 10]))();
+  const hi = opts.max != null ? opts.max : hiDefault;
+  const v = key === 'players' ? st.players : eff(key, plan);
+  const auto = !st.pin[key] && (key === 'depth' || key === 'ranked' || key === 'tournamentPacks')
+    ? ' <span class="tiny muted">auto</span>' : '';
+  return `<div class="ctl${st.pin[key] ? ' pinned' : ''}">
+    <div class="top">${pinMark(key)}<span class="lbl">${esc(LABEL[key])}</span>${auto}
+      <span class="v">${v}</span>${resetBtn(key, opts.alwaysReset)}</div>
+    <div class="bar" style="gap:8px">
+      <input type="range" data-key="${key}" min="${lo}" max="${hi}" step="1" value="${v}">
+      ${opts.pm ? numChip(key, plan, true) : ''}</div>
+    ${opts.hint ? `<div class="tiny muted">${opts.hint}</div>` : ''}
+  </div>`;
+}
+
+/* Served ranks — Stufen zuerst, dann die Zahl. Drei Bauweisen. */
+function depthControl(plan, mode) {
+  const step = get('depthStep');
+  const pinned = !!st.pin.depth;
+  const chips = rangeChips(RANGES.slice(0, 8).map((r) => r.id), pinned ? null : step, 'data-set-step');
+  // Im Zählwerk-Modus wandert die Zahl in die Kopfzeile — acht Stufen und ein
+  // Stepper nebeneinander passen auf 375px nicht in eine Zeile.
+  const value = mode === 'stepper' ? numChip('depth', plan, true)
+                                   : `<span class="v">${plan.depth}</span>`;
+  const head = `<div class="top">${pinMark('depth')}<span class="lbl">${LABEL.depth}</span>
+    ${pinned ? '<span class="manual">manual</span>'
+             : `<span class="tiny muted">${esc(RANGE_NAME[step])}</span>`}
+    <span style="margin-left:auto">${value}</span>${resetBtn('depth')}</div>`;
+  const hint = `<div class="tiny muted">cap ${plan.depthCap}${
+    plan.depth !== plan.depthStepValue && !pinned
+      ? ` · ${esc(RANGE_NAME[step])} would give ${plan.depthStepValue}` : ''}</div>`;
+  if (mode === 'stepper') {
+    return `<div class="ctl${pinned ? ' pinned' : ''}">${head}${chips}${hint}</div>`;
+  }
+  return `<div class="ctl${pinned ? ' pinned' : ''}">${head}
+    <div style="margin-bottom:5px">${chips}</div>
+    <div class="bar" style="gap:8px">
+      <input type="range" data-key="depth" min="1" max="${st.players}" step="1" value="${plan.depth}">
+      ${mode === 'both' ? numChip('depth', plan, true) : ''}</div>${hint}</div>`;
+}
+
+/* Kurvenstufen als Formen — dieselbe Zeile draussen und im Blatt. */
+function curveGlyphs(plan, withRatio) {
+  const cur = eff('curve', plan);
+  const ratio = CURVES.find((c) => c.id === cur).ratio;
+  const glyphs = CURVES.map((c) => {
+    const bars = [0, 1, 2, 3].map((j) => {
+      const h = Math.round(13 * Math.pow(c.ratio, j)) + 2;
+      return `<i style="display:inline-block;width:3px;height:${h}px;background:currentColor;
+              margin-right:1px;vertical-align:bottom"></i>`;
+    }).join('');
+    return `<button data-set-curve="${c.id}" aria-pressed="${c.id === cur}"
+            title="${c.id} · ×${c.ratio}" style="padding:5px 6px;line-height:0;min-width:0">${bars}</button>`;
+  }).join('');
+  return `<div class="ctl${st.pin.curve ? ' pinned' : ''}">
+    <div class="bar" style="gap:8px">
+      <div class="preset" style="flex-wrap:nowrap">${glyphs}</div>
+      <div class="tiny num" style="margin-left:auto">${cur}${
+        withRatio ? ` <span class="muted">×${ratio}</span>` : ''}</div>${resetBtn('curve')}</div>
+    ${withRatio ? `<div class="tiny muted">Each rank gets ${Math.round(ratio * 100)}%
+      of the rank above.</div>` : ''}
+  </div>`;
+}
+
+function prepLine(plan) {
+  return `<span class="tiny muted">Fetch ${plan.prep.fetchDisplays} displays`
+    + (plan.prep.looseBooster ? ` (one opened, ${plan.prep.looseBooster} loose)` : '')
+    + ` · ${plan.prep.fetchEnvelopes} pack envelopes → ${plan.prep.winnerYield} winner packs</span>`;
+}
+
+/* Kopf aus Variante A: Turniertyp als Überschrift, Beschaffung direkt darunter. */
+function headerBlock(plan) {
+  return `<div style="padding:9px 12px 8px;background:#fff;border-bottom:1px solid var(--line);flex:none">
+    <div class="bar">
+      <strong style="font-size:17px;letter-spacing:-.01em">${TYPES[st.type].title}</strong>
+      <span class="tiny muted num">${st.players} players</span>
+      <button class="sheetbtn tiny" data-sheet="open" style="margin-left:auto"
+        title="alles andere">⚙</button>
+    </div>
+    <div style="margin-top:2px">${prepLine(plan)}</div>
+  </div>`;
+}
+
+function rankStrip(plan) {
+  const max = Math.max(1, ...plan.rows.map((r) => r.booster));
+  const show = plan.rows.slice(0, Math.min(plan.players, 44));
+  const wide = show.length <= 18;
+  return `<div class="strip">${show.map((r) => {
+    const empty = !r.booster && !r.packs && !r.winners;
+    const h = Math.round((r.booster / max) * 100);
+    const f = r.booster ? Math.round((r.floor / r.booster) * 100) : 0;
+    return `<div class="col${empty ? ' empty' : ''}">
+      ${wide && r.booster ? `<span class="cap num">${r.booster}</span>` : ''}
+      <div class="b ${r.served ? '' : 'un'}" style="height:${Math.max(2, h)}%">
+        <i style="height:${f}%"></i>${r.winners ? '<b class="wp"></b>' : ''}</div>
+      ${wide ? `<span class="cap num muted">${r.rank}</span>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* Feste Slots. Nur Ränge, an denen wirklich etwas ankommt — der leere
+   Schwanz wird als eine Zeile ausgewiesen (#16 verlangt alle Ränge, aber
+   ein leerer Rang trägt keine Information, die eine Kachel wert ist). */
+function slotGrid(plan, cols) {
+  const rows = plan.rows.filter((r) => r.booster || r.packs || r.winners);
+  const last = rows.length ? rows[rows.length - 1].rank : 0;
+  const hidden = plan.players - last;
+  const sn = cols <= 6 ? 21 : cols <= 8 ? 17 : cols <= 10 ? 15 : cols <= 12 ? 13 : 11;
+  const dense = cols >= 12;
+  const cells = rows.map((r) => `<div class="slot${r.winners ? ' win' : ''}">
+      <span class="rk num">${r.rank}</span>
+      ${r.winners ? `<span class="wp" title="winner pack">${
+        r.winners > 1 ? `<b>${r.winners}</b>` : ''}</span>` : ''}
+      <strong class="n">${r.booster}</strong>
+      ${r.packs ? `<span class="ex">+${r.packs}p</span>` : ''}
+    </div>`).join('');
+  return `<div class="slots${dense ? ' dense' : ''}"
+      style="grid-template-columns:repeat(${cols},1fr);--sn:${sn}px">${cells}</div>
+    ${hidden > 0 ? `<div class="tiny muted" style="text-align:center;padding:5px 0 0">
+      ranks ${last + 1}–${plan.players} get nothing</div>` : ''}`;
+}
+
+function slotBlock(plan) {
+  const side = document.body.classList.contains('wide') || document.body.classList.contains('land');
+  return `<div style="padding:8px 12px 0;flex:0 1 auto;min-height:0;overflow:${side ? 'visible' : 'auto'}">
+    <div class="bar tiny muted" style="margin-bottom:5px">
+      <span>Per rank</span><span class="num">· ${st.cols} per row</span>
+      <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
+        title="Vollbild">⛶</button>
+    </div>
+    ${slotGrid(plan, st.cols)}</div>`;
+}
+
+/* Die zwei Zahlen aus #20: Boden und Formmasse, als eine Leiste. */
+function floorBar(plan) {
+  const tot = Math.max(1, plan.rank.booster);
+  const fl = Math.round((plan.floorReserved / tot) * 100);
+  const dr = Math.round((plan.displayReserved / tot) * 100);
+  return `<div>
+    <div class="segbar">
+      <i style="width:${dr}%;background:#b08bd6"></i>
+      <i style="width:${fl}%;background:var(--accent)"></i>
+      <i style="width:${100 - fl - dr}%;background:#8fc9bd"></i>
+    </div>
+    <div class="tiny muted" style="margin-top:3px">
+      RankPool ${plan.rank.booster} booster = ${plan.floorReserved} floor
+      + ${plan.shapedRemainder} shaped by the curve
+      ${plan.curveSilent ? ' — <strong style="color:var(--warn)">curve has nothing to shape</strong>' : ''}
+    </div></div>`;
+}
+
+function conflictBox(plan, sugg) {
+  if (!plan.conflict) return '';
+  return `<div class="flag"><strong>${plan.conflict.have} boosters can't carry a floor of
+    ${plan.conflict.need}.</strong><br>
+    ${sugg.map((s) => `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
+  </div>`;
+}
+
+/* Die kompakte Bodenzeile — der Regler, bei dem offen ist, ob er draussen bleibt. */
+function floorRow(plan) {
+  return `<div class="bar tiny" style="margin:0 0 8px">
+    <span style="width:11px;height:11px;background:#79b8aa;border-radius:3px"></span>
+    <span>${LABEL.rankFloor}</span>
+    ${numChip('rankFloor', plan, true)}${resetBtn('rankFloor')}
+    <span class="muted" style="margin-left:auto">${plan.floorReserved} of ${plan.rank.booster}</span>
+  </div>`;
+}
+
+function raffleRow(plan) {
+  const pot = rafflePot(plan);
+  const can = plan.allocation.open > 0 && pot.length > 0;
+  return `<div class="bar tiny" style="margin-top:2px">
+    <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
+      title="einen offenen WinnerPack auslosen">🎲</button>
+    <span class="muted">${plan.allocation.ranked} ranked · ${plan.allocation.manualCount} hand ·
+      ${plan.allocation.open} open</span>
+    <button class="sheetbtn" data-sheet="open" style="margin-left:auto">More…</button>
+  </div>`;
+}
+
+function winnerBlock(plan) {
+  const pot = rafflePot(plan);
+  const can = plan.allocation.open > 0 && pot.length > 0;
+  const list = Object.keys(plan.allocation.manual).sort((a, b) => a - b)
+    .map((r) => `<button class="sheetbtn tiny" data-unmanual="${r}">Rank ${r} ✕</button>`).join(' ');
+  return `<div style="border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff">
+    <div class="bar tiny" style="margin-bottom:6px">
+      <strong>Raffle range</strong>
+      <span class="muted grow">${esc(RANGE_NAME[get('raffleRange')])} · ${pot.length} in the pot</span>
+    </div>
+    <div style="margin-bottom:8px">${rangeChips(RANGES.map((r) => r.id),
+      get('raffleRange'), 'data-set-range')}</div>
+    <div class="bar">
+      <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}>🎲 Raffle one</button>
+      <span class="tiny muted">${plan.allocation.open} open</span>
+    </div>
+    ${list ? `<div style="margin-top:8px">${list}</div>` : ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Gemeinsame Hülle — der Aufbau ist entschieden, nur der Fuss streitet
+   ══════════════════════════════════════════════════════════════════════ */
+function shell(plan, sugg, footer) {
+  const wide = document.body.classList.contains('wide');
+  const land = document.body.classList.contains('land');
+  const side = wide || land;          // Querformat ist eine Seitenleiste, kein gestauchtes Hochformat
+  const stripMax = land ? 104 : 280;
+  return `<div style="height:100%;display:flex;flex-direction:${side ? 'row' : 'column'};
+      position:relative;overflow:hidden">
+    <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
+        overflow:${side ? 'auto' : 'hidden'}">
+      ${headerBlock(plan)}
+      <div style="padding:8px 12px 0;${side
+        ? `height:${stripMax}px;flex:none`
+        : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">
+        ${rankStrip(plan)}</div>
+      ${slotBlock(plan)}
+      <div style="padding:8px 12px 0;flex:none">${floorBar(plan)}</div>
+      ${plan.conflict ? `<div style="padding:8px 12px 0;flex:none">${conflictBox(plan, sugg)}</div>` : ''}
+      <div style="flex:1 1 0;min-height:0"></div>
+    </div>
+    <div style="${side
+      ? 'width:352px;flex:none;border-left:1px solid var(--line);overflow:auto;background:#fff'
+      : 'flex:none;background:#fff;border-top:1px solid var(--line)'}">
+      <div style="padding:9px 12px 12px">${footer}</div>
+    </div>
+    ${sheet(plan)}${fsOpen ? fullscreen(plan) : ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Die drei Varianten — sie streiten nur über die Zahleneingabe
+   ══════════════════════════════════════════════════════════════════════ */
+const VARIANTS = {};
+
+/* ── E — Stufen steuern den Regler ────────────────────────────────────
+   Jede Zahl hat eine Icon-Zeile mit Vorauswahl und darunter einen
+   Schieber, der auf die Stufe springt. Wer zieht, ist „manual".
+   Wette: Ziehen ist auf 375px genau genug, das Zählwerk erübrigt sich. */
+VARIANTS.E = {
+  name: 'E — Stufen steuern den Regler',
+  render(plan, sugg) {
+    return shell(plan, sugg, `
+      ${slider('players', plan)}
+      ${depthControl(plan, 'slider')}
+      ${curveGlyphs(plan, false)}
+      ${floorRow(plan)}
+      ${raffleRow(plan)}`);
+  },
+};
+
+/* ── F — Stufen und Zählwerk ──────────────────────────────────────────
+   Kein Schieber, wo es Stufen gibt: die Icon-Zeile setzt grob, das
+   Zählwerk korrigiert um eins. Nur Players bleibt ein Schieber.
+   Wette: auf dem Handy schlägt Tippen das Ziehen.                      */
+VARIANTS.F = {
+  name: 'F — Stufen und Zählwerk',
+  render(plan, sugg) {
+    return shell(plan, sugg, `
+      <div class="bar" style="margin-bottom:9px">
+        <div style="flex:1;font-size:13px">${pinMark('players')}${LABEL.players}</div>
+        ${numChip('players', plan)}
+      </div>
+      ${depthControl(plan, 'stepper')}
+      ${curveGlyphs(plan, false)}
+      ${floorRow(plan)}
+      ${raffleRow(plan)}`);
+  },
+};
+
+/* ── G — Schieber mit Feintuning ──────────────────────────────────────
+   Jeder Wert ist ein Schieber und trägt rechts ein kleines ±. Ziehen
+   grob, tippen für den letzten Schritt. Stufen laufen zusätzlich mit.
+   Wette: beides zugleich kostet nur Breite, nicht Klarheit.            */
+VARIANTS.G = {
+  name: 'G — Schieber mit Feintuning',
+  render(plan, sugg) {
+    return shell(plan, sugg, `
+      ${slider('players', plan, { pm: true })}
+      ${depthControl(plan, 'both')}
+      ${curveGlyphs(plan, true)}
+      ${floorRow(plan)}
+      ${raffleRow(plan)}`);
+  },
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   Blatt und Vollbild
+   ══════════════════════════════════════════════════════════════════════ */
+function sheet(plan) {
+  return `<div class="sheet${sheetOpen ? ' open' : ''}">
+    <header><button class="sheetbtn" data-sheet="close">✕</button> Everything else</header>
+    <div class="body">
+      <div class="grouphead" style="margin-top:0">Tournament type</div>
+      <div class="bar" style="gap:6px">${Object.entries(TYPES).map(([id, t]) =>
+        `<button class="sheetbtn" data-type="${id}"
+         style="${id === st.type ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : ''}"
+         >${t.title}</button>`).join('')}</div>
+
+      <div class="grouphead">Rank pool</div>
+      ${depthControl(plan, 'both')}
+      ${slider('rankFloor', plan, { pm: true, alwaysReset: true })}
+      ${curveGlyphs(plan, true)}
+
+      <div class="grouphead">Winner packs</div>
+      ${slider('ranked', plan, { max: plan.rank.winners, pm: true, alwaysReset: true })}
+      ${winnerBlock(plan)}
+
+      <div class="grouphead">Split the pool</div>
+      ${slider('participationBooster', plan, { pm: true, alwaysReset: true })}
+      ${slider('participationPack', plan, { pm: true, alwaysReset: true })}
+      ${slider('judgeBooster', plan, { pm: true, alwaysReset: true })}
+      ${slider('judgeWinner', plan, { pm: true, alwaysReset: true })}
+
+      <div class="grouphead">Supply</div>
+      ${slider('boosterRate', plan, { pm: true, alwaysReset: true })}
+      ${slider('tournamentPacks', plan, { max: st.players * 3, pm: true, alwaysReset: true })}
+      ${slider('displaySize', plan, { pm: true, alwaysReset: true })}
+      ${slider('envelopeSize', plan, { pm: true, alwaysReset: true })}
+
+      <div class="grouphead">Handout</div>
+      <label class="bar" style="gap:8px"><input type="checkbox" data-toggle="combinedHandout"
+        ${get('combinedHandout') ? 'checked' : ''}> <span class="tiny">Hand participation prizes
+        out together with rank prizes</span>${resetBtn('combinedHandout')}</label>
+
+      <div class="grouphead">Full plan</div>
+      <table class="plan"><thead><tr><th>Rank</th><th>Booster</th><th>Packs</th><th>Winner</th>
+        </tr></thead><tbody>${plan.rows.map((r) => `<tr class="${r.served ? '' : 'unserved'}">
+        <td>${r.rank}</td><td class="num">${r.booster || '·'}</td>
+        <td class="num">${r.packs || '·'}</td><td class="num">${r.winners || '·'}</td></tr>`).join('')}
+        </tbody></table>
+      <div style="height:40px"></div>
+    </div></div>`;
+}
+
+/* Vollbild für das Raster — quer halten, mehr Slots pro Zeile. */
+function fullscreen(plan) {
+  const land = document.body.classList.contains('land');
+  const bare = document.body.classList.contains('bare');
+  const cols = st.fsCols;
+  return `<div class="sheet open" style="background:var(--bg)">
+    <header style="background:var(--bg)">
+      <button class="sheetbtn" data-fs="close">✕</button>
+      <span>${TYPES[st.type].title} · ${st.players} players</span>
+      <span class="tiny muted" style="margin-left:auto">per row</span>
+      <div class="preset">${[8, 10, 12, 16].map((c) =>
+        `<button data-fscols="${c}" aria-pressed="${c === cols}">${c}</button>`).join('')}</div>
+      ${bare ? '<span class="tiny muted">Handy drehen</span>'
+             : `<button class="sheetbtn tiny" data-rotate="1">⟳ ${land ? 'hoch' : 'quer'}</button>`}
+    </header>
+    <div class="body" style="padding:10px 12px 30px">${slotGrid(plan, cols)}</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Rahmen: Umschalter, Ereignisse, Rendern
+   ══════════════════════════════════════════════════════════════════════ */
+const KEYS = ['E', 'F', 'G'];
+let current = new URLSearchParams(location.search).get('variant');
+if (!KEYS.includes(current)) current = 'E';
+let sheetOpen = false;
+let fsOpen = false;
+const stage = document.getElementById('stage');
+
+function render() {
+  const plan = distribute(settings());
+  const sugg = suggestions(plan);
+  stage.innerHTML = VARIANTS[current].render(plan, sugg);
+  document.getElementById('vname').textContent = VARIANTS[current].name;
+  document.querySelectorAll('#switch [data-cols]').forEach((b) =>
+    b.setAttribute('aria-pressed', Number(b.dataset.cols) === st.cols));
+}
+
+function clampKey(key, v) {
+  const [lo, hi] = (RANGE_OF[key] || (() => [0, 999]))();
+  return Math.max(lo, Math.min(hi, v));
+}
+
+stage.addEventListener('input', (e) => {
+  const key = e.target.dataset.key;
+  if (!key) return;
+  const v = Number(e.target.value);
+  if (key === 'players') { st.players = v; render(); return; }
+  setVal(key, v);
+});
+stage.addEventListener('change', (e) => {
+  if (e.target.dataset.toggle) setVal(e.target.dataset.toggle, e.target.checked);
+});
+stage.addEventListener('click', (e) => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  const plan = distribute(settings());
+  const d = t.dataset;
+  if (d.sheet) { sheetOpen = d.sheet === 'open'; render(); return; }
+  if (d.fs) { fsOpen = d.fs === 'open'; render(); return; }
+  if (d.fscols) { st.fsCols = Number(d.fscols); render(); return; }
+  if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
+  if (d.reset) { reset(d.reset); return; }
+  if (d.type) { st.type = d.type; st.pin = {}; st.val = {}; render(); return; }
+  if (d.setCurve) { setVal('curve', d.setCurve); return; }
+  if (d.setRange) { setVal('raffleRange', d.setRange); return; }
+  // Eine Stufe zu wählen heisst: der Regler folgt wieder der Rechnung.
+  if (d.setStep) { delete st.pin.depth; delete st.val.depth; setVal('depthStep', d.setStep); return; }
+  if (d.raffle) { doRaffle(plan); return; }
+  if (d.unmanual) { delete st.manualWinner[d.unmanual]; render(); return; }
+  if (d.apply) { setVal(d.apply, Number(d.v)); return; }
+  if (d.delta && d.key) {
+    const key = d.key, step = Number(d.delta);
+    if (key === 'players') { st.players = clampKey('players', st.players + step); render(); return; }
+    setVal(key, Math.max(0, eff(key, plan) + step));
+    return;
+  }
+});
+
+function setDev(dev) {
+  document.body.className = dev;
+  document.querySelectorAll('#switch [data-dev]').forEach((x) =>
+    x.setAttribute('aria-pressed', x.dataset.dev === dev));
+  render();
+}
+function setVariant(key) {
+  current = key;
+  history.replaceState(null, '', '?variant=' + current);
+  sheetOpen = false; fsOpen = false; render();
+}
+document.getElementById('switch').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.nav) {
+    const i = (KEYS.indexOf(current) + Number(b.dataset.nav) + KEYS.length) % KEYS.length;
+    setVariant(KEYS[i]);
+  }
+  if (b.dataset.dev) setDev(b.dataset.dev);
+  if (b.dataset.cols) { st.cols = Number(b.dataset.cols); render(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const i = (KEYS.indexOf(current) + (e.key === 'ArrowRight' ? 1 : -1) + KEYS.length) % KEYS.length;
+  setVariant(KEYS[i]);
+});
+
+// Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
+setDev(window.innerWidth < 560 ? 'bare' : 'phone');
+</script>
+</body>
+</html>
