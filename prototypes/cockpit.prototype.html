@@ -18,6 +18,9 @@
     --pin: #7b3fb5;
     --pin-soft: #f2ebfa;
     --gold: #e0b230;
+    --pack: #4a6fa5;
+    /* Sperrgebiet des Knopfes unten rechts: 52 Knopf + 12 Abstand + 6 Luft. */
+    --fabsafe: 70px;
     /* Die Kachel ist das Mass der Dinge: so gross wie im Hochformat bei
        sechs Spalten. Alles andere richtet sich danach. */
     --cell: 54px;
@@ -59,7 +62,10 @@
                       height: 760px; }
   body.bare #stagewrap { padding: 0; }
   body.bare .chrome { display: none; }
-  body.bare #stage { height: calc(100vh - 46px); }
+  /* Auch ohne Rahmen gilt der Deckel: am Rechner steht die App bei 16 Kacheln
+     und bekommt Ränder, statt weiter in die Breite zu wachsen. */
+  body.bare #stage { height: calc(100vh - 46px);
+                     max-width: calc(var(--gridmax) + var(--rail) + 24px); }
 
   /* ── Switcher (nur Prototyp-Leinwand) ──────────────────────────────── */
   #switch {
@@ -108,6 +114,12 @@
   .preset .ar { font-size: 10px; opacity: .5; }
   .preset button[aria-pressed="true"] .ar { opacity: .85; }
   .preset button.wordy { font-size: 11px; letter-spacing: .04em; }
+  /* Feste zwei Zeilen: jede untere Angabe steht genau unter ihrer oberen.
+     `all` liegt links und nimmt die Breite von top8 und top16 zusammen. */
+  .preset.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+                 gap: 3px; }
+  .preset.grid button { min-width: 0; }
+  .preset.grid button.wide2 { grid-column: 1 / span 2; }
 
   .pm { display: flex; align-items: center; }
   .pm button { font: inherit; width: 38px; height: 34px; font-size: 18px;
@@ -118,6 +130,7 @@
   .pm .val { min-width: 46px; text-align: center; border-top: 1px solid var(--line);
              border-bottom: 1px solid var(--line); height: 34px; line-height: 32px;
              background: var(--paper); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pm button:disabled { opacity: .3; cursor: default; }
   .pm.sm button { width: 32px; height: 30px; font-size: 16px; }
   .pm.sm .val { height: 30px; line-height: 28px; min-width: 38px; font-size: 13.5px; }
 
@@ -163,20 +176,37 @@
            grid-template-columns: repeat(auto-fill, minmax(var(--cell), 1fr)); }
   .slot { background: var(--paper); border: 1px solid var(--line); border-radius: 9px;
           aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center;
-          justify-content: center; position: relative; }
+          justify-content: center; position: relative; cursor: pointer; }
   .slot .rk { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
               line-height: 16px; text-align: center; border-radius: 50%;
               background: var(--accent-soft); color: var(--accent); font-size: 10px;
               font-variant-numeric: tabular-nums; }
   .slot .n { font-size: 21px; font-weight: 600; line-height: 1;
              font-variant-numeric: tabular-nums; }
-  .slot .ex { font-size: 9.5px; color: var(--muted); margin-top: 2px; line-height: 1;
-              font-variant-numeric: tabular-nums; }
   .slot.win { border-color: var(--gold); }
-  .slot .wp { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
-              border-radius: 50%; background: var(--gold); }
-  .slot .wp b { position: absolute; right: 9px; top: -4px; font-size: 9px; color: #7a5c07;
-                font-weight: 700; }
+  .slot.none { background: transparent; border-style: dashed; }
+  .slot .n.z { color: #c8cfd4; font-weight: 400; }
+  .slot[data-open] { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Zwei Ecken tragen Zahlen: oben rechts WinnerPacks, unten rechts Packs.
+     Einer ist ein Punkt, mehrere sind ein Kreis mit der Zahl darin. */
+  .badge { display: inline-grid; place-items: center; border-radius: 999px;
+           width: 8px; height: 8px; font-size: 10.5px; font-weight: 700; line-height: 1;
+           font-variant-numeric: tabular-nums; }
+  .badge.n { width: 17px; height: 17px; }
+  .badge.win { background: var(--gold); color: #4a3600; }
+  .badge.pk { background: var(--pack); color: #fff; }
+  .slot .badge { position: absolute; }
+  .slot .badge.win { top: 4px; right: 4px; }
+  .slot .badge.pk { bottom: 4px; right: 4px; }
+  .legend { text-align: center; padding: 6px 0 0; }
+  .lg { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
+  .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
+         border: 1px solid var(--line); border-radius: 11px; padding: 9px 10px;
+         box-shadow: 0 10px 28px rgba(0,0,0,.18); min-width: 168px; }
+  .pop.show { display: block; }
 
   /* ── Blatt: fährt von unten herein, statt zu erscheinen ────────────── */
   .sheet { position: absolute; inset: 0; background: var(--paper); overflow: auto; z-index: 20;
@@ -186,14 +216,31 @@
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
   .sheet .body { padding: 12px 14px 84px; }
+  /* Das Vollbild misst wie der Hauptschirm: 12px links und rechts. Mit 14px
+     fällt im Hochformat eine Spalte weg und die Kachel wächst — genau das,
+     was die feste Kachelgrösse verhindern soll. */
+  .sheet.fs .body { padding: 10px 12px 84px; }
+  /* Quer und am Rechner steht sonst die halbe Blattbreite leer. */
+  body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 20px; }
+  body.land #sheet .body > *, body.wide #sheet .body > * { break-inside: avoid; }
+  body.land #sheet .grouphead, body.wide #sheet .grouphead { break-after: avoid; }
   .sheet .grip { display: block; width: 38px; height: 4px; border-radius: 2px;
                  background: var(--line); margin: 8px auto 0; }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
-                  border-bottom: 1px solid var(--line); padding: 10px 14px;
-                  display: flex; align-items: center; gap: 10px; font-size: 14px;
-                  font-weight: 600; }
+                  border-bottom: 1px solid var(--line); padding: 9px 12px;
+                  display: flex; align-items: center; gap: 9px; font-size: 14px;
+                  font-weight: 600; white-space: nowrap; }
   .grouphead { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
                color: var(--muted); margin: 18px 0 7px; font-weight: 700; }
+
+  /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
+     lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
+  #fade { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; z-index: 28;
+          display: none; pointer-events: none;
+          background: linear-gradient(to bottom, transparent, var(--fadeto) 62%); }
+  #stage { --fadeto: var(--paper); }
+  #stage.fsopen { --fadeto: var(--bg); }
+  #stage.anyopen #fade { display: block; }
 
   /* ── Der eine Knopf unten rechts: drei Punkte ↔ Kreuz ──────────────── */
   #morph { position: absolute; right: 12px; bottom: 12px; z-index: 40; border: 0;
@@ -226,24 +273,32 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 3 zu Ticket #15</h1>
+  <h1>Prizing Cockpit — Runde 4 zu Ticket #15</h1>
   <p>
-    Keine Varianten mehr: <strong>G</strong> ist die Grundlage. Neu sind die feste
-    Kachelgrösse mit wachsender Spaltenzahl, der Beschaffungsblock, der Morph-Knopf
-    unten rechts und die Statuszeile oben rechts.
+    Neu: WinnerPacks und Packs stehen als Zahlen in den Ecken der Kachel, ein Griff
+    an die Kachel öffnet das ± für die WinnerPacks, die Bereichsknöpfe stehen in zwei
+    festen Zeilen, und der Knopf unten rechts hat ein Sperrgebiet.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      ⚙ im Kopf weg — alles geht über den Knopf unten rechts. Oben rechts steht jetzt,
-      wie viele Regler von Hand gesetzt sind, mit einem Griff zum Zurücksetzen.<br><br>
-      Die Rang-Kachel ist überall etwa <strong>54px</strong>, so gross wie im Hochformat
-      bei sechs Spalten. Die Spaltenzahl folgt dem Platz: Hochformat 6, Handy quer 7,
-      Rechner bis maximal 16 — dort hört auch die App auf zu wachsen und bekommt Ränder.
-      Vollbild rechnet nach derselben Regel.<br><br>
-      Zahlen stehen nur noch <em>einmal</em> da, zwischen den ± Knöpfen. Beim Würfel steht
-      der gewählte Bereich daneben. „Full plan" ist raus. <code>all</code> ist ein Schriftzug
-      statt eines Blocks.
+      <strong>Ecken tragen Zahlen.</strong> Oben rechts gold die WinnerPacks, unten
+      rechts blau die Packs. Einer ist ein Punkt, mehrere ein Kreis mit der Zahl darin.
+      Legende unter dem Raster.<br><br>
+      <strong>Winner von Hand.</strong> Auf eine Kachel tippen öffnet eine kleine Blase
+      mit − und +. Was der Regler <em>Winner packs by rank</em> gesetzt hat, steht dort
+      als „by rank, fixed“ und lässt sich nicht wegnehmen; was von Hand oder aus der
+      Lostrommel kam, schon. + ist gesperrt, wenn kein WinnerPack mehr offen ist.<br><br>
+      <strong>Bereiche in festem Raster.</strong> Sieben Spalten, zwei Zeilen:
+      oben top&nbsp;8 bis ¾, unten <code>all</code> über die Breite von top&nbsp;8 und
+      top&nbsp;16 und jede untere Angabe genau unter ihrer oberen. Dieselben Spalten bei
+      <em>Served ranks</em>, damit ein Icon nicht wandert.<br><br>
+      <strong>Sperrgebiet.</strong> Die letzte Reglerzeile ist so hoch wie der Knopf und
+      lässt rechts seinen Platz frei. Quer und am Rechner hält die Reglerspalte unten
+      70px frei.<br><br>
+      <strong>Quer.</strong> Das Blatt hinter dem Knopf ist zweispaltig, und der
+      RankPool-Balken bleibt stehen: die Kacheln scrollen hinter ihm weg statt ihn
+      nach unten zu schieben.
     </div>
   </details>
 </div>
@@ -420,6 +475,7 @@ const st = {
   type: 'weekly', players: 32,
   pin: {}, val: {},                  // Pinned ist gespeichert, nicht abgeleitet (ADR 0006)
   manualWinner: {}, displays: [],
+  openSlot: null,                    // Rang, dessen ±-Blase offen ist
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -546,13 +602,26 @@ const RANGE_NAME = {
   bottomTwoThirds: 'bottom two thirds', bottomHalf: 'bottom half',
   bottomThird: 'bottom third', bottomQuarter: 'bottom quarter',
 };
-function rangeChip(id, pressed, attr) {
+function rangeChip(id, pressed, attr, extra) {
   const arrow = id === 'all' ? '' : id.startsWith('bottom') ? '↓' : '↑';
+  const cls = [id === 'all' ? 'wordy' : '', extra || ''].filter(Boolean).join(' ');
   return `<button ${attr}="${id}" aria-pressed="${!!pressed}" title="${esc(RANGE_NAME[id])}"
-    class="${id === 'all' ? 'wordy' : ''}"><span class="ar">${arrow}</span>${RANGE_ICON[id]}</button>`;
+    class="${cls}"><span class="ar">${arrow}</span>${RANGE_ICON[id]}</button>`;
 }
-function rangeChips(ids, activeId, attr) {
-  return `<div class="preset">${ids.map((id) => rangeChip(id, id === activeId, attr)).join('')}</div>`;
+
+/* Zwei feste Zeilen mit festen Spalten. Oben die Spitze, unten `all` breit
+   und jede untere Angabe genau unter ihrem oberen Gegenstück. Beide
+   Bereichslisten benutzen dasselbe Raster, damit ein Icon nicht wandert. */
+const RANGE_TOP = ['top8', 'top16', 'topQuarter', 'topThird', 'topHalf',
+                   'topTwoThirds', 'topThreeQuarters'];
+const RANGE_BOTTOM = ['bottomQuarter', 'bottomThird', 'bottomHalf',
+                      'bottomTwoThirds', 'bottomThreeQuarters'];
+function rangeGrid(activeId, attr, withBottom) {
+  const chip = (id) => rangeChip(id, id === activeId, attr);
+  return `<div class="preset grid">
+    ${RANGE_TOP.map(chip).join('')}
+    ${rangeChip('all', activeId === 'all', attr, 'wide2')}
+    ${withBottom ? RANGE_BOTTOM.map(chip).join('') : ''}</div>`;
 }
 
 function pinMark(key) {
@@ -593,8 +662,7 @@ function slider(key, plan, opts) {
 function depthControl(plan) {
   const step = get('depthStep');
   const pinned = !!st.pin.depth;
-  const chips = rangeChips(RANGES.slice(0, 8).map((r) => r.id), pinned ? null : step,
-    'data-set-step');
+  const chips = rangeGrid(pinned ? null : step, 'data-set-step', false);
   return `<div class="ctl${pinned ? ' pinned' : ''}">
     <div class="top">${pinMark('depth')}<span class="lbl">${LABEL.depth}</span>
       ${pinned ? '<span class="manual">manual</span>'
@@ -680,29 +748,75 @@ function rankStrip(plan) {
   }).join('')}</div>`;
 }
 
-/* Die Kachelgrösse steht in --cell; die Spaltenzahl macht das Raster selbst. */
+/* Einer ist ein Punkt, mehrere sind ein Kreis mit Zahl. */
+function badge(kind, n, one, many) {
+  if (!n) return '';
+  return `<span class="badge ${kind}${n > 1 ? ' n' : ''}" title="${n} ${n > 1 ? many : one}">${
+    n > 1 ? n : ''}</span>`;
+}
+
+/* Die Kachelgrösse steht in --cell; die Spaltenzahl macht das Raster selbst.
+   Die Reihe läuft lückenlos bis zum letzten Rang, der etwas bekommt — sonst
+   stünde ein ausgeloster WinnerPack neben dem falschen Nachbarn. */
 function slotGrid(plan) {
-  const rows = plan.rows.filter((r) => r.booster || r.packs || r.winners);
-  const last = rows.length ? rows[rows.length - 1].rank : 0;
+  let last = 0;
+  plan.rows.forEach((r) => { if (r.booster || r.packs || r.winners) last = r.rank; });
   const hidden = plan.players - last;
-  const cells = rows.map((r) => `<div class="slot${r.winners ? ' win' : ''}">
+  const cells = plan.rows.slice(0, last).map((r) => {
+    const bare = !r.booster && !r.packs && !r.winners;
+    return `<div class="slot${r.winners ? ' win' : ''}${bare ? ' none' : ''}"
+        data-rank="${r.rank}"${st.openSlot === r.rank ? ' data-open="1"' : ''}>
       <span class="rk num">${r.rank}</span>
-      ${r.winners ? `<span class="wp" title="winner pack">${
-        r.winners > 1 ? `<b>${r.winners}</b>` : ''}</span>` : ''}
-      <strong class="n">${r.booster}</strong>
-      ${r.packs ? `<span class="ex">+${r.packs}p</span>` : ''}
-    </div>`).join('');
+      ${badge('win', r.winners, 'winner pack', 'winner packs')}
+      <strong class="n${r.booster ? '' : ' z'}">${r.booster || '–'}</strong>
+      ${badge('pk', r.packs, 'pack', 'packs')}
+    </div>`;
+  }).join('');
   return `<div class="slots">${cells}</div>
-    ${hidden > 0 ? `<div class="tiny muted" style="text-align:center;padding:5px 0 0">
+    ${hidden > 0 ? `<div class="legend tiny muted">
       ranks ${last + 1}–${plan.players} get nothing</div>` : ''}`;
 }
 
+/* Die Legende steht oben, wo sie stehen bleibt — unter dem Raster wäre sie
+   weggescrollt, sobald mehr als zwei Reihen da sind. */
+function slotLegend() {
+  return `<span class="lg"><i class="badge win"></i>winner</span>
+    <span class="lg"><i class="badge pk"></i>pack</span>`;
+}
+
+/* Die Blase: ein Griff an einer Kachel, und der gilt den WinnerPacks.
+   Was der Regler `ranked` gesetzt hat, ist hier nicht zu rütteln — nur was
+   von Hand oder aus der Lostrommel kam. */
+function slotPop(plan) {
+  const r = st.openSlot;
+  if (r == null) return '';
+  const row = plan.rows[r - 1];
+  if (!row) return '';
+  const man = plan.allocation.manual[r] || 0;
+  const byRank = Math.max(0, row.winners - man);
+  const open = plan.allocation.open;
+  return `<div class="bar tiny" style="margin-bottom:6px">
+      <strong>Rank ${r}</strong><span class="muted">winner packs</span>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
+    <div class="pm">
+      <button data-win="-1"${man ? '' : ' disabled'}>−</button>
+      <div class="val">${row.winners}</div>
+      <button data-win="1"${open > 0 ? '' : ' disabled'}>+</button>
+    </div>
+    <div class="tiny muted" style="margin-top:5px">${
+      byRank ? `${byRank} by rank, fixed · ` : ''}${
+      open > 0 ? `${open} still open`
+               : man ? 'all placed'
+                     : 'all placed — take one off another rank first'}</div>`;
+}
+
+/* Der Block scrollt selbst — auch im Querformat. Sonst wandert der
+   RankPool-Balken unter die Kacheln, statt sie hinter sich verschwinden
+   zu lassen. */
 function slotBlock(plan) {
-  const side = isSide();
-  return `<div style="padding:8px 12px 0;flex:0 1 auto;min-height:0;
-      overflow:${side ? 'visible' : 'auto'}">
+  return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;overflow:auto">
     <div class="bar tiny muted" style="margin-bottom:5px">
-      <span>Per rank</span><span class="num" data-colcount="main"></span>
+      ${slotLegend()}<span class="num" data-colcount="main"></span>
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
@@ -744,12 +858,13 @@ function floorRow(plan) {
 }
 
 /* Beim Würfel steht, aus welchem Bereich gezogen wird — dasselbe Icon wie im Blatt.
-   Rechts bleibt Platz für den Knopf, der über dieser Zeile schwebt. */
+   Diese Zeile ist zugleich das Sperrgebiet des Knopfes: sie ist so hoch wie
+   er und lässt rechts seinen Platz frei, damit er nie auf Zahlen liegt. */
 function raffleRow(plan) {
   const pot = rafflePot(plan);
   const can = plan.allocation.open > 0 && pot.length > 0;
   const range = get('raffleRange');
-  return `<div class="bar tiny" style="margin-top:2px;padding-right:58px">
+  return `<div class="bar tiny" style="margin-top:2px;padding-right:58px;min-height:56px">
     <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
       title="einen offenen WinnerPack auslosen">🎲</button>
     <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
@@ -769,8 +884,8 @@ function winnerBlock(plan) {
       <strong>Raffle range</strong>
       <span class="muted grow">${esc(RANGE_NAME[get('raffleRange')])} · ${pot.length} in the pot</span>
     </div>
-    <div style="margin-bottom:8px">${rangeChips(RANGES.map((r) => r.id),
-      get('raffleRange'), 'data-set-range')}</div>
+    <div style="margin-bottom:8px">${rangeGrid(get('raffleRange'),
+      'data-set-range', true)}</div>
     <div class="bar">
       <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
         >🎲&nbsp; Raffle one</button>
@@ -789,7 +904,10 @@ function isSide() {
 
 function screen(plan, sugg) {
   const side = isSide();
-  const stripMax = document.body.classList.contains('land') ? 104 : 280;
+  // Das Diagramm darf nicht die halbe Fläche nehmen: quer ist es flach, am
+  // Rechner mittelhoch, im Hochformat darf es wachsen.
+  const stripMax = document.body.classList.contains('land') ? 96
+                 : document.body.classList.contains('wide') ? 190 : 280;
   const controls = `
     ${slider('players', plan)}
     ${depthControl(plan)}
@@ -799,7 +917,7 @@ function screen(plan, sugg) {
   return `<div style="height:100%;display:flex;flex-direction:${side ? 'row' : 'column'};
       overflow:hidden">
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
-        overflow:${side ? 'auto' : 'hidden'}">
+        overflow:hidden">
       ${headerBlock(plan)}
       <div style="padding:8px 12px 0;${side
         ? `height:${stripMax}px;flex:none`
@@ -807,12 +925,12 @@ function screen(plan, sugg) {
       ${slotBlock(plan)}
       <div style="padding:8px 12px 0;flex:none">${floorBar(plan)}</div>
       ${plan.conflict ? `<div style="padding:8px 12px 0;flex:none">${conflictBox(plan, sugg)}</div>` : ''}
-      <div style="flex:1 1 0;min-height:0"></div>
+      <div style="height:9px;flex:none"></div>
     </div>
     <div style="${side
       ? 'width:var(--rail);flex:none;border-left:1px solid var(--line);overflow:auto;background:var(--paper)'
       : 'flex:none;background:var(--paper);border-top:1px solid var(--line)'}">
-      <div style="padding:9px 12px 12px">${controls}</div>
+      <div style="padding:9px 12px ${side ? 'var(--fabsafe)' : '8px'}">${controls}</div>
     </div>
   </div>`;
 }
@@ -854,14 +972,14 @@ function sheetContent(plan) {
 }
 
 function fsContent(plan) {
-  const land = document.body.classList.contains('land');
+  // Auf dem echten Handy dreht die Hand, nicht ein Knopf.
   const bare = document.body.classList.contains('bare');
   return `<div class="shead">
-      <span>${TYPES[st.type].title} · ${st.players} players</span>
+      <span>${TYPES[st.type].title} · ${st.players}</span>
+      <span class="tiny muted bar">${slotLegend()}</span>
       <span class="tiny muted num" data-colcount="fs"></span>
-      ${bare ? '<span class="tiny muted" style="margin-left:auto">Handy drehen</span>'
-             : `<button class="sheetbtn tiny" data-rotate="1"
-                  style="margin-left:auto">⟳ ${land ? 'hoch' : 'quer'}</button>`}
+      ${bare ? '' : `<button class="sheetbtn tiny" data-rotate="1"
+                  style="margin-left:auto">⟳</button>`}
     </div>
     <div class="body">${slotGrid(plan)}</div>`;
 }
@@ -876,22 +994,48 @@ stage.innerHTML = `
   <div id="app"></div>
   <div id="sheet" class="sheet"><span class="grip"></span><div class="body"></div></div>
   <div id="fs" class="sheet fs"></div>
+  <div id="pop" class="pop"></div>
+  <div id="fade"></div>
   <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
+const popEl = document.getElementById('pop');
 
 function render() {
   const plan = distribute(settings());
   const sugg = suggestions(plan);
+  // Das Blatt deckt die Kacheln zu, also kann dort keine Blase offen sein.
+  if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
   appEl.innerHTML = screen(plan, sugg);
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
+  popEl.innerHTML = slotPop(plan);
   sheetEl.classList.toggle('open', sheetOpen);
   fsEl.classList.toggle('open', fsOpen);
+  popEl.classList.toggle('show', st.openSlot != null);
   stage.classList.toggle('anyopen', sheetOpen || fsOpen);
+  stage.classList.toggle('fsopen', fsOpen);
   document.getElementById('morph').title = (sheetOpen || fsOpen) ? 'schliessen' : 'mehr';
   showColumnCount();
+  placePop();
+}
+
+/* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
+   oben, wenn unten kein Platz mehr ist. */
+function placePop() {
+  if (st.openSlot == null) return;
+  const host = fsOpen ? fsEl : appEl;
+  const tile = host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
+  if (!tile) { popEl.classList.remove('show'); return; }
+  const s = stage.getBoundingClientRect();
+  const t = tile.getBoundingClientRect();
+  const w = popEl.offsetWidth, h = popEl.offsetHeight;
+  let y = t.bottom - s.top + 6;
+  if (y + h > s.height - 8) y = t.top - s.top - h - 6;
+  const x = t.left - s.left + t.width / 2 - w / 2;
+  popEl.style.left = `${Math.max(8, Math.min(x, s.width - w - 8))}px`;
+  popEl.style.top = `${Math.max(8, Math.min(y, s.height - h - 8))}px`;
 }
 
 /* Die Spaltenzahl kommt vom Raster, nicht von uns — also nachlesen. */
@@ -900,7 +1044,7 @@ function showColumnCount() {
     const grid = (el.dataset.colcount === 'fs' ? fsEl : appEl).querySelector('.slots');
     if (!grid) { el.textContent = ''; return; }
     const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
-    el.textContent = `· ${n} per row`;
+    el.textContent = el.dataset.colcount === 'fs' ? `${n}/row` : `· ${n} per row`;
   });
 }
 
@@ -920,16 +1064,37 @@ stage.addEventListener('change', (e) => {
   if (e.target.dataset.toggle) setVal(e.target.dataset.toggle, e.target.checked);
 });
 stage.addEventListener('click', (e) => {
-  const t = e.target.closest('button');
-  if (!t) return;
   const plan = distribute(settings());
+  const t = e.target.closest('button');
+  if (!t) {
+    // Ein Griff an die Kachel öffnet die Blase, derselbe schliesst sie.
+    const tile = e.target.closest('.slot');
+    if (tile) {
+      const r = Number(tile.dataset.rank);
+      st.openSlot = st.openSlot === r ? null : r;
+      render();
+      return;
+    }
+    if (st.openSlot != null && !e.target.closest('#pop')) { st.openSlot = null; render(); }
+    return;
+  }
   const d = t.dataset;
+  // Jeder Knopf ausserhalb der Blase schliesst sie.
+  if (!t.closest('#pop')) st.openSlot = null;
+  if (d.closepop) { st.openSlot = null; render(); return; }
+  if (d.win) {
+    const r = st.openSlot;
+    if (Number(d.win) > 0) st.manualWinner[r] = (st.manualWinner[r] || 0) + 1;
+    else if (st.manualWinner[r] > 1) st.manualWinner[r] -= 1;
+    else delete st.manualWinner[r];
+    render(); return;
+  }
   if (t.id === 'morph') {
     if (fsOpen) fsOpen = false;
     else sheetOpen = !sheetOpen;
     render(); return;
   }
-  if (d.fs) { fsOpen = d.fs === 'open'; render(); return; }
+  if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
   if (d.sheetRange != null) { sheetOpen = true; render(); return; }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   if (d.resetall) { st.pin = {}; st.val = {}; render(); return; }
@@ -960,7 +1125,16 @@ document.getElementById('switch').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b && b.dataset.dev) setDev(b.dataset.dev);
 });
-window.addEventListener('resize', showColumnCount);
+window.addEventListener('resize', () => { showColumnCount(); placePop(); });
+/* Aufsammeln in der Einfangphase: danach hat render() das angeklickte
+   Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
+document.addEventListener('click', (e) => {
+  const inside = stage.contains(e.target);
+  if (!inside && st.openSlot != null) { st.openSlot = null; render(); }
+}, true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && st.openSlot != null) { st.openSlot = null; render(); }
+});
 
 // Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
 setDev(window.innerWidth < 560 ? 'bare' : 'phone');
