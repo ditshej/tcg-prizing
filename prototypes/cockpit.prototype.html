@@ -6,19 +6,45 @@
 <title>Prizing Cockpit</title>
 <style>
   :root {
-    --accent: #0e6f5c;
-    --accent-soft: #e6f2ef;
+    /* ── Konzept 0 „Neutral“: der bisherige Stand, ohne das Grün ───────
+       Jede Farbe und jede Form, die ein Konzept dreht, steht hier als
+       Variable. Wer unten ein Theme liest, sieht daran genau, was ein
+       Konzept ausmacht — und was es erbt. */
+    --accent: #2c3138;
+    --accent-soft: #eceef0;
+    --on-accent: #fff;
     --ink: #16191c;
     --muted: #626a72;
     --line: #dfe3e7;
     --bg: #fbfbfa;
     --paper: #fff;
+    --shell: #eceeef;          /* Fläche um die Leinwand */
+    --frame: #23262a;          /* Handyrahmen */
     --warn: #9a4a12;
     --warn-soft: #fdf1e6;
     --pin: #7b3fb5;
     --pin-soft: #f2ebfa;
     --gold: #e0b230;
     --pack: #4a6fa5;
+    --unserved: #cfd6da;       /* Balken ohne Preis */
+    --floorfill: #9aa4ac;      /* Bodenanteil im Balken */
+    --reserve: #b08bd6;        /* Display-Reservierung im RankPool-Band */
+    --shape: #a9b3bb;          /* was die Kurve formt */
+
+    /* ── Formsprache ────────────────────────────────────────────────── */
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-head: var(--font);
+    --r-tile: 9px;             /* Kachel */
+    --r-ctl: 8px;              /* Knöpfe, Melder */
+    --r-pill: 7px;             /* Stufenknöpfe */
+    --r-fab: 50%;              /* der Knopf unten rechts */
+    --tile-bw: 1px;
+    --tile-shadow: none;
+    --tile-fill: var(--paper);
+    --head-tr: uppercase;      /* Gruppentitel */
+    --head-ls: .07em;
+    --slot-num: 600;
+
     /* Sperrgebiet des Knopfes unten rechts: 52 Knopf + 12 Abstand + 6 Luft. */
     --fabsafe: 70px;
     /* Die Kachel ist das Mass der Dinge: so gross wie im Hochformat bei
@@ -31,8 +57,87 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; }
   body {
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    color: var(--ink); background: #eceeef; padding-bottom: 40px;
+    font: 15px/1.5 var(--font);
+    color: var(--ink); background: var(--shell); padding-bottom: 40px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     Fünf Konzepte. Jedes dreht Farbe **und** Form — nur Farbe zu tauschen
+     hätte fünfmal denselben Entwurf ergeben.
+     ══════════════════════════════════════════════════════════════════ */
+
+  /* 1 · Foil — Karte im schwarzen Rahmen, Gold als einzige Farbe.
+        Form: scharfe Ecken, Haarlinien, gesperrte Versalien. */
+  body[data-theme="foil"] {
+    --accent: #c9992e; --accent-soft: #2a2620; --on-accent: #14110c;
+    --ink: #f2ece0; --muted: #9a9384; --line: #37332b;
+    --bg: #131210; --paper: #1c1a16; --shell: #0a0908; --frame: #000;
+    --warn: #e8a35c; --warn-soft: #33251a;
+    --pin: #b48ee8; --pin-soft: #2b2338;
+    --gold: #e8c352; --pack: #7ea6d4;
+    --unserved: #3a362e; --floorfill: #6b5f3c; --reserve: #6d5a86; --shape: #8a7a4a;
+    --r-tile: 2px; --r-ctl: 2px; --r-pill: 2px; --r-fab: 4px;
+    --tile-fill: linear-gradient(#1f1c17, #17150f);
+    --head-ls: .16em;
+  }
+  /* 2 · Mana — tiefes Indigo, Bernstein als Ruf. Form: weich, gerundet,
+        alles auf Karten mit Schatten statt Linien. */
+  body[data-theme="mana"] {
+    --accent: #3a4bd1; --accent-soft: #e6e9fd; --on-accent: #fff;
+    --ink: #15182b; --muted: #656b86; --line: #dfe2f2;
+    --bg: #f5f6fd; --paper: #fff; --shell: #dfe3f5; --frame: #1b1f3a;
+    --warn: #a4560c; --warn-soft: #fdf0e2;
+    --pin: #8a3fd1; --pin-soft: #f2e9fc;
+    --gold: #e39c1f; --pack: #3a4bd1;
+    --unserved: #d3d8ee; --floorfill: #8f9ae6; --reserve: #b79bea; --shape: #7f8ce0;
+    --r-tile: 15px; --r-ctl: 999px; --r-pill: 999px;
+    --tile-shadow: 0 1px 2px rgba(21,24,43,.07), 0 4px 12px rgba(21,24,43,.05);
+    --tile-bw: 0px;
+    --head-tr: none; --head-ls: .01em;
+  }
+  /* 3 · Booster — Rot wie die Packung, klobig und laut.
+        Form: fette Ränder, grosse Radien, schwere Zahlen. */
+  body[data-theme="booster"] {
+    --accent: #c62828; --accent-soft: #ffeceb; --on-accent: #fff;
+    --ink: #1e1213; --muted: #7a5f60; --line: #eddcda;
+    --bg: #fffaf9; --paper: #fff; --shell: #f0dcd9; --frame: #2a1416;
+    --warn: #9a4a12; --warn-soft: #fdf1e6;
+    --pin: #7b3fb5; --pin-soft: #f4ecfb;
+    --gold: #f0a51c; --pack: #2f6fb5;
+    --unserved: #e8d6d4; --floorfill: #e8908c; --reserve: #b98ad6; --shape: #d95b57;
+    --r-tile: 18px; --r-ctl: 12px; --r-pill: 10px;
+    --tile-bw: 2px; --slot-num: 800;
+    --head-ls: .1em;
+  }
+  /* 4 · Arcane — Nacht in Violett, Cyan als Signal.
+        Form: Glas, weite Radien, Glimmen statt Linien. */
+  body[data-theme="arcane"] {
+    --accent: #35d6d0; --accent-soft: #14313a; --on-accent: #04201f;
+    --ink: #ece8fb; --muted: #9790bd; --line: #322a4d;
+    --bg: #16112a; --paper: #1e1838; --shell: #0c0918; --frame: #060411;
+    --warn: #ffab6b; --warn-soft: #3a2418;
+    --pin: #ff7ad9; --pin-soft: #3a1a34;
+    --gold: #ffd166; --pack: #7c8cff;
+    --unserved: #2d2648; --floorfill: #4a7f8f; --reserve: #7c5bc4; --shape: #2b9b9b;
+    --r-tile: 16px; --r-ctl: 999px; --r-pill: 999px;
+    --tile-fill: linear-gradient(#231c42, #1a1531);
+    --tile-shadow: 0 0 0 1px rgba(53,214,208,.07), 0 6px 18px rgba(0,0,0,.35);
+    --head-ls: .13em;
+  }
+  /* 5 · Bronze — Pergament und Bronze, das alte Kartenfenster.
+        Form: kantig, doppelte Linie, Serifen in den Titeln. */
+  body[data-theme="bronze"] {
+    --accent: #8c5a2b; --accent-soft: #f4ead9; --on-accent: #fff8ee;
+    --ink: #241c12; --muted: #7a6a55; --line: #ddcdb4;
+    --bg: #f7f1e4; --paper: #fffcf5; --shell: #e3d7c0; --frame: #3a2e1e;
+    --warn: #97400f; --warn-soft: #f9e6d5;
+    --pin: #7a4a8c; --pin-soft: #f1e7f3;
+    --gold: #b8860b; --pack: #46617a;
+    --unserved: #ded2bb; --floorfill: #c2a271; --reserve: #a98bb8; --shape: #b08a55;
+    --font-head: Georgia, "Iowan Old Style", serif;
+    --r-tile: 3px; --r-ctl: 3px; --r-pill: 3px; --r-fab: 8px;
+    --tile-shadow: inset 0 0 0 1px var(--paper), inset 0 0 0 2px var(--line);
+    --head-tr: none; --head-ls: .02em;
   }
 
   /* ── Prototype chrome (deutsch, nicht Teil des Entwurfs) ───────────── */
@@ -47,7 +152,7 @@
   #stage { background: var(--bg); width: 100%; position: relative; overflow: hidden; }
   #app { height: 100%; }
   body.phone #stage, body.land #stage {
-    border: 9px solid #23262a; border-radius: 34px;
+    border: 9px solid var(--frame); border-radius: 34px;
     box-shadow: 0 18px 44px rgba(0,0,0,.22); flex: none;
   }
   /* Innenmass 375×812 — der 9px-Rahmen kommt oben drauf, sonst zeigt die
@@ -79,6 +184,20 @@
   #switch button:hover { background: #ffffff22; }
   #switch [aria-pressed="true"] { background: #fff; color: #16191c; }
 
+  /* Konzeptwahl — links oben, damit sie dem Geräteschalter nicht ins Gehege
+     kommt. Jeder Knopf trägt seine eigenen zwei Farben als Probe. */
+  /* Unten links: am Rechner deckt die Leinwand die ganze Breite, und oben
+     stünde die Wahl mitten im Blatt. */
+  #themes { position: fixed; left: 10px; bottom: 10px; z-index: 99;
+            display: flex; flex-wrap: wrap; gap: 4px; max-width: 210px; }
+  #themes button { font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+                   border: 1px solid #ffffff30; border-radius: 8px; padding: 5px 9px 5px 6px;
+                   display: flex; align-items: center; gap: 6px;
+                   box-shadow: 0 6px 18px rgba(0,0,0,.28); }
+  #themes button i { width: 13px; height: 13px; border-radius: 3px; flex: none;
+                     box-shadow: inset 0 0 0 1px #ffffff40; }
+  #themes [aria-pressed="true"] { outline: 2px solid #16191c; outline-offset: 1px; }
+
   /* ── Primitives ────────────────────────────────────────────────────── */
   .bar { display: flex; align-items: center; gap: 8px; }
   .grow { flex: 1; }
@@ -86,7 +205,7 @@
   .num { font-variant-numeric: tabular-nums; }
   .tiny { font-size: 12px; }
   .sheetbtn { font: inherit; border: 1px solid var(--line); background: var(--paper);
-              color: var(--ink); border-radius: 8px; padding: 7px 11px; cursor: pointer; }
+              color: var(--ink); border-radius: var(--r-ctl); padding: 7px 11px; cursor: pointer; }
   .sheetbtn.tiny { padding: 4px 8px; }
 
   .pindot { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
@@ -106,11 +225,11 @@
      gewählten Schaltflächen ihr Icon behalten und nicht weiss auf weiss malen. */
   .preset { display: flex; gap: 3px; flex-wrap: wrap; }
   .preset button { font: inherit; font-size: 13px; min-width: 36px; padding: 4px 5px;
-                   border-radius: 7px; border: 1px solid var(--line);
+                   border-radius: var(--r-pill); border: 1px solid var(--line);
                    background: var(--paper); color: var(--ink);
                    cursor: pointer; font-variant-numeric: tabular-nums; line-height: 1.15; }
   .preset button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
-                                        color: var(--paper); }
+                                        color: var(--on-accent); }
   .preset .ar { font-size: 10px; opacity: .5; }
   .preset button[aria-pressed="true"] .ar { opacity: .85; }
   .preset button.wordy { font-size: 11px; letter-spacing: .04em; }
@@ -128,8 +247,8 @@
   .pm button { font: inherit; width: 38px; height: 34px; font-size: 18px;
                border: 1px solid var(--line); background: var(--paper); color: var(--ink);
                cursor: pointer; }
-  .pm button:first-child { border-radius: 9px 0 0 9px; }
-  .pm button:last-child { border-radius: 0 9px 9px 0; }
+  .pm button:first-child { border-radius: var(--r-ctl) 0 0 var(--r-ctl); }
+  .pm button:last-child { border-radius: 0 var(--r-ctl) var(--r-ctl) 0; }
   .pm .val { min-width: 46px; text-align: center; border-top: 1px solid var(--line);
              border-bottom: 1px solid var(--line); height: 34px; line-height: 32px;
              background: var(--paper); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -137,10 +256,10 @@
   .pm.sm button { width: 32px; height: 30px; font-size: 16px; }
   .pm.sm .val { height: 30px; line-height: 28px; min-width: 38px; font-size: 13.5px; }
 
-  .flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px;
+  .flag { background: var(--warn-soft); color: var(--warn); border-radius: var(--r-ctl);
           padding: 8px 10px; font-size: 12.5px; }
   .flag button { font: inherit; font-size: 12px; border: 1px solid currentColor;
-                 background: var(--paper); color: inherit; border-radius: 6px;
+                 background: var(--paper); color: inherit; border-radius: var(--r-pill);
                  padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
 
   /* Beschaffung: drei Zellen statt eines Satzes, der auf zwei Zeilen bricht.
@@ -166,8 +285,8 @@
                 justify-content: flex-end; }
   .strip .col.empty { flex: .22; }
   .strip .b { background: var(--accent); border-radius: 2px 2px 0 0; position: relative; }
-  .strip .b.un { background: #cfd6da; }
-  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: #78b3a6;
+  .strip .b.un { background: var(--unserved); }
+  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--floorfill);
                 border-radius: 0 0 2px 2px; }
   .strip .b .wp { position: absolute; left: 50%; top: 3px; width: 5px; height: 5px;
                   margin-left: -2.5px; border-radius: 50%; background: var(--gold); }
@@ -177,18 +296,19 @@
      bis zu 16, dann deckelt --gridmax das Raster und die App die Breite. */
   .slots { display: grid; gap: var(--gap); max-width: var(--gridmax); margin: 0 auto;
            grid-template-columns: repeat(auto-fill, minmax(var(--cell), 1fr)); }
-  .slot { background: var(--paper); border: 1px solid var(--line); border-radius: 9px;
+  .slot { background: var(--tile-fill); border: var(--tile-bw) solid var(--line);
+          border-radius: var(--r-tile); box-shadow: var(--tile-shadow);
           aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center;
           justify-content: center; position: relative; cursor: pointer; }
   .slot .rk { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
               line-height: 16px; text-align: center; border-radius: 50%;
               background: var(--accent-soft); color: var(--accent); font-size: 10px;
               font-variant-numeric: tabular-nums; }
-  .slot .n { font-size: 21px; font-weight: 600; line-height: 1;
+  .slot .n { font-size: 21px; font-weight: var(--slot-num); line-height: 1;
              font-variant-numeric: tabular-nums; }
   .slot.win { border-color: var(--gold); }
   .slot.none { background: transparent; border-style: dashed; }
-  .slot .n.z { color: #c8cfd4; font-weight: 400; }
+  .slot .n.z { color: var(--unserved); font-weight: 400; }
   .slot[data-open] { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   /* Zwei Ecken tragen Zahlen: oben rechts WinnerPacks, unten rechts Packs.
@@ -207,7 +327,7 @@
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
   .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
-         border: 1px solid var(--line); border-radius: 11px; padding: 9px 10px;
+         border: 1px solid var(--line); border-radius: var(--r-tile); padding: 9px 10px;
          box-shadow: 0 10px 28px rgba(0,0,0,.18); min-width: 168px; }
   .pop.show { display: block; }
 
@@ -218,20 +338,22 @@
   .sheet.open { transform: translateY(0); visibility: visible;
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
-  .sheet .body { padding: 12px 14px 84px; }
+  .sheet .body { padding: 14px 20px 92px; }
   /* Das Vollbild misst wie der Hauptschirm: 12px links und rechts. Mit 14px
      fällt im Hochformat eine Spalte weg und die Kachel wächst — genau das,
      was die feste Kachelgrösse verhindern soll. */
   .sheet.fs .body { padding: 10px 12px 84px; }
   /* Quer und am Rechner steht sonst die halbe Blattbreite leer. */
-  body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 20px; }
+  body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 34px;
+    column-rule: 1px solid var(--line); }
   body.land #sheet .body > *, body.wide #sheet .body > * { break-inside: avoid; }
   body.land #sheet .grouphead, body.wide #sheet .grouphead,
   body.land #sheet .subhead, body.wide #sheet .subhead { break-after: avoid; }
   /* Ohne Rahmen entscheidet das Fenster: auf dem Handy eine Spalte, am
      Rechner zwei — dieselbe Regel, nur ohne Leinwand-Klasse. */
   @media (min-width: 700px) {
-    body.bare #sheet .body { column-count: 2; column-gap: 20px; }
+    body.bare #sheet .body { column-count: 2; column-gap: 34px;
+                             column-rule: 1px solid var(--line); }
     body.bare #sheet .body > * { break-inside: avoid; }
     body.bare #sheet .grouphead, body.bare #sheet .subhead { break-after: avoid; }
   }
@@ -239,11 +361,22 @@
                   border-bottom: 1px solid var(--line); padding: 9px 12px;
                   display: flex; align-items: center; gap: 9px; font-size: 14px;
                   font-weight: 600; white-space: nowrap; }
-  .grouphead { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
-               color: var(--muted); margin: 18px 0 7px; font-weight: 700; }
+  /* Eine Gruppe beginnt mit einer Linie über ihrem Titel. Damit braucht kein
+     einzelner Abschnitt mehr einen Kasten, um sich abzugrenzen. */
+  .grouphead { font-size: 11px; text-transform: var(--head-tr); letter-spacing: var(--head-ls);
+               font-family: var(--font-head);
+               color: var(--muted); font-weight: 700;
+               margin: 26px 0 2px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .grouphead.first { margin-top: 0; padding-top: 0; border-top: 0; }
   /* Ein Untertitel innerhalb einer Gruppe: die Kurve hat einen Namen verdient,
      ohne dafuer eine eigene Gruppe aufzumachen. */
-  .subhead { font-size: 12px; color: var(--ink); margin: 11px 0 5px; font-weight: 600; }
+  .subhead { font-size: 12.5px; color: var(--ink); margin: 16px 0 2px; font-weight: 700;
+             font-family: var(--font-head); }
+  /* Der Erklärungstext sitzt direkt unter dem Titel, den er erklärt — bei der
+     Gruppe wie beim einzelnen Regler dieselbe Form. */
+  .desc { font-size: 11.5px; line-height: 1.4; color: var(--muted); margin: 0 0 7px;
+          max-width: 40em; }
+  .grouphead + .desc { margin-bottom: 12px; }
 
   /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
      lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
@@ -256,8 +389,8 @@
 
   /* ── Der eine Knopf unten rechts: drei Punkte ↔ Kreuz ──────────────── */
   #morph { position: absolute; right: 12px; bottom: 12px; z-index: 40; border: 0;
-           width: 52px; height: 52px; border-radius: 50%; background: var(--accent);
-           color: var(--paper); cursor: pointer; display: grid; place-items: center;
+           width: 52px; height: 52px; border-radius: var(--r-fab); background: var(--accent);
+           color: var(--on-accent); cursor: pointer; display: grid; place-items: center;
            box-shadow: 0 6px 18px rgba(0,0,0,.20); }
   #morph .m { position: relative; width: 22px; height: 22px; }
   #morph .m i { position: absolute; left: 2px; top: 50%; width: 18px; height: 3px;
@@ -274,7 +407,7 @@
     .sheet, #morph .m i { transition: none; }
   }
 
-  .ctl { margin: 0 0 10px; }
+  .ctl { margin: 0 0 16px; }
   .ctl .top { display: flex; align-items: center; gap: 6px; margin-bottom: 1px;
               min-height: 22px; }
   .ctl .lbl { font-size: 13px; }
@@ -285,30 +418,31 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 5 zu Ticket #15</h1>
+  <h1>Prizing Cockpit — Runde 6 zu Ticket #15</h1>
   <p>
-    Neu: das Blatt beginnt bei der Grundlage, die Zahl der verfügbaren WinnerPacks
-    lässt sich heben, <code>all</code> steht bei <em>Served ranks</em> rechts in
-    derselben Zeile, und über den Kacheln steht kein Text mehr.
+    Links oben stehen <strong>fünf Farb- und Formkonzepte</strong> (Tasten <code>0</code>–<code>5</code>,
+    oder <code>?theme=foil|mana|booster|arcane|bronze</code>). Das Grün ist weg; Konzept 0
+    ist der bisherige Entwurf in Graphit, damit sich die fünf gegen etwas messen lassen.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      <strong>Reihenfolge im Blatt.</strong> Erst <em>Tournament type</em>, dann
-      <em>Supply</em> und <em>Split the pool</em> samt Handout — die Grundlage —, danach
-      <em>Rank pool</em> und <em>Winner packs</em>, also die Verteilung.<br><br>
-      <strong>WinnerPacks haben einen Deckel, und der ist hebbar.</strong>
-      <em>Winner packs available</em> steht über <em>by rank</em>: die Kuverts geben eine
-      Zahl her, von Hand darf mehr auf den Tisch. <em>by rank</em> kann nie über diesen
-      Deckel hinaus, und <em>open</em> ist Deckel minus vergeben.<br><br>
-      <strong>Served ranks in einer Zeile.</strong> <code>all</code> rechts als achte
-      Spalte, gleich breit wie die anderen. Die Lostrommel behält ihre zwei Zeilen, weil
-      sie ein unteres Ende hat.<br><br>
-      <strong>Gleich wie vorne.</strong> <em>Min boosters per rank</em> ist im Blatt
-      dieselbe Zeile wie auf der Vorderseite, und die Kurve hat einen Titel.<br><br>
-      <strong>Weniger Beschriftung.</strong> Kein „6 per row“ über den Kacheln, kein
-      Drehknopf im Vollbild, keine Kerbe am oberen Rand des Blattes. Statt „cap 15“
-      steht dort jetzt, was die Zahl bedeutet.
+      <strong>Promo-Envelope.</strong> Durchgehend so genannt — in der Kopfzeile, beim
+      Deckel der WinnerPacks und als <em>Tournament Packs per Promo-Envelope</em>.<br><br>
+      <strong>Der Würfel heisst jetzt etwas.</strong> Vorne steht <em>Winner-shuffle</em>
+      neben ihm samt einer Zeile, was er tut; <em>open</em> ist vom Knopf unten rechts
+      weggerückt und liest sich nicht mehr als dessen Beschriftung.<br><br>
+      <strong>Jedes Element im Blatt erklärt sich.</strong> Ein Satz unter jedem Titel —
+      auch unter den Gruppentiteln. Die Einheit (<em>per player</em>) steht oben beim
+      Titel, nicht unter dem Schieber.<br><br>
+      <strong>Abschnitte statt Kästen.</strong> Über jedem Gruppentitel eine Linie, mehr
+      Luft dazwischen, am Rechner eine Spaltenlinie. Die <em>Raffle range</em> hat ihren
+      Kasten dafür abgegeben.<br><br>
+      <strong>Reihenfolge in <em>Supply</em>.</strong> Booster bei Boostern, Packs bei
+      Packs: Rate → Display, dann Packzahl → Promo-Envelope.<br><br>
+      <strong>Fünf Konzepte, nicht fünf Paletten.</strong> Jedes dreht auch die Form —
+      Radien, Ränder, Schatten, Titelschrift. Siehe den Block <code>body[data-theme]</code>
+      im Kopf der Datei: was dort nicht steht, erbt das Konzept.
     </div>
   </details>
 </div>
@@ -320,6 +454,15 @@
   <button data-dev="land">📱 quer</button>
   <button data-dev="wide">🖥 breit</button>
   <button data-dev="bare">⬜ nackt</button>
+</div>
+
+<div id="themes">
+  <button data-theme=""        style="background:#fff;color:#16191c"><i style="background:#2c3138"></i>0 Neutral</button>
+  <button data-theme="foil"    style="background:#1c1a16;color:#f2ece0"><i style="background:#c9992e"></i>1 Foil</button>
+  <button data-theme="mana"    style="background:#fff;color:#15182b"><i style="background:#3a4bd1"></i>2 Mana</button>
+  <button data-theme="booster" style="background:#fff;color:#1e1213"><i style="background:#c62828"></i>3 Booster</button>
+  <button data-theme="arcane"  style="background:#1e1838;color:#ece8fb"><i style="background:#35d6d0"></i>4 Arcane</button>
+  <button data-theme="bronze"  style="background:#fffcf5;color:#241c12"><i style="background:#8c5a2b"></i>5 Bronze</button>
 </div>
 
 <script>
@@ -599,8 +742,36 @@ const LABEL = {
   winnerPacks: 'Winner packs available',
   raffleRange: 'Raffle range', combinedHandout: 'Hand out with rank prizes',
   boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
-  envelopeSize: 'Packs per envelope', judgeBooster: 'Judge boosters',
+  envelopeSize: 'Tournament Packs per Promo-Envelope', judgeBooster: 'Judge boosters',
   judgeWinner: 'Judge winner packs',
+};
+
+/* Ein Satz je Bedienelement, im Blatt unter seinem Titel. Draussen ist kein
+   Platz dafür — dort steht nur, was gerade rechnet. */
+const DESC = {
+  players: 'How many players are registered. Every pool below is counted from this number.',
+  boosterRate: 'How many boosters the prize pool holds per player. This is the whole booster supply.',
+  displaySize: 'How many boosters come in one display box — decides how many displays to fetch.',
+  tournamentPacks: 'How many tournament packs are on hand. Left alone it follows one per player.',
+  envelopeSize: 'How many tournament packs one Promo-Envelope holds. Full envelopes are what yield the winner packs.',
+  participationBooster: 'Boosters every player gets just for showing up. Taken off the pool before the ranks.',
+  participationPack: 'Same for tournament packs — handed to everyone before the ranks are served.',
+  judgeBooster: 'Boosters set aside for the judge before anything else is distributed.',
+  judgeWinner: 'Winner packs reserved for the judge.',
+  combinedHandout: 'Whether participation prizes travel in the same handful as the rank prizes, instead of being handed out separately.',
+  depth: 'How far down the standings the prizes reach. Ranks below get nothing.',
+  rankFloor: 'The smallest number of boosters any served rank may get. Raising it flattens the whole plan.',
+  curve: 'How steeply the boosters drop from one rank to the next. It only shapes what is left over the floor.',
+  winnerPacks: 'The ceiling for winner packs. The Promo-Envelopes yield a number; by hand you may put more on the table.',
+  ranked: 'How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the shuffle.',
+  raffleRange: 'Which ranks the Winner-shuffle may draw from when it places an open winner pack.',
+};
+const GROUP_DESC = {
+  type: 'Picks the whole default set. Switching it drops every value you set by hand.',
+  supply: 'What is in the box before anything is split — the boosters, the packs, and how they are boxed.',
+  split: 'What comes off the top for everyone and for the judge, before the ranks are served.',
+  rank: 'What is left goes down the standings: how deep, how flat, how steep.',
+  winner: 'The scarce prize. Either strictly by rank, or drawn by the Winner-shuffle.',
 };
 const RANGE_OF = {
   players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
@@ -680,6 +851,13 @@ function minOf(key) {
   return (RANGE_OF[key] || (() => [0, 10]))()[0];
 }
 
+/* Draussen und im Blatt bauen dieselben Funktionen. Der Erklärungstext gilt
+   nur dem Blatt — vorne ist kein Platz und keine Ruhe dafür. */
+let ctx = 'front';
+function explain(key) {
+  return ctx === 'sheet' && DESC[key] ? `<div class="desc">${esc(DESC[key])}</div>` : '';
+}
+
 /* Ein Regler mit Zählwerk. Die Zahl steht nur im Zählwerk, nicht zusätzlich
    in der Kopfzeile — zweimal dieselbe Zahl liest sich wie zwei Werte. */
 function slider(key, plan, opts) {
@@ -689,10 +867,15 @@ function slider(key, plan, opts) {
   const v = key === 'players' ? st.players : eff(key, plan);
   const auto = !st.pin[key] && (key === 'depth' || key === 'ranked' || key === 'tournamentPacks')
     ? ' <span class="tiny muted">auto</span>' : '';
+  // Die Einheit gehört an den Titel, nicht unter den Schieber: sie sagt, was
+  // die Zahl bedeutet, und ist damit Teil der Beschriftung.
+  const unit = opts.unit
+    ? ` <span class="tiny muted" style="white-space:nowrap">${esc(opts.unit)}</span>` : '';
   return `<div class="ctl${st.pin[key] ? ' pinned' : ''}">
-    <div class="top">${pinMark(key)}<span class="lbl">${esc(LABEL[key])}</span>${auto}
+    <div class="top">${pinMark(key)}<span class="lbl">${esc(LABEL[key])}</span>${unit}${auto}
       <span style="margin-left:auto">${numChip(key, plan, true)}</span>
       ${resetBtn(key, opts.alwaysReset)}</div>
+    ${explain(key)}
     <input type="range" data-key="${key}" min="${lo}" max="${hi}" step="1" value="${v}">
     ${opts.hint ? `<div class="tiny muted">${opts.hint}</div>` : ''}
   </div>`;
@@ -709,6 +892,7 @@ function depthControl(plan) {
                : `<span class="tiny muted">${esc(RANGE_NAME[step])}</span>`}
       <span style="margin-left:auto">${numChip('depth', plan, true)}</span>
       ${resetBtn('depth')}</div>
+    ${explain('depth')}
     <div style="margin:3px 0 4px">${chips}</div>
     <input type="range" data-key="depth" min="1" max="${st.players}" step="1" value="${plan.depth}">
     <div class="tiny muted">the pool covers ${plan.depthCap} ranks at this floor${
@@ -764,7 +948,7 @@ function headerBlock(plan) {
     <div class="fetch">
       <div><b class="num">${p.fetchDisplays}</b><em>displays</em>
         <s>${p.looseBooster ? `one opened · ${p.looseBooster} loose` : ''}</s></div>
-      <div><b class="num">${p.fetchEnvelopes}</b><em>pack envelopes</em>
+      <div><b class="num">${p.fetchEnvelopes}</b><em>Promo-Envelopes</em>
         <s>${loosePacks > 0 ? `+${loosePacks} loose` : ''}</s></div>
       <div class="der"><b class="num">${p.winnerYield}</b><em>winner packs</em><s></s></div>
     </div>
@@ -869,9 +1053,9 @@ function floorBar(plan) {
   const dr = Math.round((plan.displayReserved / tot) * 100);
   return `<div>
     <div class="segbar">
-      <i style="width:${dr}%;background:#b08bd6"></i>
-      <i style="width:${fl}%;background:var(--accent)"></i>
-      <i style="width:${100 - fl - dr}%;background:#8fc9bd"></i>
+      <i style="width:${dr}%;background:var(--reserve)"></i>
+      <i style="width:${fl}%;background:var(--floorfill)"></i>
+      <i style="width:${100 - fl - dr}%;background:var(--shape)"></i>
     </div>
     <div class="tiny muted" style="margin-top:3px">
       RankPool ${plan.rank.booster} booster = ${plan.floorReserved} floor
@@ -889,11 +1073,15 @@ function conflictBox(plan, sugg) {
 }
 
 function floorRow(plan) {
-  return `<div class="bar tiny" style="margin:0 0 8px">
-    <span style="width:11px;height:11px;background:#79b8aa;border-radius:3px"></span>
-    <span>${LABEL.rankFloor}</span>
-    ${numChip('rankFloor', plan, true)}${resetBtn('rankFloor')}
-    <span class="muted num" style="margin-left:auto">${plan.floorReserved}/${plan.rank.booster}</span>
+  return `<div style="margin:0 0 8px">
+    <div class="bar tiny">
+      <span style="width:11px;height:11px;background:var(--floorfill);
+        border-radius:calc(var(--r-pill) / 2)"></span>
+      <span>${LABEL.rankFloor}</span>
+      ${numChip('rankFloor', plan, true)}${resetBtn('rankFloor')}
+      <span class="muted num" style="margin-left:auto">${plan.floorReserved}/${plan.rank.booster}</span>
+    </div>
+    ${explain('rankFloor')}
   </div>`;
 }
 
@@ -904,12 +1092,19 @@ function raffleRow(plan) {
   const pot = rafflePot(plan);
   const can = plan.allocation.open > 0 && pot.length > 0;
   const range = get('raffleRange');
-  return `<div class="bar tiny" style="margin-top:2px;padding-right:58px;min-height:56px">
+  // 88px rechts: der Knopf braucht 64, der Rest ist Luft — „open“ klebte vorher
+  // am Knopf und las sich wie seine Beschriftung.
+  return `<div class="bar tiny" style="margin-top:2px;padding-right:88px;min-height:56px;gap:7px">
     <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-      title="einen offenen WinnerPack auslosen">🎲</button>
+      title="Winner-shuffle: einen offenen WinnerPack auslosen">🎲</button>
     <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
-    <span class="muted">${esc(RANGE_NAME[range])} · ${pot.length} in the pot</span>
-    <span class="muted" style="margin-left:auto">${plan.allocation.open} open</span>
+    <div style="min-width:0;line-height:1.25">
+      <div style="font-weight:600">Winner-shuffle</div>
+      <div class="muted" style="font-size:10.5px">${esc(RANGE_NAME[range])} · ${
+        pot.length} in the pot</div>
+    </div>
+    <span class="muted num" style="margin-left:auto;white-space:nowrap">${
+      plan.allocation.open} open</span>
   </div>`;
 }
 
@@ -929,7 +1124,8 @@ function winnerTotalRow(plan) {
                            : '<span class="tiny muted">auto</span>'}
       <span style="margin-left:auto">${numChip('winnerPacks', plan, true)}</span>
       ${resetBtn('winnerPacks', true)}</div>
-    <div class="tiny muted">${plan.prep.fetchEnvelopes} envelopes yield ${derived}${
+    ${explain('winnerPacks')}
+    <div class="tiny muted">${plan.prep.fetchEnvelopes} Promo-Envelopes yield ${derived}${
       off > 0 ? ` · ${off} more from the box` : off < 0 ? ` · ${-off} stay in the box` : ''}${
       plan.judge.winners ? ` · ${plan.judge.winners} to the judge` : ''} · ${
       plan.rank.winners} for the ranks${
@@ -944,20 +1140,21 @@ function winnerBlock(plan) {
   const can = plan.allocation.open > 0 && pot.length > 0;
   const list = Object.keys(plan.allocation.manual).sort((a, b) => a - b)
     .map((r) => `<button class="sheetbtn tiny" data-unmanual="${r}">Rank ${r} ✕</button>`).join(' ');
-  return `<div style="border:1px solid var(--line);border-radius:9px;padding:10px;
-      background:var(--paper)">
-    <div class="bar tiny" style="margin-bottom:6px">
-      <strong>Raffle range</strong>
-      <span class="muted grow">${esc(RANGE_NAME[get('raffleRange')])} · ${pot.length} in the pot</span>
-    </div>
-    <div style="margin-bottom:8px">${rangeGrid(get('raffleRange'),
+  // Kein Kasten mehr: die Linie über dem Gruppentitel grenzt ab, und ein
+  // einzelner Kasten mitten in einer Liste sah nach Sonderfall aus.
+  return `<div>
+    <div class="subhead">${LABEL.raffleRange}</div>
+    ${explain('raffleRange')}
+    <div style="margin:6px 0 10px">${rangeGrid(get('raffleRange'),
       'data-set-range', true)}</div>
     <div class="bar">
       <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-        >🎲&nbsp; Raffle one</button>
-      <span class="tiny muted">${plan.allocation.open} open</span>
+        >🎲&nbsp; Winner-shuffle</button>
+      <span class="tiny muted">${esc(RANGE_NAME[get('raffleRange')])} · ${
+        pot.length} in the pot · ${plan.allocation.open} open</span>
     </div>
-    ${list ? `<div style="margin-top:8px">${list}</div>` : ''}
+    ${list ? `<div class="desc" style="margin:10px 0 4px">Placed by hand — tap to take back:</div>
+      <div>${list}</div>` : ''}
   </div>`;
 }
 
@@ -1002,40 +1199,50 @@ function screen(plan, sugg) {
 }
 
 function sheetContent(plan) {
-  return `
-    <div class="grouphead" style="margin-top:0">Tournament type</div>
+  ctx = 'sheet';
+  const out = `
+    <div class="grouphead first">Tournament type</div>
+    <div class="desc">${esc(GROUP_DESC.type)}</div>
     <div class="bar" style="gap:6px">${Object.entries(TYPES).map(([id, t]) =>
       `<button class="sheetbtn" data-type="${id}"
        style="${id === st.type
-         ? 'background:var(--accent);color:var(--paper);border-color:var(--accent)' : ''}"
+         ? 'background:var(--accent);color:var(--on-accent);border-color:var(--accent)' : ''}"
        >${t.title}</button>`).join('')}</div>
 
     <div class="grouphead">Supply</div>
+    <div class="desc">${esc(GROUP_DESC.supply)}</div>
     ${slider('boosterRate', plan, { alwaysReset: true })}
-    ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
     ${slider('displaySize', plan, { alwaysReset: true })}
+    ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
     ${slider('envelopeSize', plan, { alwaysReset: true })}
 
     <div class="grouphead">Split the pool</div>
-    ${slider('participationBooster', plan, { alwaysReset: true, hint: 'per player' })}
-    ${slider('participationPack', plan, { alwaysReset: true, hint: 'per player' })}
+    <div class="desc">${esc(GROUP_DESC.split)}</div>
+    ${slider('participationBooster', plan, { alwaysReset: true, unit: 'per player' })}
+    ${slider('participationPack', plan, { alwaysReset: true, unit: 'per player' })}
     ${slider('judgeBooster', plan, { alwaysReset: true })}
     ${slider('judgeWinner', plan, { alwaysReset: true })}
     <div class="subhead">Handout</div>
+    <div class="desc">${esc(DESC.combinedHandout)}</div>
     <label class="bar" style="gap:8px"><input type="checkbox" data-toggle="combinedHandout"
       ${get('combinedHandout') ? 'checked' : ''}> <span class="tiny">Hand participation prizes
       out together with rank prizes</span>${resetBtn('combinedHandout')}</label>
 
     <div class="grouphead">Rank pool</div>
+    <div class="desc">${esc(GROUP_DESC.rank)}</div>
     ${depthControl(plan)}
     ${floorRow(plan)}
     <div class="subhead">Curve</div>
+    <div class="desc">${esc(DESC.curve)}</div>
     ${curveGlyphs(plan, true)}
 
     <div class="grouphead">Winner packs</div>
+    <div class="desc">${esc(GROUP_DESC.winner)}</div>
     ${winnerTotalRow(plan)}
     ${slider('ranked', plan, { alwaysReset: true })}
     ${winnerBlock(plan)}`;
+  ctx = 'front';
+  return out;
 }
 
 function fsContent(plan) {
@@ -1187,8 +1394,29 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && st.openSlot != null) { st.openSlot = null; render(); }
 });
 
+/* Das Konzept steht im Attribut, nicht in der Klasse: setDev() schreibt
+   `body.className` neu und würde eine Themenklasse jedes Mal wegwischen. */
+const THEMES = ['', 'foil', 'mana', 'booster', 'arcane', 'bronze'];
+function setTheme(t) {
+  if (t) document.body.dataset.theme = t; else delete document.body.dataset.theme;
+  document.querySelectorAll('#themes [data-theme]').forEach((x) =>
+    x.setAttribute('aria-pressed', x.dataset.theme === (t || '')));
+  const u = new URL(location.href);
+  if (t) u.searchParams.set('theme', t); else u.searchParams.delete('theme');
+  history.replaceState(null, '', u);
+}
+document.getElementById('themes').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) setTheme(b.dataset.theme);
+});
+document.addEventListener('keydown', (e) => {
+  if (/^[0-5]$/.test(e.key)) setTheme(THEMES[Number(e.key)]);
+});
+
 // Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
 setDev(window.innerWidth < 560 ? 'bare' : 'phone');
+setTheme(THEMES.includes(new URL(location.href).searchParams.get('theme'))
+  ? new URL(location.href).searchParams.get('theme') : '');
 </script>
 </body>
 </html>
