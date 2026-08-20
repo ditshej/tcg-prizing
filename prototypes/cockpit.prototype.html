@@ -1039,7 +1039,12 @@ function conflictBox(plan, sugg) {
   </div>`;
 }
 
+/* Zwei Regler bezahlen denselben Boden (#16): die ParticipationPool-Rate trifft
+   alle Player, der RankFloor nur die bedienten Ränge. Zusammenlegen lassen sie
+   sich nicht — also steht die Summe dort, wo sie entsteht, und die Regler
+   bleiben, wo sie sachlich hingehören. */
 function floorRow(plan) {
+  const pb = plan.participation.rate.booster;
   return `<div style="margin:0 0 8px">
     <div class="bar tiny">
       <span style="width:11px;height:11px;background:var(--floorfill);
@@ -1048,6 +1053,8 @@ function floorRow(plan) {
       ${numChip('rankFloor', plan, true)}${resetBtn('rankFloor')}
       <span class="muted num" style="margin-left:auto">${plan.floorReserved}/${plan.rank.booster}</span>
     </div>
+    ${pb ? `<div class="tiny muted num" style="margin-top:2px">+${pb} participation →
+      ${plan.rankFloor + pb} effective per served rank</div>` : ''}
     ${explain('rankFloor')}
   </div>`;
 }
