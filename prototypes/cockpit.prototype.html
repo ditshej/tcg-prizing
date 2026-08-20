@@ -114,12 +114,15 @@
   .preset .ar { font-size: 10px; opacity: .5; }
   .preset button[aria-pressed="true"] .ar { opacity: .85; }
   .preset button.wordy { font-size: 11px; letter-spacing: .04em; }
-  /* Feste zwei Zeilen: jede untere Angabe steht genau unter ihrer oberen.
-     `all` liegt links und nimmt die Breite von top8 und top16 zusammen. */
+  /* Zwei Raster fuer dieselben Knoepfe. Die Lostrommel braucht zwei Zeilen,
+     damit jede untere Angabe unter ihrer oberen steht; `all` liegt dort links
+     und nimmt die Breite von top8 und top16 zusammen. Served ranks kennt kein
+     unteres Ende — eine Zeile, `all` rechts, alle gleich breit. */
   .preset.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
                  gap: 3px; }
   .preset.grid button { min-width: 0; }
   .preset.grid button.wide2 { grid-column: 1 / span 2; }
+  .preset.grid.one { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 
   .pm { display: flex; align-items: center; }
   .pm button { font: inherit; width: 38px; height: 34px; font-size: 18px;
@@ -223,15 +226,24 @@
   /* Quer und am Rechner steht sonst die halbe Blattbreite leer. */
   body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 20px; }
   body.land #sheet .body > *, body.wide #sheet .body > * { break-inside: avoid; }
-  body.land #sheet .grouphead, body.wide #sheet .grouphead { break-after: avoid; }
-  .sheet .grip { display: block; width: 38px; height: 4px; border-radius: 2px;
-                 background: var(--line); margin: 8px auto 0; }
+  body.land #sheet .grouphead, body.wide #sheet .grouphead,
+  body.land #sheet .subhead, body.wide #sheet .subhead { break-after: avoid; }
+  /* Ohne Rahmen entscheidet das Fenster: auf dem Handy eine Spalte, am
+     Rechner zwei — dieselbe Regel, nur ohne Leinwand-Klasse. */
+  @media (min-width: 700px) {
+    body.bare #sheet .body { column-count: 2; column-gap: 20px; }
+    body.bare #sheet .body > * { break-inside: avoid; }
+    body.bare #sheet .grouphead, body.bare #sheet .subhead { break-after: avoid; }
+  }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
                   border-bottom: 1px solid var(--line); padding: 9px 12px;
                   display: flex; align-items: center; gap: 9px; font-size: 14px;
                   font-weight: 600; white-space: nowrap; }
   .grouphead { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
                color: var(--muted); margin: 18px 0 7px; font-weight: 700; }
+  /* Ein Untertitel innerhalb einer Gruppe: die Kurve hat einen Namen verdient,
+     ohne dafuer eine eigene Gruppe aufzumachen. */
+  .subhead { font-size: 12px; color: var(--ink); margin: 11px 0 5px; font-weight: 600; }
 
   /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
      lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
@@ -273,32 +285,30 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 4 zu Ticket #15</h1>
+  <h1>Prizing Cockpit — Runde 5 zu Ticket #15</h1>
   <p>
-    Neu: WinnerPacks und Packs stehen als Zahlen in den Ecken der Kachel, ein Griff
-    an die Kachel öffnet das ± für die WinnerPacks, die Bereichsknöpfe stehen in zwei
-    festen Zeilen, und der Knopf unten rechts hat ein Sperrgebiet.
+    Neu: das Blatt beginnt bei der Grundlage, die Zahl der verfügbaren WinnerPacks
+    lässt sich heben, <code>all</code> steht bei <em>Served ranks</em> rechts in
+    derselben Zeile, und über den Kacheln steht kein Text mehr.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      <strong>Ecken tragen Zahlen.</strong> Oben rechts gold die WinnerPacks, unten
-      rechts blau die Packs. Einer ist ein Punkt, mehrere ein Kreis mit der Zahl darin.
-      Legende unter dem Raster.<br><br>
-      <strong>Winner von Hand.</strong> Auf eine Kachel tippen öffnet eine kleine Blase
-      mit − und +. Was der Regler <em>Winner packs by rank</em> gesetzt hat, steht dort
-      als „by rank, fixed“ und lässt sich nicht wegnehmen; was von Hand oder aus der
-      Lostrommel kam, schon. + ist gesperrt, wenn kein WinnerPack mehr offen ist.<br><br>
-      <strong>Bereiche in festem Raster.</strong> Sieben Spalten, zwei Zeilen:
-      oben top&nbsp;8 bis ¾, unten <code>all</code> über die Breite von top&nbsp;8 und
-      top&nbsp;16 und jede untere Angabe genau unter ihrer oberen. Dieselben Spalten bei
-      <em>Served ranks</em>, damit ein Icon nicht wandert.<br><br>
-      <strong>Sperrgebiet.</strong> Die letzte Reglerzeile ist so hoch wie der Knopf und
-      lässt rechts seinen Platz frei. Quer und am Rechner hält die Reglerspalte unten
-      70px frei.<br><br>
-      <strong>Quer.</strong> Das Blatt hinter dem Knopf ist zweispaltig, und der
-      RankPool-Balken bleibt stehen: die Kacheln scrollen hinter ihm weg statt ihn
-      nach unten zu schieben.
+      <strong>Reihenfolge im Blatt.</strong> Erst <em>Tournament type</em>, dann
+      <em>Supply</em> und <em>Split the pool</em> samt Handout — die Grundlage —, danach
+      <em>Rank pool</em> und <em>Winner packs</em>, also die Verteilung.<br><br>
+      <strong>WinnerPacks haben einen Deckel, und der ist hebbar.</strong>
+      <em>Winner packs available</em> steht über <em>by rank</em>: die Kuverts geben eine
+      Zahl her, von Hand darf mehr auf den Tisch. <em>by rank</em> kann nie über diesen
+      Deckel hinaus, und <em>open</em> ist Deckel minus vergeben.<br><br>
+      <strong>Served ranks in einer Zeile.</strong> <code>all</code> rechts als achte
+      Spalte, gleich breit wie die anderen. Die Lostrommel behält ihre zwei Zeilen, weil
+      sie ein unteres Ende hat.<br><br>
+      <strong>Gleich wie vorne.</strong> <em>Min boosters per rank</em> ist im Blatt
+      dieselbe Zeile wie auf der Vorderseite, und die Kurve hat einen Titel.<br><br>
+      <strong>Weniger Beschriftung.</strong> Kein „6 per row“ über den Kacheln, kein
+      Drehknopf im Vollbild, keine Kerbe am oberen Rand des Blattes. Statt „cap 15“
+      steht dort jetzt, was die Zahl bedeutet.
     </div>
   </details>
 </div>
@@ -354,8 +364,11 @@ function distribute(s) {
   const boosterTotal = s.boosterRate * n;
   const tpTotal = s.tournamentPacks == null ? n : s.tournamentPacks;
   const wpThreshold = Math.ceil((2 * s.envelopeSize) / 3);
-  const wpTotal = Math.floor(tpTotal / s.envelopeSize) +
-                  ((tpTotal % s.envelopeSize) >= wpThreshold ? 1 : 0);
+  // Aus den Kuverts fallen so viele WinnerPacks — von Hand darf mehr auf den
+  // Tisch, sonst liesse sich die Obergrenze der Verteilung nicht heben.
+  const wpDerived = Math.floor(tpTotal / s.envelopeSize) +
+                    ((tpTotal % s.envelopeSize) >= wpThreshold ? 1 : 0);
+  const wpTotal = s.winnerPacks == null ? wpDerived : Math.max(0, s.winnerPacks);
 
   const pbRate = Math.min(s.participationBooster, Math.floor(boosterTotal / n));
   const ppRate = Math.min(s.participationPack, Math.floor(tpTotal / n));
@@ -439,7 +452,8 @@ function distribute(s) {
   }
   return {
     players: n,
-    pool: { booster: boosterTotal, packs: tpTotal, winners: wpTotal },
+    pool: { booster: boosterTotal, packs: tpTotal, winners: wpTotal,
+            winnersDerived: wpDerived },
     participation: { rate: { booster: pbRate, packs: ppRate }, booster: partB, packs: partTP },
     judge: { booster: judgeB, winners: judgeWP },
     rank: { booster: rankB, packs: rankTP, winners: rankWP },
@@ -485,7 +499,9 @@ function def(key) {
 }
 function get(key) {
   if (st.pin[key]) return st.val[key];
-  if (key === 'tournamentPacks' || key === 'depth' || key === 'ranked') return null; // nachziehend
+  // Nachziehende Regler haben keinen Vorgabewert: ohne Pin rechnet der Kern.
+  if (key === 'tournamentPacks' || key === 'depth' || key === 'ranked' ||
+      key === 'winnerPacks') return null;
   return def(key);
 }
 function setVal(key, v) { st.pin[key] = true; st.val[key] = v; render(); }
@@ -507,15 +523,20 @@ function settings() {
     depth: get('depth'),
     curve: get('curve'),
     ranked: get('ranked'),
+    winnerPacks: get('winnerPacks'),
     manualWinner: st.manualWinner,
     displays: st.displays,
     combinedHandout: get('combinedHandout'),
   };
 }
 function eff(key, plan) {
+  // `ranked` zeigt immer, was wirklich vergeben wird. Der Pin bleibt gespeichert
+  // und kommt zurueck, wenn der Deckel wieder steigt — aber eine Zahl, die
+  // hoeher steht als die Vorderseite hergibt, waere gelogen.
+  if (key === 'ranked') return plan.allocation.ranked;
   if (st.pin[key]) return st.val[key];
   if (key === 'depth') return plan.depth;
-  if (key === 'ranked') return plan.allocation.ranked;
+  if (key === 'winnerPacks') return plan.pool.winners;
   if (key === 'tournamentPacks') return plan.pool.packs;
   return def(key);
 }
@@ -573,8 +594,9 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
 const LABEL = {
   players: 'Players', depth: 'Served ranks', curve: 'Curve',
   rankFloor: 'Min boosters per rank',
-  participationBooster: 'Boosters per player', participationPack: 'Packs per player',
+  participationBooster: 'Participation boosters', participationPack: 'Participation packs',
   tournamentPacks: 'Tournament packs available', ranked: 'Winner packs by rank',
+  winnerPacks: 'Winner packs available',
   raffleRange: 'Raffle range', combinedHandout: 'Hand out with rank prizes',
   boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
   envelopeSize: 'Packs per envelope', judgeBooster: 'Judge boosters',
@@ -584,7 +606,7 @@ const RANGE_OF = {
   players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
   participationPack: () => [0, 4], boosterRate: () => [0, 8], displaySize: () => [6, 36],
   envelopeSize: () => [4, 36], judgeBooster: () => [0, 48], judgeWinner: () => [0, 8],
-  tournamentPacks: () => [0, 200],
+  tournamentPacks: () => [0, 200], winnerPacks: () => [0, 24],
 };
 
 /* Eine Icon-Sprache für beide Bereichslisten: ↑ Präfix ab Rang 1,
@@ -609,19 +631,23 @@ function rangeChip(id, pressed, attr, extra) {
     class="${cls}"><span class="ar">${arrow}</span>${RANGE_ICON[id]}</button>`;
 }
 
-/* Zwei feste Zeilen mit festen Spalten. Oben die Spitze, unten `all` breit
-   und jede untere Angabe genau unter ihrem oberen Gegenstück. Beide
-   Bereichslisten benutzen dasselbe Raster, damit ein Icon nicht wandert. */
+/* Dieselben Icons in zwei Rastern. Die Lostrommel reicht bis ans untere Ende
+   und braucht zwei Zeilen: `all` breit links, jede untere Angabe genau unter
+   ihrem oberen Gegenstück. Served ranks hat kein unteres Ende — eine Zeile,
+   `all` als achte Spalte rechts, gleich breit wie alle anderen. */
 const RANGE_TOP = ['top8', 'top16', 'topQuarter', 'topThird', 'topHalf',
                    'topTwoThirds', 'topThreeQuarters'];
 const RANGE_BOTTOM = ['bottomQuarter', 'bottomThird', 'bottomHalf',
                       'bottomTwoThirds', 'bottomThreeQuarters'];
 function rangeGrid(activeId, attr, withBottom) {
   const chip = (id) => rangeChip(id, id === activeId, attr);
+  if (!withBottom) {
+    return `<div class="preset grid one">${RANGE_TOP.map(chip).join('')}${chip('all')}</div>`;
+  }
   return `<div class="preset grid">
     ${RANGE_TOP.map(chip).join('')}
     ${rangeChip('all', activeId === 'all', attr, 'wide2')}
-    ${withBottom ? RANGE_BOTTOM.map(chip).join('') : ''}</div>`;
+    ${RANGE_BOTTOM.map(chip).join('')}</div>`;
 }
 
 function pinMark(key) {
@@ -640,12 +666,26 @@ function numChip(key, plan, small) {
     <button data-delta="1" data-key="${key}">+</button></div>`;
 }
 
+/* Die Grenzen eines Reglers, an einer Stelle. Schieber und Zählwerk müssen
+   denselben Deckel kennen — sonst schiebt das Zählwerk darüber hinaus und die
+   Vorderseite zieht nicht nach, weil der Kern die Zahl still zurückschneidet. */
+function maxOf(key, plan, opts) {
+  if (opts && opts.max != null) return opts.max;
+  if (key === 'depth') return st.players;
+  if (key === 'ranked') return plan.rank.winners;
+  return (RANGE_OF[key] || (() => [0, 10]))()[1];
+}
+function minOf(key) {
+  if (key === 'depth') return 1;
+  return (RANGE_OF[key] || (() => [0, 10]))()[0];
+}
+
 /* Ein Regler mit Zählwerk. Die Zahl steht nur im Zählwerk, nicht zusätzlich
    in der Kopfzeile — zweimal dieselbe Zahl liest sich wie zwei Werte. */
 function slider(key, plan, opts) {
   opts = opts || {};
-  const [lo, hiDefault] = (RANGE_OF[key] || (() => [0, 10]))();
-  const hi = opts.max != null ? opts.max : hiDefault;
+  const lo = minOf(key);
+  const hi = maxOf(key, plan, opts);
   const v = key === 'players' ? st.players : eff(key, plan);
   const auto = !st.pin[key] && (key === 'depth' || key === 'ranked' || key === 'tournamentPacks')
     ? ' <span class="tiny muted">auto</span>' : '';
@@ -671,7 +711,7 @@ function depthControl(plan) {
       ${resetBtn('depth')}</div>
     <div style="margin:3px 0 4px">${chips}</div>
     <input type="range" data-key="depth" min="1" max="${st.players}" step="1" value="${plan.depth}">
-    <div class="tiny muted">cap ${plan.depthCap}${
+    <div class="tiny muted">the pool covers ${plan.depthCap} ranks at this floor${
       !pinned && plan.depth !== plan.depthStepValue
         ? ` · ${esc(RANGE_NAME[step])} would give ${plan.depthStepValue}` : ''}</div>
   </div>`;
@@ -816,7 +856,7 @@ function slotPop(plan) {
 function slotBlock(plan) {
   return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;overflow:auto">
     <div class="bar tiny muted" style="margin-bottom:5px">
-      ${slotLegend()}<span class="num" data-colcount="main"></span>
+      ${slotLegend()}
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
@@ -870,6 +910,32 @@ function raffleRow(plan) {
     <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
     <span class="muted">${esc(RANGE_NAME[range])} · ${pot.length} in the pot</span>
     <span class="muted" style="margin-left:auto">${plan.allocation.open} open</span>
+  </div>`;
+}
+
+/* Der Deckel ueber allem, was mit WinnerPacks passiert: die Kuverts geben eine
+   Zahl her, aber es liegt am Tisch, nicht an der Rechnung, wie viele wirklich
+   verteilt werden. Von Hand gehoben heisst: einer mehr kommt aus der Kiste. */
+function winnerTotalRow(plan) {
+  const derived = plan.pool.winnersDerived;
+  const have = plan.pool.winners;
+  const off = have - derived;
+  // Von Hand gesetzte Packs werden nie verweigert (ADR 0002) — dann liegt aber
+  // mehr auf dem Tisch als die Kiste hergibt, und das gehoert hingeschrieben.
+  const placed = plan.allocation.ranked + plan.allocation.manualCount;
+  return `<div class="ctl${st.pin.winnerPacks ? ' pinned' : ''}">
+    <div class="top">${pinMark('winnerPacks')}<span class="lbl">${LABEL.winnerPacks}</span>
+      ${st.pin.winnerPacks ? '<span class="manual">manual</span>'
+                           : '<span class="tiny muted">auto</span>'}
+      <span style="margin-left:auto">${numChip('winnerPacks', plan, true)}</span>
+      ${resetBtn('winnerPacks', true)}</div>
+    <div class="tiny muted">${plan.prep.fetchEnvelopes} envelopes yield ${derived}${
+      off > 0 ? ` · ${off} more from the box` : off < 0 ? ` · ${-off} stay in the box` : ''}${
+      plan.judge.winners ? ` · ${plan.judge.winners} to the judge` : ''} · ${
+      plan.rank.winners} for the ranks${
+      placed > plan.rank.winners
+        ? ` · <strong style="color:var(--warn)">${placed} placed, ${
+            placed - plan.rank.winners} over</strong>` : ''}</div>
   </div>`;
 }
 
@@ -944,42 +1010,38 @@ function sheetContent(plan) {
          ? 'background:var(--accent);color:var(--paper);border-color:var(--accent)' : ''}"
        >${t.title}</button>`).join('')}</div>
 
-    <div class="grouphead">Rank pool</div>
-    ${depthControl(plan)}
-    ${slider('rankFloor', plan, { alwaysReset: true })}
-    ${curveGlyphs(plan, true)}
-
-    <div class="grouphead">Winner packs</div>
-    ${slider('ranked', plan, { max: plan.rank.winners, alwaysReset: true })}
-    ${winnerBlock(plan)}
-
-    <div class="grouphead">Split the pool</div>
-    ${slider('participationBooster', plan, { alwaysReset: true })}
-    ${slider('participationPack', plan, { alwaysReset: true })}
-    ${slider('judgeBooster', plan, { alwaysReset: true })}
-    ${slider('judgeWinner', plan, { alwaysReset: true })}
-
     <div class="grouphead">Supply</div>
     ${slider('boosterRate', plan, { alwaysReset: true })}
     ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
     ${slider('displaySize', plan, { alwaysReset: true })}
     ${slider('envelopeSize', plan, { alwaysReset: true })}
 
-    <div class="grouphead">Handout</div>
+    <div class="grouphead">Split the pool</div>
+    ${slider('participationBooster', plan, { alwaysReset: true, hint: 'per player' })}
+    ${slider('participationPack', plan, { alwaysReset: true, hint: 'per player' })}
+    ${slider('judgeBooster', plan, { alwaysReset: true })}
+    ${slider('judgeWinner', plan, { alwaysReset: true })}
+    <div class="subhead">Handout</div>
     <label class="bar" style="gap:8px"><input type="checkbox" data-toggle="combinedHandout"
       ${get('combinedHandout') ? 'checked' : ''}> <span class="tiny">Hand participation prizes
-      out together with rank prizes</span>${resetBtn('combinedHandout')}</label>`;
+      out together with rank prizes</span>${resetBtn('combinedHandout')}</label>
+
+    <div class="grouphead">Rank pool</div>
+    ${depthControl(plan)}
+    ${floorRow(plan)}
+    <div class="subhead">Curve</div>
+    ${curveGlyphs(plan, true)}
+
+    <div class="grouphead">Winner packs</div>
+    ${winnerTotalRow(plan)}
+    ${slider('ranked', plan, { alwaysReset: true })}
+    ${winnerBlock(plan)}`;
 }
 
 function fsContent(plan) {
-  // Auf dem echten Handy dreht die Hand, nicht ein Knopf.
-  const bare = document.body.classList.contains('bare');
   return `<div class="shead">
       <span>${TYPES[st.type].title} · ${st.players}</span>
       <span class="tiny muted bar">${slotLegend()}</span>
-      <span class="tiny muted num" data-colcount="fs"></span>
-      ${bare ? '' : `<button class="sheetbtn tiny" data-rotate="1"
-                  style="margin-left:auto">⟳</button>`}
     </div>
     <div class="body">${slotGrid(plan)}</div>`;
 }
@@ -992,7 +1054,7 @@ let fsOpen = false;
 const stage = document.getElementById('stage');
 stage.innerHTML = `
   <div id="app"></div>
-  <div id="sheet" class="sheet"><span class="grip"></span><div class="body"></div></div>
+  <div id="sheet" class="sheet"><div class="body"></div></div>
   <div id="fs" class="sheet fs"></div>
   <div id="pop" class="pop"></div>
   <div id="fade"></div>
@@ -1017,7 +1079,6 @@ function render() {
   stage.classList.toggle('anyopen', sheetOpen || fsOpen);
   stage.classList.toggle('fsopen', fsOpen);
   document.getElementById('morph').title = (sheetOpen || fsOpen) ? 'schliessen' : 'mehr';
-  showColumnCount();
   placePop();
 }
 
@@ -1036,16 +1097,6 @@ function placePop() {
   const x = t.left - s.left + t.width / 2 - w / 2;
   popEl.style.left = `${Math.max(8, Math.min(x, s.width - w - 8))}px`;
   popEl.style.top = `${Math.max(8, Math.min(y, s.height - h - 8))}px`;
-}
-
-/* Die Spaltenzahl kommt vom Raster, nicht von uns — also nachlesen. */
-function showColumnCount() {
-  document.querySelectorAll('[data-colcount]').forEach((el) => {
-    const grid = (el.dataset.colcount === 'fs' ? fsEl : appEl).querySelector('.slots');
-    if (!grid) { el.textContent = ''; return; }
-    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
-    el.textContent = el.dataset.colcount === 'fs' ? `${n}/row` : `· ${n} per row`;
-  });
 }
 
 function clampKey(key, v) {
@@ -1110,7 +1161,7 @@ stage.addEventListener('click', (e) => {
   if (d.delta && d.key) {
     const key = d.key, step = Number(d.delta);
     if (key === 'players') { st.players = clampKey('players', st.players + step); render(); return; }
-    setVal(key, Math.max(0, eff(key, plan) + step));
+    setVal(key, Math.max(minOf(key), Math.min(maxOf(key, plan), eff(key, plan) + step)));
     return;
   }
 });
@@ -1125,7 +1176,7 @@ document.getElementById('switch').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b && b.dataset.dev) setDev(b.dataset.dev);
 });
-window.addEventListener('resize', () => { showColumnCount(); placePop(); });
+window.addEventListener('resize', placePop);
 /* Aufsammeln in der Einfangphase: danach hat render() das angeklickte
    Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
 document.addEventListener('click', (e) => {
