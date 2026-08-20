@@ -6,43 +6,50 @@
 <title>Prizing Cockpit</title>
 <style>
   :root {
-    /* ── Konzept 0 „Neutral“: der bisherige Stand, ohne das Grün ───────
-       Jede Farbe und jede Form, die ein Konzept dreht, steht hier als
-       Variable. Wer unten ein Theme liest, sieht daran genau, was ein
-       Konzept ausmacht — und was es erbt. */
-    --accent: #2c3138;
-    --accent-soft: #eceef0;
-    --on-accent: #fff;
-    --ink: #16191c;
-    --muted: #626a72;
-    --line: #dfe3e7;
-    --bg: #fbfbfa;
-    --paper: #fff;
-    --shell: #eceeef;          /* Fläche um die Leinwand */
-    --frame: #23262a;          /* Handyrahmen */
-    --warn: #9a4a12;
-    --warn-soft: #fdf1e6;
-    --pin: #7b3fb5;
-    --pin-soft: #f2ebfa;
-    --gold: #e0b230;
-    --pack: #4a6fa5;
-    --unserved: #cfd6da;       /* Balken ohne Preis */
-    --floorfill: #9aa4ac;      /* Bodenanteil im Balken */
-    --reserve: #b08bd6;        /* Display-Reservierung im RankPool-Band */
-    --shape: #a9b3bb;          /* was die Kurve formt */
+    /* ══════════════════════════════════════════════════════════════════
+       Ein Entwurf, zwei Modi. Light ist Bronze (Pergament + Bronze), Dark
+       ist Foil (Schwarz + Gold). Die Formsprache ist in beiden dieselbe und
+       steht weiter unten — sie gehört dem Entwurf, nicht dem Modus.
+       ══════════════════════════════════════════════════════════════════ */
+    --accent: #8c5a2b;
+    --accent-soft: #f0e4d1;
+    --on-accent: #fff8ee;
+    --ink: #241c12;
+    --muted: #7a6a55;
+    --line: #e2d5be;          /* nur noch für Datentrenner, nicht für Kanten */
+    --bg: #f7f1e4;
+    --paper: #fffcf5;         /* erhobene Fläche: Kachel, Knopf, Blatt */
+    --shell: #e3d7c0;
+    --frame: #3a2e1e;
+    --warn: #97400f;
+    --warn-soft: #f9e6d5;
+    --pin: #7a4a8c;
+    --pin-soft: #f1e7f3;
+    --gold: #b8860b;
+    --pack: #46617a;
+    --unserved: #ded2bb;
+    --floorfill: #c2a271;
+    --reserve: #a98bb8;
+    --shape: #b08a55;
 
-    /* ── Formsprache ────────────────────────────────────────────────── */
+    /* Tiefe statt Kanten: im Licht ein Schlagschatten, im Dunkeln derselbe
+       Schatten plus ein Glimmen als hauchdünner Innenrand. */
+    --tile-shadow: 0 1px 1px rgba(58,42,22,.07), 0 4px 12px rgba(58,42,22,.08);
+    --btn-shadow: 0 1px 2px rgba(58,42,22,.12);
+    --panel-shadow: 0 6px 18px rgba(58,42,22,.10);
+    --glow: 0 1px 2px rgba(140,90,43,.35), 0 2px 10px rgba(140,90,43,.28);
+    --tile-fill: var(--paper);
+
+    /* ── Formsprache (in beiden Modi gleich) ────────────────────────── */
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     --font-head: var(--font);
-    --r-tile: 9px;             /* Kachel */
-    --r-ctl: 8px;              /* Knöpfe, Melder */
-    --r-pill: 7px;             /* Stufenknöpfe */
-    --r-fab: 50%;              /* der Knopf unten rechts */
-    --tile-bw: 1px;
-    --tile-shadow: none;
-    --tile-fill: var(--paper);
-    --head-tr: uppercase;      /* Gruppentitel */
-    --head-ls: .07em;
+    --r-tile: 2px;            /* scharfe Ecken, überall */
+    --r-ctl: 2px;
+    --r-pill: 2px;
+    --r-fab: 3px;
+    --tile-bw: 0px;           /* kein Rand — der Schatten trägt die Kante */
+    --head-tr: uppercase;
+    --head-ls: .14em;
     --slot-num: 600;
 
     /* Sperrgebiet des Knopfes unten rechts: 52 Knopf + 12 Abstand + 6 Luft. */
@@ -62,82 +69,36 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     Fünf Konzepte. Jedes dreht Farbe **und** Form — nur Farbe zu tauschen
-     hätte fünfmal denselben Entwurf ergeben.
+     Dark — Foil. Nur Farben und die Tiefe drehen sich; jede Form bleibt.
      ══════════════════════════════════════════════════════════════════ */
-
-  /* 1 · Foil — Karte im schwarzen Rahmen, Gold als einzige Farbe.
-        Form: scharfe Ecken, Haarlinien, gesperrte Versalien. */
-  body[data-theme="foil"] {
-    --accent: #c9992e; --accent-soft: #2a2620; --on-accent: #14110c;
-    --ink: #f2ece0; --muted: #9a9384; --line: #37332b;
-    --bg: #131210; --paper: #1c1a16; --shell: #0a0908; --frame: #000;
-    --warn: #e8a35c; --warn-soft: #33251a;
-    --pin: #b48ee8; --pin-soft: #2b2338;
-    --gold: #e8c352; --pack: #7ea6d4;
-    --unserved: #3a362e; --floorfill: #6b5f3c; --reserve: #6d5a86; --shape: #8a7a4a;
-    --r-tile: 2px; --r-ctl: 2px; --r-pill: 2px; --r-fab: 4px;
-    --tile-fill: linear-gradient(#1f1c17, #17150f);
-    --head-ls: .16em;
-  }
-  /* 2 · Mana — tiefes Indigo, Bernstein als Ruf. Form: weich, gerundet,
-        alles auf Karten mit Schatten statt Linien. */
-  body[data-theme="mana"] {
-    --accent: #3a4bd1; --accent-soft: #e6e9fd; --on-accent: #fff;
-    --ink: #15182b; --muted: #656b86; --line: #dfe2f2;
-    --bg: #f5f6fd; --paper: #fff; --shell: #dfe3f5; --frame: #1b1f3a;
-    --warn: #a4560c; --warn-soft: #fdf0e2;
-    --pin: #8a3fd1; --pin-soft: #f2e9fc;
-    --gold: #e39c1f; --pack: #3a4bd1;
-    --unserved: #d3d8ee; --floorfill: #8f9ae6; --reserve: #b79bea; --shape: #7f8ce0;
-    --r-tile: 15px; --r-ctl: 999px; --r-pill: 999px;
-    --tile-shadow: 0 1px 2px rgba(21,24,43,.07), 0 4px 12px rgba(21,24,43,.05);
-    --tile-bw: 0px;
-    --head-tr: none; --head-ls: .01em;
-  }
-  /* 3 · Booster — Rot wie die Packung, klobig und laut.
-        Form: fette Ränder, grosse Radien, schwere Zahlen. */
-  body[data-theme="booster"] {
-    --accent: #c62828; --accent-soft: #ffeceb; --on-accent: #fff;
-    --ink: #1e1213; --muted: #7a5f60; --line: #eddcda;
-    --bg: #fffaf9; --paper: #fff; --shell: #f0dcd9; --frame: #2a1416;
-    --warn: #9a4a12; --warn-soft: #fdf1e6;
-    --pin: #7b3fb5; --pin-soft: #f4ecfb;
-    --gold: #f0a51c; --pack: #2f6fb5;
-    --unserved: #e8d6d4; --floorfill: #e8908c; --reserve: #b98ad6; --shape: #d95b57;
-    --r-tile: 18px; --r-ctl: 12px; --r-pill: 10px;
-    --tile-bw: 2px; --slot-num: 800;
-    --head-ls: .1em;
-  }
-  /* 4 · Arcane — Nacht in Violett, Cyan als Signal.
-        Form: Glas, weite Radien, Glimmen statt Linien. */
-  body[data-theme="arcane"] {
-    --accent: #35d6d0; --accent-soft: #14313a; --on-accent: #04201f;
-    --ink: #ece8fb; --muted: #9790bd; --line: #322a4d;
-    --bg: #16112a; --paper: #1e1838; --shell: #0c0918; --frame: #060411;
-    --warn: #ffab6b; --warn-soft: #3a2418;
-    --pin: #ff7ad9; --pin-soft: #3a1a34;
-    --gold: #ffd166; --pack: #7c8cff;
-    --unserved: #2d2648; --floorfill: #4a7f8f; --reserve: #7c5bc4; --shape: #2b9b9b;
-    --r-tile: 16px; --r-ctl: 999px; --r-pill: 999px;
-    --tile-fill: linear-gradient(#231c42, #1a1531);
-    --tile-shadow: 0 0 0 1px rgba(53,214,208,.07), 0 6px 18px rgba(0,0,0,.35);
-    --head-ls: .13em;
-  }
-  /* 5 · Bronze — Pergament und Bronze, das alte Kartenfenster.
-        Form: kantig, doppelte Linie, Serifen in den Titeln. */
-  body[data-theme="bronze"] {
-    --accent: #8c5a2b; --accent-soft: #f4ead9; --on-accent: #fff8ee;
-    --ink: #241c12; --muted: #7a6a55; --line: #ddcdb4;
-    --bg: #f7f1e4; --paper: #fffcf5; --shell: #e3d7c0; --frame: #3a2e1e;
-    --warn: #97400f; --warn-soft: #f9e6d5;
-    --pin: #7a4a8c; --pin-soft: #f1e7f3;
-    --gold: #b8860b; --pack: #46617a;
-    --unserved: #ded2bb; --floorfill: #c2a271; --reserve: #a98bb8; --shape: #b08a55;
-    --font-head: Georgia, "Iowan Old Style", serif;
-    --r-tile: 3px; --r-ctl: 3px; --r-pill: 3px; --r-fab: 8px;
-    --tile-shadow: inset 0 0 0 1px var(--paper), inset 0 0 0 2px var(--line);
-    --head-tr: none; --head-ls: .02em;
+  body[data-mode="dark"] {
+    --accent: #c9992e;
+    --accent-soft: #2a2620;
+    --on-accent: #14110c;
+    --ink: #f2ece0;
+    --muted: #9a9384;
+    --line: #35312a;
+    --bg: #131210;
+    --paper: #1e1b16;
+    --shell: #0a0908;
+    --frame: #000;
+    --warn: #e8a35c;
+    --warn-soft: #33251a;
+    --pin: #b48ee8;
+    --pin-soft: #2b2338;
+    --gold: #e8c352;
+    --pack: #7ea6d4;
+    --unserved: #3a362e;
+    --floorfill: #6b5f3c;
+    --reserve: #6d5a86;
+    --shape: #8a7a4a;
+    /* Das Glimmen: ein Innenrand aus Gold, viel zu schwach, um Linie zu
+       heissen — er macht die Kante im Dunkeln überhaupt erst sichtbar. */
+    --tile-shadow: inset 0 0 0 1px rgba(201,153,46,.13), 0 8px 20px rgba(0,0,0,.55);
+    --btn-shadow: inset 0 0 0 1px rgba(201,153,46,.16), 0 2px 6px rgba(0,0,0,.45);
+    --panel-shadow: 0 10px 26px rgba(0,0,0,.55);
+    --glow: 0 0 0 1px rgba(232,195,82,.45), 0 2px 14px rgba(201,153,46,.35);
+    --tile-fill: linear-gradient(#221e18, #1a1713);
   }
 
   /* ── Prototype chrome (deutsch, nicht Teil des Entwurfs) ───────────── */
@@ -163,7 +124,7 @@
   /* +26px: 24 Innenrand plus die zwei Rahmenlinien (border-box) — sonst fehlt
      dem Raster ein Pixel und die 16. Spalte fällt weg. */
   body.wide  #stage { max-width: calc(var(--gridmax) + var(--rail) + 26px);
-                      border: 1px solid var(--line); border-radius: 12px;
+                      border-radius: 3px; box-shadow: var(--panel-shadow);
                       height: 760px; }
   body.bare #stagewrap { padding: 0; }
   body.bare .chrome { display: none; }
@@ -184,19 +145,17 @@
   #switch button:hover { background: #ffffff22; }
   #switch [aria-pressed="true"] { background: #fff; color: #16191c; }
 
-  /* Konzeptwahl — links oben, damit sie dem Geräteschalter nicht ins Gehege
-     kommt. Jeder Knopf trägt seine eigenen zwei Farben als Probe. */
-  /* Unten links: am Rechner deckt die Leinwand die ganze Breite, und oben
-     stünde die Wahl mitten im Blatt. */
+  /* Modus-Wahl — unten links, weg vom Geräteschalter und vom Knopf des
+     Entwurfs. Jeder Knopf zeigt seine zwei Farben als Probe. */
   #themes { position: fixed; left: 10px; bottom: 10px; z-index: 99;
-            display: flex; flex-wrap: wrap; gap: 4px; max-width: 210px; }
-  #themes button { font: inherit; font-size: 12px; text-align: left; cursor: pointer;
-                   border: 1px solid #ffffff30; border-radius: 8px; padding: 5px 9px 5px 6px;
+            display: flex; gap: 4px; }
+  #themes button { font: inherit; font-size: 12px; cursor: pointer;
+                   border: 1px solid #ffffff30; border-radius: 8px; padding: 6px 10px 6px 7px;
                    display: flex; align-items: center; gap: 6px;
                    box-shadow: 0 6px 18px rgba(0,0,0,.28); }
-  #themes button i { width: 13px; height: 13px; border-radius: 3px; flex: none;
+  #themes button i { width: 13px; height: 13px; border-radius: 2px; flex: none;
                      box-shadow: inset 0 0 0 1px #ffffff40; }
-  #themes [aria-pressed="true"] { outline: 2px solid #16191c; outline-offset: 1px; }
+  #themes [aria-pressed="true"] { outline: 2px solid #6b6b6b; outline-offset: 1px; }
 
   /* ── Primitives ────────────────────────────────────────────────────── */
   .bar { display: flex; align-items: center; gap: 8px; }
@@ -327,8 +286,8 @@
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
   .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
-         border: 1px solid var(--line); border-radius: var(--r-tile); padding: 9px 10px;
-         box-shadow: 0 10px 28px rgba(0,0,0,.18); min-width: 168px; }
+         border: 0; border-radius: var(--r-tile); padding: 9px 10px;
+         box-shadow: var(--tile-shadow), var(--panel-shadow); min-width: 168px; }
   .pop.show { display: block; }
 
   /* ── Blatt: fährt von unten herein, statt zu erscheinen ────────────── */
@@ -358,7 +317,7 @@
     body.bare #sheet .grouphead, body.bare #sheet .subhead { break-after: avoid; }
   }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
-                  border-bottom: 1px solid var(--line); padding: 9px 12px;
+                  box-shadow: var(--panel-shadow); padding: 9px 12px;
                   display: flex; align-items: center; gap: 9px; font-size: 14px;
                   font-weight: 600; white-space: nowrap; }
   /* Eine Gruppe beginnt mit einer Linie über ihrem Titel. Damit braucht kein
@@ -413,36 +372,47 @@
   .ctl .lbl { font-size: 13px; }
   .ctl .v { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
   .ctl.pinned .lbl { font-weight: 700; }
+
+  /* Kanten aus Schatten: Knöpfe und Zählwerke tragen keinen Rand mehr,
+     sondern eine erhobene Fläche. Was gewählt ist, glimmt. */
+  .sheetbtn, .preset button, .flag button {
+    border: 0; box-shadow: var(--btn-shadow);
+  }
+  .preset button[aria-pressed="true"], .pinchip { box-shadow: var(--glow); }
+  .pm { border-radius: var(--r-ctl); overflow: hidden; box-shadow: var(--btn-shadow); }
+  .pm button, .pm .val { border: 0; }
+  .pm .val { background: var(--accent-soft); }
+  input[type=range] { accent-color: var(--accent); }
 </style>
 </head>
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 6 zu Ticket #15</h1>
+  <h1>Prizing Cockpit — Runde 7 zu Ticket #15</h1>
   <p>
-    Links oben stehen <strong>fünf Farb- und Formkonzepte</strong> (Tasten <code>0</code>–<code>5</code>,
-    oder <code>?theme=foil|mana|booster|arcane|bronze</code>). Das Grün ist weg; Konzept 0
-    ist der bisherige Entwurf in Graphit, damit sich die fünf gegen etwas messen lassen.
+    Aus fünf Konzepten ist <strong>eines in zwei Modi</strong> geworden:
+    <strong>Light = Bronze</strong>, <strong>Dark = Foil</strong>, dieselbe Form in beiden.
+    Umschalter unten links, Tasten <code>l</code>/<code>d</code>/<code>m</code>, oder
+    <code>?mode=light|dark</code>. Ohne Angabe folgt der Modus dem Gerät.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      <strong>Promo-Envelope.</strong> Durchgehend so genannt — in der Kopfzeile, beim
-      Deckel der WinnerPacks und als <em>Tournament Packs per Promo-Envelope</em>.<br><br>
-      <strong>Der Würfel heisst jetzt etwas.</strong> Vorne steht <em>Winner-shuffle</em>
-      neben ihm samt einer Zeile, was er tut; <em>open</em> ist vom Knopf unten rechts
-      weggerückt und liest sich nicht mehr als dessen Beschriftung.<br><br>
-      <strong>Jedes Element im Blatt erklärt sich.</strong> Ein Satz unter jedem Titel —
-      auch unter den Gruppentiteln. Die Einheit (<em>per player</em>) steht oben beim
-      Titel, nicht unter dem Schieber.<br><br>
-      <strong>Abschnitte statt Kästen.</strong> Über jedem Gruppentitel eine Linie, mehr
-      Luft dazwischen, am Rechner eine Spaltenlinie. Die <em>Raffle range</em> hat ihren
-      Kasten dafür abgegeben.<br><br>
-      <strong>Reihenfolge in <em>Supply</em>.</strong> Booster bei Boostern, Packs bei
-      Packs: Rate → Display, dann Packzahl → Promo-Envelope.<br><br>
-      <strong>Fünf Konzepte, nicht fünf Paletten.</strong> Jedes dreht auch die Form —
-      Radien, Ränder, Schatten, Titelschrift. Siehe den Block <code>body[data-theme]</code>
-      im Kopf der Datei: was dort nicht steht, erbt das Konzept.
+      <strong>Eine Formsprache aus deinen drei Punkten.</strong> Scharfe Ecken
+      überall (2 px, der Knopf 3), <em>kein</em> Rand mehr an Kachel, Knopf und
+      Zählwerk — die Kante kommt aus dem Schatten. Im Dunkeln legt sich ein
+      goldenes Glimmen als hauchdünner Innenrand darüber, sonst wäre die Kante
+      unsichtbar; was gewählt ist, glimmt kräftiger.<br><br>
+      <strong>Zwei Modi, ein Entwurf.</strong> Nur Farben und die Tiefe drehen sich
+      (<code>body[data-mode="dark"]</code>). Radien, Ränder, Titelschrift und jedes
+      Mass stehen einmal in <code>:root</code> und gelten für beide.<br><br>
+      <strong>Was Linie bleiben durfte.</strong> Die Trenner in der Beschaffungszeile
+      und die Linie über jedem Gruppentitel im Blatt — die trennen Daten, nicht
+      Flächen. Alles, was vorher eine Fläche umriss, ist jetzt Schatten.<br><br>
+      <strong>Aus Runde 6 unverändert.</strong> Promo-Envelope durchgehend, der
+      Würfel heisst <em>Winner-shuffle</em> und <em>open</em> ist vom Knopf
+      weggerückt, jedes Element im Blatt erklärt sich in einem Satz, die Einheit
+      steht beim Titel, und die <em>Raffle range</em> hat ihren Kasten abgegeben.<br><br>
     </div>
   </details>
 </div>
@@ -457,12 +427,8 @@
 </div>
 
 <div id="themes">
-  <button data-theme=""        style="background:#fff;color:#16191c"><i style="background:#2c3138"></i>0 Neutral</button>
-  <button data-theme="foil"    style="background:#1c1a16;color:#f2ece0"><i style="background:#c9992e"></i>1 Foil</button>
-  <button data-theme="mana"    style="background:#fff;color:#15182b"><i style="background:#3a4bd1"></i>2 Mana</button>
-  <button data-theme="booster" style="background:#fff;color:#1e1213"><i style="background:#c62828"></i>3 Booster</button>
-  <button data-theme="arcane"  style="background:#1e1838;color:#ece8fb"><i style="background:#35d6d0"></i>4 Arcane</button>
-  <button data-theme="bronze"  style="background:#fffcf5;color:#241c12"><i style="background:#8c5a2b"></i>5 Bronze</button>
+  <button data-mode="light" style="background:#fffcf5;color:#241c12"><i style="background:#8c5a2b"></i>☀ Light — Bronze</button>
+  <button data-mode="dark"  style="background:#1e1b16;color:#f2ece0"><i style="background:#c9992e"></i>☾ Dark — Foil</button>
 </div>
 
 <script>
@@ -939,7 +905,7 @@ function headerBlock(plan) {
   const rest = plan.pool.packs % get('envelopeSize');
   const loosePacks = rest >= p.threshold ? 0 : rest;
   return `<div style="padding:9px 12px 8px;background:var(--paper);
-      border-bottom:1px solid var(--line);flex:none">
+      box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
     <div class="bar">
       <strong style="font-size:17px;letter-spacing:-.01em">${TYPES[st.type].title}</strong>
       <span class="tiny muted num">${st.players} players</span>
@@ -1191,8 +1157,8 @@ function screen(plan, sugg) {
       <div style="height:9px;flex:none"></div>
     </div>
     <div style="${side
-      ? 'width:var(--rail);flex:none;border-left:1px solid var(--line);overflow:auto;background:var(--paper)'
-      : 'flex:none;background:var(--paper);border-top:1px solid var(--line)'}">
+      ? 'width:var(--rail);flex:none;overflow:auto;background:var(--paper);box-shadow:var(--panel-shadow)'
+      : 'flex:none;background:var(--paper);box-shadow:var(--panel-shadow)'}">
       <div style="padding:9px 12px ${side ? 'var(--fabsafe)' : '8px'}">${controls}</div>
     </div>
   </div>`;
@@ -1206,7 +1172,7 @@ function sheetContent(plan) {
     <div class="bar" style="gap:6px">${Object.entries(TYPES).map(([id, t]) =>
       `<button class="sheetbtn" data-type="${id}"
        style="${id === st.type
-         ? 'background:var(--accent);color:var(--on-accent);border-color:var(--accent)' : ''}"
+         ? 'background:var(--accent);color:var(--on-accent);box-shadow:var(--glow)' : ''}"
        >${t.title}</button>`).join('')}</div>
 
     <div class="grouphead">Supply</div>
@@ -1394,29 +1360,33 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && st.openSlot != null) { st.openSlot = null; render(); }
 });
 
-/* Das Konzept steht im Attribut, nicht in der Klasse: setDev() schreibt
-   `body.className` neu und würde eine Themenklasse jedes Mal wegwischen. */
-const THEMES = ['', 'foil', 'mana', 'booster', 'arcane', 'bronze'];
-function setTheme(t) {
-  if (t) document.body.dataset.theme = t; else delete document.body.dataset.theme;
-  document.querySelectorAll('#themes [data-theme]').forEach((x) =>
-    x.setAttribute('aria-pressed', x.dataset.theme === (t || '')));
+/* Der Modus steht im Attribut, nicht in der Klasse: setDev() schreibt
+   `body.className` neu und würde eine Klasse jedes Mal wegwischen. */
+function setMode(m) {
+  document.body.dataset.mode = m;
+  document.querySelectorAll('#themes [data-mode]').forEach((x) =>
+    x.setAttribute('aria-pressed', x.dataset.mode === m));
   const u = new URL(location.href);
-  if (t) u.searchParams.set('theme', t); else u.searchParams.delete('theme');
+  u.searchParams.set('mode', m);
   history.replaceState(null, '', u);
 }
 document.getElementById('themes').addEventListener('click', (e) => {
   const b = e.target.closest('button');
-  if (b) setTheme(b.dataset.theme);
+  if (b) setMode(b.dataset.mode);
 });
 document.addEventListener('keydown', (e) => {
-  if (/^[0-5]$/.test(e.key)) setTheme(THEMES[Number(e.key)]);
+  // ein Buchstabe je Modus, und die Leertaste kippt hin und her
+  if (e.key === 'l') setMode('light');
+  if (e.key === 'd') setMode('dark');
+  if (e.key === 'm') setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark');
 });
 
 // Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
 setDev(window.innerWidth < 560 ? 'bare' : 'phone');
-setTheme(THEMES.includes(new URL(location.href).searchParams.get('theme'))
-  ? new URL(location.href).searchParams.get('theme') : '');
+// Ohne Angabe folgt der Modus dem Gerät — genau wie die echte App es täte.
+const askedMode = new URL(location.href).searchParams.get('mode');
+setMode(askedMode === 'dark' || askedMode === 'light' ? askedMode
+  : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 </script>
 </body>
 </html>
