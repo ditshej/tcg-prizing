@@ -58,6 +58,30 @@ fällt auf 23), Reservation auf 2 `Display`s (`Rank` 1 auf 48), oder Reservation
 entfernen, womit `Rank` 1 in die Kurve zurückkehrt und die Überholung strukturell
 unmöglich wird.
 
+Nachtrag: Die Fläche unter dem Plan trägt **zwei Sorten** Eintrag, und der Satz
+oben — „ein Plan ohne Meldung ist gültig, ein Plan mit Meldung ist es nicht" —
+bleibt wörtlich gültig, weil nur die eine Sorte eine Meldung ist.
+
+Eine **Konfliktmeldung** benennt einen unpassenden Plan und die Wege heraus; der
+Lead *muss* etwas tun, und sie ist nicht wegklickbar. Ein **Angebot** steht auf
+einem vollständig gültigen Plan und schlägt bloss eine runde Sache vor; der Lead
+*darf*, und es ist wegklickbar. Der erste Vertreter der zweiten Sorte ist der
+`DisplayReservation`-Vorschlag: liegt ein `Rank` höchstens eine Viertel-`Display`
+-Grösse von einem Vielfachen davon entfernt, wird dieses Vielfache angeboten —
+in beide Richtungen, sodass die Fläche stumm bleibt, wenn eine Zuteilung mitten
+zwischen zwei `Display`s liegt. Angeboten wird ein ganzer Vektor, über das
+laufende Minimum geklemmt, damit `d₁ ≥ d₂ ≥ …` nicht durch einen stummen `Rank`
+zwischen zwei redenden verletzt wird.
+
+Getrennt sind die beiden Flächen, weil das Angebot der **häufige** Fall ist und
+der Konflikt der seltene. In einer gemeinsamen Fläche lernt der Lead, sie zu
+überfliegen — und dann geht die eine Sorte unter, die wirklich zählt. Das
+Wegklicken ist reiner Sitzungszustand: es gehört nicht in den `SetupLink` (der
+nach ADR 0005 nur `pinned` Regler trägt, sonst käme ein verschickter Link mit
+unterdrückten Hinweisen an), es überlebt kein Neuladen, und das Angebot kehrt
+zurück, sobald sich sein Inhalt ändert — aus „1 `Display`" ein „2" wird, also
+ein anderes Angebot.
+
 Variiert wird dabei **immer nur ein Regler**. Zwei gleichzeitig wären ein Produkt
 statt einer Summe, vor allem aber unlesbar: „Kurve auf `moderate` *und* Tiefe auf
 11" ist kein Vorschlag, den jemand abwägt. Die Meldung zeigt alle einzeln

@@ -73,6 +73,25 @@ nicht — der Zustand ist arithmetisch einwandfrei und genau das, was ein hoher
 Definition der Wert, der den Boden maximiert. Wer der Kurve Material lassen will,
 muss die Tiefe selbst senken.
 
+Nachtrag: Der Vorsprung von `Rank` 1 ist eine Zusicherung **innerhalb** der
+Kurve und setzt daher aus, sobald eine `DisplayReservation` einen `Rank` aus der
+Kurve nimmt. Ein abgegoltener `Rank` 1 bekommt genau `Display`-Grösse · `d₁`,
+und dass er damit über `Rank` 2 liegt, ist Arithmetik und keine Garantie — bei
+grossem `ShapedRemainder` überholt `Rank` 2 ihn. Das ist kein neuer Fall, sondern
+die Überholung, die ADR 0002 gekippt hat; sie wird durchgerechnet und gemeldet,
+nicht verhindert.
+
+Welche Ränge aus der Kurve fallen, ist dabei allgemeiner geregelt als in der
+Resolution zu #7: **abgegolten sind alle Ränge oberhalb des obersten
+Gleichstands** im `DisplayReservation`-Vektor, die Kurve läuft von dort abwärts.
+#7s Regel — „bei Gleichstand gehen alle Ränge in die Kurve" — ist der Spezialfall
+`d` = (1,1,0,…), wo der oberste Gleichstand ganz oben sitzt und oberhalb niemand
+liegt. Bei `d` = (2,1,1,0,…) bleibt `Rank` 1 mit seinen zwei `Display`s dagegen
+draussen, statt mit in die Kurve zu fallen: er ist unstrittig oben, und nur der
+Gleichstand zwischen `Rank` 2 und 3 braucht die Kurve, um gebrochen zu werden.
+Das ist die Fassung, in der „der Sieger bekommt genau zwei `Display`s" eine
+haltbare Aussage ist — der Preis ist ebendieser Verlust der Vorsprungs-Garantie.
+
 Knappe `PrizeItem`s laufen an der Kurve vorbei. `WinnerPack`s und
 `TournamentPack`s im `RankPool` werden von `Rank` 1 an durchgereicht und
 beginnen wieder oben, wenn mehr davon da sind als bediente Ränge — sonst gehen

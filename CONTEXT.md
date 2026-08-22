@@ -217,7 +217,13 @@ _Avoid_: RafflePool (kein `Pool`, er verteilt nichts, sondern begrenzt die Empf�
 Die Anzahl `Display`s, die ein einzelner `Rank` aus dem `RankPool` vorab
 zugeteilt bekommt, bevor die `DistributionCurve` den Rest formt. Nach oben
 begrenzt durch den `Rank` darüber, sodass sie über die Ränge nie steigt. Betrifft
-nur `Booster`.
+nur `Booster`. Wird nie vorbelegt, weil sie einen `Rank` benennt (ADR 0003), und
+nie automatisch gesetzt — der `CommunityLead` greift dafür an die Kachel des
+`Rank`, wie bei den `manual`-`WinnerPack`s der `WinnerPackAllocation`.
+**Abgegolten** sind alle Ränge oberhalb des obersten Gleichstands im Vektor: sie
+bekommen genau ihre `Display`s und fallen aus der Kurve, die von dort abwärts
+läuft. Bei `Rank` 1 heisst das, der Vorsprung aus ADR 0001 setzt aus und eine
+Überholung wird gemeldet statt verhindert.
 _Avoid_: Full-Display-Win, DisplayPrize, DisplayPool (es ist kein `Pool`, sondern eine Reservation innerhalb des `RankPool`)
 
 **DistributionPlan**:
@@ -229,6 +235,25 @@ verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
 Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
 _Avoid_: Payout
+
+**ConflictNotice**:
+Der Eintrag unter dem `DistributionPlan`, der einen unpassenden Reglerstand
+benennt und die einzeln gangbaren Wege heraus zeigt, jeden mit einem Klick
+übernehmbar. Ein `DistributionPlan` mit `ConflictNotice` ist ungültig, einer ohne
+gültig (ADR 0002) — die Anwesenheit ist die Aussage, deshalb ist sie nicht
+wegklickbar. Der seltene Fall.
+_Avoid_: Error, Warning (die Rechnung ist nie fehlgeschlagen), Validation
+
+**Offer**:
+Der Eintrag unter dem `DistributionPlan`, der auf einem vollständig **gültigen**
+Plan eine rundere Fassung vorschlägt — heute allein die `DisplayReservation`,
+wenn ein `Rank` höchstens eine Viertel-`Display`-Grösse von einem Vielfachen
+davon entfernt liegt, in beide Richtungen. Steht in einer eigenen Fläche neben
+der `ConflictNotice`, weil er der häufige Fall ist und eine Fläche, in der meist
+Harmloses steht, keine Warnfläche mehr wäre. Wegklickbar, und das Wegklicken ist
+reiner Sitzungszustand: nie im `SetupLink`, kein Überleben eines Neuladens,
+zurück sobald sich der Inhalt des Vorschlags ändert.
+_Avoid_: Hint, Suggestion (bezeichnet auch die Wege aus der `ConflictNotice`), Tip
 
 **CombinedHandout**:
 Ob der `ParticipationPool` zusammen mit dem `RankPool` ausgeteilt wird oder
