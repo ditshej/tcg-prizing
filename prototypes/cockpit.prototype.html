@@ -236,9 +236,43 @@
   .fetch .der b::before { content: '→'; color: var(--muted); font-size: 12px;
                           font-weight: 400; margin-right: 4px; }
 
-  .segbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden;
-            background: var(--line); }
-  .segbar i { display: block; height: 100%; }
+  /* Der ⓘ sitzt an der Zahl, die er erklärt — klein, aber mit echter
+     Trefferfläche, weil er am Handy mit dem Daumen gedrückt wird. */
+  .info { font: inherit; font-size: 10px; font-weight: 700; font-style: italic;
+          font-family: Georgia, serif; width: 15px; height: 15px; padding: 0;
+          border: 0; border-radius: 50%; background: var(--accent-soft);
+          color: var(--accent); cursor: pointer; vertical-align: 2px;
+          margin-left: 3px; line-height: 15px; }
+
+  /* Was zu Beginn rausgeht: eine Zeile, punktiert abgesetzt vom Beschaffungsteil
+     darüber — sie sagt nicht, was zu holen ist, sondern was sofort weggeht. */
+  .handout { font-size: 11.5px; line-height: 1.5; margin-top: 7px; padding-top: 6px;
+             max-width: 520px; border-top: 1px dotted var(--line); }
+  .handout .bar { gap: 5px; }
+  /* Die Einheit klebt an ihrer Zahl: „1 pack" darf nie umbrechen. */
+  .handout strong { white-space: nowrap; }
+  /* Zahl und Etikett im Beschaffungsteil bleiben zusammen, sonst rutscht der
+     ⓘ auf eine eigene Zeile und sieht nach Fussnote aus. */
+  .fetch em, .fetch .info { white-space: nowrap; }
+  .fetch div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 3px; }
+  .fetch s { flex: 1 0 100%; }
+
+  /* Das Rangtotal liegt über den Balken, oben rechts, wo der Abfall der Kurve
+     ohnehin Platz lässt. Es hört keine Klicks ab. */
+  .ranktot { position: absolute; right: 12px; top: 6px; z-index: 1;
+             pointer-events: none; text-align: right; }
+
+  .pophead { display: flex; align-items: center; gap: 6px; font-size: 12px;
+             margin-bottom: 5px; }
+  .popline { display: flex; align-items: baseline; gap: 6px; font-size: 11.5px;
+             line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .popline b { margin-left: auto; font-weight: 600; }
+  .popfoot { font-size: 11.5px; margin-top: 6px; padding-top: 6px;
+             border-top: 1px solid var(--line); color: var(--accent); }
+  .popfoot button { font: inherit; font-size: 11.5px; display: block; margin-top: 5px;
+                    border: 0; box-shadow: var(--btn-shadow); background: var(--paper);
+                    color: var(--ink); border-radius: var(--r-pill);
+                    padding: 4px 9px; cursor: pointer; }
 
   .strip { display: flex; align-items: flex-end; gap: 2px; height: 100%; }
   .strip .col { flex: 1; min-width: 3px; height: 100%; display: flex; flex-direction: column;
@@ -389,7 +423,7 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 7 zu Ticket #15</h1>
+  <h1>Prizing Cockpit — Runde 8 zu Ticket #23</h1>
   <p>
     Aus fünf Konzepten ist <strong>eines in zwei Modi</strong> geworden:
     <strong>Light = Bronze</strong>, <strong>Dark = Foil</strong>, dieselbe Form in beiden.
@@ -592,7 +626,9 @@ const GAME = {
 };
 const TYPES = {
   weekly: { title: 'Weekly', over: {} },
-  weekend: { title: 'Weekend', over: { curve: 'severe' } },
+  // #21 hat das Blatt nachgelesen statt zurückgerechnet: die Teilnahmerate ist
+  // am Wochenende 1, die Kurve `steep` — genau zwei Abweichungen, nicht `severe`.
+  weekend: { title: 'Weekend', over: { curve: 'steep', participationBooster: 1 } },
 };
 
 const st = {
@@ -600,6 +636,7 @@ const st = {
   pin: {}, val: {},                  // Pinned ist gespeichert, nicht abgeleitet (ADR 0006)
   manualWinner: {}, displays: [],
   openSlot: null,                    // Rang, dessen ±-Blase offen ist
+  openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -905,6 +942,10 @@ function headerBlock(plan) {
   // diese Packs bleiben übrig und gehören ausgewiesen.
   const rest = plan.pool.packs % get('envelopeSize');
   const loosePacks = rest >= p.threshold ? 0 : rest;
+  // Die Gesamtzahl Booster gehört in den Kopf: sie ist die eine Zahl, gegen die
+  // sich die Summenregel prüfen lässt — Displays sind eine Beschaffungsgrösse,
+  // keine Menge. Mit ihr und der Handout-Zeile liest sich 96 = 64 + 32 am Schirm.
+  const sealed = Math.floor(plan.pool.booster / get('displaySize'));
   return `<div style="padding:9px 12px 8px;background:var(--paper);
       box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
     <div class="bar">
@@ -913,13 +954,108 @@ function headerBlock(plan) {
       ${status}
     </div>
     <div class="fetch">
-      <div><b class="num">${p.fetchDisplays}</b><em>displays</em>
-        <s>${p.looseBooster ? `one opened · ${p.looseBooster} loose` : ''}</s></div>
+      <div><b class="num">${p.fetchDisplays}</b><em>displays</em>${infoBtn('displays')}
+        <s>${plan.pool.booster} boosters${
+          p.looseBooster ? ` · ${sealed} sealed + ${p.looseBooster} loose` : ''}</s></div>
       <div><b class="num">${p.fetchEnvelopes}</b><em>Promo-Envelopes</em>
         <s>${loosePacks > 0 ? `+${loosePacks} loose` : ''}</s></div>
-      <div class="der"><b class="num">${p.winnerYield}</b><em>winner packs</em><s></s></div>
+      <div class="der"><b class="num">${p.winnerYield}</b><em>winner packs</em>${
+        infoBtn('winners')}<s></s></div>
+    </div>
+    ${handoutRow(plan)}
+  </div>`;
+}
+
+/* Was zu Beginn rausgeht, samt Total — die Rate allein liesse die 64 unsichtbar.
+   Steht `CombinedHandout` auf ein, verschwindet die Zeile ganz: den Posten gibt
+   es dann nicht mehr, die Anteile stecken in den Rangzeilen. Eine Zeile, die
+   stehen bleibt, läse sich als Zugabe — und genau das verschiebt der Schalter. */
+function handoutRow(plan) {
+  if (get('combinedHandout')) return '';
+  const r = plan.participation.rate;
+  if (!r.booster && !r.packs) return '';
+  const each = [r.booster ? `${r.booster} boosters` : '',
+                r.packs ? `${r.packs} pack${r.packs > 1 ? 's' : ''}` : ''].filter(Boolean);
+  const tot = [r.booster ? plan.participation.booster : '',
+               r.packs ? plan.participation.packs : ''].filter((x) => x !== '');
+  // Zwei Zeilen statt einer: im Hochformat brach die einzeilige Fassung mitten
+  // durch „1 pack" und las sich wie zwei Werte.
+  return `<div class="handout">
+    <div class="muted">Handed out at check-in</div>
+    <div class="bar">
+      <strong>${each.join(' · ')}</strong><span class="muted">each</span>
+      <span class="muted num" style="margin-left:auto;white-space:nowrap">${
+        tot.join(' · ')} of the pool</span>
     </div>
   </div>`;
+}
+
+/* ── Die zwei Erklärer im Kopf ──────────────────────────────────────────
+   Eine Zahl, die aus einer Regel fällt, muss ihre Regel hergeben können. Der
+   WinnerPack-Erklärer trägt zugleich den Vorschlag aus #19 als letzte Zeile:
+   wer sagt, wie die 3 entstand, sagt mit, wie man auf 4 kommt. Damit braucht
+   der Hinweis keinen eigenen Platz neben der Zahl. */
+function infoBtn(id) {
+  return `<button class="info" data-info="${id}" title="wie wird das gerechnet?">i</button>`;
+}
+
+function infoDisplays(plan) {
+  const S = get('displaySize');
+  const tot = plan.pool.booster;
+  const sealed = Math.floor(tot / S), loose = tot % S;
+  return `<div class="pophead"><strong>${tot} boosters</strong>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
+    <div class="popline">${st.players} players × ${get('boosterRate')} each
+      <b>${tot}</b></div>
+    <div class="popline muted">÷ ${S} per display</div>
+    <div class="popline">${sealed} sealed<b>${sealed * S}</b></div>
+    ${loose ? `<div class="popline">+ ${loose} from the ${sealed + 1}${
+        sealed ? 'th' : 'st'}<b>${tot}</b></div>
+      <div class="popline muted">${S - loose} stay in the box</div>`
+      : '<div class="popline muted">comes out even</div>'}`;
+}
+
+function infoWinners(plan) {
+  const g = get('envelopeSize');
+  const packs = plan.pool.packs;
+  const full = Math.floor(packs / g), rest = packs % g;
+  const thr = plan.prep.threshold;
+  const carries = rest >= thr;
+  // Nur anbieten, wenn der Rest die Schwelle noch nicht trägt — sonst wäre der
+  // nächste WinnerPack ein ganzes Kuvert weit weg und der Vorschlag gelogen.
+  const need = carries ? 0 : thr - rest;
+  const pinned = !!st.pin.winnerPacks;
+  return `<div class="pophead"><strong>${plan.pool.winners} winner packs</strong>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
+    ${pinned ? `<div class="popline muted">set by hand — the envelopes yield ${
+        plan.pool.winnersDerived}</div>` : ''}
+    <div class="popline">${packs} packs<span class="muted">÷ ${g} per envelope</span></div>
+    <div class="popline">${full} full envelope${full === 1 ? '' : 's'}<b>${full}</b></div>
+    <div class="popline">${rest} left over<span class="muted">needs ${thr}</span>
+      <b>${carries ? 1 : 0}</b></div>
+    ${need > 0 && !pinned ? `<div class="popfoot">
+        ${need} more pack${need === 1 ? '' : 's'} would make it ${
+          plan.pool.winnersDerived + 1}
+        <button data-apply="tournamentPacks" data-v="${packs + need}"
+          >Set packs to ${packs + need}</button></div>` : ''}`;
+}
+
+const INFO = { displays: infoDisplays, winners: infoWinners };
+
+/* Die Zahl, die in die Ränge geht — oben rechts über den Balken, wo ohnehin
+   Platz ist. Nullachsen bleiben weg: „0 packs" ist keine Information. */
+function rankTotal(plan) {
+  // Bei CombinedHandout stecken die Teilnahmeanteile in den Kacheln. Eine Zahl,
+  // die dann noch den reinen RankPool nennt, widerspricht dem, was unter ihr
+  // steht — also zählt sie mit und sagt dazu, dass sie die Kacheln meint.
+  const on = get('combinedHandout');
+  const b = plan.rank.booster + (on ? plan.participation.booster : 0);
+  const pk = plan.rank.packs + (on ? plan.participation.packs : 0);
+  const bits = [`${b} boosters`];
+  if (pk) bits.push(`${pk} packs`);
+  if (plan.rank.winners) bits.push(`${plan.rank.winners} winner packs`);
+  return `<div class="ranktot tiny muted">${on ? 'on the tiles' : 'to the ranks'}
+    <strong class="num">${bits.join(' · ')}</strong></div>`;
 }
 
 function rankStrip(plan) {
@@ -963,9 +1099,18 @@ function slotGrid(plan) {
       ${badge('pk', r.packs, 'pack', 'packs')}
     </div>`;
   }).join('');
-  return `<div class="slots">${cells}</div>
-    ${hidden > 0 ? `<div class="legend tiny muted">
-      ranks ${last + 1}–${plan.players} get nothing</div>` : ''}`;
+  return `<div class="slots">${cells}</div>`;
+}
+
+/* Diese Zeile darf nicht mitscrollen. Sie ist die einzige Aussage über die
+   Ränge, die gar keine Kachel haben — im Scrollbereich lag sie unter der Kante
+   und war damit genau dann unsichtbar, wenn sie etwas zu sagen hatte. */
+function slotFoot(plan) {
+  let last = 0;
+  plan.rows.forEach((r) => { if (r.booster || r.packs || r.winners) last = r.rank; });
+  if (last >= plan.players) return '';
+  return `<div class="legend tiny muted">ranks ${last + 1}–${
+    plan.players} get nothing</div>`;
 }
 
 /* Die Legende steht oben, wo sie stehen bleibt — unter dem Raster wäre sie
@@ -1005,36 +1150,27 @@ function slotPop(plan) {
    RankPool-Balken unter die Kacheln, statt sie hinter sich verschwinden
    zu lassen. */
 function slotBlock(plan) {
-  return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;overflow:auto">
-    <div class="bar tiny muted" style="margin-bottom:5px">
+  return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;display:flex;
+      flex-direction:column">
+    <div class="bar tiny muted" style="margin-bottom:5px;flex:none">
       ${slotLegend()}
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
-    ${slotGrid(plan)}</div>`;
+    <div style="flex:1 1 auto;min-height:0;overflow:auto">${slotGrid(plan)}</div>
+    ${slotFoot(plan)}</div>`;
 }
 
-function floorBar(plan) {
-  const tot = Math.max(1, plan.rank.booster);
-  const fl = Math.round((plan.floorReserved / tot) * 100);
-  const dr = Math.round((plan.displayReserved / tot) * 100);
-  return `<div>
-    <div class="segbar">
-      <i style="width:${dr}%;background:var(--reserve)"></i>
-      <i style="width:${fl}%;background:var(--floorfill)"></i>
-      <i style="width:${100 - fl - dr}%;background:var(--shape)"></i>
-    </div>
-    <div class="tiny muted" style="margin-top:3px">
-      RankPool ${plan.rank.booster} booster = ${plan.floorReserved} floor
-      + ${plan.shapedRemainder} shaped by the curve
-      ${plan.curveSilent ? ' — <strong style="color:var(--warn)">curve has nothing to shape</strong>' : ''}
-    </div></div>`;
-}
-
+/* Der Balken unter den Kacheln ist weg: die Aufteilung des RankPool steht jetzt
+   im Kopf (Total plus Handout-Zeile) und als Rangtotal über den Balken. Der Satz
+   zur stummen Kurve, den er mittrug, ist eine Zeile der Konfliktmeldung
+   geworden — dort, wo alle anderen Meldungen auch stehen. Der seltene Fall
+   ShapedRemainder == 0 *ohne* Konflikt bleibt bewusst unbenannt: eine Meldung
+   dort würde nach ADR 0002 einen gültigen Plan für ungültig erklären. */
 function conflictBox(plan, sugg) {
   if (!plan.conflict) return '';
   return `<div class="flag"><strong>${plan.conflict.have} boosters can't carry a floor of
-    ${plan.conflict.need}.</strong><br>
+    ${plan.conflict.need}.</strong><br>The curve has nothing left to shape.<br>
     ${sugg.map((s) => `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
   </div>`;
 }
@@ -1156,11 +1292,11 @@ function screen(plan, sugg) {
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
         overflow:hidden">
       ${headerBlock(plan)}
-      <div style="padding:8px 12px 0;${side
+      <div style="position:relative;padding:8px 12px 0;${side
         ? `height:${stripMax}px;flex:none`
-        : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${rankStrip(plan)}</div>
+        : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
+        rankTotal(plan)}${rankStrip(plan)}</div>
       ${slotBlock(plan)}
-      <div style="padding:8px 12px 0;flex:none">${floorBar(plan)}</div>
       ${plan.conflict ? `<div style="padding:8px 12px 0;flex:none">${conflictBox(plan, sugg)}</div>` : ''}
       <div style="height:9px;flex:none"></div>
     </div>
@@ -1224,7 +1360,7 @@ function fsContent(plan) {
       <span>${TYPES[st.type].title} · ${st.players}</span>
       <span class="tiny muted bar">${slotLegend()}</span>
     </div>
-    <div class="body">${slotGrid(plan)}</div>`;
+    <div class="body">${slotGrid(plan)}${slotFoot(plan)}</div>`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1248,15 +1384,16 @@ const popEl = document.getElementById('pop');
 function render() {
   const plan = distribute(settings());
   const sugg = suggestions(plan);
-  // Das Blatt deckt die Kacheln zu, also kann dort keine Blase offen sein.
+  // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
   if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
+  if (sheetOpen || fsOpen) st.openInfo = null;
   appEl.innerHTML = screen(plan, sugg);
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
-  popEl.innerHTML = slotPop(plan);
+  popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
   sheetEl.classList.toggle('open', sheetOpen);
   fsEl.classList.toggle('open', fsOpen);
-  popEl.classList.toggle('show', st.openSlot != null);
+  popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
   stage.classList.toggle('anyopen', sheetOpen || fsOpen);
   stage.classList.toggle('fsopen', fsOpen);
   document.getElementById('morph').title = (sheetOpen || fsOpen) ? 'schliessen' : 'mehr';
@@ -1266,9 +1403,11 @@ function render() {
 /* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
    oben, wenn unten kein Platz mehr ist. */
 function placePop() {
-  if (st.openSlot == null) return;
+  if (st.openSlot == null && st.openInfo == null) return;
   const host = fsOpen ? fsEl : appEl;
-  const tile = host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
+  const tile = st.openInfo
+    ? host.querySelector(`[data-info="${st.openInfo}"]`)
+    : host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
   if (!tile) { popEl.classList.remove('show'); return; }
   const s = stage.getBoundingClientRect();
   const t = tile.getBoundingClientRect();
@@ -1303,17 +1442,26 @@ stage.addEventListener('click', (e) => {
     const tile = e.target.closest('.slot');
     if (tile) {
       const r = Number(tile.dataset.rank);
+      st.openInfo = null;
       st.openSlot = st.openSlot === r ? null : r;
       render();
       return;
     }
-    if (st.openSlot != null && !e.target.closest('#pop')) { st.openSlot = null; render(); }
+    if ((st.openSlot != null || st.openInfo != null) && !e.target.closest('#pop')) {
+      st.openSlot = null; st.openInfo = null; render();
+    }
     return;
   }
   const d = t.dataset;
+  // Der Erklärer ist ein Umschalter: derselbe ⓘ schliesst ihn wieder.
+  if (d.info) {
+    st.openSlot = null;
+    st.openInfo = st.openInfo === d.info ? null : d.info;
+    render(); return;
+  }
   // Jeder Knopf ausserhalb der Blase schliesst sie.
-  if (!t.closest('#pop')) st.openSlot = null;
-  if (d.closepop) { st.openSlot = null; render(); return; }
+  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; }
+  if (d.closepop) { st.openSlot = null; st.openInfo = null; render(); return; }
   if (d.win) {
     const r = st.openSlot;
     if (Number(d.win) > 0) st.manualWinner[r] = (st.manualWinner[r] || 0) + 1;
@@ -1362,10 +1510,14 @@ window.addEventListener('resize', placePop);
    Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
 document.addEventListener('click', (e) => {
   const inside = stage.contains(e.target);
-  if (!inside && st.openSlot != null) { st.openSlot = null; render(); }
+  if (!inside && (st.openSlot != null || st.openInfo != null)) {
+    st.openSlot = null; st.openInfo = null; render();
+  }
 }, true);
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && st.openSlot != null) { st.openSlot = null; render(); }
+  if (e.key === 'Escape' && (st.openSlot != null || st.openInfo != null)) {
+    st.openSlot = null; st.openInfo = null; render();
+  }
 });
 
 /* Der Modus steht im Attribut, nicht in der Klasse: setDev() schreibt
