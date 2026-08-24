@@ -51,10 +51,9 @@ Eingaben, der Link ist nur eine weitere Quelle dafür.
 
 **Die Kodierung wird öffentlich.** Sobald Links bei Leuten liegen, ist ihr Format
 eine Schnittstelle: ein umbenannter Regler oder ein entfernter `TournamentType`
-macht alte Links ungültig oder, schlimmer, still falsch. Was die App mit einem
-Link tut, der auf einen verschwundenen `TournamentType` oder auf einen Wert
-ausserhalb eines inzwischen verschobenen Deckels zeigt, ist noch nicht entschieden
-und liegt als eigenes Ticket auf der Karte.
+macht alte Links ungültig oder, schlimmer, still falsch. Wie die App damit umgeht,
+entscheidet ADR 0007 — die URL trägt eine Version, und jede Erhöhung bringt eine
+`LinkMigration` mit, die das Ergebnis erhält statt der Werte.
 
 **Der Kopierknopf ist eine Abkürzung, kein Export.** Er legt die Adresszeile in
 die Zwischenablage und erzeugt kein zweites Format — die Entscheidung gegen
@@ -68,3 +67,13 @@ stehen mit demselben Wert, den sein Default ohnehin liefert. Der Satz oben, die
 Menge der Abweichungen *sei* die Menge der angefassten Regler, ist entsprechend
 zu lesen — es bleibt **ein** Bit je Regler, wie ADR 0003 verlangt, aber die
 Gleichsetzung der beiden Mengen gilt nicht mehr. Am Format ändert das nichts.
+
+Nachtrag: Die Lebensdauer eines Links ist länger, als der Abschnitt „Kein Zustand
+in der URL" oben unterstellt. Dort steht, der `SetupLink` sei für den *einmaligen*
+Fall da und Wiederkehrendes gehöre in den `TournamentType`. Das bleibt als
+Empfehlung richtig, beschreibt aber nicht, wie der Link benutzt wird: er wird als
+**Lesezeichen** abgelegt — im Discord gepinnt, in einer Notiz aufbewahrt, Monate
+später wieder geöffnet. Der Link ist damit ein zweiter, ungepflegter Ort für
+wiederkehrende Einstellungen, und das ist hingenommen, nicht wegdefiniert. Die
+Folge trägt ADR 0007: eine Version in der URL und eine `LinkMigration` je
+Erhöhung.

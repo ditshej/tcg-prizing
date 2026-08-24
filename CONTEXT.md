@@ -349,7 +349,31 @@ meist auch abweichen, ist Folge und nicht Definition. Sie schreibt sich beim Zie
 mit, ohne Browser-Historie zu erzeugen; Neuladen ändert nichts. Eingabe, nicht
 Persistenz: die App schreibt nichts weg, sie liest einen Link — Accounts, Storage
 und Caching bleiben ausgeschlossen.
+Sie wird als **Lesezeichen** abgelegt und Monate später wieder geöffnet, also ist
+ihre Kodierung eine Schnittstelle: sie trägt eine **Formatversion**, und was nicht
+mehr passt, richtet eine `LinkMigration`. `Game` und `TournamentType` stehen darin
+als **stabiler Name**, nie als Position — die Reihenfolge der `TournamentType`-Liste
+ist bedeutungstragend und darf sich ändern. Ein Wert aus dem Link ist ein `pinned`
+Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
+`ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
+URL kam.
 _Avoid_: Preset (Oberflächensprache, siehe `DefaultSet`), Permalink, State, Snapshot (sie trägt keinen vollständigen Zustand, nur die Abweichungen)
+
+**LinkMigration**:
+Die Umschreibregel, die einen `SetupLink` einer älteren Formatversion auf die
+heutige hebt — eine je Erhöhung, vom Maintainer geschrieben. Ihr Vertrag ist, das
+**Ergebnis** zu erhalten und nicht die Werte: sie darf Regler setzen, die im alten
+Link nie standen, solange der `DistributionPlan` möglichst derselbe bleibt.
+Mechanisch erfunden wird dabei nichts — wo ein Regler ersatzlos verschwunden ist
+und die Kette keinen Nachfolger nennt, fällt der Wert weg, statt dass ein
+ausgedachter als `pinned` eine Entscheidung behauptet, die nie jemand getroffen
+hat. Beim Öffnen läuft die Kette hoch und der migrierte Stand gilt sofort; die
+Adresszeile schreibt sich als heutige Version mit, und ein einmaliges Overlay
+berichtet, was umgeschrieben und was weggefallen ist, samt der Aufforderung, das
+Lesezeichen zu erneuern. Es liegt über allem statt in der Reihe unter dem Plan,
+weil es nicht den Plan kommentiert, sondern die Herkunft der Eingabe — wegklickbar,
+nie im `SetupLink`, und nur da, wenn die Kette tatsächlich gelaufen ist.
+_Avoid_: Upgrade, Konvertierung, Kompatibilitätsmodus (es gibt keinen zweiten Lesemodus, nur einen Weg nach vorn)
 
 **Ranking**:
 Die fertige Reihenfolge der `Player`, geliefert vom Turniertool des `Game`.
