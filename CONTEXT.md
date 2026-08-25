@@ -34,13 +34,18 @@ Ein versiegelter Pack mit genau einer goldgestempelten Siegerkarte darin. Ein
 _Avoid_: Winner (allein), Siegerkarte als Bezeichnung für einen Menschen
 
 **PackEnvelope**:
-Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine Anzahl
-`TournamentPack`s plus ein `WinnerPack`. Die Anzahl ist pro `Tournament`
-einstellbar, mit einem Default am `Game` — sie wechselt von Event zu Event
-innerhalb desselben `Game`. Der `WinnerPack` gehört erst zum `PrizePool`, wenn
-mindestens zwei Drittel der `TournamentPack`s daraus angebrochen sind; diese
-Schwelle wird aus der Grösse abgeleitet und nicht eingestellt. Sie ist der
-einzige Ort, an dem zwei `PrizeItem`-Typen aneinander hängen.
+Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine **Grösse** —
+die Anzahl `TournamentPack`s darin — und eine **Ausbeute**, die Anzahl
+`WinnerPack`s darin. Beide sind pro `Tournament` einstellbar, mit einem Default
+am `Game`, das der `TournamentType` überschreiben darf — der Umschlag wechselt
+von Event zu Event innerhalb desselben `Game`. Die `WinnerPack`s gehören nicht
+auf einmal zum `PrizePool`, sondern fallen **gleichmässig auf dem Weg zur
+Zwei-Drittel-Marke** an: bei zwei Dritteln angebrochener `TournamentPack`s ist
+die Ausbeute komplett, davor zählt sie anteilig, also
+`min(Ausbeute, ⌊3 · Ausbeute · angebrochen / (2 · Grösse)⌋)`. Bei Ausbeute 1 ist
+das die einzelne Schwelle bei zwei Dritteln. Die Staffel wird aus Grösse und
+Ausbeute abgeleitet und nicht eingestellt. Sie ist der einzige Ort, an dem zwei
+`PrizeItem`-Typen aneinander hängen.
 Die `PackagingUnit` für `TournamentPack`s. Lose Einzelpacks, die im Laden aus
 einem früheren `PackEnvelope` übrig sind, kennt die App nicht — die zählt der
 `CommunityLead` selbst.
@@ -86,9 +91,12 @@ Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
 `Pool`s übrig bleibt.
 
 **RankPoolDepth**:
-Wie tief die **geformte** Verteilung des `RankPool` ins `Ranking` reicht: Anzahl
-der Ränge ab `Rank` 1, die aus der `DistributionCurve` etwas bekommen —
-lückenlos, mindestens 1. Sie betrifft nur die teilbaren Mengen, also die
+Wie tief der `RankPool` ins `Ranking` reicht: Anzahl der Ränge ab `Rank` 1, die
+**bedient** werden, also mindestens den `RankFloor` bekommen — lückenlos,
+mindestens 1. Nicht die Reichweite der `DistributionCurve`: die formt nur den
+`ShapedRemainder` und läuft unten aus, sobald sie bei null angekommen ist. Ein
+bedienter `Rank`, bei dem die Kurve nichts mehr abwirft, bleibt bedient — bei
+grosser Tiefe der Normalfall, nicht die Ausnahme. Sie betrifft nur die teilbaren Mengen, also die
 `Booster`; knappe unteilbare `PrizeItem`s laufen den `RankCycle` und reichen
 tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
 `RankPool` selbst: jeder bediente `Rank` bekommt mindestens den `RankFloor` und
@@ -168,7 +176,8 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
 ihn per `Raffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
 Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die vorhandene Zahl `WinnerPack`s** ist
-und der Wert auf ebendiese gedeckelt wird), die nachzieht,
+und der Wert auf ebendiese gedeckelt wird — auch bei n = 0, wo die Staffel damit
+selbst auf 0 fällt), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch die vorhandene Zahl
 gedeckelt. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
 aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter

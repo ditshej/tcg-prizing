@@ -92,6 +92,22 @@ Gleichstand zwischen `Rank` 2 und 3 braucht die Kurve, um gebrochen zu werden.
 Das ist die Fassung, in der „der Sieger bekommt genau zwei `Display`s" eine
 haltbare Aussage ist — der Preis ist ebendieser Verlust der Vorsprungs-Garantie.
 
+Nachtrag: Der Satz „im Konflikt werden **wenige Ränge anständig** bedient statt
+viele mit Krümeln" ist keine Leitlinie der App, sondern die Begründung für die
+Reglerwerte eines **kompetitiven** `TournamentType`. Er wird hier ausdrücklich
+vom Mechanismus abgezogen: die Vorrangkette steht, weil der `RankFloor` eine
+harte Zusicherung ist und die Kurve ein weicher Wunsch — das gilt bei Tiefe 8
+wie bei Tiefe 32 unverändert und braucht keine Aussage darüber, welche Verteilung
+die bessere ist. Der Gegenbeweis ist das Release-Blatt (Resolution zu #25):
+`RankPoolDepth` = alle Spielenden, `RankFloor` 2, und der Krümel für `Rank` 32 ist
+genau der Punkt der Veranstaltung. Wer die Kette als Wertung liest, hält ein
+gültiges Set-Blatt für einen Verstoss.
+
+Ebenfalls gegen den Wortlaut oben zu lesen: „**die flachste Stufe**" heisst die
+unterste der sieben — `gentle` 0.85 —, nie die Abwesenheit einer Kurve. Flach im
+Sinne von „möglichst viele bekommen möglichst gleich viel" macht der `RankFloor`,
+nicht die Stufenwahl; eine achte, gleichverteilende Stufe bleibt ausgeschlossen.
+
 Knappe `PrizeItem`s laufen an der Kurve vorbei. `WinnerPack`s und
 `TournamentPack`s im `RankPool` werden von `Rank` 1 an durchgereicht und
 beginnen wieder oben, wenn mehr davon da sind als bediente Ränge — sonst gehen
