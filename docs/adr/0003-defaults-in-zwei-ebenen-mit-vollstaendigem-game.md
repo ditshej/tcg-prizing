@@ -10,7 +10,7 @@ verschachtelten Ebenen entsteht: Das `Game` trägt ein **vollständiges** Blatt
 ## Considered Options
 
 **Disjunkte Ebenen.** Jede Variable hätte genau einen Wohnort: das `Game` trüge
-die physischen Fakten (`Display`-Grösse, `PackEnvelope`-Grösse, welche
+die physischen Fakten (`Display`-Grösse, `PromoEnvelope`-Grösse, welche
 `PrizeItem`-Typen es gibt), der `TournamentType` die Eventfakten (Spielerzahl,
 Raten, `DistributionCurve`, `RankPoolDepth`). Der Reiz war, dass es dann keine
 Vorrangregel braucht, weil sich die Ebenen nie in die Quere kommen — dasselbe
@@ -18,7 +18,7 @@ Muster, mit dem die Regler-Obergrenzen aus der Summenregel eine Eigenschaft der
 Eingabe statt einer Prüfung gemacht haben.
 
 Das scheitert an einem Fakt, der schon festgehalten war: Die
-`PackEnvelope`-Grösse wechselt ausdrücklich *innerhalb* desselben `Game` von
+`PromoEnvelope`-Grösse wechselt ausdrücklich *innerhalb* desselben `Game` von
 Event zu Event. Sie ist nach jeder vernünftigen Lesart eine physische Tatsache
 und müsste also am `Game` hängen — genau dort, wo sie nicht bleiben kann. Ein
 Modell, das schon beim ersten bekannten Beispiel eine Ausnahme braucht, ist

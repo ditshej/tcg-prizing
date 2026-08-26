@@ -26,14 +26,14 @@ Ein versiegelter Booster aus einem regulären Set. Ein `PrizeItem`.
 Ein versiegelter Pack mit genau einer Turnierkarte darin, von Bandai als
 Teilnahmepreis für Store Tournaments geliefert. Ein `PrizeItem`. Verteilt wird
 der geschlossene Pack, nie die Karte darin.
-_Avoid_: Promo (ist bei Bandai der Oberbegriff über alle Turnierkarten, auch die Siegerkarte), ParticipationPack (heisst nur auf Championship-Ebene so)
+_Avoid_: Promo (ist bei Bandai der Oberbegriff über alle Turnierkarten, auch die Siegerkarte — am `PromoEnvelope` ist derselbe Oberbegriff dagegen richtig, weil der Umschlag beide Sorten hält), ParticipationPack (heisst nur auf Championship-Ebene so)
 
 **WinnerPack**:
 Ein versiegelter Pack mit genau einer goldgestempelten Siegerkarte darin. Ein
 `PrizeItem`, also eine Sache — nie eine Person.
 _Avoid_: Winner (allein), Siegerkarte als Bezeichnung für einen Menschen
 
-**PackEnvelope**:
+**PromoEnvelope**:
 Die Liefereinheit, in der Bandai `TournamentPack`s ausgibt: eine **Grösse** —
 die Anzahl `TournamentPack`s darin — und eine **Ausbeute**, die Anzahl
 `WinnerPack`s darin. Beide sind pro `Tournament` einstellbar, mit einem Default
@@ -47,13 +47,13 @@ das die einzelne Schwelle bei zwei Dritteln. Die Staffel wird aus Grösse und
 Ausbeute abgeleitet und nicht eingestellt. Sie ist der einzige Ort, an dem zwei
 `PrizeItem`-Typen aneinander hängen.
 Die `PackagingUnit` für `TournamentPack`s. Lose Einzelpacks, die im Laden aus
-einem früheren `PackEnvelope` übrig sind, kennt die App nicht — die zählt der
+einem früheren `PromoEnvelope` übrig sind, kennt die App nicht — die zählt der
 `CommunityLead` selbst.
-_Avoid_: Briefchen (nur Umgangssprache), ParticipationPack
+_Avoid_: Briefchen (nur Umgangssprache), ParticipationPack, PackEnvelope (hiess bis 2026-08-26 so; Tickets bis #25 sagen es noch)
 
 **PackagingUnit**:
 Die Einheit, in der ein `PrizeItem` geliefert wird, im Unterschied zur Einheit,
-in der es verteilt wird: `Display` für `Booster`, `PackEnvelope` für
+in der es verteilt wird: `Display` für `Booster`, `PromoEnvelope` für
 `TournamentPack`s. Sie bindet die Beschaffung, nie die Verteilung — angebrochen
 werden darf immer, und der `PrizePool` wird nie auf ganze Einheiten gerundet.
 Sie ist die Achse, entlang der die `PreparationList` zerlegt.
@@ -174,7 +174,7 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 `ranked`-Anteil, frei über das ganze `Ranking` und unabhängig von
 `RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
-ihn per `Raffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
+ihn per `WinnerRaffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
 Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die vorhandene Zahl `WinnerPack`s** ist
 und der Wert auf ebendiese gedeckelt wird — auch bei n = 0, wo die Staffel damit
 selbst auf 0 fällt), die nachzieht,
@@ -185,7 +185,7 @@ aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
 `JudgePool`.
 _Avoid_: fix (heisst auf Englisch „reparieren"), WinnerAssignment, ManualPool (es ist kein `Pool`)
 
-**Raffle**:
+**WinnerRaffle**:
 Der Bedienschritt, mit dem der `CommunityLead` einen `manual`-`WinnerPack` aus
 der `WinnerPackAllocation` auslosen lässt statt ihn selbst zu setzen: ein
 Auslösen vergibt genau einen `WinnerPack` an einen gleichverteilt gezogenen
@@ -196,11 +196,12 @@ dieser `Rank` sofort wieder ziehbar. Ein Bedienschritt, kein Rechenschritt: der
 Zufall sitzt in der Eingabe, nicht in der Berechnung, deshalb ändert Neurechnen
 nie einen Gewinner. Steht neben der Handzuteilung, ersetzt sie nicht. Nicht
 auslösbar, wenn kein `manual`-`WinnerPack` mehr offen oder der `RafflePot` leer
-ist.
-_Avoid_: Draw (heisst im TCG das Ziehen einer Karte), Lottery (klingt nach Geld und Recht), Verlosung als Name für den Bereich
+ist. Der Zusatz `Winner` gehört zum Namen, weil `Raffle` allein nicht sagt, was
+verlost wird; die zwei Ableitungen tragen ihn nicht, weil sie niemand ausspricht.
+_Avoid_: Shuffle (heisst im TCG das Mischen des eigenen Decks — und es benennt eine Reihenfolge, keinen Empfänger: ein gemischtes Deck hat niemanden gewinnen lassen), Draw (heisst im TCG das Ziehen einer Karte), Lottery (klingt nach Geld und Recht), Verlosung als Name für den Bereich
 
 **RaffleRange**:
-Der `Rank`-Bereich, aus dem eine `Raffle` zieht — dreizehn benannte Stufen über
+Der `Rank`-Bereich, aus dem eine `WinnerRaffle` zieht — dreizehn benannte Stufen über
 der Spielerzahl. Obere acht: `all`, `top8`, `top16`, `topQuarter`, `topThird`,
 `topHalf`, `topTwoThirds`, `topThreeQuarters`. Untere fünf als deren
 Komplemente: `bottomThreeQuarters`, `bottomTwoThirds`, `bottomHalf`,
@@ -213,13 +214,13 @@ acht beschränkt. Bemessungsgrundlage ist immer die Spielerzahl, nie
 _Avoid_: RaffleMode (es ist ein Bereich, kein zweiter Rechenweg), Lostopf (das ist der `RafflePot`)
 
 **RafflePot**:
-Die `Rank`s, die bei einer `Raffle` wirklich im Topf liegen: die `RaffleRange`
+Die `Rank`s, die bei einer `WinnerRaffle` wirklich im Topf liegen: die `RaffleRange`
 abzüglich aller `Rank`s, die schon einen `WinnerPack` haben — `ranked` wie
 `manual`. Dieser Ausschluss ist eine Invariante und kein Bedienelement, eine
 Siegerkarte gewinnt niemand zweimal. Über `open` gebliebene `WinnerPack`s sagt er
 nichts, weil sie keinen Empfänger haben. Er hängt am laufenden Zuteilstand und
 kann leer sein, während die `RaffleRange` es nicht ist — genau dann ist die
-`Raffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind.
+`WinnerRaffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind.
 _Avoid_: RafflePool (kein `Pool`, er verteilt nichts, sondern begrenzt die Empfängerwahl), RaffleGroup, Lostopf als Identifier
 
 **DisplayReservation**:
@@ -363,8 +364,9 @@ gleich, auch wenn er nur bei den dreien beisst, deren Startwert eine Rechnung
 statt einer Zahl ist — `RankPoolDepth`, die absolute `TournamentPack`-Zahl und
 der `ranked`-Anteil der `WinnerPackAllocation`. Ein `pinned` Wert wird nie
 nachträglich gekappt: sinkt ein Deckel unter ihn, bleibt er stehen und die App
-zeigt die Lage (ADR 0002).
-_Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), Touched (beschreibt die Geste, nicht den Zustand), Locked (klingt nach Schutz vor dem Nutzer), Dirty
+zeigt die Lage (ADR 0002). Das Gegenteil heisst **`auto`** — der Regler folgt
+noch einer Rechnung. Beide Wörter stehen so auch am Schirm.
+_Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), Touched (beschreibt die Geste, nicht den Zustand), Locked (klingt nach Schutz vor dem Nutzer), Dirty, Manual (ist schon der `manual`-Anteil der `WinnerPackAllocation` — dasselbe Wort für zwei Sachen auf demselben Schirm)
 
 **SetupLink**:
 Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
