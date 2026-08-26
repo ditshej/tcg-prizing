@@ -264,6 +264,19 @@ reiner Sitzungszustand: nie im `SetupLink`, kein Überleben eines Neuladens,
 zurück sobald sich der Inhalt des Vorschlags ändert.
 _Avoid_: Hint, Suggestion (bezeichnet auch die Wege aus der `ConflictNotice`), Tip
 
+**CarryOverNotice**:
+Die Meldung nach einem Wechsel von `Game` oder `TournamentType`, die auflistet,
+welche `pinned` Regler den Wechsel überstanden haben und darum nicht dem neuen
+`DefaultSet` folgen. Sie kommentiert die **Herkunft der Eingabe**, nicht den
+`DistributionPlan` — darin dem Bericht der `LinkMigration` verwandt und nicht der
+`ConflictNotice`, die eine Aussage über den Plan macht. Sie ist die Ansage zu
+einem Klick, der sichtbar wenig getan hat, und trägt deshalb den Weg mit: einen
+Knopf, der alle auf das neue Blatt zieht. Wegklickbar und reiner
+Sitzungszustand, nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
+verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
+`TournamentType`-Titel (alle) steht.
+_Avoid_: Warning (es ist nichts schiefgegangen), ChangeLog, Diff
+
 **CombinedHandout**:
 Ob der `ParticipationPool` zusammen mit dem `RankPool` ausgeteilt wird oder
 vorher. Ein Bit am `Tournament` und kein Rechenschritt: es verschiebt die
@@ -301,7 +314,9 @@ entsteht.
 **Game**:
 Das TCG, für das ein `Tournament` läuft, und Träger eines **vollständigen**
 Blatts Startwerte: jede Variable, die überhaupt vorbelegt werden kann, hat auf
-dieser Ebene einen Wert. Ein unvollständiges `Game` ist ein Fehler und kein
+dieser Ebene einen Wert — die **erwartete Spielerzahl** eingeschlossen, denn sie
+benennt keinen `Rank` und unterscheidet sich zwischen Spielen wie zwischen
+Turniertypen. Ein unvollständiges `Game` ist ein Fehler und kein
 zulässiger Zustand, weil der Rückfall eines `TournamentType` sonst ins Leere
 zeigt. Diese Werte sind zugleich die des ersten `TournamentType` — keine
 neutrale Grundlinie, sondern der häufigste Fall.
@@ -326,7 +341,9 @@ Daten, nie Logik. Es belegt nie etwas vor, das einen `Rank` benennt: die
 `DisplayReservation` und der `manual`-Anteil der `WinnerPackAllocation` starten
 immer neutral, weil ein vorbelegter Empfänger eine Zuteilung ohne Entscheid
 wäre. Ein Wechsel von `Game` oder `TournamentType` ersetzt das ganze
-`DefaultSet` und setzt alle Regler zurück, auch die `pinned` gesetzten. Ein
+`DefaultSet`, **überschreibt aber nichts von Hand Gesetztes**: nicht `pinned`
+Regler folgen dem neuen Blatt, `pinned` Regler bleiben stehen, und der
+`CarryOverNotice` sagt, welche. Ein
 `SetupLink` legt sich als dritte Ebene darüber — er trägt keine Startwerte,
 sondern setzt die Regler, die er nennt, auf `pinned`.
 _Avoid_: Preset (Oberflächensprache), Config, Profile, Defaults (allein)
@@ -336,9 +353,10 @@ Der Zustand eines Reglers, den der `CommunityLead` selbst gesetzt hat: er folgt
 keiner Rechnung mehr, steht im `SetupLink` und ist in der Oberfläche markiert.
 Gesetzt wird er durch die **Bedienhandlung**, nicht durch den Wert — wer einen
 Regler verstellt und wieder auf den Ausgangswert zurückzieht, hat entschieden und
-lässt ihn `pinned`. Aufgehoben wird er allein über den Knopf neben dem Regler,
-der ihn auf das `DefaultSet` zurückstellt, sowie über einen Wechsel von `Game`
-oder `TournamentType`. Die Markierung sagt deshalb „folgt der Rechnung nicht
+lässt ihn `pinned`. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
+bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
+zurück, der Knopf neben dem `TournamentType`-Titel **alle**. Ein Wechsel von
+`Game` oder `TournamentType` hebt ihn nicht auf. Die Markierung sagt deshalb „folgt der Rechnung nicht
 mehr", nicht „weicht ab": beides fällt meist zusammen, aber ein `pinned` Regler
 darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
 gleich, auch wenn er nur bei den dreien beisst, deren Startwert eine Rechnung
@@ -350,7 +368,9 @@ _Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), 
 
 **SetupLink**:
 Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
-`pinned` Regler trägt. Dritte Ebene der Kette `Game` → `TournamentType` →
+`pinned` Regler trägt — die neutral startenden eingeschlossen, also auch die
+`DisplayReservation` und den `manual`-Anteil der `WinnerPackAllocation` (ADR
+0006). Dritte Ebene der Kette `Game` → `TournamentType` →
 `SetupLink`, und wie die zweite trägt sie **nur den Unterschied** — was sie nicht
 nennt, ist nicht `pinned` und zieht mit der Spielerzahl nach. Ein Bit je Regler
 genügt dafür, weil der Wert selbst die Aussage ist; dass die genannten Regler

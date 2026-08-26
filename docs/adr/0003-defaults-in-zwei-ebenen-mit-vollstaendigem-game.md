@@ -63,3 +63,35 @@ Zöge nur die Hälfte nach, wäre der sichtbare Stand eine Mischung aus zwei Set
 und die angefasst-Anzeige aus ADR 0001 würde über ihre eigene Bezugsgrösse lügen.
 Weil dabei Handarbeit verloren geht, verlangt der Wechsel eine Bestätigung —
 aber nur, wenn tatsächlich schon etwas angefasst war.
+
+## Nachtrag (#26): der Wechsel löscht nichts
+
+Der vorstehende Absatz ist **zurückgezogen**. Ein Wechsel von `Game` oder
+`TournamentType` ersetzt weiterhin das ganze `DefaultSet`, überschreibt aber
+nichts von Hand Gesetztes: nicht `pinned` Regler folgen dem neuen Blatt,
+`pinned` Regler bleiben stehen.
+
+Die Befürchtung „eine Mischung aus zwei Sets" beschreibt keinen neuen Zustand,
+sondern den Normalfall. Ein `pinned` Regler ist nach ADR 0006 definiert als
+einer, der **keiner Rechnung mehr folgt** — und der Startwert aus einem Set ist
+eine Rechnung wie jede andere. Der Wechsel war damit die einzige Stelle im
+System, an der ein Pin ohne den Reset-Knopf starb; die Ausnahme entfällt, und die
+verbleibende Regel gilt ausnahmslos. Die Bezugsgrösse lügt dabei nicht, weil die
+Markierung nach ADR 0006 ohnehin „folgt der Rechnung nicht mehr" bedeutet und
+nicht „weicht vom heutigen Blatt ab".
+
+Eine Ausnahmeliste braucht die Regel nicht: `DisplayReservation` und der
+`manual`-Anteil der `WinnerPackAllocation` sind nach ADR 0006 gewöhnliche
+`pinned` Regler und fallen ohne Sonderfall unter denselben Satz.
+
+Damit entfällt die Bestätigung ersatzlos — es geht nichts verloren, also ist
+nichts zu bestätigen —, und mit ihr der an #15 gerichtete Wunsch nach einem Undo
+für den Set-Wechsel. An die Stelle beider tritt der `CarryOverNotice`: eine
+wegklickbare Meldung, die auflistet, was stehengeblieben ist, und einen Knopf
+trägt, der alles auf das neue Blatt zieht. Einzelübernahme leistet der
+Reset-Knopf am Regler, den ADR 0006 ohnehin verlangt; er heisst damit nicht mehr
+„zurück auf Default", sondern **„zurück auf den gewählten Typ"**.
+
+Nachgetragen wird zugleich ein Loch im Blatt: die **erwartete Spielerzahl** ist
+ein vorbelegbarer Wert wie jeder andere und gehört auf die `Game`-Ebene. Der
+Prototyp führte sie ausserhalb des Sets, was nie entschieden war.

@@ -72,3 +72,26 @@ zwei `pinned` Regler sich widersprechen, kann die Meldung deshalb nicht auf den
 keinen. Benannt wird der Verlierer der Vorrangkette aus ADR 0001
 (`RankFloor` → `RankPoolDepth` → `DisplayReservation`), was aus dem Zustand
 allein ableitbar ist und im geöffneten Link genauso trägt wie beim Schrauben.
+
+## Nachtrag (#26): der Rückweg hat zwei Reichweiten, der Wechsel ist keine
+
+Der Satz „ohne den Knopf gäbe es keinen Rückweg ausser dem Wechsel von `Game`
+oder `TournamentType`, der alles auf einmal zurücksetzt" ist überholt: der
+Wechsel setzt seit dem Nachtrag zu ADR 0003 **nichts** mehr zurück. An seine
+Stelle tritt ein zweiter Knopf neben dem `TournamentType`-Titel, der alle Pins
+auf einmal auf das gewählte Set zurückstellt — dieselbe Handlung wie der Knopf am
+Regler, nur mit voller Reichweite. Er reicht über sämtliche Pins einschliesslich
+der Kachel-Zuteilungen, hält aber bei `Game` und `TournamentType` an: er stellt
+den Schirm auf den gewählten Typ zurück, er wählt ihn nicht neu.
+
+Damit ist dieser Knopf die einzige verbliebene Stelle im Programm, an der
+Handarbeit verlorengeht, und er trägt eine zweistufige Sicherung an Ort und
+Stelle — der erste Druck macht den Knopf zur Frage samt Zahl („reset 12 tile
+picks?"), der zweite führt aus. Kein Overlay, keine neue Fläche. Die Sicherung
+ist **hinfällig, sobald es ein sitzungsweites Undo gibt**: eine Rückfrage vor
+einer rücknehmbaren Handlung ist Reibung ohne Gegenwert.
+
+Der Satz „es gibt keine Bedienhistorie" bleibt für die Zwecke gültig, für die er
+getroffen wurde — die `ConflictNotice` ordnet weiter nach der Vorrangkette, weil
+ein aus einem `SetupLink` geöffneter Zustand keine Vorgeschichte hat. Käme ein
+Undo-Stapel, änderte das an dieser Begründung nichts.
