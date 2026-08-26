@@ -79,3 +79,18 @@ Herkunft der Eingabe. Damit teilt es sich keinen Platz mit `ConflictNotice` und
 `Offer` und verschärft die Enge aus dem Ticket zu deren Verdrängung nicht. Es ist
 wegklickbar, kommt nicht zurück, steht nie im `SetupLink` und erscheint nur, wenn
 die Kette tatsächlich gelaufen ist.
+
+## Nachtrag (#34): die Kette erreicht die Adresse nicht
+
+Die `LinkMigration` läuft **in** der App. Sie kann jeden Reglerschlüssel umschreiben,
+aber nicht den Host, unter dem sie erreicht wurde — ein alter Link, der die App nicht
+mehr findet, kommt an der Kette nie an. Der **Wirt der Kodierung** ist damit der eine
+Teil der Schnittstelle, den die Versionierung nicht deckt, und ein Domainwechsel nach
+dem Livegang die eine Änderung, für die es keine Migration gibt. Übrig bliebe allein
+eine dauerhafte Weiterleitung auf dem alten Vhost.
+
+Daraus folgt keine Regel für den Code, sondern eine für die Reihenfolge: das
+Deploy-Ziel gehört **vor** den ersten Link im Umlauf festgelegt. Entschieden in
+[Deploy-Ziel: optcg.ch statt ditshej.ch?](https://github.com/ditshej/tcg-prizing/issues/34)
+als `prizing.optcg.ch`, solange die Einrichtung noch nicht gelaufen war — danach wäre
+derselbe Entscheid eine Weiterleitung ohne Ablaufdatum gewesen.

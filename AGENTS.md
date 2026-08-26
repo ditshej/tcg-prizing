@@ -1,4 +1,4 @@
-# tcg-price-calc
+# tcg-prizing
 
 ## Language
 
