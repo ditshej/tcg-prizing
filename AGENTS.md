@@ -41,6 +41,8 @@ Commit messages are written in English.
 
 ## Agent skills
 
+Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure` is one.
+
 ### Issue tracker
 
 Issues live in this repo's GitHub Issues, driven via the `gh` CLI. See `docs/agents/issue-tracker.md`.
@@ -52,6 +54,12 @@ The five canonical triage roles, each label string equal to its role name. See `
 ### Domain docs
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+Where we depart from the vendored `/domain-modeling` skill: when a later ADR touches an earlier one, the earlier one gets a stamp line under its title — `Ergänzt durch ADR-NNNN.` if the later one only extends it, `Teilweise`/`Vollständig überholt durch ADR-NNNN.` if it overturns it. Sharpening your own text while writing needs no stamp; it belongs in that same ADR's body. The extension case is the one that gets forgotten, because nothing at the earlier ADR becomes wrong — it only becomes incomplete. Table and examples in `docs/agents/domain.md`.
+
+### Prototypes
+
+Form per case, mockups marked as reference-only, one throwaway branch per map. See `docs/agents/prototyping.md`.
 
 ### SetupLink encoding
 

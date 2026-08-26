@@ -1,5 +1,7 @@
 # Defaults in zwei Ebenen, mit vollständigem `Game`
 
+Ergänzt durch ADR-0005.
+
 Die Startwerte aller Regler kommen aus einem `DefaultSet`, das aus zwei
 verschachtelten Ebenen entsteht: Das `Game` trägt ein **vollständiges** Blatt
 über alle vorbelegbaren Variablen, der gewählte `TournamentType` trägt nur seine

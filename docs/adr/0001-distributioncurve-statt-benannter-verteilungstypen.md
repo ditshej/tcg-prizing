@@ -1,5 +1,7 @@
 # DistributionCurve statt benannter Verteilungstypen
 
+Teilweise überholt durch ADR-0002.
+
 Für die Aufteilung des `RankPool` auf die bedienten Ränge standen zwei Modelle
 zur Wahl: ein einzelner Regler mit Abstufungen von flach bis extrem, oder eine
 Auswahl benannter Berechnungs-Typen (gleichmässig, Halbierung, Plateaus,

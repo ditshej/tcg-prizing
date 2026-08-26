@@ -37,7 +37,21 @@ Run `gh issue view <number> --comments`.
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map`.
+- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map`. Two things the body carries **from the moment it is created** — both load-bearing for `/map-closure`, neither addable usefully later:
+  - A line in `## Notes` pointing at the closure check: „**Leere Frontier ist nicht das Ende.** Sind keine offenen Tickets mehr da, läuft `/map-closure` — mechanisches Gate, Fächer-Lauf mit frischen Linsen, Skeptiker, Triage zu viert. Die Karte ist erst zu, wenn ein **vollständiger** Durchgang null überlebende Funde bringt. Verbrauchte Linsen stehen unten im `## Prüfprotokoll`." This is the load-bearing half. The `## Notes` block is the only part of the map every session is guaranteed to load in full; without this line the session that first sees an empty frontier never finds the skill — the one moment it matters. A section further down does not help: nothing gives that session a reason to scroll there.
+  - An empty `## Prüfprotokoll` section, carrying the comment from the skill:
+
+    ```md
+    ## Prüfprotokoll
+
+    <!-- verbrauchte Linsen des Abschluss-Checks, eine Zeile je Linse und Durchgang; siehe /map-closure -->
+
+    Noch kein Durchgang gelaufen.
+    ```
+
+    A section that appears late is a section no session finds.
+
+  A map already under way retrofits **both, now** — not on its first closure pass. A map close to an empty frontier is precisely the one where retrofitting still changes something.
 - **Child ticket**: an issue linked to the map as a GitHub sub-issue (`gh api` on the sub-issues endpoint). Where sub-issues aren't enabled, add the child to a task list in the map body and put `Part of #<map>` at the top of the child body. Labels: `wayfinder:<type>` (`research`/`prototype`/`grilling`/`task`). Once claimed, the ticket is assigned to the driving dev.
 - **Blocking**: GitHub's **native issue dependencies** — the canonical, UI-visible representation. Add an edge with `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`, where `<blocker-db-id>` is the blocker's numeric **database id** (`gh api repos/<owner>/<repo>/issues/<n> --jq .id`, _not_ the `#number` or `node_id`). GitHub reports `issue_dependencies_summary.blocked_by` (open blockers only — the live gate). Where dependencies aren't available, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked when every blocker is closed.
 - **Frontier query**: list the map's open children (`gh issue list --state open`, scoped to the map's sub-issues / task list), drop any with an open blocker (`issue_dependencies_summary.blocked_by > 0`, or an open issue in the `Blocked by` line) or an assignee; first in map order wins.
