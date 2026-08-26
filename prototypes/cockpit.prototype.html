@@ -30,7 +30,12 @@
     --pack: #46617a;
     --unserved: #ded2bb;
     --floorfill: #c2a271;
-    --reserve: #a98bb8;
+    /* Die Reservation ist Handwerk — sie wird nie vorbelegt und nie automatisch
+       gesetzt. Darum steht sie in der Familie von --pin und nicht bei den
+       Prize-Farben: Violett heisst auf diesem Schirm überall „das warst du". */
+    --reserve: #8a5f9c;
+    --reserve-soft: #f3ecf6;
+    --reserve-ink: #6b3f80;
     --shape: #b08a55;
 
     /* Tiefe statt Kanten: im Licht ein Schlagschatten, im Dunkeln derselbe
@@ -91,7 +96,9 @@
     --pack: #7ea6d4;
     --unserved: #3a362e;
     --floorfill: #6b5f3c;
-    --reserve: #6d5a86;
+    --reserve: #a888c8;
+    --reserve-soft: #2a2338;
+    --reserve-ink: #c8aee4;
     --shape: #8a7a4a;
     /* Das Glimmen: ein Innenrand aus Gold, viel zu schwach, um Linie zu
        heissen — er macht die Kante im Dunkeln überhaupt erst sichtbar. */
@@ -222,6 +229,17 @@
                  background: var(--paper); color: inherit; border-radius: var(--r-pill);
                  padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
 
+  /* Das Offer: dieselbe Form wie die ConflictNotice, ein anderer Ton. Nicht
+     warnfarben, weil der Plan gültig ist — und mit ✕, weil man es darf, nicht
+     muss. Die ConflictNotice hat beides nicht. */
+  .deal { background: var(--reserve-soft); color: var(--reserve-ink);
+          border-radius: var(--r-ctl); padding: 8px 10px; font-size: 12.5px; }
+  .deal .muted { color: inherit; opacity: .72; }
+  .deal .reset { color: inherit; opacity: .6; }
+  .deal > button { font: inherit; font-size: 12px; border: 1px solid currentColor;
+                   background: var(--paper); color: inherit; border-radius: var(--r-pill);
+                   padding: 3px 8px; margin-top: 6px; cursor: pointer; }
+
   /* Beschaffung: drei Zellen statt eines Satzes, der auf zwei Zeilen bricht.
      Die Nebenzeile ist immer da, auch leer — sonst springt der Kopf. */
   .fetch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; max-width: 520px;
@@ -280,7 +298,8 @@
   .strip .col.empty { flex: .22; }
   .strip .b { background: var(--accent); border-radius: 2px 2px 0 0; position: relative; }
   .strip .b.un { background: var(--unserved); }
-  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--floorfill);
+  .strip .b i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--floorfill); }
+  .strip .b u { position: absolute; left: 0; right: 0; bottom: 0; background: var(--reserve);
                 border-radius: 0 0 2px 2px; }
   .strip .b .wp { position: absolute; left: 50%; top: 3px; width: 5px; height: 5px;
                   margin-left: -2.5px; border-radius: 50%; background: var(--gold); }
@@ -305,6 +324,27 @@
   .slot .n.z { color: var(--unserved); font-weight: 400; }
   .slot[data-open] { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  /* Ein Display ist keine Ecke, sondern ein Anteil der Fläche: die Kachel nimmt
+     vier Plätze statt einem. Feste Grösse ab dem ersten Display — die *Zahl*
+     der Displays steht als Zeile darin, weil zwei Kacheln sonst gleich gross
+     wären und doch das Doppelte trügen. Die grosse Zahl bleibt die Boosterzahl:
+     im Gleichstand kommt zum Display noch Boden und Kurve dazu, und das
+     Rangtotal aus #23 zählt die Kachelzahlen zusammen. */
+  .slot.big { grid-column: span 2; grid-row: span 2; aspect-ratio: auto;
+              min-height: calc(var(--cell) * 2 + var(--gap));
+              gap: 5px; }
+  .slot.big .n { font-size: 30px; }
+  .slot .disp { display: flex; align-items: center; gap: 4px; font-size: 11px;
+                color: var(--reserve); font-weight: 600;
+                font-variant-numeric: tabular-nums; }
+  .slot .disp i { width: 11px; height: 9px; border-radius: 1px; flex: none;
+                  background: var(--reserve); }
+  /* Abgegolten: der Rang fällt aus der Kurve und bekommt genau seine Displays.
+     Der Ton sagt das, ohne ein Wort dafür zu brauchen. */
+  .slot.settled { background: var(--reserve-soft); }
+  .slot.settled .disp { color: var(--reserve-ink); }
+  .slot.settled .disp i { background: var(--reserve-ink); }
+
   /* Zwei Ecken tragen Zahlen: oben rechts WinnerPacks, unten rechts Packs.
      Einer ist ein Punkt, mehrere sind ein Kreis mit der Zahl darin. */
   .badge { display: inline-grid; place-items: center; border-radius: 999px;
@@ -324,6 +364,10 @@
          border: 0; border-radius: var(--r-tile); padding: 9px 10px;
          box-shadow: var(--tile-shadow), var(--panel-shadow); min-width: 168px; }
   .pop.show { display: block; }
+  /* Zwei Aufgaben in einer Blase: Titel links, Zählwerk rechts, beide Zeilen
+     auf derselben Kante — sonst liest es sich als zwei Blasen untereinander. */
+  .popctl { display: flex; align-items: center; gap: 10px; }
+  .popctl > span { flex: 1; }
 
   /* ── Blatt: fährt von unten herein, statt zu erscheinen ────────────── */
   .sheet { position: absolute; inset: 0; background: var(--paper); overflow: auto; z-index: 20;
@@ -423,31 +467,40 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 8 zu Ticket #23</h1>
+  <h1>Prizing Cockpit — Runde 9 zu Ticket #28</h1>
   <p>
-    Aus fünf Konzepten ist <strong>eines in zwei Modi</strong> geworden:
-    <strong>Light = Bronze</strong>, <strong>Dark = Foil</strong>, dieselbe Form in beiden.
-    Umschalter unten links, Tasten <code>l</code>/<code>d</code>/<code>m</code>, oder
-    <code>?mode=light|dark</code>. Ohne Angabe folgt der Modus dem Gerät.
+    Die <strong>DisplayReservation</strong> ist nachgeholt. Zum Ausprobieren:
+    <strong>Weekend, 32 Spieler</strong> zeigt unten das Angebot „1 display für Rang 1";
+    ein Klick darauf macht aus <code>29·14·7·4·3·3·2·2</code> die Reihe
+    <code>24·16·9·5·3·3·2·2</code>. Auf <strong>48 Spieler</strong> hochziehen, und
+    Rang 2 überholt Rang 1 — die grosse Kachel trägt dann die kleinere Zahl.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      <strong>Eine Formsprache aus deinen drei Punkten.</strong> Scharfe Ecken
-      überall (2 px, der Knopf 3), <em>kein</em> Rand mehr an Kachel, Knopf und
-      Zählwerk — die Kante kommt aus dem Schatten. Im Dunkeln legt sich ein
-      goldenes Glimmen als hauchdünner Innenrand darüber, sonst wäre die Kante
-      unsichtbar; was gewählt ist, glimmt kräftiger.<br><br>
-      <strong>Zwei Modi, ein Entwurf.</strong> Nur Farben und die Tiefe drehen sich
-      (<code>body[data-mode="dark"]</code>). Radien, Ränder, Titelschrift und jedes
-      Mass stehen einmal in <code>:root</code> und gelten für beide.<br><br>
-      <strong>Was Linie bleiben durfte.</strong> Die Trenner in der Beschaffungszeile
-      und die Linie über jedem Gruppentitel im Blatt — die trennen Daten, nicht
-      Flächen. Alles, was vorher eine Fläche umriss, ist jetzt Schatten.<br><br>
-      <strong>Aus Runde 6 unverändert.</strong> Promo-Envelope durchgehend, der
-      Würfel heisst <em>Winner-shuffle</em> und <em>open</em> ist vom Knopf
-      weggerückt, jedes Element im Blatt erklärt sich in einem Satz, die Einheit
-      steht beim Titel, und die <em>Raffle range</em> hat ihren Kasten abgegeben.<br><br>
+      <strong>Ein Display ist ein Anteil der Fläche.</strong> Eine Kachel mit
+      Reservation nimmt <em>vier</em> Plätze statt einem — feste Grösse ab dem
+      ersten Display, die <em>Zahl</em> der Displays steht als Zeile darin. Die
+      grosse Zahl bleibt die Boosterzahl: im Gleichstand kommen zum Display noch
+      Boden und Kurve dazu, und das Rangtotal aus #23 zählt die Kachelzahlen
+      zusammen. Der Ton der Kachel sagt, ob der Rang abgegolten ist.<br><br>
+      <strong>Eine Blase, zwei Aufgaben.</strong> Der Griff an die Kachel öffnet
+      dieselbe Blase wie vorher, jetzt mit zwei Zeilen: <em>Winner packs</em> und
+      <em>Displays</em>. Das ± ist gedeckelt vom Rang darüber und von der
+      Machbarkeit — aber <em>nicht</em> von der Überholung, die soll erreichbar
+      bleiben.<br><br>
+      <strong>Zwei Flächen unter dem Plan.</strong> Die <em>ConflictNotice</em>
+      (warnfarben, kein ✕) kennt neu die Überholung und zeigt die einzeln
+      gangbaren Wege heraus — die Reservation zuerst, weil sie in der
+      Vorrangkette als letzte kommt und damit als erste nachgibt. Das
+      <em>Offer</em> (ruhig, mit ✕) steht nur auf einem gültigen Plan und
+      schlägt eine rundere Fassung vor, Fenster <code>S/4</code> = 6 in beide
+      Richtungen.<br><br>
+      <strong>Zwei Fehler nebenbei.</strong> Der Balken malte abgegoltenen Rängen
+      einen Boden, den es dort nicht gibt; jetzt liegt die Reservation als eigenes
+      Segment unten. Und „alles zurück" liess Reservationen und
+      manual-WinnerPacks stehen, obwohl beide nach ADR 0006 gewöhnliche
+      <em>pinned</em> Regler sind.<br><br>
     </div>
   </details>
 </div>
@@ -582,16 +635,37 @@ function distribute(s) {
   for (let i = 0; i < ranked; i++) winners[i]++;
   for (const [r, c] of Object.entries(manual)) winners[Number(r) - 1] += c;
 
+  // Der Vorsprung von Rank 1 setzt bei gesetzter Reservation aus (ADR 0001,
+  // Nachtrag). Die Überholung wird deshalb gemeldet und nicht verhindert — ohne
+  // Reservation kann sie gar nicht auftreten, die Kurve fällt von selbst.
+  let overtake = null;
+  for (let i = 0; i < depth && !overtake; i++) {
+    for (let j = i + 1; j < depth; j++) {
+      if (booster[j] > booster[i]) {
+        overtake = { under: i + 1, over: j + 1, has: booster[i], gets: booster[j] };
+        break;
+      }
+    }
+  }
+
   const S = s.displaySize;
   const rows = [];
   for (let i = 0; i < n; i++) {
+    const res = i < depth ? d[i] * S : 0;
     rows.push({
       rank: i + 1,
       booster: booster[i] + (s.combinedHandout ? pbRate : 0),
       packs: packs[i] + (s.combinedHandout ? ppRate : 0),
       winners: winners[i],
-      floor: Math.min(booster[i], i < depth ? m + (i === 0 ? lead : 0) : 0),
+      displays: i < depth ? d[i] : 0,
+      reserved: res,
+      // Ein abgegoltener Rang bekommt *genau* seine Displays — keinen Boden und
+      // keinen Vorsprung. Der Balken malte hier bisher einen Boden, den es nicht
+      // gibt, und liess die Reservation als gewöhnliche Kurvenhöhe erscheinen.
+      floor: i < curveFrom ? 0
+           : Math.min(booster[i] - res, i < depth ? m + (i === 0 ? lead : 0) : 0),
       served: i < depth,
+      settled: i < curveFrom,
     });
   }
   return {
@@ -603,6 +677,7 @@ function distribute(s) {
     rank: { booster: rankB, packs: rankTP, winners: rankWP },
     depth, depthCap, depthStepValue, rankFloor: m,
     floorReserved: floorNeed, displayReserved: reservedB,
+    settledCount: curveFrom, displayVector: d,
     shapedRemainder: Math.max(0, shaped), curveSilent: shaped <= 0, curveCount,
     allocation: { ranked, rankedAuto, manual, manualCount, open: openWP },
     prep: {
@@ -610,7 +685,7 @@ function distribute(s) {
       fetchEnvelopes: Math.ceil(tpTotal / s.envelopeSize), winnerYield: wpTotal,
       threshold: wpThreshold,
     },
-    rows, conflict,
+    rows, conflict, overtake,
   };
 }
 
@@ -637,6 +712,8 @@ const st = {
   manualWinner: {}, displays: [],
   openSlot: null,                    // Rang, dessen ±-Blase offen ist
   openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
+  offerOff: null,                    // weggeklicktes Offer, an seinem Inhalt erkannt:
+                                     // reiner Sitzungszustand, nie im SetupLink
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -688,27 +765,131 @@ function eff(key, plan) {
   return def(key);
 }
 
-/* Vorschläge (#19): den Verlierer der Vorrangkette zuerst. */
+/* Zwei unpassende Zustände, ein Verfahren (#19): einen Regler über seinen
+   Bereich variieren, distribute() je Wert laufen lassen, den nächstliegenden
+   Wert nehmen, der die Bedingung räumt. Dass die Rechnung nach ADR 0002 total
+   ist, ist die Bedingung dafür, dass das überhaupt geht. */
+const unfit = (p) => !!p.conflict || !!p.overtake;
+
+/* Vorschläge (#19): den Verlierer der Vorrangkette zuerst. Die Kette lautet
+   RankFloor → RankPoolDepth → DisplayReservation, also gibt die Reservation als
+   erste nach — sie steht hier neu an der Spitze der Liste. */
 function suggestions(plan) {
-  if (!plan.conflict) return [];
+  if (!unfit(plan)) return [];
   const out = [];
   const base = settings();
+  // Ein Weg heraus darf die Beteiligten nicht abschaffen. „Nächstliegender Wert,
+  // der es räumt" allein wählte bei einer Überholung `Serve 1 rank`: der
+  // Überholer fällt aus dem Plan, damit ist die Meldung weg und nichts gelöst.
+  const keeps = (p) => !plan.overtake || p.depth >= plan.overtake.over;
+  const clears = (t) => { const p = distribute(t); return !unfit(p) && keeps(p); };
   const tryKey = (key, lo, hi, label) => {
     const cur = eff(key, plan);
     let best = null;
     for (let v = lo; v <= hi; v++) {
       if (v === cur) continue;
       const t = { ...base }; t[key] = v;
-      if (!distribute(t).conflict) {
+      if (clears(t)) {
         if (best == null || Math.abs(v - cur) < Math.abs(best - cur)) best = v;
       }
     }
-    if (best != null) out.push({ key, value: best, label: label(best) });
+    if (best != null) out.push({ key, value: best, label: label(best, cur) });
   };
-  tryKey('depth', 1, st.players, (v) => `Serve ${v} ranks`);
-  tryKey('rankFloor', 0, 8, (v) => `Floor down to ${v}`);
-  tryKey('participationBooster', 0, 8, (v) => `Participation boosters to ${v}`);
+  // Ein Rang je Reservation, plus der Überholer: ihn auf Gleichstand zu heben
+  // bricht den Vorsprung nicht mehr und ist oft der kürzeste Weg heraus.
+  const idx = new Set();
+  (st.displays || []).forEach((v, i) => { if (v > 0) idx.add(i); });
+  if (plan.overtake) { idx.add(plan.overtake.under - 1); idx.add(plan.overtake.over - 1); }
+  [...idx].sort((a, b) => a - b).forEach((i) => {
+    const cur = (st.displays || [])[i] || 0;
+    let best = null;
+    for (let v = 0; v <= 4; v++) {
+      if (v === cur) continue;
+      const dd = (st.displays || []).slice();
+      while (dd.length <= i) dd.push(0);
+      dd[i] = v;
+      if (!monotone(dd)) continue;   // d₁ ≥ d₂ ≥ … bleibt unverhandelbar
+      if (clears({ ...base, displays: dd })) {
+        if (best == null || Math.abs(v - cur) < Math.abs(best - cur)) best = v;
+      }
+    }
+    if (best != null) {
+      out.push({ display: i, value: best, label: best === 0
+        ? `Drop rank ${i + 1}'s display${cur > 1 ? 's' : ''}`
+        : `Rank ${i + 1} ${best > cur ? 'up' : 'down'} to ${best} display${
+            best > 1 ? 's' : ''}` });
+    }
+  });
+  // Die Richtung gehört in den Text. Beim Bodenkonflikt fiel der Boden immer,
+  // also stimmte „down" von selbst; die Überholung räumt er, indem er *steigt*.
+  const dir = (v, cur) => (v > cur ? 'up' : 'down');
+  tryKey('depth', 1, st.players, (v) => `Serve ${v} rank${v > 1 ? 's' : ''}`);
+  tryKey('rankFloor', 0, 8, (v, cur) => `Floor ${dir(v, cur)} to ${v}`);
+  tryKey('participationBooster', 0, 8, (v, cur) =>
+    `Participation boosters ${dir(v, cur)} to ${v}`);
   return out;
+}
+
+/* Nach oben begrenzt durch den Rang darüber, sodass sie über die Ränge nie
+   steigt — die eine Regel, die kein Vorschlag brechen darf. */
+function monotone(d) {
+  for (let i = 1; i < d.length; i++) if ((d[i] || 0) > (d[i - 1] || 0)) return false;
+  return true;
+}
+
+/* Die Reservation setzen — wie die manual-WinnerPacks ein Griff an die Kachel,
+   kein Regler im Blatt. Der Vektor bleibt dabei immer nie steigend. */
+function setDisplay(r, v) {
+  const d = st.displays.slice();
+  while (d.length < r) d.push(0);
+  d[r - 1] = Math.max(0, v);
+  while (d.length && d[d.length - 1] === 0) d.pop();
+  st.displays = d;
+  render();
+}
+/* Der Deckel des ±: der Rang darüber nach oben, der darunter nach unten, und
+   die Machbarkeit aus #7 — B − S·N muss den Mindestbedarf noch tragen. Eine
+   Überholung deckelt *nicht*: sie ist genau der Fall, der gemeldet werden soll,
+   also muss er erreichbar bleiben. */
+function displayReach(r, v) {
+  const d = st.displays.slice();
+  while (d.length < r) d.push(0);
+  d[r - 1] = v;
+  if (v < 0 || !monotone(d)) return false;
+  return !distribute({ ...settings(), displays: d }).conflict;
+}
+
+/* Das Offer (#21): auf einem vollständig gültigen Plan eine rundere Fassung.
+   Das Fenster ist symmetrisch — S/4 in beide Richtungen. Nur nach oben zu
+   runden nähme dem Kopf im Extremfall S−1 Booster weg, und bei S = 24 fallen
+   S/6 und S/5 auf dieselbe Regel zusammen und lassen den Anlassfall verstummen. */
+function offerFor(plan) {
+  if (unfit(plan)) return null;              // nur auf gültigem Plan (ADR 0002)
+  const S = get('displaySize');
+  const win = Math.max(1, Math.round(S / 4));
+  for (let i = 0; i < plan.depth; i++) {
+    const row = plan.rows[i];
+    const k = Math.round(row.booster / S);
+    if (k < 1 || k <= row.displays) continue;
+    if (Math.abs(row.booster - k * S) > win) continue;
+    if (!displayReach(i + 1, k)) continue;
+    const probe = distribute({ ...settings(),
+      displays: (() => { const d = st.displays.slice();
+        while (d.length <= i) d.push(0); d[i] = k; return d; })() });
+    if (unfit(probe)) continue;
+    // Der Vorschlag verspricht einen Rang und trifft womöglich mehrere: d = (2,1)
+    // gilt auch Rang 2 ab und nimmt ihm zehn Booster. Wer eine rundere Fassung
+    // anbietet, muss sagen, was sie sonst noch kostet.
+    const also = [];
+    for (let j = 0; j < plan.depth; j++) {
+      if (j === i) continue;
+      const before = plan.rows[j].booster, after = probe.rows[j].booster;
+      if (before !== after) also.push({ rank: j + 1, before, after });
+    }
+    return { rank: i + 1, value: k, from: row.booster, to: k * S, also,
+             key: `${i + 1}:${k}:${row.booster}` };
+  }
+  return null;
 }
 
 /* Raffle (#10) — Zufall in der Eingabe, nicht in der Berechnung. */
@@ -931,7 +1112,8 @@ function curveGlyphs(plan, withRatio) {
 /* Kopf: Turniertyp als Überschrift, Handzustand oben rechts,
    Beschaffung als drei Zellen statt eines umbrechenden Satzes. */
 function headerBlock(plan) {
-  const pins = Object.keys(st.pin).length;
+  const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
+             + st.displays.filter(Boolean).length;
   const status = pins
     ? `<button class="pinchip" data-resetall="1" style="margin-left:auto"
          title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
@@ -946,6 +1128,7 @@ function headerBlock(plan) {
   // sich die Summenregel prüfen lässt — Displays sind eine Beschaffungsgrösse,
   // keine Menge. Mit ihr und der Handout-Zeile liest sich 96 = 64 + 32 am Schirm.
   const sealed = Math.floor(plan.pool.booster / get('displaySize'));
+  const reservedDisplays = plan.displayVector.reduce((a, b) => a + b, 0);
   return `<div style="padding:9px 12px 8px;background:var(--paper);
       box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
     <div class="bar">
@@ -956,7 +1139,11 @@ function headerBlock(plan) {
     <div class="fetch">
       <div><b class="num">${p.fetchDisplays}</b><em>displays</em>${infoBtn('displays')}
         <s>${plan.pool.booster} boosters${
-          p.looseBooster ? ` · ${sealed} sealed + ${p.looseBooster} loose` : ''}</s></div>
+          p.looseBooster ? ` · ${sealed} sealed + ${p.looseBooster} loose` : ''}${
+          // #11: die Reservation teilt die Beschaffungszahl in „ungeöffnet" und
+          // „zum Anbrechen" — sie erhöht sie nie. Ohne diese Zeile stünden „6
+          // displays" im Kopf und „1 display" auf der Kachel unverbunden da.
+          reservedDisplays ? ` · ${reservedDisplays} go over unopened` : ''}</s></div>
       <div><b class="num">${p.fetchEnvelopes}</b><em>Promo-Envelopes</em>
         <s>${loosePacks > 0 ? `+${loosePacks} loose` : ''}</s></div>
       <div class="der"><b class="num">${p.winnerYield}</b><em>winner packs</em>${
@@ -1065,11 +1252,15 @@ function rankStrip(plan) {
   return `<div class="strip">${show.map((r) => {
     const empty = !r.booster && !r.packs && !r.winners;
     const h = Math.round((r.booster / max) * 100);
+    // Reservation unten, Boden darüber, geformter Rest oben — in der Reihenfolge,
+    // in der der Kern sie abzieht. Ein abgegoltener Rang hat gar keinen Boden.
+    const res = r.booster ? Math.round((r.reserved / r.booster) * 100) : 0;
     const f = r.booster ? Math.round((r.floor / r.booster) * 100) : 0;
     return `<div class="col${empty ? ' empty' : ''}">
       ${wide && r.booster ? `<span class="cap num">${r.booster}</span>` : ''}
       <div class="b ${r.served ? '' : 'un'}" style="height:${Math.max(2, h)}%">
-        <i style="height:${f}%"></i>${r.winners ? '<b class="wp"></b>' : ''}</div>
+        <u style="height:${res}%"></u><i style="height:${f}%;bottom:${res}%"></i>${
+        r.winners ? '<b class="wp"></b>' : ''}</div>
       ${wide ? `<span class="cap num muted">${r.rank}</span>` : ''}
     </div>`;
   }).join('')}</div>`;
@@ -1091,11 +1282,15 @@ function slotGrid(plan) {
   const hidden = plan.players - last;
   const cells = plan.rows.slice(0, last).map((r) => {
     const bare = !r.booster && !r.packs && !r.winners;
-    return `<div class="slot${r.winners ? ' win' : ''}${bare ? ' none' : ''}"
+    const cls = [r.winners ? 'win' : '', bare ? 'none' : '',
+                 r.displays ? 'big' : '', r.settled ? 'settled' : ''].filter(Boolean).join(' ');
+    return `<div class="slot${cls ? ' ' + cls : ''}"
         data-rank="${r.rank}"${st.openSlot === r.rank ? ' data-open="1"' : ''}>
       <span class="rk num">${r.rank}</span>
       ${badge('win', r.winners, 'winner pack', 'winner packs')}
       <strong class="n${r.booster ? '' : ' z'}">${r.booster || '–'}</strong>
+      ${r.displays ? `<span class="disp"><i></i>${r.displays} display${
+        r.displays > 1 ? 's' : ''}</span>` : ''}
       ${badge('pk', r.packs, 'pack', 'packs')}
     </div>`;
   }).join('');
@@ -1120,9 +1315,11 @@ function slotLegend() {
     <span class="lg"><i class="badge pk"></i>pack</span>`;
 }
 
-/* Die Blase: ein Griff an einer Kachel, und der gilt den WinnerPacks.
-   Was der Regler `ranked` gesetzt hat, ist hier nicht zu rütteln — nur was
-   von Hand oder aus der Lostrommel kam. */
+/* Die Blase: ein Griff an einer Kachel — und der gilt jetzt zwei Aufgaben.
+   Das Ticket verlangt für die DisplayReservation dieselbe Geste wie für die
+   manual-WinnerPacks, „nicht ein zweites Muster". Also nicht eine zweite Blase,
+   sondern zwei Zeilen in derselben: was diesem Rang von Hand zugeteilt wird.
+   Was der Regler `ranked` gesetzt hat, ist auch hier nicht zu rütteln. */
 function slotPop(plan) {
   const r = st.openSlot;
   if (r == null) return '';
@@ -1131,19 +1328,44 @@ function slotPop(plan) {
   const man = plan.allocation.manual[r] || 0;
   const byRank = Math.max(0, row.winners - man);
   const open = plan.allocation.open;
-  return `<div class="bar tiny" style="margin-bottom:6px">
-      <strong>Rank ${r}</strong><span class="muted">winner packs</span>
+  const S = get('displaySize');
+  const dc = row.displays;
+  const up = displayReach(r, dc + 1), down = dc > 0 && displayReach(r, dc - 1);
+  // Der Rang darüber deckelt die Reservation — das ist keine Machbarkeitsgrenze,
+  // sondern die Regel selbst, und sie gehört benannt statt nur ausgegraut.
+  const above = r > 1 ? (st.displays[r - 2] || 0) : null;
+  const capped = !up && above != null && dc >= above;
+  return `<div class="bar tiny" style="margin-bottom:7px">
+      <strong>Rank ${r}</strong><span class="muted">by hand</span>
       <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
-    <div class="pm">
-      <button data-win="-1"${man ? '' : ' disabled'}>−</button>
-      <div class="val">${row.winners}</div>
-      <button data-win="1"${open > 0 ? '' : ' disabled'}>+</button>
+    <div class="popctl">
+      <span class="tiny">Winner packs</span>
+      <div class="pm sm">
+        <button data-win="-1"${man ? '' : ' disabled'}>−</button>
+        <div class="val">${row.winners}</div>
+        <button data-win="1"${open > 0 ? '' : ' disabled'}>+</button>
+      </div>
     </div>
-    <div class="tiny muted" style="margin-top:5px">${
+    <div class="tiny muted" style="margin:3px 0 8px">${
       byRank ? `${byRank} by rank, fixed · ` : ''}${
       open > 0 ? `${open} still open`
                : man ? 'all placed'
-                     : 'all placed — take one off another rank first'}</div>`;
+                     : 'all placed — take one off another rank first'}</div>
+    ${row.served ? `<div class="popctl">
+        <span class="tiny">Displays</span>
+        <div class="pm sm">
+          <button data-disp="-1"${down ? '' : ' disabled'}>−</button>
+          <div class="val">${dc}</div>
+          <button data-disp="1"${up ? '' : ' disabled'}>+</button>
+        </div>
+      </div>
+      <div class="tiny muted" style="margin-top:3px">${
+        dc ? `${dc * S} boosters reserved${row.settled
+              ? ' · settled, out of the curve' : ' · tied, still in the curve'}`
+           : `${S} boosters each`}${
+        capped ? ` · rank ${r - 1} caps this at ${above}` : ''}</div>`
+      : `<div class="tiny muted">Rank ${r} is not served — raise <em>Served ranks</em>
+         before reserving a display here.</div>`}`;
 }
 
 /* Der Block scrollt selbst — auch im Querformat. Sonst wandert der
@@ -1168,10 +1390,43 @@ function slotBlock(plan) {
    ShapedRemainder == 0 *ohne* Konflikt bleibt bewusst unbenannt: eine Meldung
    dort würde nach ADR 0002 einen gültigen Plan für ungültig erklären. */
 function conflictBox(plan, sugg) {
-  if (!plan.conflict) return '';
-  return `<div class="flag"><strong>${plan.conflict.have} boosters can't carry a floor of
-    ${plan.conflict.need}.</strong><br>The curve has nothing left to shape.<br>
-    ${sugg.map((s) => `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
+  if (!unfit(plan)) return '';
+  // Zwei unpassende Zustände in einer Fläche. Die Überholung ist der neue: bei
+  // gesetzter Reservation setzt der Vorsprung von Rank 1 aus, also *kann* ein
+  // Rang darunter mehr bekommen. Verhindert wird das nicht — gemeldet schon.
+  const head = plan.conflict
+    ? `<strong>${plan.conflict.have} boosters can't carry a floor of
+       ${plan.conflict.need}.</strong><br>The curve has nothing left to shape.`
+    : `<strong>Rank ${plan.overtake.over} gets ${plan.overtake.gets}, rank ${
+       plan.overtake.under} only ${plan.overtake.has}.</strong><br>A reserved display
+       settles a rank at exactly its boxes — the rank-1 lead is off, so the curve
+       below can overtake it.`;
+  return `<div class="flag">${head}<br>
+    ${sugg.map((s) => s.display != null
+      ? `<button data-applyd="${s.display}" data-v="${s.value}">${esc(s.label)}</button>`
+      : `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
+  </div>`;
+}
+
+/* Die zweite Fläche (#21). Sie steht neben der ConflictNotice und nicht in ihr:
+   das Offer ist der häufige Fall auf einem gültigen Plan, und eine Fläche, in
+   der meist Harmloses steht, wäre keine Warnfläche mehr. Wegklickbar — und das
+   Wegklicken ist reiner Sitzungszustand, zurück sobald der Inhalt wechselt. */
+function offerBox(off) {
+  const S = get('displaySize');
+  return `<div class="deal">
+    <div class="bar tiny" style="align-items:flex-start;gap:8px">
+      <div style="flex:1">
+        <strong>Rank ${off.rank} is ${Math.abs(off.from - off.to)} off a full display.</strong>
+        <div class="muted" style="margin-top:2px">${off.from} → ${off.to} boosters
+          — ${off.value} sealed display${off.value > 1 ? 's' : ''} of ${S}, handed over unopened.${
+          off.also.length ? ` Also moves rank${off.also.length > 1 ? 's' : ''} ${
+            off.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(', ')}.` : ''}</div>
+      </div>
+      <button class="reset" data-offeroff="${esc(off.key)}" title="wegklicken">✕</button>
+    </div>
+    <button data-applyd="${off.rank - 1}" data-v="${off.value}">Reserve ${
+      off.value} display${off.value > 1 ? 's' : ''} for rank ${off.rank}</button>
   </div>`;
 }
 
@@ -1193,6 +1448,28 @@ function floorRow(plan) {
       ${plan.rankFloor + pb} effective per served rank</div>` : ''}
     ${explain('rankFloor')}
   </div>`;
+}
+
+/* Im Blatt steht kein Regler für die Reservation — sie wird nie vorbelegt und
+   nie automatisch gesetzt, gesetzt wird sie an der Kachel. Was hier steht, ist
+   die Liste des Gesetzten samt Rückweg, genau wie bei den manual-WinnerPacks:
+   sonst findet man eine Reservation auf Rang 12 nie wieder. */
+function reservationBlock(plan) {
+  const S = get('displaySize');
+  const set = plan.displayVector
+    .map((v, i) => ({ v, r: i + 1 })).filter((x) => x.v > 0);
+  return `<div class="subhead">Display reservations</div>
+    <div class="desc">Whole sealed displays handed to a single rank, taken off the
+      rank pool before the curve shapes the rest. Set them on the tile, not here.</div>
+    ${set.length
+      ? `<div>${set.map((x) => `<button class="sheetbtn tiny" data-applyd="${x.r - 1}"
+           data-v="0">Rank ${x.r}: ${x.v} × ${S} ✕</button>`).join(' ')}</div>
+         <div class="tiny muted" style="margin-top:6px">${plan.displayReserved} of ${
+           plan.rank.booster} boosters reserved · ${plan.settledCount
+             ? `rank${plan.settledCount > 1 ? 's' : ''} 1–${plan.settledCount} settled,
+                out of the curve`
+             : 'tied, so every rank stays in the curve'}</div>`
+      : '<div class="tiny muted">None — tap a rank tile to reserve one.</div>'}`;
 }
 
 /* Beim Würfel steht, aus welchem Bereich gezogen wird — dasselbe Icon wie im Blatt.
@@ -1275,7 +1552,7 @@ function isSide() {
   return document.body.classList.contains('wide') || document.body.classList.contains('land');
 }
 
-function screen(plan, sugg) {
+function screen(plan, sugg, off) {
   const side = isSide();
   // Das Diagramm darf nicht die halbe Fläche nehmen: quer ist es flach, am
   // Rechner mittelhoch, im Hochformat darf es wachsen.
@@ -1297,7 +1574,9 @@ function screen(plan, sugg) {
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
         rankTotal(plan)}${rankStrip(plan)}</div>
       ${slotBlock(plan)}
-      ${plan.conflict ? `<div style="padding:8px 12px 0;flex:none">${conflictBox(plan, sugg)}</div>` : ''}
+      ${unfit(plan) ? `<div style="padding:8px 12px 0;flex:none">${
+        conflictBox(plan, sugg)}</div>` : ''}
+      ${off ? `<div style="padding:8px 12px 0;flex:none">${offerBox(off)}</div>` : ''}
       <div style="height:9px;flex:none"></div>
     </div>
     <div style="${side
@@ -1342,6 +1621,7 @@ function sheetContent(plan) {
     <div class="desc">${esc(GROUP_DESC.rank)}</div>
     ${depthControl(plan)}
     ${floorRow(plan)}
+    ${reservationBlock(plan)}
     <div class="subhead">Curve</div>
     <div class="desc">${esc(DESC.curve)}</div>
     ${curveGlyphs(plan, true)}
@@ -1384,10 +1664,14 @@ const popEl = document.getElementById('pop');
 function render() {
   const plan = distribute(settings());
   const sugg = suggestions(plan);
+  const cand = offerFor(plan);
+  // Zurück, sobald sich der Inhalt des Vorschlags ändert: weggeklickt ist genau
+  // dieses Angebot, nicht die Fläche.
+  const off = cand && st.offerOff !== cand.key ? cand : null;
   // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
   if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
   if (sheetOpen || fsOpen) st.openInfo = null;
-  appEl.innerHTML = screen(plan, sugg);
+  appEl.innerHTML = screen(plan, sugg, off);
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
@@ -1469,6 +1753,13 @@ stage.addEventListener('click', (e) => {
     else delete st.manualWinner[r];
     render(); return;
   }
+  if (d.disp) {
+    const r = st.openSlot;
+    setDisplay(r, (st.displays[r - 1] || 0) + Number(d.disp));
+    return;
+  }
+  if (d.offeroff) { st.offerOff = d.offeroff; render(); return; }
+  if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
   if (t.id === 'morph') {
     if (fsOpen) fsOpen = false;
     else sheetOpen = !sheetOpen;
@@ -1477,7 +1768,11 @@ stage.addEventListener('click', (e) => {
   if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
   if (d.sheetRange != null) { sheetOpen = true; render(); return; }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
-  if (d.resetall) { st.pin = {}; st.val = {}; render(); return; }
+  // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
+  // Regler (#26). „Alles zurück" muss sie also mitnehmen — sonst bliebe ein Rang
+  // mit 24 reservierten Boostern stehen, während der Zähler 0 sagt.
+  if (d.resetall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
+                    render(); return; }
   if (d.reset) { reset(d.reset); return; }
   if (d.type) { st.type = d.type; st.pin = {}; st.val = {}; render(); return; }
   if (d.setCurve) { setVal('curve', d.setCurve); return; }
