@@ -316,6 +316,20 @@
      Spalte und wurde auf jede Breite angewandt. Ab zwei Spalten stehen
      Beschaffung und Handout deshalb *nebeneinander*, jedes mit seinem Deckel,
      und der punktierte Trenner dreht sich von waagrecht auf senkrecht mit. */
+  /* Der gefaltete Kopf. Der Beschaffungsteil ist das, was man *vor* dem Turnier
+     braucht — beim Schrauben an den Reglern steht er im Weg: gemessen 164 px von
+     830, ein Fünftel des Handyschirms. Gefaltet bleiben die drei Holzahlen und
+     das Boosertotal, weil an ihm die Summenprobe aus #23 hängt. */
+  .brief { cursor: pointer; }
+  .brief .bar { gap: 6px; }
+  .brief b { font-size: 15px; font-weight: 600; }
+  .headfold { margin-left: auto; }
+  .fold { font: inherit; font-size: 11px; border: 0; background: transparent;
+          color: var(--muted); cursor: pointer; padding: 2px 5px; }
+
+  /* `display` in einer Regel schlägt das hidden-Attribut — ohne diese Zeile
+     wächst der gefaltete Kopf, statt zu schrumpfen. */
+  [hidden] { display: none !important; }
   .headcols { display: block; }
   body.land .headcols, body.wide .headcols { display: flex; align-items: flex-start; }
   body.land .headcols .fetch, body.wide .headcols .fetch { flex: 1 1 520px; }
@@ -791,6 +805,7 @@ const st = {
   // Grösse. Beide beginnen offen — beim ersten Auftreten soll die Meldung laut
   // sein; klein wird sie erst, wenn der Lead es will.
   noticeOpen: true, offerOpen: true,
+  headOpen: true,                    // der Beschaffungsteil, gleiches Muster
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -1206,14 +1221,37 @@ function headerBlock(plan) {
   // keine Menge. Mit ihr und der Handout-Zeile liest sich 96 = 64 + 32 am Schirm.
   const sealed = Math.floor(plan.pool.booster / get('displaySize'));
   const reservedDisplays = plan.displayVector.reduce((a, b) => a + b, 0);
+  // Eingeklappt: die drei Holzahlen in einer Zeile, darunter das Boosertotal.
+  // Weg sind nur die *Herleitungen* — die Zahl, an der die Summenregel hängt
+  // (#23), steht auch gefaltet da, sonst wäre die Probe nicht mehr führbar.
+  const fold = `<button class="fold headfold" data-fold="head"
+    title="${st.headOpen ? 'einklappen' : 'aufklappen'}">${st.headOpen ? '▼' : '▲'}</button>`;
+  const brief = `<div class="brief" data-fold="head">
+      <div class="bar tiny">
+        <span><b class="num">${p.fetchDisplays}</b> displays</span>
+        <span class="muted">·</span>
+        <span><b class="num">${p.fetchEnvelopes}</b> envelopes</span>
+        <span class="muted">·</span>
+        <span><b class="num">${p.winnerYield}</b> winner packs</span>
+        ${fold}
+      </div>
+      <div class="tiny muted num">${plan.pool.booster} boosters${
+        // #23 braucht drei Zahlen an drei Stellen: Total, Handout, Rangtotal.
+        // Gefaltet verschwindet die Handout-Zeile, also zieht die Zahl hier ein
+        // — sonst bräche die Probe genau dann, wenn man sie am nötigsten hat.
+        !get('combinedHandout') && plan.participation.booster
+          ? ` · ${plan.participation.booster} handed out` : ''}</div>
+    </div>`;
   return `<div style="padding:9px 12px 8px;background:var(--paper);
       box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
     <div class="bar">
       <strong style="font-size:17px;letter-spacing:-.01em">${TYPES[st.type].title}</strong>
       <span class="tiny muted num">${st.players} players</span>
-      ${status}
+      ${status}${st.headOpen ? `<span${status ? '' : ' style="margin-left:auto"'}>${
+        fold}</span>` : ''}
     </div>
-    <div class="headcols">
+    ${st.headOpen ? '' : brief}
+    <div class="headcols" ${st.headOpen ? '' : 'hidden'}>
     <div class="fetch">
       <div><b class="num">${p.fetchDisplays}</b><em>displays</em>${infoBtn('displays')}
         <s>${plan.pool.booster} boosters${
@@ -1835,6 +1873,9 @@ stage.addEventListener('click', (e) => {
   const plan = distribute(settings());
   const t = e.target.closest('button');
   if (!t) {
+    // Der gefaltete Kopf ist als Ganzes ein Griff, nicht nur sein Pfeil — ein
+    // 11px-Dreieck ist kein Ziel für einen Daumen.
+    if (e.target.closest('.brief')) { st.headOpen = true; render(); return; }
     // Ein Griff an die Kachel öffnet die Blase, derselbe schliesst sie.
     const tile = e.target.closest('.slot');
     if (tile) {
@@ -1871,6 +1912,7 @@ stage.addEventListener('click', (e) => {
     setDisplay(r, (st.displays[r - 1] || 0) + Number(d.disp));
     return;
   }
+  if (d.fold === 'head') { st.headOpen = !st.headOpen; render(); return; }
   if (d.fold === 'notice') { st.noticeOpen = !st.noticeOpen; render(); return; }
   if (d.fold === 'offer') { st.offerOpen = !st.offerOpen; render(); return; }
   if (d.offeroff) { st.offerOff = d.offeroff; render(); return; }
