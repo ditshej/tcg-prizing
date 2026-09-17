@@ -263,6 +263,13 @@ der `ConflictNotice`, weil er der häufige Fall ist und eine Fläche, in der mei
 Harmloses steht, keine Warnfläche mehr wäre. Wegklickbar, und das Wegklicken ist
 reiner Sitzungszustand: nie im `SetupLink`, kein Überleben eines Neuladens,
 zurück sobald sich der Inhalt des Vorschlags ändert.
+Sein **Versprechen ist örtlich, seine Wirkung nicht**: das Viertel-Fenster prüft
+den genannten `Rank`, aber eine `DisplayReservation` gilt Ränge ab, und ein
+abgegoltener `Rank` bekommt nur seine `Display`s — angenommen kann der Vorschlag
+also einem anderen `Rank` mehr wegnehmen, als das Fenster je erlaubt hätte. Er
+wird deshalb nicht enger gefasst, sondern **benennt die mitbewegten `Rank`s**
+samt ihrer Zahlen: ein Vorschlag, den man nicht annehmen muss, darf teuer sein,
+solange er seinen Preis nennt.
 _Avoid_: Hint, Suggestion (bezeichnet auch die Wege aus der `ConflictNotice`), Tip
 
 **CarryOverNotice**:
