@@ -233,6 +233,37 @@
                  background: var(--paper); color: inherit; border-radius: var(--r-pill);
                  padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
 
+  /* ── Der Meldungsstapel ────────────────────────────────────────────────
+     Er *liegt* über den Kacheln, statt sie zu schieben. Vorher nahm die
+     ConflictNotice der Rangtabelle auf dem Handy die ganze Höhe: gemessen
+     blieben von 114 px Raster 11 px übrig, in der Praxis null — man las fünf
+     Wege zur Reparatur von etwas, das man nicht sehen konnte. Und der von Hand
+     gangbare Weg, ein Griff an die Kachel, war überhaupt nicht mehr da.
+
+     Eingeklappt bleibt ein Balken. Das ist kein Wegklicken: ADR 0002 verlangt
+     Anwesenheit, nicht Grösse — solange etwas dasteht, das „hier stimmt was
+     nicht" sagt, ist die Anwesenheit weiter die Aussage. */
+  .stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12;
+           padding: 0 12px 9px; display: flex; flex-direction: column; gap: 6px;
+           pointer-events: none; }
+  .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
+
+  /* Der eingeklappte Balken: eine Zeile, die ganze Breite, und ein Griff.
+     Er sagt *dass*, die Kacheln sagen *wo*, aufgeklappt steht das *wie heraus*. */
+  .bail { display: flex; align-items: center; gap: 8px; cursor: pointer;
+          font: inherit; font-size: 12.5px; text-align: left; width: 100%;
+          border: 0; border-radius: var(--r-ctl); padding: 7px 10px; }
+  .bail.warn { background: var(--warn-soft); color: var(--warn); }
+  .bail.deal { background: var(--reserve-soft); color: var(--reserve-ink); }
+  .bail b { font-weight: 600; }
+  .bail .chev { margin-left: auto; font-size: 11px; opacity: .7; }
+  .flag .chev, .deal .chev { font-size: 11px; opacity: .7; }
+  /* Der Griff zum Einklappen sitzt, wo beim Offer das ✕ sitzt — dieselbe Ecke,
+     zwei verschiedene Versprechen: das eine kommt wieder, das andere nicht. */
+  .flag .fold, .deal .fold { font: inherit; font-size: 11px; border: 0;
+                             background: transparent; color: inherit; opacity: .65;
+                             cursor: pointer; padding: 2px 5px; }
+
   /* Das Offer: dieselbe Form wie die ConflictNotice, ein anderer Ton. Nicht
      warnfarben, weil der Plan gültig ist — und mit ✕, weil man es darf, nicht
      muss. Die ConflictNotice hat beides nicht. */
@@ -278,6 +309,27 @@
   .fetch em, .fetch .info { white-space: nowrap; }
   .fetch div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 3px; }
   .fetch s { flex: 1 0 100%; }
+
+  /* Die 520px an .fetch und .handout sind ein Lesedeckel fürs Hochformat: drei
+     Zellen sollen nicht beliebig breit auseinanderlaufen. Am Rechner liess er
+     aber knapp die halbe Kopfbreite leer stehen — der Deckel galt für eine
+     Spalte und wurde auf jede Breite angewandt. Ab zwei Spalten stehen
+     Beschaffung und Handout deshalb *nebeneinander*, jedes mit seinem Deckel,
+     und der punktierte Trenner dreht sich von waagrecht auf senkrecht mit. */
+  .headcols { display: block; }
+  body.land .headcols, body.wide .headcols { display: flex; align-items: flex-start; }
+  body.land .headcols .fetch, body.wide .headcols .fetch { flex: 1 1 520px; }
+  body.land .headcols .handout, body.wide .headcols .handout {
+    flex: 1 1 260px; margin-top: 8px; padding-top: 7px; margin-left: 16px;
+    padding-left: 16px; border-top: 1px solid var(--line);
+    border-left: 1px dotted var(--line); }
+  @media (min-width: 700px) {
+    body.bare .headcols { display: flex; align-items: flex-start; }
+    body.bare .headcols .fetch { flex: 1 1 520px; }
+    body.bare .headcols .handout { flex: 1 1 260px; margin-top: 8px; padding-top: 7px;
+      margin-left: 16px; padding-left: 16px; border-top: 1px solid var(--line);
+      border-left: 1px dotted var(--line); }
+  }
 
   /* Das Rangtotal liegt über den Balken, oben rechts, wo der Abfall der Kurve
      ohnehin Platz lässt. Es hört keine Klicks ab. */
@@ -343,6 +395,12 @@
                 font-variant-numeric: tabular-nums; }
   .slot .disp i { width: 11px; height: 9px; border-radius: 1px; flex: none;
                   background: var(--reserve); }
+  /* Die Kachel trägt den Konflikt selbst. Vorher nannte die Meldung Ränge in
+     Prosa, während genau die vom Schirm geschoben waren — man las über Kacheln,
+     die man nicht sah. Jetzt zeigt auch der eingeklappte Zustand noch das Wo. */
+  .slot.flagged { box-shadow: var(--tile-shadow), inset 0 0 0 2px var(--warn); }
+  .slot.flagged .rk { background: var(--warn); color: var(--warn-soft); }
+
   /* Abgegolten: der Rang fällt aus der Kurve und bekommt genau seine Displays.
      Der Ton sagt das, ohne ein Wort dafür zu brauchen. */
   .slot.settled { background: var(--reserve-soft); }
@@ -631,6 +689,16 @@ function distribute(s) {
     conflict = { need: floorNeed, have: available };
   }
 
+  // Welche Ränge die Meldung *meint*. Sie nannte sie bisher nur in Prosa — und
+  // genau die waren vom Schirm geschoben, weil die Meldung sie wegdrückte. Wer
+  // die Kacheln markiert, sagt das Wo auch im eingeklappten Zustand.
+  const flagged = [];
+  if (conflict) {
+    for (let i = curveFrom; i < depth; i++) {
+      if (booster[i] - d[i] * s.displaySize < m) flagged.push(i + 1);
+    }
+  }
+
   const packs = new Array(n).fill(0);
   const start = ranked >= n ? 0 : ranked;
   for (let g = 0; g < rankTP; g++) packs[(start + g) % n]++;
@@ -647,6 +715,7 @@ function distribute(s) {
     for (let j = i + 1; j < depth; j++) {
       if (booster[j] > booster[i]) {
         overtake = { under: i + 1, over: j + 1, has: booster[i], gets: booster[j] };
+        flagged.push(i + 1, j + 1);
         break;
       }
     }
@@ -689,7 +758,7 @@ function distribute(s) {
       fetchEnvelopes: Math.ceil(tpTotal / s.envelopeSize), winnerYield: wpTotal,
       threshold: wpThreshold,
     },
-    rows, conflict, overtake,
+    rows, conflict, overtake, flagged,
   };
 }
 
@@ -718,6 +787,10 @@ const st = {
   openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
   offerOff: null,                    // weggeklicktes Offer, an seinem Inhalt erkannt:
                                      // reiner Sitzungszustand, nie im SetupLink
+  // Eingeklappt ist nicht weggeklickt: ADR 0002 verlangt Anwesenheit, nicht
+  // Grösse. Beide beginnen offen — beim ersten Auftreten soll die Meldung laut
+  // sein; klein wird sie erst, wenn der Lead es will.
+  noticeOpen: true, offerOpen: true,
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -1140,6 +1213,7 @@ function headerBlock(plan) {
       <span class="tiny muted num">${st.players} players</span>
       ${status}
     </div>
+    <div class="headcols">
     <div class="fetch">
       <div><b class="num">${p.fetchDisplays}</b><em>displays</em>${infoBtn('displays')}
         <s>${plan.pool.booster} boosters${
@@ -1154,6 +1228,7 @@ function headerBlock(plan) {
         infoBtn('winners')}<s></s></div>
     </div>
     ${handoutRow(plan)}
+    </div>
   </div>`;
 }
 
@@ -1284,10 +1359,12 @@ function slotGrid(plan) {
   let last = 0;
   plan.rows.forEach((r) => { if (r.booster || r.packs || r.winners) last = r.rank; });
   const hidden = plan.players - last;
+  const flag = new Set(plan.flagged);
   const cells = plan.rows.slice(0, last).map((r) => {
     const bare = !r.booster && !r.packs && !r.winners;
     const cls = [r.winners ? 'win' : '', bare ? 'none' : '',
-                 r.displays ? 'big' : '', r.settled ? 'settled' : ''].filter(Boolean).join(' ');
+                 r.displays ? 'big' : '', r.settled ? 'settled' : '',
+                 flag.has(r.rank) ? 'flagged' : ''].filter(Boolean).join(' ');
     return `<div class="slot${cls ? ' ' + cls : ''}"
         data-rank="${r.rank}"${st.openSlot === r.rank ? ' data-open="1"' : ''}>
       <span class="rk num">${r.rank}</span>
@@ -1375,16 +1452,19 @@ function slotPop(plan) {
 /* Der Block scrollt selbst — auch im Querformat. Sonst wandert der
    RankPool-Balken unter die Kacheln, statt sie hinter sich verschwinden
    zu lassen. */
-function slotBlock(plan) {
+function slotBlock(plan, stack) {
+  // Der Meldungsstapel liegt *in* diesem Block, absolut positioniert — damit
+  // schiebt er die Kacheln nicht mehr weg, sondern deckt sie zu, und was er
+  // zudeckt, erreicht man durch Einklappen wieder.
   return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;display:flex;
-      flex-direction:column">
+      flex-direction:column;position:relative">
     <div class="bar tiny muted" style="margin-bottom:5px;flex:none">
       ${slotLegend()}
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
     <div style="flex:1 1 auto;min-height:0;overflow:auto">${slotGrid(plan)}</div>
-    ${slotFoot(plan)}</div>`;
+    ${slotFoot(plan)}${stack || ''}</div>`;
 }
 
 /* Der Balken unter den Kacheln ist weg: die Aufteilung des RankPool steht jetzt
@@ -1398,14 +1478,27 @@ function conflictBox(plan, sugg) {
   // Zwei unpassende Zustände in einer Fläche. Die Überholung ist der neue: bei
   // gesetzter Reservation setzt der Vorsprung von Rank 1 aus, also *kann* ein
   // Rang darunter mehr bekommen. Verhindert wird das nicht — gemeldet schon.
-  const head = plan.conflict
-    ? `<strong>${plan.conflict.have} boosters can't carry a floor of
-       ${plan.conflict.need}.</strong><br>The curve has nothing left to shape.`
-    : `<strong>Rank ${plan.overtake.over} gets ${plan.overtake.gets}, rank ${
-       plan.overtake.under} only ${plan.overtake.has}.</strong><br>A reserved display
-       settles a rank at exactly its boxes — the rank-1 lead is off, so the curve
-       below can overtake it.`;
-  return `<div class="flag">${head}<br>
+  const line = plan.conflict
+    ? `<b>${plan.conflict.have} boosters can't carry a floor of ${plan.conflict.need}.</b>`
+    : `<b>Rank ${plan.overtake.over} overtakes rank ${plan.overtake.under}.</b>`;
+  // Eingeklappt: ein Balken statt der ganzen Fläche. Die Anwesenheit bleibt, und
+  // damit die Aussage — was verschwindet, sind nur die Wege heraus.
+  if (!st.noticeOpen) {
+    return `<button class="bail warn" data-fold="notice">⚠ ${line}
+      <span class="chev">▲ ${sugg.length} way${sugg.length === 1 ? '' : 's'} out</span></button>`;
+  }
+  const why = plan.conflict
+    ? 'The curve has nothing left to shape.'
+    : `A reserved display settles a rank at exactly its boxes — the rank-1 lead
+       is off, so the curve below can overtake it.`;
+  const nums = plan.conflict ? ''
+    : ` Rank ${plan.overtake.over} gets ${plan.overtake.gets}, rank ${
+        plan.overtake.under} only ${plan.overtake.has}.`;
+  return `<div class="flag">
+    <div class="bar" style="align-items:flex-start;gap:6px">
+      <div style="flex:1">${line}${nums}<br>${why}</div>
+      <button class="fold" data-fold="notice" title="einklappen">▼</button>
+    </div>
     ${sugg.map((s) => s.display != null
       ? `<button data-applyd="${s.display}" data-v="${s.value}">${esc(s.label)}</button>`
       : `<button data-apply="${s.key}" data-v="${s.value}">${esc(s.label)}</button>`).join('')}
@@ -1418,6 +1511,14 @@ function conflictBox(plan, sugg) {
    Wegklicken ist reiner Sitzungszustand, zurück sobald der Inhalt wechselt. */
 function offerBox(off) {
   const S = get('displaySize');
+  // Dasselbe Einklappen wie bei der ConflictNotice — aber das ✕ bleibt daneben
+  // stehen: einklappen heisst „später", wegklicken heisst „nein". Beim Offer
+  // darf man beides, bei der ConflictNotice nur das erste.
+  if (!st.offerOpen) {
+    return `<button class="bail deal" data-fold="offer">◇ <b>Rank ${off.rank} is ${
+      Math.abs(off.from - off.to)} off a full display.</b>
+      <span class="chev">▲ show</span></button>`;
+  }
   return `<div class="deal">
     <div class="bar tiny" style="align-items:flex-start;gap:8px">
       <div style="flex:1">
@@ -1427,6 +1528,7 @@ function offerBox(off) {
           off.also.length ? ` Also moves rank${off.also.length > 1 ? 's' : ''} ${
             off.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(', ')}.` : ''}</div>
       </div>
+      <button class="fold" data-fold="offer" title="einklappen">▼</button>
       <button class="reset" data-offeroff="${esc(off.key)}" title="wegklicken">✕</button>
     </div>
     <button data-applyd="${off.rank - 1}" data-v="${off.value}">Reserve ${
@@ -1577,10 +1679,8 @@ function screen(plan, sugg, off) {
         ? `height:${stripMax}px;flex:none`
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
         rankTotal(plan)}${rankStrip(plan)}</div>
-      ${slotBlock(plan)}
-      ${unfit(plan) ? `<div style="padding:8px 12px 0;flex:none">${
-        conflictBox(plan, sugg)}</div>` : ''}
-      ${off ? `<div style="padding:8px 12px 0;flex:none">${offerBox(off)}</div>` : ''}
+      ${slotBlock(plan, unfit(plan) || off ? `<div class="stack">${
+        conflictBox(plan, sugg)}${off ? offerBox(off) : ''}</div>` : '')}
       <div style="height:9px;flex:none"></div>
     </div>
     <div style="${side
@@ -1652,6 +1752,7 @@ function fsContent(plan) {
    ══════════════════════════════════════════════════════════════════════ */
 let sheetOpen = false;
 let fsOpen = false;
+let lastNoticeKey = null, lastOfferKey = null;
 const stage = document.getElementById('stage');
 stage.innerHTML = `
   <div id="app"></div>
@@ -1672,6 +1773,14 @@ function render() {
   // Zurück, sobald sich der Inhalt des Vorschlags ändert: weggeklickt ist genau
   // dieses Angebot, nicht die Fläche.
   const off = cand && st.offerOff !== cand.key ? cand : null;
+  // Beides klappt von selbst wieder auf, sobald es etwas *anderes* zu sagen hat.
+  // Sonst bliebe eine zugeklappte Meldung über einem neuen Konflikt stehen und
+  // behauptete, man habe sie schon gelesen.
+  const key = !unfit(plan) ? null
+    : plan.conflict ? `c:${plan.conflict.need}/${plan.conflict.have}`
+                    : `o:${plan.overtake.under}>${plan.overtake.over}`;
+  if (key !== lastNoticeKey) { st.noticeOpen = true; lastNoticeKey = key; }
+  if (cand && cand.key !== lastOfferKey) { st.offerOpen = true; lastOfferKey = cand.key; }
   // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
   if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
   if (sheetOpen || fsOpen) st.openInfo = null;
@@ -1762,6 +1871,8 @@ stage.addEventListener('click', (e) => {
     setDisplay(r, (st.displays[r - 1] || 0) + Number(d.disp));
     return;
   }
+  if (d.fold === 'notice') { st.noticeOpen = !st.noticeOpen; render(); return; }
+  if (d.fold === 'offer') { st.offerOpen = !st.offerOpen; render(); return; }
   if (d.offeroff) { st.offerOff = d.offeroff; render(); return; }
   if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
   if (t.id === 'morph') {
