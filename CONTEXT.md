@@ -45,10 +45,15 @@ die Ausbeute komplett, davor zählt sie anteilig, also
 `min(Ausbeute, ⌊3 · Ausbeute · angebrochen / (2 · Grösse)⌋)`. Bei Ausbeute 1 ist
 das die einzelne Schwelle bei zwei Dritteln. Die Staffel wird aus Grösse und
 Ausbeute abgeleitet und nicht eingestellt. Sie ist der einzige Ort, an dem zwei
-`PrizeItem`-Typen aneinander hängen.
+`PrizeItem`-Typen aneinander hängen — sie bindet aber den **Startwert**, nicht
+die Menge: was die Staffel abwirft, ist der `auto`-Wert der Zahl vorhandener
+`WinnerPack`s, und der `CommunityLead` darf sie in beide Richtungen
+übersteuern.
 Die `PackagingUnit` für `TournamentPack`s. Lose Einzelpacks, die im Laden aus
 einem früheren `PromoEnvelope` übrig sind, kennt die App nicht — die zählt der
-`CommunityLead` selbst.
+`CommunityLead` selbst. Lose `WinnerPack`s dagegen schon, weil ihre Zahl ein
+Regler ist; die `PreparationList` nennt die Differenz zur Ausbeute in einem
+Halbsatz, damit der Lead sie nicht in der Schublade vergisst.
 _Avoid_: Briefchen (nur Umgangssprache), ParticipationPack, PackEnvelope (hiess bis 2026-08-26 so; Tickets bis #25 sagen es noch)
 
 **PackagingUnit**:
@@ -83,8 +88,10 @@ Der `Pool`, der die `Judge`s abfindet. Anonymer Block ohne Bezug zur Anzahl
 `Judge`s — er hält fest, wieviel für die Turnierleitung beiseite liegt, nicht wer
 es bekommt. Als einziger `Pool` absolut eingestellt statt als Menge pro `Player`,
 weil ein `Judge` keine `PrizeItem`s in den `PrizePool` bringt, sondern nur
-abgreift. Steht meist auf null: solange der `Shop` die `Judge`s von aussen
-abfindet, berührt die Rechnung sie nicht.
+abgreift. Abgreifbar sind **`Booster` und `WinnerPack`**, je als eigener
+Absolutwert; `TournamentPack`s nicht — die sind dafür da, dass möglichst jeder
+`Player` einen bekommt. Steht meist auf null: solange der `Shop` die `Judge`s von
+aussen abfindet, berührt die Rechnung sie nicht.
 
 **RankPool**:
 Der `Pool`, der nach `Rank` verteilt wird. Der Rest, der nach allen anderen
@@ -175,11 +182,13 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 `RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
 ihn per `WinnerRaffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
-Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die vorhandene Zahl `WinnerPack`s** ist
-und der Wert auf ebendiese gedeckelt wird — auch bei n = 0, wo die Staffel damit
-selbst auf 0 fällt), die nachzieht,
-bis der Lead sie anfasst; ihre Summe ist nach oben durch die vorhandene Zahl
-gedeckelt. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
+Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die Zahl `WinnerPack`s im `RankPool`**
+ist, also nach Abzug des `JudgePool`, und der Wert auf ebendiese gedeckelt wird —
+auch bei n = 0, wo die Staffel damit selbst auf 0 fällt), die nachzieht,
+bis der Lead sie anfasst; ihre Summe ist nach oben durch dieselbe Zahl
+gedeckelt. Die Staffel rechnet nie auf Stücken, die beiseite liegen: ein
+Judge-Pack verkürzt das automatische Präfix, statt den `open`-Rest aufzuzehren,
+der der `WinnerRaffle` gehört. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
 aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
 `WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
 `JudgePool`.
@@ -308,7 +317,10 @@ eigenen Beschaffungshinweis, weil die Booster einer angebrochenen Einheit in
 mehrere `Pool`s fliessen. Sie rechnet nichts Eigenes und fügt nichts hinzu —
 auch der `JudgePool` ist eine Umschichtung innerhalb des `PrizePool`, keine
 Zusatzbestellung. Eine `DisplayReservation` teilt die Beschaffungszahl in
-„ungeöffnet" und „zum Anbrechen", erhöht sie nie. Kein Zustand und kein
+„ungeöffnet" und „zum Anbrechen", erhöht sie nie. Auf der `WinnerPack`-Achse
+teilt sie ebenso: weicht die Zahl vorhandener `WinnerPack`s von der Ausbeute der
+`PromoEnvelope`s ab, steht die Differenz als Halbsatz an der Ausbeute-Zeile — in
+beide Richtungen, als Herkunftsangabe und nicht als zweiter Hinweis. Kein Zustand und kein
 Bedienmodus, sondern eine Ableitung, die schon vollständig ist, bevor es ein
 `Ranking` gibt.
 _Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
@@ -367,9 +379,10 @@ zurück, der Knopf neben dem `TournamentType`-Titel **alle**. Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die Markierung sagt deshalb „folgt der Rechnung nicht
 mehr", nicht „weicht ab": beides fällt meist zusammen, aber ein `pinned` Regler
 darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
-gleich, auch wenn er nur bei den dreien beisst, deren Startwert eine Rechnung
-statt einer Zahl ist — `RankPoolDepth`, die absolute `TournamentPack`-Zahl und
-der `ranked`-Anteil der `WinnerPackAllocation`. Ein `pinned` Wert wird nie
+gleich, auch wenn er nur bei den vieren beisst, deren Startwert eine Rechnung
+statt einer Zahl ist — `RankPoolDepth`, die absolute `TournamentPack`-Zahl, die
+Zahl vorhandener `WinnerPack`s und der `ranked`-Anteil der
+`WinnerPackAllocation`. Ein `pinned` Wert wird nie
 nachträglich gekappt: sinkt ein Deckel unter ihn, bleibt er stehen und die App
 zeigt die Lage (ADR 0002). Das Gegenteil heisst **`auto`** — der Regler folgt
 noch einer Rechnung. Beide Wörter stehen so auch am Schirm.
