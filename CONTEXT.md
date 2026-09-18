@@ -255,16 +255,54 @@ Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
 _Avoid_: Payout
 
+**NoticeStack**:
+Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
+`CarryOverNotice`. Sie schwebt **über der ganzen App**, nicht über dem
+`DistributionPlan`: eine Meldung über die Herkunft der Eingabe passt in kein
+plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
+ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
+**deckt zu und schiebt nichts**.
+Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
+Wegen, oder *Chip* — ein Icon in einer Farbe, gestapelt über dem Knopf, der die
+übrigen Regler öffnet. Ein Chip steht **nie für mehrere** Meldungen, und er
+öffnet nur: er nimmt nichts an und löst nichts aus.
+**Alle beginnen offen.** Eine Meldung, die als Chip erscheint, wird ignoriert,
+und ein Vorschlag, den niemand sieht, ist kein Vorschlag; das ✕ ist der Preis
+dafür, laut anfangen zu dürfen. Unterschieden sind die drei allein durch
+**Farbe und Resolve-Wege**, nie durch Form oder Anfangszustand.
+Die **Ordnung bildet ab, wovon geredet wird**: die Meldung über den Plan sitzt
+oben bei den Kacheln, die über die Eingabe unten bei den Reglern. Eine vierte
+wäre nicht einzusortieren, sondern zu fragen, worüber sie redet.
+Zwei Familien, und sie entscheiden, wann eine minimierte Meldung wieder
+aufgeht — **Zustandsmeldung** (`ConflictNotice`, `Offer`): sie steht, solange
+eine Bedingung gilt, und geht auf, wenn sich die **Art** ändert, nie wenn sich
+nur Zahlen ändern; wer am genannten Regler zieht, soll nicht angesprungen
+werden. **Ereignismeldung** (`CarryOverNotice`): jedes Auftreten ist ein neues
+Ereignis, sie geht **immer** auf — und öffnet die stehenden Zustandsmeldungen
+mit, weil unter ihnen gerade der Boden bewegt wurde.
+Der Klappzustand ist reiner Sitzungszustand: nie im `SetupLink`, ein Neuladen
+setzt alles auf offen. Minimieren ist schwächer als Wegklicken und kann darum
+nicht länger überleben.
+Der Bericht der `LinkMigration` gehört **nicht** dazu: er kommentiert das
+Hereinkommen und nicht den Schirm, tritt einmal je Öffnen auf und wird zur
+Kenntnis genommen statt minimiert.
+_Avoid_: Toast, Alert, Banner, Snackbar
+
 **ConflictNotice**:
-Der Eintrag unter dem `DistributionPlan`, der einen unpassenden Reglerstand
-benennt und die einzeln gangbaren Wege heraus zeigt, jeden mit einem Klick
-übernehmbar. Ein `DistributionPlan` mit `ConflictNotice` ist ungültig, einer ohne
-gültig (ADR 0002) — die Anwesenheit ist die Aussage, deshalb ist sie nicht
-wegklickbar. Der seltene Fall.
+Der Eintrag im `NoticeStack`, der einen unpassenden Reglerstand benennt und die
+einzeln gangbaren Wege heraus zeigt, jeden mit einem Klick übernehmbar. Ein
+`DistributionPlan` mit `ConflictNotice` ist ungültig, einer ohne gültig
+(ADR 0002) — die Anwesenheit ist die Aussage, deshalb ist sie nicht wegklickbar.
+Der seltene Fall. Sie **darf minimiert werden**: ADR 0002 verlangt Anwesenheit,
+nicht Grösse, und die Anwesenheit sagen dann der Chip und die rot markierten
+`Rank`-Kacheln. Die Markierung ist damit **tragend und keine Doppelung** — ohne
+sie behauptete ein minimierter Konflikt einen gültigen Plan.
+Sie kann nie zugleich mit einem `Offer` stehen: das eine setzt einen ungültigen
+Plan voraus, das andere einen gültigen.
 _Avoid_: Error, Warning (die Rechnung ist nie fehlgeschlagen), Validation
 
 **Offer**:
-Der Eintrag unter dem `DistributionPlan`, der auf einem vollständig **gültigen**
+Der Eintrag im `NoticeStack`, der auf einem vollständig **gültigen**
 Plan eine rundere Fassung vorschlägt — heute allein die `DisplayReservation`,
 wenn ein `Rank` höchstens eine Viertel-`Display`-Grösse von einem Vielfachen
 davon entfernt liegt, in beide Richtungen. Steht in einer eigenen Fläche neben
@@ -272,6 +310,9 @@ der `ConflictNotice`, weil er der häufige Fall ist und eine Fläche, in der mei
 Harmloses steht, keine Warnfläche mehr wäre. Wegklickbar, und das Wegklicken ist
 reiner Sitzungszustand: nie im `SetupLink`, kein Überleben eines Neuladens,
 zurück sobald sich der Inhalt des Vorschlags ändert.
+**Wegklicken gilt diesem Angebot, Minimieren gilt der Fläche**: das Wegklicken
+kennt den Vorschlag samt seinen Zahlen, das Minimieren nur die Art. Darum kommt
+ein geändertes Angebot zurück, während ein minimiertes minimiert bleibt.
 Sein **Versprechen ist örtlich, seine Wirkung nicht**: das Viertel-Fenster prüft
 den genannten `Rank`, aber eine `DisplayReservation` gilt Ränge ab, und ein
 abgegoltener `Rank` bekommt nur seine `Display`s — angenommen kann der Vorschlag
@@ -292,6 +333,15 @@ Knopf, der alle auf das neue Blatt zieht. Wegklickbar und reiner
 Sitzungszustand, nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
 verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
 `TournamentType`-Titel (alle) steht.
+Sie ist die einzige **Ereignismeldung** des `NoticeStack`: sie beschreibt keinen
+anhaltenden Zustand, sondern den Klick, der gerade geschehen ist. Zweimal
+hintereinander gewechselt heisst zweimal dieselbe Art, aber eine andere Liste
+darunter — ein Zustandsschlüssel liesse sie minimiert stehen und behauptete,
+das Neue sei gelesen.
+Nichts tun ist bei ihr der **Normalfall und kein Notausgang**: der Wechsel hat
+nichts von Hand Gesetztes überschrieben, die Pins stehen. Ein erzwungenes
+Übernehmen wäre die Bestätigungsabfrage zurück, die der Nachtrag zu ADR 0003
+ersatzlos gestrichen hat.
 _Avoid_: Warning (es ist nichts schiefgegangen), ChangeLog, Diff
 
 **CombinedHandout**:
