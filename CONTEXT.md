@@ -263,9 +263,14 @@ plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
 ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
 **deckt zu und schiebt nichts**.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
-Wegen, oder *Chip* — eine kurze Pille in einer Farbe, gestapelt über dem Knopf,
-der die übrigen Regler öffnet. Ein Chip steht **nie für mehrere** Meldungen, und
-er öffnet nur: er nimmt nichts an und löst nichts aus.
+Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
+mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
+Einklappen ist ein **Schrumpfen an Ort**: der Chip bleibt auf derselben Schicht
+wie die offene Meldung, überlebt darum jeden Seitenwechsel und liegt nie unter
+einer Seite. Ein Chip, der ins Seitenlayout einzieht, gehört einer Seite und ist
+auf den übrigen weg — ausgerechnet dort, wo man an den auslösenden Reglern
+dreht. Aus demselben Grund braucht er nicht beweglich zu sein: eine verschobene
+Lage wäre Zustand, und den hat diese App nirgends.
 Der Chip trägt ein **Wort und nach Möglichkeit eine Zahl** (`3 ways out`,
 `2 kept`), kein Zeichen: ein Glyph beschreibt die Meldung und muss gedeutet
 werden, während der Chip zum Antippen auffordern soll. Die Zahl ist dabei der
@@ -384,11 +389,12 @@ teilt sie ebenso: weicht die Zahl vorhandener `WinnerPack`s von der Ausbeute der
 beide Richtungen, als Herkunftsangabe und nicht als zweiter Hinweis. Kein Zustand und kein
 Bedienmodus, sondern eine Ableitung, die schon vollständig ist, bevor es ein
 `Ranking` gibt.
-_Label_: **Prepare** — der Griff bietet eine Handlung an („was muss ich
-vorbereiten?"), und das Wort steht auf einem Knopf, nicht über einem Dokument.
-*Preparation* wäre deckungsgleich, liest sich am Knopf aber wie eine
-Überschrift; *List* ist am Schirm ohnehin falsch, weil die Sicht kein Verzeichnis
-ist. Erste gezogene `_Label_`-Zeile seit der Regel aus #27.
+_Label_: **Prepare** — das Wort bietet eine Handlung an („was muss ich
+vorbereiten?") statt einen Gegenstand zu benennen. *Preparation* wäre
+deckungsgleich, liest sich aber wie eine Überschrift; *List* ist am Schirm
+ohnehin falsch, weil die Sicht kein Verzeichnis ist. Erste gezogene
+`_Label_`-Zeile seit der Regel aus #27. Es ist seit #36 der Name einer der drei
+Seiten, nicht mehr der eines Griffs — an der Begründung ändert das nichts.
 _Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
 
 ## Turnier und Personen
