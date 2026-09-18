@@ -64,6 +64,7 @@
 
     /* Sperrgebiet des Knopfes unten rechts: 52 Knopf + 12 Abstand + 6 Luft. */
     --fabsafe: 70px;
+    --foot: 56px;
     /* Die Kachel ist das Mass der Dinge: so gross wie im Hochformat bei
        sechs Spalten. Alles andere richtet sich danach. */
     --cell: 54px;
@@ -123,7 +124,11 @@
 
   #stagewrap { display: flex; justify-content: center; padding: 8px 12px 0; }
   #stage { background: var(--bg); width: 100%; position: relative; overflow: hidden; }
-  #app { height: 100%; }
+  /* Runde 13: der Fuss ist eine eigene Zeile, keine schwebenden Griffe mehr.
+     Der #morph schwebte über den vorderen Reglern — `raffleRow` trug dafür ein
+     `padding-right: 88px`, also war die Fläche ohnehin bezahlt, nur verdeckt
+     statt reserviert. Kopf trägt Zahlen, Fuss trägt Flächen. */
+  #app { height: calc(100% - var(--foot)); }
   body.phone #stage, body.land #stage {
     border: 9px solid var(--frame); border-radius: 34px;
     box-shadow: 0 18px 44px rgba(0,0,0,.22); flex: none;
@@ -248,8 +253,8 @@
      *Plan* sitzt oben bei den Kacheln, die Meldung über die *Eingabe* unten
      bei den Reglern. Eine vierte müsste man nicht einsortieren, sondern nur
      fragen, worüber sie redet. */
-  .stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 35;
-           padding: 0 12px 70px; display: flex; flex-direction: column; gap: 6px;
+  .stack { position: absolute; left: 0; right: 0; bottom: var(--foot); z-index: 35;
+           padding: 0 12px 8px; display: flex; flex-direction: column; gap: 6px;
            pointer-events: none; max-height: 100%; overflow-y: auto; }
   /* Wo die Regler als Schiene rechts stehen (#15), hört der Stapel vor ihr auf:
      die Schiene trägt die Pin-Markierungen, die der CarryOverNotice aufzählt —
@@ -260,18 +265,20 @@
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
   .flag .chev, .deal .chev { font-size: 11px; opacity: .7; }
 
-  /* ── Minimiert: ein Chip auf der #morph-Schicht ────────────────────────
+  /* ── Minimiert: ein Chip, jetzt im Fuss ────────────────────────────────
      Zwei Zustände, keiner dazwischen: offen oder Chip. Der Balken über die
      ganze Breite, den Runde 9 als dritten Zustand hatte, sagte dasselbe wie
      der Chip in gross — auf 393 px ist das eine Stufe zu viel.
 
-     Die Chips stapeln sich senkrecht *über* dem Knopf, nicht neben ihm: der
-     Knopf bleibt verankert, und drei Meldungen brauchen drei Chips. Ein Chip
-     steht nie für mehrere — sonst wäre die Ecke ein Zähler und keine Meldung.
-     Er öffnet nur; er nimmt nichts an und löst nichts aus, damit der Fehlgriff
-     im Daumenbereich folgenlos bleibt. */
-  #chips { position: absolute; right: 12px; bottom: 74px; z-index: 41;
-           display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+     Runde 13 legt sie in den Fuss statt senkrecht über den Knopf: dort haben
+     sie einen Platz statt einer Schwebelage, und der Einwand gegen die
+     Nachbarschaft von Geholtem und Zugestelltem fällt mit der Form. Die
+     Unterscheidung lebt im Verhalten — Meldungen gehen von selbst auf, sind
+     warnfarben, verschwinden wieder —, nicht im Ort. Feste Griffe links,
+     Meldungen rechts. Ein Chip steht nie für mehrere, sonst wäre der Fuss ein
+     Zähler; er öffnet nur, nimmt nichts an und löst nichts aus. */
+  #chips { display: flex; gap: 8px; align-items: center; margin-left: auto;
+           overflow-x: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt ist der
      #morph-Knopf, und zwei gefüllte Kreise übereinander lesen sich als zwei
      Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
@@ -505,11 +512,11 @@
   .sheet.open { transform: translateY(0); visibility: visible;
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
-  .sheet .body { padding: 14px 20px 92px; }
+  .sheet .body { padding: 14px 20px 26px; }
   /* Das Vollbild misst wie der Hauptschirm: 12px links und rechts. Mit 14px
      fällt im Hochformat eine Spalte weg und die Kachel wächst — genau das,
      was die feste Kachelgrösse verhindern soll. */
-  .sheet.fs .body { padding: 10px 12px 84px; }
+  .sheet.fs .body { padding: 10px 12px 18px; }
   /* Quer und am Rechner steht sonst die halbe Blattbreite leer. */
   body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 34px;
     column-rule: 1px solid var(--line); }
@@ -547,18 +554,34 @@
 
   /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
      lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
-  #fade { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; z-index: 28;
+  #fade { position: absolute; left: 0; right: 0; bottom: var(--foot); height: 60px; z-index: 28;
           display: none; pointer-events: none;
           background: linear-gradient(to bottom, transparent, var(--fadeto) 62%); }
   #stage { --fadeto: var(--paper); }
   #stage.fsopen { --fadeto: var(--bg); }
   #stage.anyopen #fade { display: block; }
 
-  /* ── Der eine Knopf unten rechts: drei Punkte ↔ Kreuz ──────────────── */
-  #morph { position: absolute; right: 12px; bottom: 12px; z-index: 40; border: 0;
-           width: 52px; height: 52px; border-radius: var(--r-fab); background: var(--accent);
-           color: var(--on-accent); cursor: pointer; display: grid; place-items: center;
-           box-shadow: 0 6px 18px rgba(0,0,0,.20); }
+  /* ── Der Fuss: feste Griffe links, Meldungen rechts ────────────────────
+     Er liegt über den Blättern (z 45 gegen 25), damit derselbe Knopf öffnet
+     und schliesst und die Meldungs-Chips auch bei offenem Blatt erreichbar
+     bleiben — Runde 10 hatte genau dort den Fehler, dass der Stapel unter dem
+     Blatt lag, während man an den auslösenden Reglern drehte. */
+  #foot { position: absolute; left: 0; right: 0; bottom: 0; height: var(--foot);
+          z-index: 45; background: var(--paper); box-shadow: var(--panel-shadow);
+          display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+  .footbtn { border: 0; background: transparent; color: var(--ink); font: inherit;
+             font-size: 12.5px; font-weight: 600; cursor: pointer; height: 38px;
+             border-radius: var(--r-ctl); padding: 0 12px; display: flex;
+             align-items: center; gap: 7px; white-space: nowrap; }
+  .footbtn:active { transform: translateY(1px); }
+  .footbtn.prime { background: var(--accent-soft); }
+  .footbtn.on { background: var(--accent); color: var(--on-accent);
+                box-shadow: var(--glow); }
+
+  /* ── Der eine Knopf: drei Punkte ↔ Kreuz, jetzt im Fuss ──────────────── */
+  #morph { border: 0; width: 44px; height: 38px; border-radius: var(--r-ctl);
+           background: var(--accent);
+           color: var(--on-accent); cursor: pointer; display: grid; place-items: center; }
   #morph .m { position: relative; width: 22px; height: 22px; }
   #morph .m i { position: absolute; left: 2px; top: 50%; width: 18px; height: 3px;
                 margin-top: -1.5px; border-radius: 2px; background: currentColor;
@@ -599,7 +622,7 @@
     font-weight: 600; box-shadow: var(--btn-shadow); cursor: pointer; white-space: nowrap;
   }
   .prepbtn:active { transform: translateY(1px); }
-  .body.prep { padding: 10px 12px var(--fabsafe); }
+  .body.prep { padding: 10px 12px 18px; }
   .prepitem { background: var(--paper); box-shadow: var(--panel-shadow); padding: 10px 12px;
     margin-bottom: 10px; }
   .prepitem .big { font-size: 26px; line-height: 1; }
@@ -1352,9 +1375,7 @@ function headerBlock(plan) {
       <span class="tiny muted num">${st.players} players</span>
       <span class="tiny muted">·</span>
       <span class="tiny num" style="font-weight:600">${plan.pool.booster} boosters</span>
-      ${status}
-      <button class="prepbtn" data-prep="open" style="margin-left:auto"
-        title="was muss ich vorbereiten?">🛒 Prepare</button>
+      <span style="margin-left:auto">${status}</span>
     </div>
     ${handoutRow(plan)}
   </div>`;
@@ -1824,9 +1845,11 @@ function raffleRow(plan) {
   const pot = rafflePot(plan);
   const can = plan.allocation.open > 0 && pot.length > 0;
   const range = get('raffleRange');
-  // 88px rechts: der Knopf braucht 64, der Rest ist Luft — „open“ klebte vorher
-  // am Knopf und las sich wie seine Beschriftung.
-  return `<div class="bar tiny" style="margin-top:2px;padding-right:88px;min-height:56px;gap:7px">
+  // Das `padding-right: 88px` ist weg: es hielt die Zeile vom schwebenden
+  // #morph frei, und der steht seit Runde 13 im Fuss. Die Zeile bekommt damit
+  // 88px zurück — sie ist es, die den Fuss bezahlt hat. Sie zieht ohnehin bald
+  // an die Legende um (#35).
+  return `<div class="bar tiny" style="margin-top:2px;min-height:52px;gap:7px">
     <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
       title="Winner raffle: einen offenen WinnerPack auslosen">🎲</button>
     <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
@@ -1925,7 +1948,7 @@ function screen(plan, sugg, off) {
     <div style="${side
       ? 'width:var(--rail);flex:none;overflow:auto;background:var(--paper);box-shadow:var(--panel-shadow)'
       : 'flex:none;background:var(--paper);box-shadow:var(--panel-shadow)'}">
-      <div style="padding:9px 12px ${side ? 'var(--fabsafe)' : '8px'}">${controls}</div>
+      <div style="padding:9px 12px 8px">${controls}</div>
     </div>
   </div>`;
 }
@@ -2003,8 +2026,12 @@ stage.innerHTML = `
   <div id="pop" class="pop"></div>
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
-  <div id="chips"></div>
-  <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>`;
+  <div id="foot">
+    <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>
+    <button class="footbtn prime" data-prep="open" title="was muss ich vorbereiten?"
+      >🛒 Prepare</button>
+    <div id="chips"></div>
+  </div>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
@@ -2075,6 +2102,7 @@ function render() {
   stage.classList.toggle('fsopen', fsOpen || prepOpen);
   document.getElementById('morph').title =
     (sheetOpen || fsOpen || prepOpen) ? 'schliessen' : 'mehr';
+  document.querySelector('#foot [data-prep]').classList.toggle('on', prepOpen);
   placePop();
 }
 
@@ -2173,9 +2201,13 @@ stage.addEventListener('click', (e) => {
     render(); return;
   }
   if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
-  // Geholt, nicht zugestellt: die Vorbereitung öffnet vom Kopf aus und schliesst
-  // über denselben Knopf wie alles andere.
-  if (d.prep) { prepOpen = d.prep === 'open'; st.openSlot = null; render(); return; }
+  // Geholt, nicht zugestellt. Der Griff schaltet um statt nur zu öffnen, und er
+  // schliesst die anderen Flächen — zwei Blätter übereinander wären ein Ablauf,
+  // und #15 hat „ein Schirm, kein Ablauf" entschieden.
+  if (d.prep) {
+    prepOpen = !prepOpen; sheetOpen = false; fsOpen = false;
+    st.openSlot = null; render(); return;
+  }
   if (d.sheetRange != null) { sheetOpen = true; render(); return; }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
