@@ -302,7 +302,11 @@
      hat diese App nirgends — Persistenz ist Out of scope, der SetupLink trägt
      nach #16 nur Reglerabweichungen. Es muss nicht beweglich sein, es muss
      klein sein und oben liegen. */
-  .badges { display: flex; gap: 8px; align-items: center; align-self: flex-start;
+  /* Rechtsbündig. Runde 13 hatte „Meldungen links, Aktionen rechts" — das war
+     eine Teilung *des Fusses* in zwei Zonen, und die gibt es nicht mehr, seit
+     er ganz der Navigation gehört. Übrig bleibt der Daumen, und der greift
+     rechts: ein Badge ist ein Griff, kein Text. */
+  .badges { display: flex; gap: 8px; align-items: center; align-self: flex-end;
             max-width: 100%; overflow-x: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt wäre er ein
      Knopf unter den Zahlen des Kopfes, und der Kopf hat keine Knöpfe ausser dem
