@@ -384,6 +384,11 @@ teilt sie ebenso: weicht die Zahl vorhandener `WinnerPack`s von der Ausbeute der
 beide Richtungen, als Herkunftsangabe und nicht als zweiter Hinweis. Kein Zustand und kein
 Bedienmodus, sondern eine Ableitung, die schon vollständig ist, bevor es ein
 `Ranking` gibt.
+_Label_: **Prepare** — der Griff bietet eine Handlung an („was muss ich
+vorbereiten?"), und das Wort steht auf einem Knopf, nicht über einem Dokument.
+*Preparation* wäre deckungsgleich, liest sich am Knopf aber wie eine
+Überschrift; *List* ist am Schirm ohnehin falsch, weil die Sicht kein Verzeichnis
+ist. Erste gezogene `_Label_`-Zeile seit der Regel aus #27.
 _Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
 
 ## Turnier und Personen
