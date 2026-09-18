@@ -260,8 +260,13 @@
      die Schiene trägt die Pin-Markierungen, die der CarryOverNotice aufzählt —
      eine Meldung, die ihre eigenen Belege zudeckt, ist keine Meldung. Am Handy
      liegt die Leiste unten, dort deckt der Stapel sie zu: das ist der leichtere
-     Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind. */
-  body.wide .stack, body.land .stack { right: var(--rail); }
+     Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind.
+
+     Seit Runde 14 gilt das nur auf `Plan`: die Schiene gehört zu dieser Seite,
+     und auf `Details` und `Prepare` hielte die Regel nichts frei, sondern
+     stellte das Badge nur mitten ins Bild (gemessen x ≈ 640 von 1002). */
+  body.wide #stage.onplan .stack,
+  body.land #stage.onplan .stack { right: var(--rail); }
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
   /* Die Badge-Zeile ist ein durchsichtiger Halter, kein Panel — der Schatten
      gehört an die Pille, nicht an die Luft neben ihr. */
@@ -2062,10 +2067,20 @@ function sheetContent(plan) {
   return out;
 }
 
+/* Das Vollbild braucht einen eigenen Ausgang — es hatte nie einen. Bis Runde 13
+   schloss es der `⋯`-Knopf, also der Griff *einer anderen Fläche*, und genau
+   diese Kopplung ist der Grund, aus dem dieses Ticket entstand. Mit dem Wegfall
+   des einen Morph-Knopfes wurde daraus eine Sackgasse.
+
+   Der Griff sitzt, wo der zum Öffnen sass — dieselbe Ecke, das Zeichen
+   umgedreht. Ein Zustand, der sich am selben Ort ein- und ausschalten lässt,
+   braucht keine Erklärung. */
 function fsContent(plan) {
   return `<div class="shead">
       <span>${TYPES[st.type].title} · ${st.players}</span>
       <span class="tiny muted bar">${slotLegend()}</span>
+      <button class="sheetbtn tiny" data-fs="close" style="margin-left:auto"
+        title="Vollbild verlassen">⤡</button>
     </div>
     <div class="body">${slotGrid(plan)}${slotFoot(plan)}</div>`;
 }
@@ -2160,6 +2175,7 @@ function render() {
   prepEl.classList.toggle('open', page === 'prepare');
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
   popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
+  stage.classList.toggle('onplan', !away);
   stage.classList.toggle('anyopen', away || fsOpen);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
   for (const b of document.querySelectorAll('#foot .navbtn')) {
