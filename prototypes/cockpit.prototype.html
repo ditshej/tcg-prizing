@@ -591,6 +591,32 @@
   .pm button, .pm .val { border: 0; }
   .pm .val { background: var(--accent-soft); }
   input[type=range] { accent-color: var(--accent); }
+
+  /* ── Runde 12: der Prepare-Knopf und seine Fläche ───────────────────── */
+  .prepbtn {
+    border: 0; background: var(--accent-soft); color: var(--ink);
+    border-radius: var(--r-ctl); padding: 5px 10px; font: inherit; font-size: 12px;
+    font-weight: 600; box-shadow: var(--btn-shadow); cursor: pointer; white-space: nowrap;
+  }
+  .prepbtn:active { transform: translateY(1px); }
+  .body.prep { padding: 10px 12px var(--fabsafe); }
+  .prepitem { background: var(--paper); box-shadow: var(--panel-shadow); padding: 10px 12px;
+    margin-bottom: 10px; }
+  .prepitem .big { font-size: 26px; line-height: 1; }
+  .prepitem em { font-style: normal; font-weight: 600; font-size: 13px; }
+  .prepitem .steps { margin-top: 8px; font-size: 12px; }
+  .prepitem .steps > div { display: flex; gap: 8px; align-items: baseline;
+    padding: 3px 0; border-top: 1px solid var(--hair); }
+  .prepitem .steps > div:first-child { border-top: 0; }
+  .prepitem .steps b { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .prepitem .steps .muted { color: var(--muted); }
+  .prepitem .steps .keep { color: var(--accent); font-weight: 600; }
+  .prepitem .offerline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    color: var(--accent); }
+  .prepitem .offerline button { border: 0; background: var(--accent); color: var(--on-accent);
+    border-radius: var(--r-ctl); padding: 4px 9px; font: inherit; font-size: 12px;
+    cursor: pointer; }
+  .prepnote { font-size: 11px; color: var(--muted); padding: 2px 4px 0; }
 </style>
 </head>
 <body class="phone">
@@ -1300,82 +1326,119 @@ function curveGlyphs(plan, withRatio) {
   </div>`;
 }
 
-/* Kopf: Turniertyp als Überschrift, Handzustand oben rechts,
-   Beschaffung als drei Zellen statt eines umbrechenden Satzes. */
+/* Kopf: Turniertyp als Überschrift, Handzustand oben rechts — und die
+   Boosterzahl daneben, sonst nichts.
+
+   Runde 12 nimmt ihm die Beschaffung ab. Die PreparationList ist nach #11 eine
+   *Sicht* auf den PrizePool, und sie wird in einem anderen Moment gebraucht als
+   die Regler: man stellt ein, dann geht man holen. Also liegt sie hinter einem
+   Knopf und hat dort Platz für die Erklärungen, die im Kopf keinen mehr hatten.
+
+   Was bleibt, ist die Zahl, die nicht Beschaffung ist: #23 braucht drei Zahlen
+   an drei Stellen für die Summenprobe (288 · 192 · 96). Die erste davon hinter
+   einen Knopf zu legen, hiesse die harte Regel der Karte unprüfbar machen. */
 function headerBlock(plan) {
   const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
              + st.displays.filter(Boolean).length;
   const status = pins
-    ? `<button class="pinchip" data-resetall="1" style="margin-left:auto"
+    ? `<button class="pinchip" data-resetall="1"
          title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
- pins} pinned ↺</button>`
+ pins} ↺</button>`
     : '';
-  const p = plan.prep;
-  // Ein angebrochenes Kuvert unter der Schwelle wird zu keinem WinnerPack —
-  // diese Packs bleiben übrig und gehören ausgewiesen.
-  const loosePacks = p.partialYield > 0 ? 0 : p.opened;
-  // #29: weicht der Regler von der Ausbeute ab, gehört der Halbsatz dorthin, wo
-  // der Lead beim Zusammensuchen hinschaut — nicht nur an den Regler im Blatt.
-  const off = p.winnerYield - plan.pool.winnersDerived;
-  const yieldNote = `yield ${plan.pool.winnersDerived}${
-    off > 0 ? ` · ${off} more from the box`
-    : off < 0 ? ` · ${-off} stays in the box` : ''}`;
-  // Die Gesamtzahl Booster gehört in den Kopf: sie ist die eine Zahl, gegen die
-  // sich die Summenregel prüfen lässt — Displays sind eine Beschaffungsgrösse,
-  // keine Menge. Mit ihr und der Handout-Zeile liest sich 96 = 64 + 32 am Schirm.
-  const sealed = Math.floor(plan.pool.booster / get('displaySize'));
-  const reservedDisplays = plan.displayVector.reduce((a, b) => a + b, 0);
-  // Eingeklappt: die drei Holzahlen in einer Zeile, darunter das Boosertotal.
-  // Weg sind nur die *Herleitungen* — die Zahl, an der die Summenregel hängt
-  // (#23), steht auch gefaltet da, sonst wäre die Probe nicht mehr führbar.
-  const fold = `<button class="fold headfold" data-fold="head"
-    title="${st.headOpen ? 'einklappen' : 'aufklappen'}">${st.headOpen ? '▼' : '▲'}</button>`;
-  const brief = `<div class="brief" data-fold="head">
-      <div class="bar tiny">
-        <span><b class="num">${p.fetchDisplays}</b> ${plural(p.fetchDisplays, 'display')}</span>
-        <span class="muted">·</span>
-        <span><b class="num">${p.fetchEnvelopes}</b> ${plural(p.fetchEnvelopes, 'envelope')}</span>
-        <span class="muted">·</span>
-        <span><b class="num">${p.winnerYield}</b> ${
-          plural(p.winnerYield, 'winner pack')}</span>
-        ${fold}
-      </div>
-      <div class="tiny muted num">${plan.pool.booster} boosters${
-        // #23 braucht drei Zahlen an drei Stellen: Total, Handout, Rangtotal.
-        // Gefaltet verschwindet die Handout-Zeile, also zieht die Zahl hier ein
-        // — sonst bräche die Probe genau dann, wenn man sie am nötigsten hat.
-        !get('combinedHandout') && plan.participation.booster
-          ? ` · ${plan.participation.booster} handed out` : ''}</div>
-    </div>`;
   return `<div style="padding:9px 12px 8px;background:var(--paper);
       box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
     <div class="bar">
       <strong style="font-size:17px;letter-spacing:-.01em">${TYPES[st.type].title}</strong>
       <span class="tiny muted num">${st.players} players</span>
-      ${status}${st.headOpen ? `<span${status ? '' : ' style="margin-left:auto"'}>${
-        fold}</span>` : ''}
-    </div>
-    ${st.headOpen ? '' : brief}
-    <div class="headcols" ${st.headOpen ? '' : 'hidden'}>
-    <div class="fetch">
-      <div><b class="num">${p.fetchDisplays}</b><em>${
-        plural(p.fetchDisplays, 'display')}</em>${infoBtn('displays')}
-        <s>${plan.pool.booster} boosters${
-          p.looseBooster ? ` · ${sealed} sealed + ${p.looseBooster} loose` : ''}${
-          // #11: die Reservation teilt die Beschaffungszahl in „ungeöffnet" und
-          // „zum Anbrechen" — sie erhöht sie nie. Ohne diese Zeile stünden „6
-          // displays" im Kopf und „1 display" auf der Kachel unverbunden da.
-          reservedDisplays ? ` · ${reservedDisplays} go over unopened` : ''}</s></div>
-      <div><b class="num">${p.fetchEnvelopes}</b><em>${
-        plural(p.fetchEnvelopes, 'Promo-Envelope')}</em>
-        <s>${loosePacks > 0 ? `+${loosePacks} loose` : ''}</s></div>
-      <div class="der"><b class="num">${p.winnerYield}</b><em>${
-        plural(p.winnerYield, 'winner pack')}</em>${
-        infoBtn('winners')}<s>${yieldNote}</s></div>
+      <span class="tiny muted">·</span>
+      <span class="tiny num" style="font-weight:600">${plan.pool.booster} boosters</span>
+      ${status}
+      <button class="prepbtn" data-prep="open" style="margin-left:auto"
+        title="was muss ich vorbereiten?">🛒 Prepare</button>
     </div>
     ${handoutRow(plan)}
-    </div>
   </div>`;
+}
+
+/* Die PreparationList als eigene Fläche (#11: eine Sicht, kein Rechenschritt).
+   Geholt, nicht zugestellt — darin unterscheidet sie sich vom NoticeStack aus
+   #31, der von selbst aufgeht. Hier ist Platz, also stehen die Herleitungen
+   ausgeschrieben da statt hinter einem ⓘ. */
+function prepContent(plan) {
+  const p = plan.prep;
+  const S = get('displaySize');
+  const tot = plan.pool.booster;
+  const sealed = Math.floor(tot / S), loose = tot % S;
+  const reservedDisplays = plan.displayVector.reduce((a, b) => a + b, 0);
+  const g = get('envelopeSize'), y = p.envelopeYield;
+  const full = Math.floor(plan.pool.packs / g);
+  const off = p.winnerYield - plan.pool.winnersDerived;
+  const nextAt = p.partialYield < y ? p.thresholds[p.partialYield] : null;
+  const need = nextAt == null ? 0 : nextAt - p.opened;
+  const loosePacks = p.partialYield > 0 ? 0 : p.opened;
+  return `<div class="shead">
+      <span>Prepare · ${TYPES[st.type].title} · ${st.players}</span>
+      <span class="tiny muted">everything the pool holds</span>
+    </div>
+    <div class="body prep">
+
+    <div class="prepitem">
+      <div class="bar"><b class="num big">${p.fetchDisplays}</b>
+        <em>${plural(p.fetchDisplays, 'display')}</em>
+        <span class="tiny muted num" style="margin-left:auto">${tot} boosters</span></div>
+      <div class="steps">
+        <div>${st.players} players × ${get('boosterRate')} each<b>${tot}</b></div>
+        <div class="muted">÷ ${S} per display</div>
+        <div>${sealed} sealed<b>${sealed * S}</b></div>
+        ${loose ? `<div>+ ${loose} from the ${sealed + 1}${sealed ? 'th' : 'st'}<b>${tot}</b></div>
+          <div class="muted">${S - loose} stay in the box</div>`
+          : '<div class="muted">comes out even</div>'}
+        ${reservedDisplays ? `<div class="keep">${reservedDisplays} ${
+            plural(reservedDisplays, 'display')} go over unopened<span class="muted"
+            >reserved for the top ranks</span></div>` : ''}
+      </div>
+    </div>
+
+    <div class="prepitem">
+      <div class="bar"><b class="num big">${p.fetchEnvelopes}</b>
+        <em>${plural(p.fetchEnvelopes, 'Promo-Envelope')}</em>
+        <span class="tiny muted num" style="margin-left:auto">${
+          plan.pool.packs} tournament packs</span></div>
+      <div class="steps">
+        <div>${plan.pool.packs} packs<span class="muted">÷ ${g} per envelope</span></div>
+        <div>${full} full<b>${full * g}</b></div>
+        ${p.opened ? `<div>${p.opened} opened from the next<b>${plan.pool.packs}</b></div>`
+          : '<div class="muted">comes out even</div>'}
+        ${loosePacks ? `<div class="muted">the ${loosePacks} opened ${
+          plural(loosePacks, 'yields', 'yield')} nothing yet</div>` : ''}
+      </div>
+    </div>
+
+    <div class="prepitem">
+      <div class="bar"><b class="num big">${p.winnerYield}</b>
+        <em>${plural(p.winnerYield, 'winner pack')}</em>
+        <span class="tiny muted num" style="margin-left:auto">${
+          st.pin.winnerPacks ? 'set by hand' : 'from the envelopes'}</span></div>
+      <div class="steps">
+        <div>${full} full ${plural(full, 'envelope')}${
+          y > 1 ? `<span class="muted">× ${y} each</span>` : ''}<b>${full * y}</b></div>
+        <div>${p.opened} opened<span class="muted">${
+          p.thresholds.map((t, k) => `${k + 1} at ${t}`).join(', ')}</span
+          ><b>${p.partialYield}</b></div>
+        ${off !== 0 ? `<div class="keep">${Math.abs(off)} ${
+            off > 0 ? 'more from the box' : plural(-off, 'stays', 'stay')
+              + ' in the box'}<span class="muted">you set this by hand</span
+            ><b>${p.winnerYield}</b></div>` : ''}
+        ${need > 0 && !st.pin.winnerPacks ? `<div class="offerline">${need} more ${
+            plural(need, 'pack')} would make it ${plan.pool.winnersDerived + 1}
+          <button data-apply="tournamentPacks" data-v="${plan.pool.packs + need}"
+            >Set packs to ${plan.pool.packs + need}</button></div>` : ''}
+      </div>
+    </div>
+
+    <div class="prepnote">Nothing here is an extra order — the judge's share and the
+      reserved displays are the same pool, moved around.</div>
+    </div>`;
 }
 
 /* Was zu Beginn rausgeht, samt Total — die Rate allein liesse die 64 unsichtbar.
@@ -1929,12 +1992,14 @@ function fsContent(plan) {
    ══════════════════════════════════════════════════════════════════════ */
 let sheetOpen = false;
 let fsOpen = false;
+let prepOpen = false;
 let lastNoticeKey = null, lastOfferKey = null;
 const stage = document.getElementById('stage');
 stage.innerHTML = `
   <div id="app"></div>
   <div id="sheet" class="sheet"><div class="body"></div></div>
   <div id="fs" class="sheet fs"></div>
+  <div id="prep" class="sheet fs"></div>
   <div id="pop" class="pop"></div>
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
@@ -1943,6 +2008,7 @@ stage.innerHTML = `
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
+const prepEl = document.getElementById('prep');
 const popEl = document.getElementById('pop');
 const stackEl = document.getElementById('stack');
 const chipsEl = document.getElementById('chips');
@@ -1972,8 +2038,8 @@ function render() {
   if (cand && !lastOfferKey) { st.offerOpen = true; }
   lastOfferKey = cand ? 'd' : null;
   // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
-  if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
-  if (sheetOpen || fsOpen) st.openInfo = null;
+  if (sheetOpen || prepOpen || st.openSlot > st.players) st.openSlot = null;
+  if (sheetOpen || fsOpen || prepOpen) st.openInfo = null;
   appEl.innerHTML = screen(plan, sugg, off);
   /* Der Stapel hängt im #stage, nicht im Planblock — sonst liegt er unter dem
      Reglerblatt, und genau dort dreht man an den Reglern, die den Konflikt
@@ -1999,13 +2065,16 @@ function render() {
   ].join('');
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
+  prepEl.innerHTML = prepContent(plan);
   popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
   sheetEl.classList.toggle('open', sheetOpen);
   fsEl.classList.toggle('open', fsOpen);
+  prepEl.classList.toggle('open', prepOpen);
   popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
-  stage.classList.toggle('anyopen', sheetOpen || fsOpen);
-  stage.classList.toggle('fsopen', fsOpen);
-  document.getElementById('morph').title = (sheetOpen || fsOpen) ? 'schliessen' : 'mehr';
+  stage.classList.toggle('anyopen', sheetOpen || fsOpen || prepOpen);
+  stage.classList.toggle('fsopen', fsOpen || prepOpen);
+  document.getElementById('morph').title =
+    (sheetOpen || fsOpen || prepOpen) ? 'schliessen' : 'mehr';
   placePop();
 }
 
@@ -2098,11 +2167,15 @@ stage.addEventListener('click', (e) => {
                     st.carry = null; render(); return; }
   if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
   if (t.id === 'morph') {
-    if (fsOpen) fsOpen = false;
+    if (prepOpen) prepOpen = false;
+    else if (fsOpen) fsOpen = false;
     else sheetOpen = !sheetOpen;
     render(); return;
   }
   if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
+  // Geholt, nicht zugestellt: die Vorbereitung öffnet vom Kopf aus und schliesst
+  // über denselben Knopf wie alles andere.
+  if (d.prep) { prepOpen = d.prep === 'open'; st.openSlot = null; render(); return; }
   if (d.sheetRange != null) { sheetOpen = true; render(); return; }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
