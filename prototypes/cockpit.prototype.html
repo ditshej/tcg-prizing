@@ -623,12 +623,16 @@
             text-transform: var(--head-tr);
             cursor: pointer; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 4px; }
-  .navbtn .ico { font-size: 18px; line-height: 1; opacity: .85; }
+  .navbtn .ico { font-size: 18px; line-height: 1; opacity: .85;
+                 padding: 3px 16px; border-radius: var(--r-ctl); }
   .navbtn:active { transform: translateY(1px); }
-  /* Aktiv heisst: Farbe und volle Deckkraft. Kein Kasten darunter — der Fuss
-     hat nur drei Plätze, da genügt der Unterschied ohne Rahmen. */
+  /* Aktiv heisst Farbe *und* ein weiches Feld unter dem Icon. Die Farbe allein
+     war zu leise — gemessen rgb(122,106,85) gegen rgb(140,90,43), auf 56 px
+     Fusshöhe nicht zu sehen. Ein Strich unter dem aktiven Eintrag wäre die
+     geläufige Lösung und hier ausgeschlossen: #15 lässt eine Linie nur noch
+     dort zu, wo sie Daten trennt. Ein Feld ist Tiefe, kein Strich. */
   .navbtn[aria-current="page"] { color: var(--accent); }
-  .navbtn[aria-current="page"] .ico { opacity: 1; }
+  .navbtn[aria-current="page"] .ico { opacity: 1; background: var(--accent-soft); }
   @media (prefers-reduced-motion: reduce) {
     .sheet { transition: none; }
   }
@@ -2076,10 +2080,19 @@ function fsContent(plan) {
 let page = 'plan';                     // 'plan' | 'details' | 'prepare'
 let fsOpen = false;                    // Zustand von 'plan'
 let lastNoticeKey = null, lastOfferKey = null;
+/* Die Reihenfolge ist nach Körnigkeit, nicht nach Abend: #23 hat die Ausgabe
+   schon einmal so geordnet — die PreparationList als Total, dann die
+   Aufteilung, dann die Rangkacheln. Grob → fein → Stellschrauben. Mit dem
+   Abend begründet (einkaufen, verteilen, einstellen) wäre es ein Ablauf, und
+   #15 hat „ein Schirm, kein Ablauf" entschieden.
+
+   Am Rechner fällt es zusammen mit der Schiene: die steht rechts und hält
+   Regler, und `Details` hält Regler. Links läge dasselbe auf beiden Seiten
+   des Plans. */
 const PAGES = [
+  ['prepare', '🛒', 'Prepare'],
   ['plan',    '⊞',  'Plan'],
   ['details', '☰',  'Details'],
-  ['prepare', '🛒', 'Prepare'],
 ];
 const stage = document.getElementById('stage');
 stage.innerHTML = `
