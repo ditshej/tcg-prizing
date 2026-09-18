@@ -263,9 +263,17 @@ plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
 ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
 **deckt zu und schiebt nichts**.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
-Wegen, oder *Chip* — ein Icon in einer Farbe, gestapelt über dem Knopf, der die
-übrigen Regler öffnet. Ein Chip steht **nie für mehrere** Meldungen, und er
-öffnet nur: er nimmt nichts an und löst nichts aus.
+Wegen, oder *Chip* — eine kurze Pille in einer Farbe, gestapelt über dem Knopf,
+der die übrigen Regler öffnet. Ein Chip steht **nie für mehrere** Meldungen, und
+er öffnet nur: er nimmt nichts an und löst nichts aus.
+Der Chip trägt ein **Wort und nach Möglichkeit eine Zahl** (`3 ways out`,
+`2 kept`), kein Zeichen: ein Glyph beschreibt die Meldung und muss gedeutet
+werden, während der Chip zum Antippen auffordern soll. Die Zahl ist dabei der
+eigentliche Antrieb — sie sagt, wieviel dahinterliegt. Das `Offer` hat als
+einziges keine, weil es immer genau eines ist.
+Das ⚠ bleibt **neben** dem Wort der `ConflictNotice` und ist das einzige
+Zeichen der Ecke: es trennt die Meldung, die gelöst werden **muss**, von den
+zweien, die man wegklicken **darf** — dieselbe Achse wie das ✕.
 **Alle beginnen offen.** Eine Meldung, die als Chip erscheint, wird ignoriert,
 und ein Vorschlag, den niemand sieht, ist kein Vorschlag; das ✕ ist der Preis
 dafür, laut anfangen zu dürfen. Unterschieden sind die drei allein durch
@@ -320,7 +328,10 @@ also einem anderen `Rank` mehr wegnehmen, als das Fenster je erlaubt hätte. Er
 wird deshalb nicht enger gefasst, sondern **benennt die mitbewegten `Rank`s**
 samt ihrer Zahlen: ein Vorschlag, den man nicht annehmen muss, darf teuer sein,
 solange er seinen Preis nennt.
-_Avoid_: Hint, Suggestion (bezeichnet auch die Wege aus der `ConflictNotice`), Tip
+_Avoid_: Hint, Suggestion, Tip — die Wege aus der `ConflictNotice` sind auch
+Vorschläge, und seit dem `NoticeStack` ist das kein blosser Vorbehalt mehr,
+sondern ein herstellbarer Fall: beide Chips können nebeneinander in der Ecke
+stehen, `⚠ 3 ways out` neben dem, was dann „Suggestion" hiesse.
 
 **CarryOverNotice**:
 Die Meldung nach einem Wechsel von `Game` oder `TournamentType`, die auflistet,
