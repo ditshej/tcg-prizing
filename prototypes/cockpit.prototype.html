@@ -596,18 +596,34 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 9 zu Ticket #28</h1>
+  <h1>Prizing Cockpit — Runde 11 zu Ticket #32</h1>
   <p>
-    Die <strong>DisplayReservation</strong> ist nachgeholt. Zum Ausprobieren:
-    <strong>Weekend, 32 Spieler</strong> zeigt unten das Angebot „1 display für Rang 1";
-    ein Klick darauf macht aus <code>29·14·7·4·3·3·2·2</code> die Reihe
-    <code>24·16·9·5·3·3·2·2</code>. Auf <strong>48 Spieler</strong> hochziehen, und
-    Rang 2 überholt Rang 1 — die grosse Kachel trägt dann die kleinere Zahl.
+    Der dritte <strong>TournamentType: Release</strong> ist da, und mit ihm das Bild,
+    um das es geht: <strong>Release, 32 Spieler</strong> bedient alle 32 Ränge, die
+    Kurve läuft bei Rang 15 aus, <strong>17 Kacheln</strong> stehen identisch auf
+    <code>2</code>. Das Raster hat auf dem Handy Platz für zweieinhalb Reihen —
+    <code>⛶</code> zeigt alle 32 auf einmal. Im Kopf die Summenprobe über drei
+    Stellen: <code>288</code> Booster, <code>192</code> ausgeteilt,
+    <code>96</code> in die Ränge.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
-      <strong>Ein Display ist ein Anteil der Fläche.</strong> Eine Kachel mit
+      <strong>Der Umschlag ist zwei Zahlen.</strong> Grösse <em>und</em> Ausbeute
+      (#25), am Release ⟨32, 2⟩. Die Zwei-Drittel-Schwelle ist damit eine Staffel:
+      <code>min(Ausbeute, ⌊3·Ausbeute·angebrochen / (2·Grösse)⌋)</code> — bei
+      Grösse 32 zählt die erste Siegerkarte ab 11 angebrochenen Packs, die zweite
+      ab 22. Bei Ausbeute 1 fällt sie exakt auf die alte Schwelle zurück. Der
+      ⓘ-Erklärer im Kopf zeigt die Staffel statt der alten Schwelle.<br><br>
+      <strong>Der Halbsatz aus #29 sitzt jetzt im Kopf.</strong> Die
+      <em>PreparationList</em> trägt an der Ausbeute-Zeile
+      <code>yield 2 · 1 more from the box</code>, sobald der Regler abweicht —
+      dort, wo der Lead beim Zusammensuchen hinschaut. Am Regler im Blatt steht
+      er weiterhin auch.<br><br>
+      <strong>Nebenbei:</strong> „1 Promo-Envelopes" — der Plural stand seit
+      Runde 8 da, aber erst Release fällt auf <em>ein</em> Kuvert.<br><br>
+      <hr>
+      <strong>Aus Runde 9 — ein Display ist ein Anteil der Fläche.</strong> Eine Kachel mit
       Reservation nimmt <em>vier</em> Plätze statt einem — feste Grösse ab dem
       ersten Display, die <em>Zahl</em> der Displays steht als Zeile darin. Die
       grosse Zahl bleibt die Boosterzahl: im Gleichstand kommen zum Display noch
@@ -689,11 +705,20 @@ function distribute(s) {
   const n = Math.max(1, s.players);
   const boosterTotal = s.boosterRate * n;
   const tpTotal = s.tournamentPacks == null ? n : s.tournamentPacks;
-  const wpThreshold = Math.ceil((2 * s.envelopeSize) / 3);
+  // #25: der Umschlag ist zwei Zahlen, ⟨Grösse, Ausbeute⟩. Die Zwei-Drittel-
+  // Schwelle wird damit zur Staffel — sie war nie eine Verhältnisrechnung,
+  // sondern der Punkt, an dem die *ganze* Ausbeute zählt. Bei Ausbeute 1 fällt
+  // sie exakt auf die alte Schwelle zurück: dieselbe Mechanik, verallgemeinert.
+  const yieldPer = Math.max(1, s.envelopeYield == null ? 1 : s.envelopeYield);
+  const opened = tpTotal % s.envelopeSize;
+  const partialYield = Math.min(yieldPer,
+    Math.floor((3 * yieldPer * opened) / (2 * s.envelopeSize)));
+  // Ab wie vielen angebrochenen Packs die k-te Siegerkarte zählt.
+  const wpThresholdAt = (k) => Math.ceil((2 * s.envelopeSize * k) / (3 * yieldPer));
+  const wpThreshold = wpThresholdAt(1);
   // Aus den Kuverts fallen so viele WinnerPacks — von Hand darf mehr auf den
   // Tisch, sonst liesse sich die Obergrenze der Verteilung nicht heben.
-  const wpDerived = Math.floor(tpTotal / s.envelopeSize) +
-                    ((tpTotal % s.envelopeSize) >= wpThreshold ? 1 : 0);
+  const wpDerived = Math.floor(tpTotal / s.envelopeSize) * yieldPer + partialYield;
   const wpTotal = s.winnerPacks == null ? wpDerived : Math.max(0, s.winnerPacks);
 
   const pbRate = Math.min(s.participationBooster, Math.floor(boosterTotal / n));
@@ -823,7 +848,8 @@ function distribute(s) {
     prep: {
       fetchDisplays: Math.ceil(boosterTotal / S), looseBooster: boosterTotal % S,
       fetchEnvelopes: Math.ceil(tpTotal / s.envelopeSize), winnerYield: wpTotal,
-      threshold: wpThreshold,
+      threshold: wpThreshold, envelopeYield: yieldPer, opened, partialYield,
+      thresholds: Array.from({ length: yieldPer }, (_, k) => wpThresholdAt(k + 1)),
     },
     rows, conflict, overtake, flagged,
   };
@@ -833,7 +859,7 @@ function distribute(s) {
    DefaultSet, Zustand, Pins
    ══════════════════════════════════════════════════════════════════════ */
 const GAME = {
-  boosterRate: 3, envelopeSize: 9, displaySize: 24,
+  boosterRate: 3, envelopeSize: 9, envelopeYield: 1, displaySize: 24,
   participationBooster: 2, participationPack: 1,
   judgeBooster: 0, judgeWinner: 0,
   rankFloor: 2, depthStep: 'top8', curve: 'mild',
@@ -844,6 +870,12 @@ const TYPES = {
   // #21 hat das Blatt nachgelesen statt zurückgerechnet: die Teilnahmerate ist
   // am Wochenende 1, die Kurve `steep` — genau zwei Abweichungen, nicht `severe`.
   weekend: { title: 'Weekend', over: { curve: 'steep', participationBooster: 1 } },
+  // #25, sieben Abweichungen: neun Booster pro Player, sechs davon an alle,
+  // Tiefe `all`, flachste Stufe, und der aufgebrochene Umschlag ⟨32, 2⟩.
+  release: { title: 'Release', over: {
+    boosterRate: 9, participationBooster: 6, depthStep: 'all', curve: 'gentle',
+    envelopeSize: 32, envelopeYield: 2,
+  } },
 };
 
 const st = {
@@ -886,6 +918,7 @@ function settings() {
     boosterRate: get('boosterRate'),
     tournamentPacks: get('tournamentPacks'),
     envelopeSize: get('envelopeSize'),
+    envelopeYield: get('envelopeYield'),
     displaySize: get('displaySize'),
     participationBooster: get('participationBooster'),
     participationPack: get('participationPack'),
@@ -1068,6 +1101,10 @@ function doRaffle(plan) {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+/* Am Release fällt die Beschaffung erstmals auf *ein* Kuvert — „1 Promo-
+   Envelopes" stand da, seit die Zahl im Kopf steht, nur nie mit einer 1 davor. */
+const plural = (n, one, many) => (n === 1 ? one : many || `${one}s`);
+
 const LABEL = {
   players: 'Players', depth: 'Served ranks', curve: 'Curve',
   rankFloor: 'Min boosters per rank',
@@ -1076,7 +1113,8 @@ const LABEL = {
   winnerPacks: 'Winner packs available',
   raffleRange: 'Raffle range', combinedHandout: 'Hand out with rank prizes',
   boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
-  envelopeSize: 'Tournament Packs per Promo-Envelope', judgeBooster: 'Judge boosters',
+  envelopeSize: 'Tournament Packs per Promo-Envelope',
+  envelopeYield: 'Winner packs per Promo-Envelope', judgeBooster: 'Judge boosters',
   judgeWinner: 'Judge winner packs',
   // Nach ADR 0006 gewöhnliche pinned Regler — der CarryOverNotice zählt sie mit.
   displays: 'Reserved displays', manualWinner: 'Winner packs by hand',
@@ -1090,6 +1128,7 @@ const DESC = {
   displaySize: 'How many boosters come in one display box — decides how many displays to fetch.',
   tournamentPacks: 'How many tournament packs are on hand. Left alone it follows one per player.',
   envelopeSize: 'How many tournament packs one Promo-Envelope holds. Full envelopes are what yield the winner packs.',
+  envelopeYield: 'How many winner packs one Promo-Envelope holds. An opened envelope counts them off as it empties.',
   participationBooster: 'Boosters every player gets just for showing up. Taken off the pool before the ranks.',
   participationPack: 'Same for tournament packs — handed to everyone before the ranks are served.',
   judgeBooster: 'Boosters set aside for the judge before anything else is distributed.',
@@ -1111,8 +1150,9 @@ const GROUP_DESC = {
 };
 const RANGE_OF = {
   players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
-  participationPack: () => [0, 4], boosterRate: () => [0, 8], displaySize: () => [6, 36],
-  envelopeSize: () => [4, 36], judgeBooster: () => [0, 48], judgeWinner: () => [0, 8],
+  participationPack: () => [0, 4], boosterRate: () => [0, 12], displaySize: () => [6, 36],
+  envelopeSize: () => [4, 36], envelopeYield: () => [1, 4],
+  judgeBooster: () => [0, 48], judgeWinner: () => [0, 8],
   tournamentPacks: () => [0, 200], winnerPacks: () => [0, 24],
 };
 
@@ -1273,8 +1313,13 @@ function headerBlock(plan) {
   const p = plan.prep;
   // Ein angebrochenes Kuvert unter der Schwelle wird zu keinem WinnerPack —
   // diese Packs bleiben übrig und gehören ausgewiesen.
-  const rest = plan.pool.packs % get('envelopeSize');
-  const loosePacks = rest >= p.threshold ? 0 : rest;
+  const loosePacks = p.partialYield > 0 ? 0 : p.opened;
+  // #29: weicht der Regler von der Ausbeute ab, gehört der Halbsatz dorthin, wo
+  // der Lead beim Zusammensuchen hinschaut — nicht nur an den Regler im Blatt.
+  const off = p.winnerYield - plan.pool.winnersDerived;
+  const yieldNote = `yield ${plan.pool.winnersDerived}${
+    off > 0 ? ` · ${off} more from the box`
+    : off < 0 ? ` · ${-off} stays in the box` : ''}`;
   // Die Gesamtzahl Booster gehört in den Kopf: sie ist die eine Zahl, gegen die
   // sich die Summenregel prüfen lässt — Displays sind eine Beschaffungsgrösse,
   // keine Menge. Mit ihr und der Handout-Zeile liest sich 96 = 64 + 32 am Schirm.
@@ -1287,11 +1332,12 @@ function headerBlock(plan) {
     title="${st.headOpen ? 'einklappen' : 'aufklappen'}">${st.headOpen ? '▼' : '▲'}</button>`;
   const brief = `<div class="brief" data-fold="head">
       <div class="bar tiny">
-        <span><b class="num">${p.fetchDisplays}</b> displays</span>
+        <span><b class="num">${p.fetchDisplays}</b> ${plural(p.fetchDisplays, 'display')}</span>
         <span class="muted">·</span>
-        <span><b class="num">${p.fetchEnvelopes}</b> envelopes</span>
+        <span><b class="num">${p.fetchEnvelopes}</b> ${plural(p.fetchEnvelopes, 'envelope')}</span>
         <span class="muted">·</span>
-        <span><b class="num">${p.winnerYield}</b> winner packs</span>
+        <span><b class="num">${p.winnerYield}</b> ${
+          plural(p.winnerYield, 'winner pack')}</span>
         ${fold}
       </div>
       <div class="tiny muted num">${plan.pool.booster} boosters${
@@ -1312,17 +1358,20 @@ function headerBlock(plan) {
     ${st.headOpen ? '' : brief}
     <div class="headcols" ${st.headOpen ? '' : 'hidden'}>
     <div class="fetch">
-      <div><b class="num">${p.fetchDisplays}</b><em>displays</em>${infoBtn('displays')}
+      <div><b class="num">${p.fetchDisplays}</b><em>${
+        plural(p.fetchDisplays, 'display')}</em>${infoBtn('displays')}
         <s>${plan.pool.booster} boosters${
           p.looseBooster ? ` · ${sealed} sealed + ${p.looseBooster} loose` : ''}${
           // #11: die Reservation teilt die Beschaffungszahl in „ungeöffnet" und
           // „zum Anbrechen" — sie erhöht sie nie. Ohne diese Zeile stünden „6
           // displays" im Kopf und „1 display" auf der Kachel unverbunden da.
           reservedDisplays ? ` · ${reservedDisplays} go over unopened` : ''}</s></div>
-      <div><b class="num">${p.fetchEnvelopes}</b><em>Promo-Envelopes</em>
+      <div><b class="num">${p.fetchEnvelopes}</b><em>${
+        plural(p.fetchEnvelopes, 'Promo-Envelope')}</em>
         <s>${loosePacks > 0 ? `+${loosePacks} loose` : ''}</s></div>
-      <div class="der"><b class="num">${p.winnerYield}</b><em>winner packs</em>${
-        infoBtn('winners')}<s></s></div>
+      <div class="der"><b class="num">${p.winnerYield}</b><em>${
+        plural(p.winnerYield, 'winner pack')}</em>${
+        infoBtn('winners')}<s>${yieldNote}</s></div>
     </div>
     ${handoutRow(plan)}
     </div>
@@ -1380,22 +1429,27 @@ function infoDisplays(plan) {
 
 function infoWinners(plan) {
   const g = get('envelopeSize');
+  const y = plan.prep.envelopeYield;
   const packs = plan.pool.packs;
-  const full = Math.floor(packs / g), rest = packs % g;
-  const thr = plan.prep.threshold;
-  const carries = rest >= thr;
-  // Nur anbieten, wenn der Rest die Schwelle noch nicht trägt — sonst wäre der
-  // nächste WinnerPack ein ganzes Kuvert weit weg und der Vorschlag gelogen.
-  const need = carries ? 0 : thr - rest;
+  const full = Math.floor(packs / g), rest = plan.prep.opened;
+  const got = plan.prep.partialYield;
+  // #25: der angebrochene Umschlag zählt seine Ausbeute ab, statt alles oder
+  // nichts zu geben. Die Staffel gehört hin — sie ist die Regel hinter der Zahl.
+  const ladder = plan.prep.thresholds.map((t, k) => `${k + 1} at ${t}`).join(', ');
+  const nextAt = got < y ? plan.prep.thresholds[got] : null;
+  // Nur anbieten, wenn die nächste Stufe im selben Umschlag noch kommt — sonst
+  // wäre der nächste WinnerPack ein ganzes Kuvert weit weg und der Vorschlag gelogen.
+  const need = nextAt == null ? 0 : nextAt - rest;
   const pinned = !!st.pin.winnerPacks;
   return `<div class="pophead"><strong>${plan.pool.winners} winner packs</strong>
       <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
-    ${pinned ? `<div class="popline muted">set by hand — the envelopes yield ${
-        plan.pool.winnersDerived}</div>` : ''}
+    ${pinned ? `<div class="popline muted">set by hand — what follows is what the
+        envelopes say, not what is on the table</div>` : ''}
     <div class="popline">${packs} packs<span class="muted">÷ ${g} per envelope</span></div>
-    <div class="popline">${full} full envelope${full === 1 ? '' : 's'}<b>${full}</b></div>
-    <div class="popline">${rest} left over<span class="muted">needs ${thr}</span>
-      <b>${carries ? 1 : 0}</b></div>
+    <div class="popline">${full} full envelope${full === 1 ? '' : 's'}${
+      y > 1 ? `<span class="muted">× ${y} each</span>` : ''}<b>${full * y}</b></div>
+    <div class="popline">${rest} opened<span class="muted">${ladder}</span>
+      <b>${got}</b></div>
     ${need > 0 && !pinned ? `<div class="popfoot">
         ${need} more pack${need === 1 ? '' : 's'} would make it ${
           plan.pool.winnersDerived + 1}
@@ -1740,7 +1794,8 @@ function winnerTotalRow(plan) {
       <span style="margin-left:auto">${numChip('winnerPacks', plan, true)}</span>
       ${resetBtn('winnerPacks', true)}</div>
     ${explain('winnerPacks')}
-    <div class="tiny muted">${plan.prep.fetchEnvelopes} Promo-Envelopes yield ${derived}${
+    <div class="tiny muted">${plan.prep.fetchEnvelopes} ${
+      plural(plan.prep.fetchEnvelopes, 'Promo-Envelope')} yield ${derived}${
       off > 0 ? ` · ${off} more from the box` : off < 0 ? ` · ${-off} stay in the box` : ''}${
       plan.judge.winners ? ` · ${plan.judge.winners} to the judge` : ''} · ${
       plan.rank.winners} for the ranks${
@@ -1829,6 +1884,7 @@ function sheetContent(plan) {
     ${slider('displaySize', plan, { alwaysReset: true })}
     ${slider('tournamentPacks', plan, { max: st.players * 3, alwaysReset: true })}
     ${slider('envelopeSize', plan, { alwaysReset: true })}
+    ${slider('envelopeYield', plan, { alwaysReset: true })}
 
     <div class="grouphead">Split the pool</div>
     <div class="desc">${esc(GROUP_DESC.split)}</div>
