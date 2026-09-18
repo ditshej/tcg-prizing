@@ -274,11 +274,21 @@
            display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt ist der
      #morph-Knopf, und zwei gefüllte Kreise übereinander lesen sich als zwei
-     Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen. */
-  .chip { width: 38px; height: 38px; border: 0; border-radius: var(--r-fab);
-          background: var(--paper); display: grid; place-items: center;
-          font-size: 15px; cursor: pointer;
+     Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
+
+     Er trägt ein **Wort**, kein Zeichen. Durchprobiert waren ⚠ ◇ ↷ ✦ → ! ⚡ ☞
+     ⊕ » ➤ — jedes davon *beschreibt* die Meldung und muss erst gedeutet werden,
+     während der Chip zum Antippen auffordern soll. Ein Wort tut das ohne
+     Umweg. Es ist nicht der Balken aus Runde 9 zurück: kein Satz, keine ganze
+     Breite, keine zugedeckte Kachel — die Ecke war ohnehin leer. */
+  .chip { height: 34px; border: 0; border-radius: var(--r-pill);
+          background: var(--paper); display: flex; align-items: center; gap: 6px;
+          padding: 0 13px; cursor: pointer; white-space: nowrap;
+          font: 600 12.5px/1 inherit; letter-spacing: .01em;
           box-shadow: inset 0 0 0 2px currentColor, 0 4px 12px rgba(0,0,0,.18); }
+  /* Das ⚠ bleibt — aber neben dem Wort, nicht statt seiner: es trennt die
+     Meldung, die man lösen *muss*, von den zweien, die man darf. */
+  .chip .g { font-size: 13px; }
   .chip.warn { color: var(--warn); }
   .chip.deal { color: var(--reserve); }
   .chip.carry { color: var(--accent); }
@@ -1918,11 +1928,18 @@ function render() {
      ist dieselbe wie im Stapel: Plan oben, Eingabe unten am Knopf. */
   chipsEl.innerHTML = [
     unfit(plan) && !st.noticeOpen
-      ? '<button class="chip warn" data-fold="notice" title="conflict">⚠</button>' : '',
+      ? `<button class="chip warn" data-fold="notice"><span class="g">⚠</span>${
+          sugg.length} way${sugg.length === 1 ? '' : 's'} out</button>` : '',
     off && !st.offerOpen
-      ? '<button class="chip deal" data-fold="offer" title="offer">◇</button>' : '',
+      // Das Wort des Glossars, nicht ein danebengestelltes: „Suggestion" steht
+      // beim Offer auf _Avoid_, weil die Wege aus der ConflictNotice auch
+      // Vorschläge sind — und mit den Pillen können beide nebeneinander in der
+      // Ecke stehen. „Round it up" wäre zudem falsch: das Offer rundet zum
+      // nächsten Vielfachen, auch nach unten (29 → 24), Fenster symmetrisch
+      // nach #21.
+      ? '<button class="chip deal" data-fold="offer">Offer</button>' : '',
     st.carry && !st.carryOpen
-      ? '<button class="chip carry" data-fold="carry" title="carried over">↷</button>' : '',
+      ? `<button class="chip carry" data-fold="carry">${st.carry.keys.length} kept</button>` : '',
   ].join('');
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
