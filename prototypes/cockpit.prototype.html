@@ -184,7 +184,7 @@
   .pinchip { font: inherit; font-size: 12px; display: flex; align-items: center; gap: 5px;
              border: 1px solid var(--pin-soft); background: var(--pin-soft); color: var(--pin);
              border-radius: 999px; padding: 3px 9px; cursor: pointer; }
-  .manual { font-size: 10px; color: var(--pin); background: var(--pin-soft);
+  .pinword { font-size: 10px; color: var(--pin); background: var(--pin-soft);
             border-radius: 5px; padding: 1px 5px; }
   .reset { font: inherit; font-size: 12px; border: 0; background: transparent;
            color: var(--pin); cursor: pointer; padding: 2px 5px; border-radius: 6px; }
@@ -234,34 +234,58 @@
                  padding: 3px 8px; margin: 4px 4px 0 0; cursor: pointer; }
 
   /* ── Der Meldungsstapel ────────────────────────────────────────────────
-     Er *liegt* über den Kacheln, statt sie zu schieben. Vorher nahm die
-     ConflictNotice der Rangtabelle auf dem Handy die ganze Höhe: gemessen
-     blieben von 114 px Raster 11 px übrig, in der Praxis null — man las fünf
-     Wege zur Reparatur von etwas, das man nicht sehen konnte. Und der von Hand
-     gangbare Weg, ein Griff an die Kachel, war überhaupt nicht mehr da.
+     Runde 9 legte ihn über die Kacheln, statt sie zu schieben — gemessen
+     blieben vorher von 114 px Raster 11 px übrig, in der Praxis null.
 
-     Eingeklappt bleibt ein Balken. Das ist kein Wegklicken: ADR 0002 verlangt
-     Anwesenheit, nicht Grösse — solange etwas dasteht, das „hier stimmt was
-     nicht" sagt, ist die Anwesenheit weiter die Aussage. */
-  .stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12;
-           padding: 0 12px 9px; display: flex; flex-direction: column; gap: 6px;
-           pointer-events: none; }
+     Runde 10 hebt ihn eine Schicht höher: er hängt nicht mehr im Planblock,
+     sondern im #stage, auf derselben Schicht wie der #morph-Knopf. Der Grund
+     ist ein Loch, das im Planblock nicht zu schliessen war — bei offenem
+     Reglerblatt (z 20) lag die Meldung (z 12) darunter. Man drehte an genau
+     den sechzehn Reglern, die den Konflikt auslösen, und der Schirm sagte
+     kein Wort.
+
+     Die Ordnung im Stapel bildet ab, wovon geredet wird: die Meldung über den
+     *Plan* sitzt oben bei den Kacheln, die Meldung über die *Eingabe* unten
+     bei den Reglern. Eine vierte müsste man nicht einsortieren, sondern nur
+     fragen, worüber sie redet. */
+  .stack { position: absolute; left: 0; right: 0; bottom: 0; z-index: 35;
+           padding: 0 12px 70px; display: flex; flex-direction: column; gap: 6px;
+           pointer-events: none; max-height: 100%; overflow-y: auto; }
+  /* Wo die Regler als Schiene rechts stehen (#15), hört der Stapel vor ihr auf:
+     die Schiene trägt die Pin-Markierungen, die der CarryOverNotice aufzählt —
+     eine Meldung, die ihre eigenen Belege zudeckt, ist keine Meldung. Am Handy
+     liegt die Leiste unten, dort deckt der Stapel sie zu: das ist der leichtere
+     Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind. */
+  body.wide .stack, body.land .stack { right: var(--rail); }
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
-
-  /* Der eingeklappte Balken: eine Zeile, die ganze Breite, und ein Griff.
-     Er sagt *dass*, die Kacheln sagen *wo*, aufgeklappt steht das *wie heraus*. */
-  .bail { display: flex; align-items: center; gap: 8px; cursor: pointer;
-          font: inherit; font-size: 12.5px; text-align: left; width: 100%;
-          border: 0; border-radius: var(--r-ctl); padding: 7px 10px; }
-  .bail.warn { background: var(--warn-soft); color: var(--warn); }
-  .bail.deal { background: var(--reserve-soft); color: var(--reserve-ink); }
-  .bail b { font-weight: 600; }
-  .bail .chev { margin-left: auto; font-size: 11px; opacity: .7; }
   .flag .chev, .deal .chev { font-size: 11px; opacity: .7; }
+
+  /* ── Minimiert: ein Chip auf der #morph-Schicht ────────────────────────
+     Zwei Zustände, keiner dazwischen: offen oder Chip. Der Balken über die
+     ganze Breite, den Runde 9 als dritten Zustand hatte, sagte dasselbe wie
+     der Chip in gross — auf 393 px ist das eine Stufe zu viel.
+
+     Die Chips stapeln sich senkrecht *über* dem Knopf, nicht neben ihm: der
+     Knopf bleibt verankert, und drei Meldungen brauchen drei Chips. Ein Chip
+     steht nie für mehrere — sonst wäre die Ecke ein Zähler und keine Meldung.
+     Er öffnet nur; er nimmt nichts an und löst nichts aus, damit der Fehlgriff
+     im Daumenbereich folgenlos bleibt. */
+  #chips { position: absolute; right: 12px; bottom: 74px; z-index: 41;
+           display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt ist der
+     #morph-Knopf, und zwei gefüllte Kreise übereinander lesen sich als zwei
+     Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen. */
+  .chip { width: 38px; height: 38px; border: 0; border-radius: var(--r-fab);
+          background: var(--paper); display: grid; place-items: center;
+          font-size: 15px; cursor: pointer;
+          box-shadow: inset 0 0 0 2px currentColor, 0 4px 12px rgba(0,0,0,.18); }
+  .chip.warn { color: var(--warn); }
+  .chip.deal { color: var(--reserve); }
+  .chip.carry { color: var(--accent); }
   /* Der Griff zum Einklappen sitzt, wo beim Offer das ✕ sitzt — dieselbe Ecke,
      zwei verschiedene Versprechen: das eine kommt wieder, das andere nicht. */
-  .flag .fold, .deal .fold { font: inherit; font-size: 11px; border: 0;
-                             background: transparent; color: inherit; opacity: .65;
+  .flag .fold, .deal .fold { font: inherit; font-size:  14px; border: 0;
+                             background: transparent; color: inherit; opacity: .8;
                              cursor: pointer; padding: 2px 5px; }
 
   /* Das Offer: dieselbe Form wie die ConflictNotice, ein anderer Ton. Nicht
@@ -274,6 +298,25 @@
   .deal > button { font: inherit; font-size: 12px; border: 1px solid currentColor;
                    background: var(--paper); color: inherit; border-radius: var(--r-pill);
                    padding: 3px 8px; margin-top: 6px; cursor: pointer; }
+
+  /* Der CarryOverNotice (#26): dieselbe Form, ein dritter Ton. Er redet über
+     die Herkunft der Eingabe und nicht über den Plan, darum sitzt er unten im
+     Stapel, bei den Reglern. Wegklickbar — nichts tun heisst „ich behalte
+     meine Pins", und das ist der Normalfall, nicht der Notausgang. */
+  /* Nicht --pin-soft, obwohl es inhaltlich passte: neben dem Offer (#f3ecf6)
+     ist --pin-soft (#f1e7f3) am Schirm nicht zu unterscheiden, und nach der
+     Entscheidung „gleiche Form, Unterschied ist die Farbe" muss die Farbe die
+     ganze Last tragen. Die Akzentfamilie ist ausserdem die Farbe dessen, was
+     gerade gewechselt wurde — die Typ-Knöpfe sind bronzen. */
+  .carry { background: var(--accent-soft); color: var(--ink); border-radius: var(--r-ctl);
+           padding: 8px 10px; font-size: 12.5px; }
+  .carry .muted { color: inherit; opacity: .72; }
+  .carry .reset { color: inherit; opacity: .6; }
+  .carry .fold { font: inherit; font-size: 14px; border: 0; background: transparent;
+                 color: inherit; opacity: .8; cursor: pointer; padding: 2px 5px; }
+  .carry > button { font: inherit; font-size: 12px; border: 1px solid currentColor;
+                    background: var(--paper); color: inherit; border-radius: var(--r-pill);
+                    padding: 3px 8px; margin-top: 6px; cursor: pointer; }
 
   /* Beschaffung: drei Zellen statt eines Satzes, der auf zwei Zeilen bricht.
      Die Nebenzeile ist immer da, auch leer — sonst springt der Kopf. */
@@ -801,11 +844,15 @@ const st = {
   openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
   offerOff: null,                    // weggeklicktes Offer, an seinem Inhalt erkannt:
                                      // reiner Sitzungszustand, nie im SetupLink
-  // Eingeklappt ist nicht weggeklickt: ADR 0002 verlangt Anwesenheit, nicht
-  // Grösse. Beide beginnen offen — beim ersten Auftreten soll die Meldung laut
-  // sein; klein wird sie erst, wenn der Lead es will.
-  noticeOpen: true, offerOpen: true,
+  // Minimiert ist nicht weggeklickt: ADR 0002 verlangt Anwesenheit, nicht
+  // Grösse. *Alle* beginnen offen — eine Meldung, die als Chip erscheint, wird
+  // ignoriert, und ein Vorschlag, den niemand sieht, ist kein Vorschlag. Das ✕
+  // ist der Preis dafür, laut anfangen zu dürfen; die ConflictNotice hat keines
+  // und beginnt trotzdem laut, weil ihre Anwesenheit die Aussage ist.
+  noticeOpen: true, offerOpen: true, carryOpen: true,
   headOpen: true,                    // der Beschaffungsteil, gleiches Muster
+  carry: null,                       // {from, to, keys} — Bericht des letzten Set-Wechsels
+  carryEvent: 0,                     // Ereigniszähler: jeder Wechsel ist ein neues Ereignis
   cols: 6, fsCols: 10,               // Prototyp-Sonden: Slots pro Zeile
 };
 
@@ -1021,6 +1068,8 @@ const LABEL = {
   boosterRate: 'Boosters per player (pool)', displaySize: 'Boosters per display',
   envelopeSize: 'Tournament Packs per Promo-Envelope', judgeBooster: 'Judge boosters',
   judgeWinner: 'Judge winner packs',
+  // Nach ADR 0006 gewöhnliche pinned Regler — der CarryOverNotice zählt sie mit.
+  displays: 'Reserved displays', manualWinner: 'Winner packs by hand',
 };
 
 /* Ein Satz je Bedienelement, im Blatt unter seinem Titel. Draussen ist kein
@@ -1040,15 +1089,15 @@ const DESC = {
   rankFloor: 'The smallest number of boosters any served rank may get. Raising it flattens the whole plan.',
   curve: 'How steeply the boosters drop from one rank to the next. It only shapes what is left over the floor.',
   winnerPacks: 'The ceiling for winner packs. The Promo-Envelopes yield a number; by hand you may put more on the table.',
-  ranked: 'How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the shuffle.',
-  raffleRange: 'Which ranks the Winner-shuffle may draw from when it places an open winner pack.',
+  ranked: 'How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the raffle.',
+  raffleRange: 'Which ranks the Winner raffle may draw from when it places an open winner pack.',
 };
 const GROUP_DESC = {
   type: 'Picks the whole default set. Switching it drops every value you set by hand.',
   supply: 'What is in the box before anything is split — the boosters, the packs, and how they are boxed.',
   split: 'What comes off the top for everyone and for the judge, before the ranks are served.',
   rank: 'What is left goes down the standings: how deep, how flat, how steep.',
-  winner: 'The scarce prize. Either strictly by rank, or drawn by the Winner-shuffle.',
+  winner: 'The scarce prize. Either strictly by rank, or drawn by the Winner raffle.',
 };
 const RANGE_OF = {
   players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
@@ -1165,7 +1214,7 @@ function depthControl(plan) {
   const chips = rangeGrid(pinned ? null : step, 'data-set-step', false);
   return `<div class="ctl${pinned ? ' pinned' : ''}">
     <div class="top">${pinMark('depth')}<span class="lbl">${LABEL.depth}</span>
-      ${pinned ? '<span class="manual">manual</span>'
+      ${pinned ? '<span class="pinword">pinned</span>'
                : `<span class="tiny muted">${esc(RANGE_NAME[step])}</span>`}
       <span style="margin-left:auto">${numChip('depth', plan, true)}</span>
       ${resetBtn('depth')}</div>
@@ -1209,7 +1258,7 @@ function headerBlock(plan) {
   const status = pins
     ? `<button class="pinchip" data-resetall="1" style="margin-left:auto"
          title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
-         pins} manual ↺</button>`
+ pins} pinned ↺</button>`
     : '';
   const p = plan.prep;
   // Ein angebrochenes Kuvert unter der Schwelle wird zu keinem WinnerPack —
@@ -1519,12 +1568,11 @@ function conflictBox(plan, sugg) {
   const line = plan.conflict
     ? `<b>${plan.conflict.have} boosters can't carry a floor of ${plan.conflict.need}.</b>`
     : `<b>Rank ${plan.overtake.over} overtakes rank ${plan.overtake.under}.</b>`;
-  // Eingeklappt: ein Balken statt der ganzen Fläche. Die Anwesenheit bleibt, und
-  // damit die Aussage — was verschwindet, sind nur die Wege heraus.
-  if (!st.noticeOpen) {
-    return `<button class="bail warn" data-fold="notice">⚠ ${line}
-      <span class="chev">▲ ${sugg.length} way${sugg.length === 1 ? '' : 's'} out</span></button>`;
-  }
+  // Minimiert ist die Fläche ganz weg — sie steht dann als Chip in der Ecke.
+  // Die Anwesenheit bleibt, und damit die Aussage: ADR 0002 verlangt
+  // Anwesenheit, nicht Grösse. Der Chip sagt *dass*, die roten Kacheln sagen
+  // *wo*, offen steht das *wie heraus*.
+  if (!st.noticeOpen) return '';
   const why = plan.conflict
     ? 'The curve has nothing left to shape.'
     : `A reserved display settles a rank at exactly its boxes — the rank-1 lead
@@ -1535,7 +1583,7 @@ function conflictBox(plan, sugg) {
   return `<div class="flag">
     <div class="bar" style="align-items:flex-start;gap:6px">
       <div style="flex:1">${line}${nums}<br>${why}</div>
-      <button class="fold" data-fold="notice" title="einklappen">▼</button>
+      <button class="fold" data-fold="notice" title="minimieren">▾</button>
     </div>
     ${sugg.map((s) => s.display != null
       ? `<button data-applyd="${s.display}" data-v="${s.value}">${esc(s.label)}</button>`
@@ -1549,14 +1597,10 @@ function conflictBox(plan, sugg) {
    Wegklicken ist reiner Sitzungszustand, zurück sobald der Inhalt wechselt. */
 function offerBox(off) {
   const S = get('displaySize');
-  // Dasselbe Einklappen wie bei der ConflictNotice — aber das ✕ bleibt daneben
-  // stehen: einklappen heisst „später", wegklicken heisst „nein". Beim Offer
+  // Dasselbe Minimieren wie bei der ConflictNotice — aber das ✕ bleibt daneben
+  // stehen: minimieren heisst „später", wegklicken heisst „nein". Beim Offer
   // darf man beides, bei der ConflictNotice nur das erste.
-  if (!st.offerOpen) {
-    return `<button class="bail deal" data-fold="offer">◇ <b>Rank ${off.rank} is ${
-      Math.abs(off.from - off.to)} off a full display.</b>
-      <span class="chev">▲ show</span></button>`;
-  }
+  if (!st.offerOpen) return '';
   return `<div class="deal">
     <div class="bar tiny" style="align-items:flex-start;gap:8px">
       <div style="flex:1">
@@ -1566,11 +1610,41 @@ function offerBox(off) {
           off.also.length ? ` Also moves rank${off.also.length > 1 ? 's' : ''} ${
             off.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(', ')}.` : ''}</div>
       </div>
-      <button class="fold" data-fold="offer" title="einklappen">▼</button>
+      <button class="fold" data-fold="offer" title="minimieren">▾</button>
       <button class="reset" data-offeroff="${esc(off.key)}" title="wegklicken">✕</button>
     </div>
     <button data-applyd="${off.rank - 1}" data-v="${off.value}">Reserve ${
       off.value} display${off.value > 1 ? 's' : ''} for rank ${off.rank}</button>
+  </div>`;
+}
+
+/* Die dritte Fläche (#26). Sie redet über die *Herkunft der Eingabe* und nicht
+   über den Plan — darum sitzt sie unten im Stapel, bei den Reglern, und darum
+   ist sie eine *Ereignis*meldung: jeder Set-Wechsel ist ein neues Auftreten und
+   öffnet sie, auch wenn die vorige noch stand. Ein Zustandsschlüssel wie bei
+   ConflictNotice und Offer trüge das nicht: zweimal hintereinander gewechselt
+   heisst zweimal dasselbe „es sind Pins stehen geblieben", während die Liste
+   darunter längst eine andere ist.
+
+   Nichts tun ist hier der Normalfall und kein Notausgang: der Wechsel hat nach
+   #26 nichts von Hand Gesetztes überschrieben, die Pins stehen. Ein erzwungenes
+   „übernehmen" wäre die Bestätigungsabfrage, die #26 abgeschafft hat. */
+function carryBox() {
+  const c = st.carry;
+  if (!c || !st.carryOpen) return '';
+  const names = c.keys.map((k) => LABEL[k] || k);
+  return `<div class="carry">
+    <div class="bar tiny" style="align-items:flex-start;gap:8px">
+      <div style="flex:1">
+        <strong>${c.keys.length} pinned slider${c.keys.length > 1 ? 's' : ''} stayed behind.</strong>
+        <div class="muted" style="margin-top:2px">${esc(names.join(', '))} —
+          set by hand, so ${c.keys.length > 1 ? 'they' : 'it'} ${
+          c.keys.length > 1 ? 'do' : 'does'} not follow ${esc(c.to)}.</div>
+      </div>
+      <button class="fold" data-fold="carry" title="minimieren">▾</button>
+      <button class="reset" data-carryoff="1" title="wegklicken">✕</button>
+    </div>
+    <button data-carryall="1">Carry them over to ${esc(c.to)}</button>
   </div>`;
 }
 
@@ -1627,10 +1701,10 @@ function raffleRow(plan) {
   // am Knopf und las sich wie seine Beschriftung.
   return `<div class="bar tiny" style="margin-top:2px;padding-right:88px;min-height:56px;gap:7px">
     <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-      title="Winner-shuffle: einen offenen WinnerPack auslosen">🎲</button>
+      title="Winner raffle: einen offenen WinnerPack auslosen">🎲</button>
     <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
     <div style="min-width:0;line-height:1.25">
-      <div style="font-weight:600">Winner-shuffle</div>
+      <div style="font-weight:600">Winner raffle</div>
       <div class="muted" style="font-size:10.5px">${esc(RANGE_NAME[range])} · ${
         pot.length} in the pot</div>
     </div>
@@ -1651,7 +1725,7 @@ function winnerTotalRow(plan) {
   const placed = plan.allocation.ranked + plan.allocation.manualCount;
   return `<div class="ctl${st.pin.winnerPacks ? ' pinned' : ''}">
     <div class="top">${pinMark('winnerPacks')}<span class="lbl">${LABEL.winnerPacks}</span>
-      ${st.pin.winnerPacks ? '<span class="manual">manual</span>'
+      ${st.pin.winnerPacks ? '<span class="pinword">pinned</span>'
                            : '<span class="tiny muted">auto</span>'}
       <span style="margin-left:auto">${numChip('winnerPacks', plan, true)}</span>
       ${resetBtn('winnerPacks', true)}</div>
@@ -1680,7 +1754,7 @@ function winnerBlock(plan) {
       'data-set-range', true)}</div>
     <div class="bar">
       <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-        >🎲&nbsp; Winner-shuffle</button>
+        >🎲&nbsp; Winner raffle</button>
       <span class="tiny muted">${esc(RANGE_NAME[get('raffleRange')])} · ${
         pot.length} in the pot · ${plan.allocation.open} open</span>
     </div>
@@ -1717,8 +1791,7 @@ function screen(plan, sugg, off) {
         ? `height:${stripMax}px;flex:none`
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
         rankTotal(plan)}${rankStrip(plan)}</div>
-      ${slotBlock(plan, unfit(plan) || off ? `<div class="stack">${
-        conflictBox(plan, sugg)}${off ? offerBox(off) : ''}</div>` : '')}
+      ${slotBlock(plan, '')}
       <div style="height:9px;flex:none"></div>
     </div>
     <div style="${side
@@ -1798,11 +1871,15 @@ stage.innerHTML = `
   <div id="fs" class="sheet fs"></div>
   <div id="pop" class="pop"></div>
   <div id="fade"></div>
+  <div id="stack" class="stack"></div>
+  <div id="chips"></div>
   <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
 const popEl = document.getElementById('pop');
+const stackEl = document.getElementById('stack');
+const chipsEl = document.getElementById('chips');
 
 function render() {
   const plan = distribute(settings());
@@ -1811,18 +1888,42 @@ function render() {
   // Zurück, sobald sich der Inhalt des Vorschlags ändert: weggeklickt ist genau
   // dieses Angebot, nicht die Fläche.
   const off = cand && st.offerOff !== cand.key ? cand : null;
-  // Beides klappt von selbst wieder auf, sobald es etwas *anderes* zu sagen hat.
-  // Sonst bliebe eine zugeklappte Meldung über einem neuen Konflikt stehen und
-  // behauptete, man habe sie schon gelesen.
-  const key = !unfit(plan) ? null
-    : plan.conflict ? `c:${plan.conflict.need}/${plan.conflict.have}`
-                    : `o:${plan.overtake.under}>${plan.overtake.over}`;
+  /* Der Schlüssel trägt nur noch die *Art*, nicht die Zahlen. Runde 9 hatte
+     `c:${need}/${have}` — und damit poppte die Meldung bei jedem Klick auf
+     genau den Regler, den sie nennt, gemessen: gefaltet → floor 4→5 → OFFEN.
+     Das ist die lauteste Stelle des Schirms an der unpassendsten.
+
+     Mit der Art als Schlüssel fällt beides zusammen, was zusammengehört:
+     Zahlen ändern ist kein Wechsel (still), Verschwinden setzt auf null und
+     Wiederkommen ist einer (laut), und eine *andere* Art — Boden-Konflikt
+     gegen Überholung — öffnet, auch wenn der Plan durchgehend ungültig blieb.
+
+     Beim Offer trennen sich damit zwei Dinge, die vorher einen Schlüssel
+     teilten: **wegklicken gilt diesem Angebot** (mit Zahlen, wie CONTEXT.md es
+     festhält), **minimieren gilt der Fläche** (nur die Art). */
+  const key = !unfit(plan) ? null : plan.conflict ? 'c' : 'o';
   if (key !== lastNoticeKey) { st.noticeOpen = true; lastNoticeKey = key; }
-  if (cand && cand.key !== lastOfferKey) { st.offerOpen = true; lastOfferKey = cand.key; }
+  if (cand && !lastOfferKey) { st.offerOpen = true; }
+  lastOfferKey = cand ? 'd' : null;
   // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
   if (sheetOpen || st.openSlot > st.players) st.openSlot = null;
   if (sheetOpen || fsOpen) st.openInfo = null;
   appEl.innerHTML = screen(plan, sugg, off);
+  /* Der Stapel hängt im #stage, nicht im Planblock — sonst liegt er unter dem
+     Reglerblatt, und genau dort dreht man an den Reglern, die den Konflikt
+     auslösen. Ordnung: die Meldung über den Plan oben bei den Kacheln, die
+     Meldung über die Eingabe unten bei den Reglern. */
+  stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()}`;
+  /* Ein Chip je minimierter Meldung — nie einer für mehrere. Die Reihenfolge
+     ist dieselbe wie im Stapel: Plan oben, Eingabe unten am Knopf. */
+  chipsEl.innerHTML = [
+    unfit(plan) && !st.noticeOpen
+      ? '<button class="chip warn" data-fold="notice" title="conflict">⚠</button>' : '',
+    off && !st.offerOpen
+      ? '<button class="chip deal" data-fold="offer" title="offer">◇</button>' : '',
+    st.carry && !st.carryOpen
+      ? '<button class="chip carry" data-fold="carry" title="carried over">↷</button>' : '',
+  ].join('');
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
@@ -1915,7 +2016,13 @@ stage.addEventListener('click', (e) => {
   if (d.fold === 'head') { st.headOpen = !st.headOpen; render(); return; }
   if (d.fold === 'notice') { st.noticeOpen = !st.noticeOpen; render(); return; }
   if (d.fold === 'offer') { st.offerOpen = !st.offerOpen; render(); return; }
+  if (d.fold === 'carry') { st.carryOpen = !st.carryOpen; render(); return; }
   if (d.offeroff) { st.offerOff = d.offeroff; render(); return; }
+  if (d.carryoff) { st.carry = null; render(); return; }
+  // „Alle übernehmen" heisst: die Pins fallen, die Regler folgen wieder dem
+  // neuen Set-Blatt. Es ist ein Reset mit Reichweite, kein eigener Mechanismus.
+  if (d.carryall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
+                    st.carry = null; render(); return; }
   if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
   if (t.id === 'morph') {
     if (fsOpen) fsOpen = false;
@@ -1931,7 +2038,7 @@ stage.addEventListener('click', (e) => {
   if (d.resetall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
                     render(); return; }
   if (d.reset) { reset(d.reset); return; }
-  if (d.type) { st.type = d.type; st.pin = {}; st.val = {}; render(); return; }
+  if (d.type) { switchType(d.type); return; }
   if (d.setCurve) { setVal('curve', d.setCurve); return; }
   if (d.setRange) { setVal('raffleRange', d.setRange); return; }
   // Eine Stufe zu wählen heisst: der Regler folgt wieder der Rechnung.
@@ -1946,6 +2053,28 @@ stage.addEventListener('click', (e) => {
     return;
   }
 });
+
+/* Der Set-Wechsel nach #26 — der Prototyp fuhr hier noch die alte Fassung aus
+   #12 und löschte alle Pins. Neu: er ersetzt das DefaultSet und überschreibt
+   *nichts* von Hand Gesetztes. Ungepinnte Regler folgen, gepinnte bleiben, und
+   der CarryOverNotice zählt auf, welche — sonst stirbt ein Pin an der einzigen
+   Stelle im System, an der er ohne Reset-Knopf sterben könnte.
+
+   Der Wechsel ist ausserdem ein *Ereignis*: er öffnet auch die stehenden
+   Zustandsmeldungen wieder. Unter einer minimierten Warnung ist gerade das
+   ganze Set-Blatt ausgetauscht worden — minimiert stehen zu bleiben läse sich,
+   als sei sie danach noch einmal geprüft worden. */
+function switchType(id) {
+  const keys = Object.keys(st.pin);
+  if (st.displays.some((x) => x > 0)) keys.push('displays');
+  if (Object.keys(st.manualWinner).length) keys.push('manualWinner');
+  st.type = id;
+  st.carryEvent += 1;
+  st.carry = keys.length ? { to: TYPES[id].title, keys } : null;
+  st.carryOpen = true;                 // Ereignismeldung: öffnet immer
+  st.noticeOpen = true; st.offerOpen = true;
+  render();
+}
 
 function setDev(dev) {
   document.body.className = dev;
