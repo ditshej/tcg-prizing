@@ -263,6 +263,9 @@
      Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind. */
   body.wide .stack, body.land .stack { right: var(--rail); }
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
+  /* Die Badge-Zeile ist ein durchsichtiger Halter, kein Panel — der Schatten
+     gehört an die Pille, nicht an die Luft neben ihr. */
+  .stack > .badges { box-shadow: none; background: transparent; }
   .flag .chev, .deal .chev { font-size: 11px; opacity: .7; }
 
   /* ── Minimiert: ein Chip, jetzt im Fuss ────────────────────────────────
@@ -280,19 +283,27 @@
   /* Meldungen links, Aktionen rechts: der Daumen greift rechts, und was man
      *tut*, gehört unter den Daumen. Was einen *anspricht*, darf weiter weg
      stehen — es will gelesen und dann angetippt werden, nicht blind getroffen. */
-  /* Runde 14: aus dem Fuss in den Kopf. Nicht weil es dort hübscher ist,
-     sondern weil der Fuss ganz der Navigation gehört und ein Badge wieder
-     einen *Platz* braucht statt einer Schwebelage — genau das Wort, mit dem
-     Runde 13 sie in den Fuss geholt hatte. Ein Platz wird mitgelayoutet und
-     kann darum per Konstruktion nichts zudecken; das erledigt zugleich den
-     Vorschlag, das Badge verschiebbar zu machen. Verschiebbar wäre Zustand,
-     und den hat diese App nirgends: Persistenz ist Out of scope, der
-     SetupLink trägt nach #16 nur Reglerabweichungen.
+  /* Runde 14: das Badge bleibt im Stapel, wo die offene Meldung schon hängt.
+     Einklappen ist damit ein *Schrumpfen an Ort*, kein Umzug — dieselbe
+     Meldung, dieselbe Stelle, zwei Grössen.
 
-     Es gehört zu den Zahlen (#32: „Kopf trägt Zahlen, Fuss trägt Flächen"),
-     denn nach #31 ist am Badge die *Zahl* der Antrieb, nicht das Wort. */
-  .badges { display: flex; gap: 8px; align-items: center; overflow-x: auto;
-            justify-content: flex-end; margin-top: 8px; }
+     Zwei Wege waren vorher dran und sind gemessen gescheitert. Im **Fuss**
+     (Runde 13) kann es nicht bleiben: der gehört jetzt ganz der Navigation.
+     Im **Kopf** als einlayouteter Platz ging es auch nicht, aus zwei Gründen,
+     die beide erst am Bild sichtbar wurden — er *schiebt* (Kopf 101 → 143 px,
+     Kachelfenster 107 → 97, Diagramm −32), und er gehört zu `Plan`, liegt
+     also auf `Details` und `Prepare` unter der Seite. Genau dort dreht man an
+     den sechzehn Reglern, die den Konflikt auslösen; das ist wörtlich der
+     Fehler, den Runde 10 schon einmal behoben hat.
+
+     Ein Badge muss den *Seitenwechsel überleben*, und das kann nur etwas,
+     das über den Seiten schwebt. Das ist zugleich die Antwort auf den
+     Vorschlag, es verschiebbar zu machen: verschiebbar wäre Zustand, und den
+     hat diese App nirgends — Persistenz ist Out of scope, der SetupLink trägt
+     nach #16 nur Reglerabweichungen. Es muss nicht beweglich sein, es muss
+     klein sein und oben liegen. */
+  .badges { display: flex; gap: 8px; align-items: center; align-self: flex-start;
+            max-width: 100%; overflow-x: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt wäre er ein
      Knopf unter den Zahlen des Kopfes, und der Kopf hat keine Knöpfe ausser dem
      Reset. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
@@ -1401,7 +1412,7 @@ function badgeRow(plan, sugg, off) {
   return b ? `<div class="badges">${b}</div>` : '';
 }
 
-function headerBlock(plan, sugg, off) {
+function headerBlock(plan) {
   const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
              + st.displays.filter(Boolean).length;
   const status = pins
@@ -1419,7 +1430,6 @@ function headerBlock(plan, sugg, off) {
       <span style="margin-left:auto">${status}</span>
     </div>
     ${handoutRow(plan)}
-    ${badgeRow(plan, sugg, off)}
   </div>`;
 }
 
@@ -1979,7 +1989,7 @@ function screen(plan, sugg, off) {
       overflow:hidden">
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
         overflow:hidden">
-      ${headerBlock(plan, sugg, off)}
+      ${headerBlock(plan)}
       <div style="position:relative;padding:8px 12px 0;${side
         ? `height:${stripMax}px;flex:none`
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
@@ -2119,7 +2129,12 @@ function render() {
      Reglerblatt, und genau dort dreht man an den Reglern, die den Konflikt
      auslösen. Ordnung: die Meldung über den Plan oben bei den Kacheln, die
      Meldung über die Eingabe unten bei den Reglern. */
-  stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()}`;
+  /* Offene Meldungen in der Ordnung, die #31 festgelegt hat (Plan oben bei den
+     Kacheln, Eingabe unten bei den Reglern), und darunter die Badges in einer
+     Zeile — dort, wo Runde 13 sie hatte, nur eine Zeile höher, weil der Fuss
+     jetzt der Navigation gehört. */
+  stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()
+    }${badgeRow(plan, sugg, off)}`;
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
