@@ -277,8 +277,12 @@
      warnfarben, verschwinden wieder —, nicht im Ort. Feste Griffe links,
      Meldungen rechts. Ein Chip steht nie für mehrere, sonst wäre der Fuss ein
      Zähler; er öffnet nur, nimmt nichts an und löst nichts aus. */
-  #chips { display: flex; gap: 8px; align-items: center; margin-left: auto;
-           overflow-x: auto; }
+  /* Meldungen links, Aktionen rechts: der Daumen greift rechts, und was man
+     *tut*, gehört unter den Daumen. Was einen *anspricht*, darf weiter weg
+     stehen — es will gelesen und dann angetippt werden, nicht blind getroffen. */
+  #chips { display: flex; gap: 8px; align-items: center; overflow-x: auto;
+           min-width: 0; }
+  #acts { display: flex; gap: 8px; align-items: center; margin-left: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt ist der
      #morph-Knopf, und zwei gefüllte Kreise übereinander lesen sich als zwei
      Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
@@ -2027,10 +2031,12 @@ stage.innerHTML = `
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
   <div id="foot">
-    <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>
-    <button class="footbtn prime" data-prep="open" title="was muss ich vorbereiten?"
-      >🛒 Prepare</button>
     <div id="chips"></div>
+    <div id="acts">
+      <button class="footbtn prime" data-prep="open" title="was muss ich vorbereiten?"
+        >🛒 Prepare</button>
+      <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>
+    </div>
   </div>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
