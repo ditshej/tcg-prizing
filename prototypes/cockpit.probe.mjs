@@ -48,6 +48,40 @@ console.log(`   overtake: Rang ${ot.overtake.over} bekommt ${ot.overtake.gets}, 
 console.log(`   markierte Kacheln: ${ot.flagged.join(', ')}`);
 api.suggestions(ot).forEach((s) => console.log('   •', s.label));
 
+console.log('\n── Proben aus Ticket #32 (Zahlen aus #25) ──');
+const rel = run('Release 32, keine Reservation', 'release', 32, [],
+  '8·6·5·5·5·4·4·4·3·3·3·3·3·3·3·2·2·2·2·2·2·2·2·2·2·2·2·2·2·2·2·2');
+console.log(`   Pool ${rel.pool.booster} · Teilnahme ${rel.participation.booster}`
+  + ` · RankPool ${rel.rank.booster} · Rangtotal `
+  + rel.rows.reduce((a, r) => a + r.booster, 0));
+console.log(`   Tiefe ${rel.depth} (Deckel ${rel.depthCap}) · ShapedRemainder `
+  + `${rel.shapedRemainder} · Kurve reicht bis Rang `
+  + rel.rows.filter((r) => r.booster > 2).length);
+console.log(`   PreparationList: ${rel.prep.fetchDisplays} Displays, `
+  + `${rel.prep.looseBooster} lose · ${rel.prep.fetchEnvelopes} Promo-Envelopes, `
+  + `Ausbeute ${rel.prep.envelopeYield} → ${rel.pool.winnersDerived} WinnerPacks `
+  + `· ranked ${rel.allocation.ranked}`);
+
+console.log('\n── Die Staffel am Release-Umschlag ⟨32, 2⟩ ──');
+[0, 10, 11, 16, 21, 22, 31, 32, 43].forEach((tp) => {
+  st.type = 'release'; st.players = 32; st.displays = [];
+  st.pin = { tournamentPacks: true }; st.val = { tournamentPacks: tp };
+  st.manualWinner = {};
+  const p = distribute(settings());
+  console.log(`   ${String(tp).padStart(2)} Packs → ${p.pool.winnersDerived} WinnerPacks`
+    + `   (Schwellen ${p.prep.thresholds.join(' / ')})`);
+});
+
+console.log('\n── Ausbeute 1 fällt auf die alte Schwelle zurück (Weekly ⟨9, 1⟩) ──');
+[5, 6, 8, 9, 14, 15].forEach((tp) => {
+  st.type = 'weekly'; st.players = 32; st.displays = [];
+  st.pin = { tournamentPacks: true }; st.val = { tournamentPacks: tp };
+  st.manualWinner = {};
+  const p = distribute(settings());
+  console.log(`   ${String(tp).padStart(2)} Packs → ${p.pool.winnersDerived}`
+    + `   (Schwelle ${p.prep.thresholds.join(' / ')}, alt ceil(2·9/3) = 6)`);
+});
+
 console.log('\n── Offer auf dem Ausgangsfall ──');
 st.type = 'weekend'; st.players = 32; st.displays = [];
 st.pin = {}; st.val = {}; st.manualWinner = {};
