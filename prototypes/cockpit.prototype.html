@@ -280,12 +280,23 @@
   /* Meldungen links, Aktionen rechts: der Daumen greift rechts, und was man
      *tut*, gehört unter den Daumen. Was einen *anspricht*, darf weiter weg
      stehen — es will gelesen und dann angetippt werden, nicht blind getroffen. */
-  #chips { display: flex; gap: 8px; align-items: center; overflow-x: auto;
-           min-width: 0; }
-  #acts { display: flex; gap: 8px; align-items: center; margin-left: auto; }
-  /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt ist der
-     #morph-Knopf, und zwei gefüllte Kreise übereinander lesen sich als zwei
-     Hauptknöpfe. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
+  /* Runde 14: aus dem Fuss in den Kopf. Nicht weil es dort hübscher ist,
+     sondern weil der Fuss ganz der Navigation gehört und ein Badge wieder
+     einen *Platz* braucht statt einer Schwebelage — genau das Wort, mit dem
+     Runde 13 sie in den Fuss geholt hatte. Ein Platz wird mitgelayoutet und
+     kann darum per Konstruktion nichts zudecken; das erledigt zugleich den
+     Vorschlag, das Badge verschiebbar zu machen. Verschiebbar wäre Zustand,
+     und den hat diese App nirgends: Persistenz ist Out of scope, der
+     SetupLink trägt nach #16 nur Reglerabweichungen.
+
+     Es gehört zu den Zahlen (#32: „Kopf trägt Zahlen, Fuss trägt Flächen"),
+     denn nach #31 ist am Badge die *Zahl* der Antrieb, nicht das Wort. */
+  .badges { display: flex; gap: 8px; align-items: center; overflow-x: auto;
+            justify-content: flex-end; margin-top: 8px; }
+  /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt wäre er ein
+     Knopf unter den Zahlen des Kopfes, und der Kopf hat keine Knöpfe ausser dem
+     Reset. Im Dunkeln war die weiche Tönung ausserdem nicht zu sehen.
+     (Bis Runde 13 war das Gegenüber der gefüllte #morph-Knopf im Fuss.)
 
      Er trägt ein **Wort**, kein Zeichen. Durchprobiert waren ⚠ ◇ ↷ ✦ → ! ⚡ ☞
      ⊕ » ➤ — jedes davon *beschreibt* die Meldung und muss erst gedeutet werden,
@@ -516,6 +527,14 @@
   .sheet.open { transform: translateY(0); visibility: visible;
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
+  /* Eine Seite fährt nicht herein, sie ist da. Das Hereinfahren von unten ist
+     die Geste des Blattes — es kommt aus dem Griff heraus, den man gezogen hat.
+     Zwischen Seiten wird gewechselt, und ein Wechsel hat keine Richtung, weil
+     die Leiste nicht sagt, welche Seite links von welcher liegt.
+     Das Vollbild behält die Geste: es *wird* über den Plan gezogen. */
+  .sheet.page { transform: none; opacity: 0;
+                transition: opacity .15s linear, visibility 0s .15s; }
+  .sheet.page.open { opacity: 1; transition: opacity .15s linear; }
   .sheet .body { padding: 14px 20px 26px; }
   /* Das Vollbild misst wie der Hauptschirm: 12px links und rechts. Mit 14px
      fällt im Hochformat eine Spalte weg und die Kachel wächst — genau das,
@@ -565,40 +584,38 @@
   #stage.fsopen { --fadeto: var(--bg); }
   #stage.anyopen #fade { display: block; }
 
-  /* ── Der Fuss: feste Griffe links, Meldungen rechts ────────────────────
-     Er liegt über den Blättern (z 45 gegen 25), damit derselbe Knopf öffnet
-     und schliesst und die Meldungs-Chips auch bei offenem Blatt erreichbar
-     bleiben — Runde 10 hatte genau dort den Fehler, dass der Stapel unter dem
-     Blatt lag, während man an den auslösenden Reglern drehte. */
+  /* ── Der Fuss trägt die Navigation, sonst nichts ───────────────────────
+     Runde 13 hatte hier Meldungen links und Aktionen rechts. Seit dem Fuss
+     stimmte die Metapher nicht mehr: `⋯`, `Prepare` und das Vollbild waren als
+     *Blätter* gebaut — etwas, das man aufzieht und wieder zumacht — sahen dort
+     unten aber aus wie *Seiten*. Der Beleg war ein Bediengefühl: der `⋯`-Knopf
+     schloss auch das Prepare, weil er der eine Morph-Knopf war. Unter Blättern
+     folgerichtig (ein Blatt, ein Griff), unter Seiten falsch.
+
+     Jetzt drei Seiten, drei gleich breite Plätze, keine davon schliessbar. Und
+     jedes Icon *ist* seine Seite: Kacheln, Regler, Wagen. „Home" wäre ein Ort
+     unter zwei Inhalten gewesen — eine Wurzel ohne Baum, denn #15 hat „ein
+     Schirm, kein Ablauf" entschieden. Der Plan ist ein Inhalt und heisst so.
+
+     Die Meldungen sind hier ausgezogen: sie sind etwas anderes als eine
+     Navigation — flüchtig und mit einem Thema, wo die Leiste ständig und
+     ortsfest ist. Sie sitzen jetzt im Kopf, siehe `.badges`. */
   #foot { position: absolute; left: 0; right: 0; bottom: 0; height: var(--foot);
           z-index: 45; background: var(--paper); box-shadow: var(--panel-shadow);
-          display: flex; align-items: center; gap: 8px; padding: 0 10px; }
-  .footbtn { border: 0; background: transparent; color: var(--ink); font: inherit;
-             font-size: 12.5px; font-weight: 600; cursor: pointer; height: 38px;
-             border-radius: var(--r-ctl); padding: 0 12px; display: flex;
-             align-items: center; gap: 7px; white-space: nowrap; }
-  .footbtn:active { transform: translateY(1px); }
-  .footbtn.prime { background: var(--accent-soft); }
-  .footbtn.on { background: var(--accent); color: var(--on-accent);
-                box-shadow: var(--glow); }
-
-  /* ── Der eine Knopf: drei Punkte ↔ Kreuz, jetzt im Fuss ──────────────── */
-  #morph { border: 0; width: 44px; height: 38px; border-radius: var(--r-ctl);
-           background: var(--accent);
-           color: var(--on-accent); cursor: pointer; display: grid; place-items: center; }
-  #morph .m { position: relative; width: 22px; height: 22px; }
-  #morph .m i { position: absolute; left: 2px; top: 50%; width: 18px; height: 3px;
-                margin-top: -1.5px; border-radius: 2px; background: currentColor;
-                transform-origin: 50% 50%;
-                transition: transform .32s cubic-bezier(.25,1.3,.4,1), opacity .18s; }
-  #morph .m i:nth-child(1) { transform: translateX(-6px) scaleX(.167); }
-  #morph .m i:nth-child(2) { transform: scaleX(.167); }
-  #morph .m i:nth-child(3) { transform: translateX(6px) scaleX(.167); }
-  #stage.anyopen #morph .m i:nth-child(1) { transform: rotate(45deg) scaleX(1); }
-  #stage.anyopen #morph .m i:nth-child(2) { transform: scaleX(0); opacity: 0; }
-  #stage.anyopen #morph .m i:nth-child(3) { transform: rotate(-45deg) scaleX(1); }
+          display: flex; align-items: stretch; }
+  .navbtn { flex: 1; border: 0; background: transparent; color: var(--muted);
+            font: 700 10px/1 var(--font-head); letter-spacing: var(--head-ls);
+            text-transform: var(--head-tr);
+            cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 4px; }
+  .navbtn .ico { font-size: 18px; line-height: 1; opacity: .85; }
+  .navbtn:active { transform: translateY(1px); }
+  /* Aktiv heisst: Farbe und volle Deckkraft. Kein Kasten darunter — der Fuss
+     hat nur drei Plätze, da genügt der Unterschied ohne Rahmen. */
+  .navbtn[aria-current="page"] { color: var(--accent); }
+  .navbtn[aria-current="page"] .ico { opacity: 1; }
   @media (prefers-reduced-motion: reduce) {
-    .sheet, #morph .m i { transition: none; }
+    .sheet { transition: none; }
   }
 
   .ctl { margin: 0 0 16px; }
@@ -1364,7 +1381,27 @@ function curveGlyphs(plan, withRatio) {
    Was bleibt, ist die Zahl, die nicht Beschaffung ist: #23 braucht drei Zahlen
    an drei Stellen für die Summenprobe (288 · 192 · 96). Die erste davon hinter
    einen Knopf zu legen, hiesse die harte Regel der Karte unprüfbar machen. */
-function headerBlock(plan) {
+/* Ein Badge je minimierter Meldung — nie eines für mehrere. Die Reihenfolge
+   ist dieselbe wie im Stapel: Plan zuerst, Eingabe zuletzt. */
+function badgeRow(plan, sugg, off) {
+  const b = [
+    unfit(plan) && !st.noticeOpen
+      ? `<button class="chip warn" data-fold="notice"><span class="g">⚠</span>${
+          sugg.length} way${sugg.length === 1 ? '' : 's'} out</button>` : '',
+    off && !st.offerOpen
+      // Das Wort des Glossars, nicht ein danebengestelltes: „Suggestion" steht
+      // beim Offer auf _Avoid_, weil die Wege aus der ConflictNotice auch
+      // Vorschläge sind — und mit den Pillen können beide nebeneinander stehen.
+      // „Round it up" wäre zudem falsch: das Offer rundet zum nächsten
+      // Vielfachen, auch nach unten (29 → 24), Fenster symmetrisch nach #21.
+      ? '<button class="chip deal" data-fold="offer">Offer</button>' : '',
+    st.carry && !st.carryOpen
+      ? `<button class="chip carry" data-fold="carry">${st.carry.keys.length} kept</button>` : '',
+  ].join('');
+  return b ? `<div class="badges">${b}</div>` : '';
+}
+
+function headerBlock(plan, sugg, off) {
   const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
              + st.displays.filter(Boolean).length;
   const status = pins
@@ -1382,6 +1419,7 @@ function headerBlock(plan) {
       <span style="margin-left:auto">${status}</span>
     </div>
     ${handoutRow(plan)}
+    ${badgeRow(plan, sugg, off)}
   </div>`;
 }
 
@@ -1941,7 +1979,7 @@ function screen(plan, sugg, off) {
       overflow:hidden">
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
         overflow:hidden">
-      ${headerBlock(plan)}
+      ${headerBlock(plan, sugg, off)}
       <div style="position:relative;padding:8px 12px 0;${side
         ? `height:${stripMax}px;flex:none`
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
@@ -2017,34 +2055,36 @@ function fsContent(plan) {
 /* ══════════════════════════════════════════════════════════════════════
    Rahmen
    ══════════════════════════════════════════════════════════════════════ */
-let sheetOpen = false;
-let fsOpen = false;
-let prepOpen = false;
+/* Eine Seite ist gerade aktiv — es gibt kein Öffnen und kein Schliessen mehr.
+   Das Vollbild ist *kein* vierter Eintrag: es zeigt denselben Inhalt wie
+   `Plan`, nur mehr davon, und ein Zoom ist kein Inhalt. Es bleibt darum ein
+   Zustand von `Plan` und wird am Plan gegriffen, nicht im Fuss. */
+let page = 'plan';                     // 'plan' | 'details' | 'prepare'
+let fsOpen = false;                    // Zustand von 'plan'
 let lastNoticeKey = null, lastOfferKey = null;
+const PAGES = [
+  ['plan',    '⊞',  'Plan'],
+  ['details', '☰',  'Details'],
+  ['prepare', '🛒', 'Prepare'],
+];
 const stage = document.getElementById('stage');
 stage.innerHTML = `
   <div id="app"></div>
-  <div id="sheet" class="sheet"><div class="body"></div></div>
+  <div id="sheet" class="sheet page"><div class="body"></div></div>
   <div id="fs" class="sheet fs"></div>
-  <div id="prep" class="sheet fs"></div>
+  <div id="prep" class="sheet fs page"></div>
   <div id="pop" class="pop"></div>
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
-  <div id="foot">
-    <div id="chips"></div>
-    <div id="acts">
-      <button class="footbtn prime" data-prep="open" title="was muss ich vorbereiten?"
-        >🛒 Prepare</button>
-      <button id="morph" title="mehr"><span class="m"><i></i><i></i><i></i></span></button>
-    </div>
-  </div>`;
+  <div id="foot">${PAGES.map(([id, ico, label]) =>
+    `<button class="navbtn" data-page="${id}"><span class="ico">${ico}</span>${label}</button>`
+  ).join('')}</div>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
 const prepEl = document.getElementById('prep');
 const popEl = document.getElementById('pop');
 const stackEl = document.getElementById('stack');
-const chipsEl = document.getElementById('chips');
 
 function render() {
   const plan = distribute(settings());
@@ -2070,45 +2110,30 @@ function render() {
   if (key !== lastNoticeKey) { st.noticeOpen = true; lastNoticeKey = key; }
   if (cand && !lastOfferKey) { st.offerOpen = true; }
   lastOfferKey = cand ? 'd' : null;
-  // Das Blatt deckt Kacheln und Kopf zu, also kann dort keine Blase offen sein.
-  if (sheetOpen || prepOpen || st.openSlot > st.players) st.openSlot = null;
-  if (sheetOpen || fsOpen || prepOpen) st.openInfo = null;
+  const away = page !== 'plan';        // eine andere Seite ist aktiv
+  // Eine andere Seite deckt Kacheln und Kopf zu, also keine Blase offen dort.
+  if (away || st.openSlot > st.players) st.openSlot = null;
+  if (away || fsOpen) st.openInfo = null;
   appEl.innerHTML = screen(plan, sugg, off);
   /* Der Stapel hängt im #stage, nicht im Planblock — sonst liegt er unter dem
      Reglerblatt, und genau dort dreht man an den Reglern, die den Konflikt
      auslösen. Ordnung: die Meldung über den Plan oben bei den Kacheln, die
      Meldung über die Eingabe unten bei den Reglern. */
   stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()}`;
-  /* Ein Chip je minimierter Meldung — nie einer für mehrere. Die Reihenfolge
-     ist dieselbe wie im Stapel: Plan oben, Eingabe unten am Knopf. */
-  chipsEl.innerHTML = [
-    unfit(plan) && !st.noticeOpen
-      ? `<button class="chip warn" data-fold="notice"><span class="g">⚠</span>${
-          sugg.length} way${sugg.length === 1 ? '' : 's'} out</button>` : '',
-    off && !st.offerOpen
-      // Das Wort des Glossars, nicht ein danebengestelltes: „Suggestion" steht
-      // beim Offer auf _Avoid_, weil die Wege aus der ConflictNotice auch
-      // Vorschläge sind — und mit den Pillen können beide nebeneinander in der
-      // Ecke stehen. „Round it up" wäre zudem falsch: das Offer rundet zum
-      // nächsten Vielfachen, auch nach unten (29 → 24), Fenster symmetrisch
-      // nach #21.
-      ? '<button class="chip deal" data-fold="offer">Offer</button>' : '',
-    st.carry && !st.carryOpen
-      ? `<button class="chip carry" data-fold="carry">${st.carry.keys.length} kept</button>` : '',
-  ].join('');
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
   popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
-  sheetEl.classList.toggle('open', sheetOpen);
-  fsEl.classList.toggle('open', fsOpen);
-  prepEl.classList.toggle('open', prepOpen);
+  sheetEl.classList.toggle('open', page === 'details');
+  prepEl.classList.toggle('open', page === 'prepare');
+  fsEl.classList.toggle('open', fsOpen && page === 'plan');
   popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
-  stage.classList.toggle('anyopen', sheetOpen || fsOpen || prepOpen);
-  stage.classList.toggle('fsopen', fsOpen || prepOpen);
-  document.getElementById('morph').title =
-    (sheetOpen || fsOpen || prepOpen) ? 'schliessen' : 'mehr';
-  document.querySelector('#foot [data-prep]').classList.toggle('on', prepOpen);
+  stage.classList.toggle('anyopen', away || fsOpen);
+  stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
+  for (const b of document.querySelectorAll('#foot .navbtn')) {
+    if (b.dataset.page === page) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  }
   placePop();
 }
 
@@ -2200,21 +2225,18 @@ stage.addEventListener('click', (e) => {
   if (d.carryall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
                     st.carry = null; render(); return; }
   if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
-  if (t.id === 'morph') {
-    if (prepOpen) prepOpen = false;
-    else if (fsOpen) fsOpen = false;
-    else sheetOpen = !sheetOpen;
-    render(); return;
-  }
-  if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
-  // Geholt, nicht zugestellt. Der Griff schaltet um statt nur zu öffnen, und er
-  // schliesst die anderen Flächen — zwei Blätter übereinander wären ein Ablauf,
-  // und #15 hat „ein Schirm, kein Ablauf" entschieden.
-  if (d.prep) {
-    prepOpen = !prepOpen; sheetOpen = false; fsOpen = false;
+  /* Ein Tippen wählt eine Seite — es schaltet nicht um. Auf der Seite, die
+     schon aktiv ist, passiert nichts; ein zweites Tippen auf `Plan` bringt
+     einen nicht irgendwohin zurück, weil es kein Zurück gibt. Genau darin
+     unterscheidet sich die Seite vom Blatt, und genau das war der Fehler, den
+     Runde 13 hinterliess: der `⋯`-Knopf schloss auch das Prepare. */
+  if (d.page) {
+    page = d.page;
+    if (page !== 'plan') fsOpen = false;
     st.openSlot = null; render(); return;
   }
-  if (d.sheetRange != null) { sheetOpen = true; render(); return; }
+  if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
+  if (d.sheetRange != null) { page = 'details'; fsOpen = false; render(); return; }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
   // Regler (#26). „Alles zurück" muss sie also mitnehmen — sonst bliebe ein Rang
