@@ -70,7 +70,23 @@
     --cell: 54px;
     --gap: 5px;
     --gridmax: 940px;   /* 16 Kacheln = 16·54 + 15·5, plus 1px Luft gegen Rundung */
-    --rail: 352px;
+    /* Runde 19 — die Spaltenbreiten. Jede Zahl ist eine *Erstbreite*: die
+       Breite, die eine Spalte hatte, als sie zum ersten Mal erschien. Keine
+       darf je darunter fallen, und daraus fallen die Bruchstellen von selbst
+       (#37): 774 = planmin + det + Griffstreifen, 1096 = planmin + det + prep.
+       Alles darüber geht an den Plan, bis er bei --gridmax seine 16
+       Kachelspalten hat — das ist zugleich der Deckel, 940 + 352 + 356 + Ränder.
+       `--det` hiess bis Runde 18 `--rail`: dieselbe Zahl, neuer Name, weil die
+       Schiene nie ein eigener Inhalt war, sondern Details in seiner ersten,
+       für einen Fall handgemachten Form. */
+    --det: 352px;
+    /* 356 ist gemessen, nicht gewählt: die breiteste Zeile der PreparationList
+       ist der Hinweis mit Knopf daneben — Weekly 340, Weekend 341, Release
+       354 („11 more packs would make it 3 · Set packs to 43"). Plus zwei
+       Pixel Rundung. Der Schätzwert 340 aus der Runde davor hätte Release
+       umbrochen, und zwar genau die Zeile, die zum Handeln auffordert. */
+    --prep: 356px;
+    --planmin: 388px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; }
@@ -124,6 +140,23 @@
 
   #stagewrap { display: flex; justify-content: center; padding: 8px 12px 0; }
   #stage { background: var(--bg); width: 100%; position: relative; overflow: hidden; }
+  /* ── Die Plan-Spalte ist das Mass ──────────────────────────────────────
+     `--planl` und `--planr` sind die Einzüge ihrer beiden Ränder. Daran
+     hängen Meldungsstapel und Verlosungsleiste — eine Grösse an der Stelle,
+     an der bis Runde 18 drei standen: `--rail`, `--foot` und `.onplan`.
+     Bei einer Spalte ist der Plan der ganze Schirm, also sind beide null;
+     das gilt damit auch am Handy, ohne eigene Regel. */
+  #stage { --planl: 0px; --planr: 0px; --grip: 34px; }
+  /* Der Griff ist die eingefaltete Spalte, also *nimmt* er Platz statt darauf
+     zu liegen — gemessen: schwebend deckte er die Legende und die erste Kachel
+     zu. Sein Streifen ist damit derselbe Rand wie der der Spalte, nur 34 statt
+     340 breit, und bei 1080 wächst er in sie hinein. */
+  #stage[data-cols="2"] { --planl: var(--grip); --planr: var(--det); --foot: 0px; }
+  #stage[data-cols="3"] { --planr: var(--det); --planl: var(--prep); --foot: 0px; }
+  /* Das Vollbild ist die Faltung in die Gegenrichtung: alles weg ausser dem
+     Plan. Also *ist* der Plan der ganze Schirm, und die Einzüge fallen von
+     selbst auf null — dieselbe Regel, kein Sonderfall. */
+  #stage.fsopen { --planl: 0px; --planr: 0px; }
   /* Runde 13: der Fuss ist eine eigene Zeile, keine schwebenden Griffe mehr.
      Der #morph schwebte über den vorderen Reglern — `raffleRow` trug dafür ein
      `padding-right: 88px`, also war die Fläche ohnehin bezahlt, nur verdeckt
@@ -137,18 +170,27 @@
      Leinwand eine Spalte weniger als das echte Gerät. */
   body.phone #stage { width: 393px; height: 830px; }
   body.land  #stage { width: 830px; height: 393px; border-radius: 28px; }
-  /* Deckel: Raster plus Reglerspalte plus Rand. Darüber nur noch Ränder. */
+  /* Runde 19: zwei Leinwände dazu, je eine knapp über einer Bruchstelle —
+     900 zeigt zwei Spalten, 1280 drei. Ohne sie prüft man die Regel nur an
+     ihren Rändern. */
+  body.tab #stage { width: 900px; height: 700px; border-radius: 6px;
+                    border: 9px solid var(--frame);
+                    box-shadow: 0 18px 44px rgba(0,0,0,.22); flex: none; }
+  /* Deckel: Raster plus beide Reglerspalten plus Rand. Darüber nur Ränder. */
   /* +26px: 24 Innenrand plus die zwei Rahmenlinien (border-box) — sonst fehlt
      dem Raster ein Pixel und die 16. Spalte fällt weg. */
-  body.wide  #stage { max-width: calc(var(--gridmax) + var(--rail) + 26px);
+  body.wide  #stage { width: 1280px; max-width: 100%;
                       border-radius: 3px; box-shadow: var(--panel-shadow);
                       height: 760px; }
+  body.max   #stage { max-width: calc(var(--gridmax) + var(--det) + var(--prep) + 26px);
+                      border-radius: 3px; box-shadow: var(--panel-shadow);
+                      height: 820px; }
   body.bare #stagewrap { padding: 0; }
   body.bare .chrome { display: none; }
   /* Auch ohne Rahmen gilt der Deckel: am Rechner steht die App bei 16 Kacheln
      und bekommt Ränder, statt weiter in die Breite zu wachsen. */
   body.bare #stage { height: calc(100vh - 46px);
-                     max-width: calc(var(--gridmax) + var(--rail) + 24px); }
+                     max-width: calc(var(--gridmax) + var(--det) + var(--prep) + 24px); }
 
   /* ── Switcher (nur Prototyp-Leinwand) ──────────────────────────────── */
   #switch {
@@ -256,21 +298,18 @@
   /* `--raffleh` ist 0, solange die Verlosungsleiste zu ist — der Stapel steht
      dann wie bisher direkt auf dem Fuss. Ist sie offen, rueckt er um ihre
      gemessene Hoehe hoch, statt von ihr zugedeckt zu werden (Runde 16). */
-  .stack { position: absolute; left: 0; right: 0; z-index: 35;
+  .stack { position: absolute; left: var(--planl); right: var(--planr); z-index: 35;
            bottom: calc(var(--foot) + var(--raffleh));
            padding: 0 12px 8px; display: flex; flex-direction: column; gap: 6px;
            pointer-events: none; max-height: 100%; overflow-y: auto; }
-  /* Wo die Regler als Schiene rechts stehen (#15), hört der Stapel vor ihr auf:
-     die Schiene trägt die Pin-Markierungen, die der CarryOverNotice aufzählt —
-     eine Meldung, die ihre eigenen Belege zudeckt, ist keine Meldung. Am Handy
-     liegt die Leiste unten, dort deckt der Stapel sie zu: das ist der leichtere
-     Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind.
-
-     Seit Runde 14 gilt das nur auf `Plan`: die Schiene gehört zu dieser Seite,
-     und auf `Details` und `Prepare` hielte die Regel nichts frei, sondern
-     stellte das Badge nur mitten ins Bild (gemessen x ≈ 640 von 1002). */
-  body.wide #stage.onplan .stack,
-  body.land #stage.onplan .stack { right: var(--rail); }
+  /* Der Grund von Runde 14 gilt weiter, nur allgemeiner: die Reglerspalte trägt
+     die Pin-Markierungen, die der CarryOverNotice aufzählt — eine Meldung, die
+     ihre eigenen Belege zudeckt, ist keine Meldung. Er ist sogar stärker
+     geworden, weil `Details` ab 740 *immer* danebensteht statt nur auf einer
+     Seite. Darum steht die Regel jetzt in `--planr` und braucht kein `.onplan`
+     mehr: den Zustand „eine andere Seite ist vorne" gibt es in Spalten nicht.
+     Am Handy liegen die Regler unten, dort deckt der Stapel sie zu: der
+     leichtere Verlust, weil die Wege heraus in der Meldung anklickbar sind. */
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
   /* Die Badge-Zeile ist ein durchsichtiger Halter, kein Panel — der Schatten
      gehört an die Pille, nicht an die Luft neben ihr. */
@@ -429,20 +468,16 @@
   /* `display` in einer Regel schlägt das hidden-Attribut — ohne diese Zeile
      wächst der gefaltete Kopf, statt zu schrumpfen. */
   [hidden] { display: none !important; }
+  /* Der Kopf teilt sich, wenn die *Plan-Spalte* breit genug ist — nicht wenn
+     die Leinwand es ist. Ab Runde 19 sind das zwei verschiedene Zahlen: bei
+     drei Spalten hat ein 1280er Schirm eine 588 px schmale Plan-Spalte. */
   .headcols { display: block; }
-  body.land .headcols, body.wide .headcols { display: flex; align-items: flex-start; }
-  body.land .headcols .fetch, body.wide .headcols .fetch { flex: 1 1 520px; }
-  body.land .headcols .handout, body.wide .headcols .handout {
+  #stage.wideplan .headcols { display: flex; align-items: flex-start; }
+  #stage.wideplan .headcols .fetch { flex: 1 1 520px; }
+  #stage.wideplan .headcols .handout {
     flex: 1 1 260px; margin-top: 8px; padding-top: 7px; margin-left: 16px;
     padding-left: 16px; border-top: 1px solid var(--line);
     border-left: 1px dotted var(--line); }
-  @media (min-width: 700px) {
-    body.bare .headcols { display: flex; align-items: flex-start; }
-    body.bare .headcols .fetch { flex: 1 1 520px; }
-    body.bare .headcols .handout { flex: 1 1 260px; margin-top: 8px; padding-top: 7px;
-      margin-left: 16px; padding-left: 16px; border-top: 1px solid var(--line);
-      border-left: 1px dotted var(--line); }
-  }
 
   /* Das Rangtotal liegt über den Balken, oben rechts, wo der Abfall der Kurve
      ohnehin Platz lässt. Es hört keine Klicks ab. */
@@ -621,14 +656,19 @@
      Linie hier waere die erste, die keine Daten trennt. Also ein Spalt ringsum,
      durch den `--bg` durchsieht, und der Schattensatz der Blase — im Dunkeln
      traegt `--tile-shadow` ohnehin einen goldenen Haarstrich als Kante. */
-  #raffle { position: absolute; left: 8px; right: 8px;
+  #raffle { position: absolute;
+            left: calc(var(--planl) + 8px); right: calc(var(--planr) + 8px);
             bottom: calc(var(--foot) + 8px);
             z-index: 40; background: var(--paper); border-radius: var(--r-tile);
             box-shadow: var(--tile-shadow), var(--panel-shadow);
             padding: 10px 12px 12px; display: none; }
   #raffle.open { display: block; }
-  body.wide #stage.onplan #raffle, body.land #stage.onplan #raffle {
-    right: calc(var(--rail) + 8px); }
+  /* Die Leiste folgt derselben Grösse wie der Meldungsstapel — eine Regel für
+     beide, statt zweier gleichlautender. Sie *gehört* zur Plan-Spalte: der
+     Auslöser steht dort, wo man den Treffer sieht. Im Vollbild wird sie von
+     selbst wieder ganze Breite, weil dort die Plan-Spalte der ganze Schirm
+     ist. Deckt eine Seite den Schirm, ist sie ohnehin zu — render() schliesst
+     sie beim Seitenwechsel, seit Runde 14. */
   /* Der Meldungsstapel und das Verlaufsband ruecken um die Leiste nach oben —
      sonst legt sich die Verlosung ueber die ConflictNotice, die nach ADR 0002
      anwesend sein *muss*. Die Hoehe misst render(), weil sie mit der Liste
@@ -647,20 +687,28 @@
      fällt im Hochformat eine Spalte weg und die Kachel wächst — genau das,
      was die feste Kachelgrösse verhindern soll. */
   .sheet.fs .body { padding: 10px 12px 18px; }
-  /* Quer und am Rechner steht sonst die halbe Blattbreite leer. */
-  body.land #sheet .body, body.wide #sheet .body { column-count: 2; column-gap: 34px;
+  /* Das Reglerblatt als *Overlay* gibt es nur noch unter 740, wo es ohnehin
+     einspaltig ist — ab da ist Details eine Spalte. Die Zweispaltigkeit von
+     Runde 14 trifft damit nur noch den Querformat-Fall unter der Bruchstelle;
+     sie hängt an der gemessenen Breite, nicht mehr an der Leinwand-Klasse. */
+  #stage.widesheet #sheet .body { column-count: 2; column-gap: 34px;
     column-rule: 1px solid var(--line); }
-  body.land #sheet .body > *, body.wide #sheet .body > * { break-inside: avoid; }
-  body.land #sheet .grouphead, body.wide #sheet .grouphead,
-  body.land #sheet .subhead, body.wide #sheet .subhead { break-after: avoid; }
-  /* Ohne Rahmen entscheidet das Fenster: auf dem Handy eine Spalte, am
-     Rechner zwei — dieselbe Regel, nur ohne Leinwand-Klasse. */
-  @media (min-width: 700px) {
-    body.bare #sheet .body { column-count: 2; column-gap: 34px;
-                             column-rule: 1px solid var(--line); }
-    body.bare #sheet .body > * { break-inside: avoid; }
-    body.bare #sheet .grouphead, body.bare #sheet .subhead { break-after: avoid; }
-  }
+  #stage.widesheet #sheet .body > * { break-inside: avoid; }
+  #stage.widesheet #sheet .grouphead,
+  #stage.widesheet #sheet .subhead { break-after: avoid; }
+  /* ── Die zwei Spalten ──────────────────────────────────────────────────
+     Details trägt oben die vier heissen Regler, dann die Gruppenlinie, dann
+     die übrigen dreizehn. `.grouphead.first` verliert darum seine Sonderrolle:
+     hier steht etwas darüber, also braucht sie ihre Linie. */
+  .detc .grouphead.first { margin-top: 26px; padding-top: 16px;
+                           border-top: 1px solid var(--line); }
+  /* Prepare als Spalte bringt sein eigenes `.shead` mit — dieselbe Form wie
+     als Seite, nur schmaler. Die Polsterung hing bisher an `.sheet`. */
+  .prepc .shead { position: sticky; top: 0; background: var(--paper); z-index: 2;
+                  box-shadow: var(--panel-shadow); padding: 9px 12px;
+                  display: flex; align-items: center; gap: 9px; font-size: 14px;
+                  font-weight: 600; white-space: nowrap; }
+  .prepc .body { padding: 12px 14px 22px; }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
                   box-shadow: var(--panel-shadow); padding: 9px 12px;
                   display: flex; align-items: center; gap: 9px; font-size: 14px;
@@ -711,6 +759,29 @@
   #foot { position: absolute; left: 0; right: 0; bottom: 0; height: var(--foot);
           z-index: 45; background: var(--paper); box-shadow: var(--panel-shadow);
           display: flex; align-items: stretch; }
+  /* Runde 19: ein Eintrag, dessen Seite als Spalte dasteht, verschwindet —
+     ein Griff zu etwas, das man sieht, ist kein Griff. Damit schrumpft die
+     Leiste drei → einer → keiner, und `aria-current` entfällt ersatzlos: nie
+     führt ein Eintrag zu etwas Offenem. Bei zwei Spalten löst sich das Band
+     ganz auf, statt 56 px für einen Knopf zu halten. */
+  #stage:not([data-cols="1"]) #foot { display: none; }
+  /* Der übrige Griff steht an der linken Kante — dort, wo seine Spalte bei
+     1080 aufklappt. Nicht unten in einem Band: aus dem Griff *wird* die
+     Spalte, statt dass unten etwas verschwindet und links etwas erscheint.
+     Er liegt auf der Höhe des Fusses (45) und damit über dem Stapel (35):
+     eine Meldung darf zudecken, nur nicht den Weg heraus. */
+  #prepgrip { position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+              z-index: 45; display: none; border: 0; cursor: pointer;
+              background: var(--paper); color: var(--muted);
+              box-shadow: var(--panel-shadow);
+              border-radius: 0 var(--r-ctl) var(--r-ctl) 0;
+              padding: 16px 5px 16px 3px;
+              font: 700 10px/1 var(--font-head); letter-spacing: var(--head-ls);
+              text-transform: var(--head-tr);
+              writing-mode: vertical-rl; transform-origin: center; }
+  #stage[data-cols="2"] #prepgrip { display: flex; align-items: center; gap: 7px; }
+  #prepgrip .ico { writing-mode: horizontal-tb; font-size: 16px; opacity: .85; }
+  #prepgrip:active { box-shadow: var(--btn-shadow); }
   .navbtn { flex: 1; border: 0; background: transparent; color: var(--muted);
             font: 700 10px/1 var(--font-head); letter-spacing: var(--head-ls);
             text-transform: var(--head-tr);
@@ -835,9 +906,11 @@
 <div id="stagewrap"><div id="stage"></div></div>
 
 <div id="switch">
-  <button data-dev="phone">📱 hoch</button>
-  <button data-dev="land">📱 quer</button>
-  <button data-dev="wide">🖥 breit</button>
+  <button data-dev="phone">📱 393</button>
+  <button data-dev="land">📱 830 quer</button>
+  <button data-dev="tab">▭ 900</button>
+  <button data-dev="wide">🖥 1280</button>
+  <button data-dev="max">🖥 1658</button>
   <button data-dev="bare">⬜ nackt</button>
 </div>
 
@@ -2206,38 +2279,90 @@ function winnerBlock(plan) {
 /* ══════════════════════════════════════════════════════════════════════
    Die Oberfläche
    ══════════════════════════════════════════════════════════════════════ */
-function isSide() {
-  return document.body.classList.contains('wide') || document.body.classList.contains('land');
+/* ── Die Faltung ───────────────────────────────────────────────────────────
+   Gemessen wird die Bühne, nicht das Fenster: die App steht im Prototyp in
+   einem Rahmen, und eine Media Query sähe die Leinwand statt der App. In der
+   echten App ist die Bühne das Fenster, dann fallen beide zusammen.
+
+   Die Bruchstellen sind nicht gewählt, sondern gerechnet — Summe der
+   Erstbreiten. Keine Spalte fällt je unter die Breite, die sie hatte, als sie
+   zum ersten Mal erschien; daraus folgt, dass Aufklappen nie etwas wegnimmt.
+   Das ist der Fall, der die naive Regel („klapp auf, was hineinpasst")
+   kaputtmacht: ein 900er Schirm hätte dann drei Spalten und *weniger* Kacheln
+   zu sehen als derselbe hochkant mit einer. */
+const COLW = { plan: 388, det: 352, prep: 356 };
+const GRIP = 34;                                // der eingefaltete Prepare-Streifen
+const BP2 = COLW.plan + COLW.det + GRIP;        // 774
+const BP3 = COLW.plan + COLW.det + COLW.prep;   // 1096
+function colCount() {
+  const w = stage.clientWidth;
+  return w >= BP3 ? 3 : w >= BP2 ? 2 : 1;
 }
 
 function screen(plan, sugg, off) {
-  const side = isSide();
-  // Das Diagramm darf nicht die halbe Fläche nehmen: quer ist es flach, am
-  // Rechner mittelhoch, im Hochformat darf es wachsen.
-  const stripMax = document.body.classList.contains('land') ? 96
-                 : document.body.classList.contains('wide') ? 190 : 280;
+  const cols = colCount();
+  // Die Plan-Spalte bekommt, was übrig bleibt — sie ist die einzige, die von
+  // Breite wirklich profitiert (Details sind Regler fester Breite, Prepare ist
+  // Prosa). Der Kopf teilt sich erst, wenn *sie* breit ist.
+  const planW = stage.clientWidth - (cols >= 2 ? COLW.det : 0)
+    - (cols === 2 ? GRIP : 0) - (cols >= 3 ? COLW.prep : 0);
+  stage.classList.toggle('wideplan', planW >= 620);
+  stage.classList.toggle('widesheet', stage.clientWidth >= 700);
+  // Das Diagramm darf nicht die halbe Fläche nehmen: flach im Querformat,
+  // mittelhoch, wo Höhe da ist, und im Hochformat darf es wachsen.
+  const h = stage.clientHeight;
+  const stripMax = h < 460 ? 96 : cols >= 2 ? 190 : 280;
   const controls = `
     ${slider('players', plan)}
     ${depthControl(plan)}
     ${curveGlyphs(plan, true)}
     ${floorRow(plan)}`;
-  return `<div style="height:100%;display:flex;flex-direction:${side ? 'row' : 'column'};
-      overflow:hidden">
+  const planCol = `
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
         overflow:hidden">
       ${headerBlock(plan)}
-      <div style="position:relative;padding:8px 12px 0;${side
+      <div style="position:relative;padding:8px 12px 0;${cols >= 2
         ? `height:${stripMax}px;flex:none`
         : `flex:3 1 122px;min-height:78px;max-height:${stripMax}px`}">${
         rankTotal(plan)}${rankStrip(plan)}</div>
       ${slotBlock(plan, '')}
       <div style="height:9px;flex:none"></div>
-    </div>
-    <div style="${side
-      ? 'width:var(--rail);flex:none;overflow:auto;background:var(--paper);box-shadow:var(--panel-shadow)'
-      : 'flex:none;background:var(--paper);box-shadow:var(--panel-shadow)'}">
+    </div>`;
+  /* Die Schiene *ist* Details. Sie war nie ein eigener Inhalt: vier Regler aus
+     derselben Menge, ohne eigenen Namen im Fuss und ohne eigenen Griff — nur
+     die handgemachte Fassung für einen Fall. Vom Sonderstatus der vier bleibt
+     genau das, was noch trägt: die Reihenfolge. („Diese vier sieht man ohne
+     Handgriff" ist in der Breite wahr für alle siebzehn.) */
+  const detCol = `
+    <div class="detc" style="width:var(--det);flex:none;overflow:auto;
+        background:var(--paper);box-shadow:var(--panel-shadow)">
+      <div style="padding:9px 12px 8px">${controls}${sheetContent(plan)}</div>
+    </div>`;
+  const hotBar = `
+    <div style="flex:none;background:var(--paper);box-shadow:var(--panel-shadow)">
       <div style="padding:9px 12px 8px">${controls}</div>
-    </div>
+    </div>`;
+  const prepCol = `
+    <div class="prepc" style="width:var(--prep);flex:none;overflow:auto;
+        background:var(--paper);box-shadow:var(--panel-shadow)">${prepContent(plan)}</div>`;
+  /* Bei zwei Spalten nimmt Prepare den Platz des *Plans* ein, nicht den des
+     ganzen Schirms. Zwei Gründe, und beide sind am Bild aufgefallen: Details
+     bleibt stehen, weil man daran dauernd dreht (das war Q1s Begründung, hier
+     noch einmal), und der Griff hat sonst kein Gegenstück — als Vollbild-Seite
+     war Prepare eine Sackgasse, denn der Fuss ist weg und der Griff kennt kein
+     zweites Tippen. Damit trägt der Streifen immer die *eingefaltete* Spalte:
+     auf dem Plan heisst er Prepare, auf Prepare heisst er Plan. */
+  const prepMain = `
+    <div class="prepc" style="flex:1;min-width:0;overflow:auto;
+        background:var(--paper)">${prepContent(plan)}</div>`;
+  // Bei zwei Spalten hält der Griff seinen Streifen links frei; bei dreien ist
+  // dort die Spalte selbst, also kein Rand.
+  return `<div style="height:100%;display:flex;
+      flex-direction:${cols >= 2 ? 'row' : 'column'};overflow:hidden;
+      padding-left:${cols === 2 ? 'var(--grip)' : '0'}">
+    ${cols >= 3 ? prepCol : ''}
+    ${cols === 2 && page === 'prepare' ? prepMain : planCol}
+    ${cols >= 2 ? detCol : hotBar}
   </div>`;
 }
 
@@ -2350,7 +2475,8 @@ stage.innerHTML = `
   <div id="stack" class="stack"></div>
   <div id="foot">${PAGES.map(([id, ico, label]) =>
     `<button class="navbtn" data-page="${id}"><span class="ico">${ico}</span>${label}</button>`
-  ).join('')}</div>`;
+  ).join('')}</div>
+  <button id="prepgrip" data-page="prepare"><span class="ico">🛒</span>Prepare</button>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
@@ -2358,8 +2484,17 @@ const prepEl = document.getElementById('prep');
 const popEl = document.getElementById('pop');
 const raffleEl = document.getElementById('raffle');
 const stackEl = document.getElementById('stack');
+const gripEl = document.getElementById('prepgrip');
 
 function render() {
+  /* Erst falten, dann zeichnen: steht eine Seite als Spalte da, gibt es sie
+     als *aktive Seite* nicht mehr — sonst läge ein Overlay über einer Spalte
+     mit demselben Inhalt. Wer bei 700 px auf `Details` steht und das Fenster
+     aufzieht, landet auf `Plan` und sieht seine Regler daneben stehen. */
+  const cols = colCount();
+  stage.dataset.cols = cols;
+  if (cols >= 2 && page === 'details') page = 'plan';
+  if (cols >= 3 && page === 'prepare') page = 'plan';
   const plan = distribute(settings());
   const sugg = suggestions(plan);
   const cand = offerFor(plan);
@@ -2412,7 +2547,14 @@ function render() {
     st.openRaffle ? `${raffleEl.offsetHeight + 16}px` : '0px');
   padBottom();
   sheetEl.classList.toggle('open', page === 'details');
-  prepEl.classList.toggle('open', page === 'prepare');
+  // Ab zwei Spalten steht Prepare *in* der Faltung, nicht darüber.
+  prepEl.classList.toggle('open', page === 'prepare' && cols < 2);
+  /* Der Streifen trägt, was gerade eingefaltet ist — sonst führt er bei zwei
+     Spalten in eine Sackgasse. */
+  const gripTo = page === 'prepare' ? 'plan' : 'prepare';
+  gripEl.dataset.page = gripTo;
+  gripEl.innerHTML = gripTo === 'plan'
+    ? '<span class="ico">⊞</span>Plan' : '<span class="ico">🛒</span>Prepare';
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
   popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
   stage.classList.toggle('onplan', !away);
@@ -2605,6 +2747,14 @@ document.getElementById('switch').addEventListener('click', (e) => {
   if (b && b.dataset.dev) setDev(b.dataset.dev);
 });
 window.addEventListener('resize', placePop);
+/* Die Faltung hängt an der gemessenen Bühne, also muss sie neu zeichnen, wenn
+   die Bühne sich ändert — beim Fensterziehen wie beim Leinwandwechsel. */
+let resizePending = false;
+new ResizeObserver(() => {
+  if (resizePending) return;
+  resizePending = true;
+  requestAnimationFrame(() => { resizePending = false; render(); });
+}).observe(stage);
 /* Aufsammeln in der Einfangphase: danach hat render() das angeklickte
    Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
 document.addEventListener('click', (e) => {
