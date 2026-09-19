@@ -1835,11 +1835,42 @@ function raffleBar(plan) {
   // wirft, hat den Wurf ungeschehen gemacht, und ein Satz darüber wäre eine
   // Behauptung über einen Zustand, den es nicht mehr gibt.
   const hit = st.lastDraw && manual[st.lastDraw] ? st.lastDraw : null;
+  /* Die Topfzahl ist gestrichen. Sie sagte *wie viele* Ränge ziehbar sind, aber
+     die Frage am Tisch ist *wo* — und die beantwortet das Bereichsraster
+     darunter, nicht eine Zahl. Dazu war sie eine Differenz in Gestalt einer
+     absoluten Zahl: vor dem ersten Wurf ist der `RafflePot` genau so gross wie
+     die `RaffleRange`, also wiederholte sie in dem Moment, in dem man sie
+     zuerst liest, nur die eben getroffene Wahl.
+
+     An ihrer Stelle steht der *Stand*: wie viele `WinnerPack`s insgesamt schon
+     einen Empfänger haben, `ranked` und `manual` zusammen, gegen die Zahl, die
+     den Rängen zusteht. Das zählt endlich dieselbe Einheit wie der Knopf
+     daneben, und es beantwortet „wie oft kann ich noch drücken" durch
+     Subtraktion — die Zahl der offenen steht ohnehin als Zähler am Griff, also
+     sagt die Leiste das, was der Griff nicht sagen kann. Steht dort mehr
+     platziert als vorhanden, ist das der von Hand überhobene Fall, den
+     `winnerTotalRow` schon ausweist; die Zeile liest sich dann sichtbar falsch,
+     und das ist die Absicht.
+
+     Was ausserdem bleibt, ist der eine Fall, den `CONTEXT.md` eigens benennt:
+     der Topf kann leer sein, während der Bereich es nicht ist — dann ist der
+     Knopf gesperrt, obwohl noch `WinnerPack`s offen sind. Ohne Satz wäre das
+     ein toter Knopf ohne Grund, und nach ADR 0002 wird ein unpassender Zustand
+     benannt, nicht versteckt.
+
+     Der Knopf heisst ausserdem nicht mehr `Draw`: das steht bei `WinnerRaffle`
+     auf der `_Avoid_`-Zeile, weil es im TCG das Ziehen einer Karte heisst.
+     `Raffle` ist die Kürzung des Terms und damit keine Ersetzung. */
+  const potEmpty = pot.length === 0 && open > 0;
+  const placed = plan.allocation.ranked + plan.allocation.manualCount;
+  const total = plan.rank.winners;
   return `<div class="bar" style="gap:9px;margin-bottom:9px">
       <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-        >🎲&nbsp; Draw</button>
+        >🎲&nbsp; Raffle</button>
       <div class="tiny muted" style="min-width:0;line-height:1.3">${
-        pot.length} in the pot<br>${open} still open</div>
+        placed} of ${total} winner ${plural(total, 'pack')} placed${
+        potEmpty ? `<br><span style="color:var(--warn)">every rank in range already
+          has one — widen the range</span>` : ''}</div>
       <button class="reset" data-closeraffle="1" style="margin-left:auto">✕</button>
     </div>
     ${rangeGrid(get('raffleRange'), 'data-set-range', true)}
@@ -2163,11 +2194,12 @@ function winnerBlock(plan) {
   return `<div>
     <div class="subhead">${LABEL.raffleRange}</div>
     ${explain('raffleRange')}
-    <div class="desc">Drawn from the legend above the tiles — the handle on
+    <div class="desc">Raffled from the legend above the tiles — the handle on
       <i class="badge win" style="position:static;vertical-align:-1px"></i>
       <strong>winner</strong>, where the range is set too. Currently
       <strong>${esc(RANGE_NAME[get('raffleRange')])}</strong>, ${
-      plan.allocation.open} still open.</div>
+      plan.allocation.open} winner ${plural(plan.allocation.open, 'pack')} still
+      open.</div>
   </div>`;
 }
 
