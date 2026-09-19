@@ -345,7 +345,10 @@ welche `pinned` Regler den Wechsel überstanden haben und darum nicht dem neuen
 `DistributionPlan` — darin dem Bericht der `LinkMigration` verwandt und nicht der
 `ConflictNotice`, die eine Aussage über den Plan macht. Sie ist die Ansage zu
 einem Klick, der sichtbar wenig getan hat, und trägt deshalb den Weg mit: einen
-Knopf, der alle auf das neue Blatt zieht. Wegklickbar und reiner
+Knopf, der alle auf das neue Blatt zieht. Dieser Knopf ist die **dritte
+Reichweite** desselben Rückwegs und keine eigene Handlung — er lässt dieselben
+Pins fallen wie der Knopf am `TournamentType`-Titel, Kachel-Zuteilungen
+eingeschlossen, und fragt darum ebenso vorher nach. Wegklickbar und reiner
 Sitzungszustand, nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
 verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
 `TournamentType`-Titel (alle) steht.
@@ -447,8 +450,14 @@ Gesetzt wird er durch die **Bedienhandlung**, nicht durch den Wert — wer einen
 Regler verstellt und wieder auf den Ausgangswert zurückzieht, hat entschieden und
 lässt ihn `pinned`. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
-zurück, der Knopf neben dem `TournamentType`-Titel **alle**. Ein Wechsel von
-`Game` oder `TournamentType` hebt ihn nicht auf. Die Markierung sagt deshalb „folgt der Rechnung nicht
+zurück, der Knopf neben dem `TournamentType`-Titel **alle**, und derselbe Weg in
+voller Reichweite steht momentan im `CarryOverNotice`. Ein Wechsel von
+`Game` oder `TournamentType` hebt ihn nicht auf. Die beiden **vollen**
+Reichweiten fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
+Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,
+denn dort steht ein sichtbarer Wert, der mit einem Griff wieder gesetzt ist. Die
+Rückfrage hängt an der **Handlung**, nicht am Ort, und bleibt: ein sitzungsweites
+Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006). Die Markierung sagt deshalb „folgt der Rechnung nicht
 mehr", nicht „weicht ab": beides fällt meist zusammen, aber ein `pinned` Regler
 darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
 gleich, auch wenn er nur bei den vieren beisst, deren Startwert eine Rechnung

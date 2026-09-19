@@ -95,3 +95,30 @@ Der Satz „es gibt keine Bedienhistorie" bleibt für die Zwecke gültig, für d
 getroffen wurde — die `ConflictNotice` ordnet weiter nach der Vorrangkette, weil
 ein aus einem `SetupLink` geöffneter Zustand keine Vorgeschichte hat. Käme ein
 Undo-Stapel, änderte das an dieser Begründung nichts.
+
+## Nachtrag (#33): die Verfallsklausel verfällt, die Sicherung bleibt — an der Handlung, nicht am Ort
+
+Ein sitzungsweites Undo kommt nicht. Der Fall, für den die Sicherung oben
+„hinfällig" wäre, tritt damit nicht ein: sie ist keine Übergangslösung bis zum
+Undo, sondern die dauerhafte Antwort auf die einzige Zerstörung im Programm.
+Zwei Korrekturen daran.
+
+**Die Form wird eine verankerte Blase statt eines zweistufigen Knopfs.** Ein
+Knopf, der sich beim ersten Druck in eine Frage verwandelt, gibt derselben Fläche
+zwei Bedeutungen und lässt das Abbrechen ohne Ziel — man muss irgendwo anders
+hintippen, und „irgendwo anders" ist am Handy genau die Geste, die man
+versehentlich macht. Die Blase gibt dem Ablehnen einen benannten Platz neben dem
+Bestätigen. Sie ist **kein Overlay**: sie hängt am Knopf wie der Kachel-Griff und
+die ⓘ, und die App behält ihr einziges Overlay, den `LinkMigration`-Bericht.
+
+**Die Reichweite ist die Handlung, nicht der Ort.** Der Satz oben, der Knopf am
+`TournamentType`-Titel sei „die einzige verbliebene Stelle", war beim Schreiben
+wahr und ist es seit dem `CarryOverNotice` (#31) nicht mehr: dessen Knopf „alle
+übernehmen" lässt dieselben Pins fallen, einschliesslich `DisplayReservation` und
+`manual`. Es ist dieselbe Handlung in der dritten Reichweite, nicht eine eigene.
+Sie fragt darum ebenso nach. Die Reichweite am **einzelnen** Regler fragt nicht:
+dort steht ein Wert, er ist sichtbar, und er ist mit einem Griff wieder gesetzt.
+
+Kein eigener Begriff im Glossar. Eine Rückfrage vor einer Massenlöschung ist
+allgemeine Bedienform und keine Aussage über die Domäne; was sie schützt, steht
+beim `Pinned`.
