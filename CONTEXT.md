@@ -281,6 +281,13 @@ Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
 plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
 ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
 **deckt zu und schiebt nichts**.
+**Schicht und Fläche sind zwei Aussagen.** „Über der ganzen App" ist die
+Schicht: der Stapel liegt über jeder Seite und gehört keiner. Seine *Fläche*
+ist so breit wie der Platz, den der `DistributionPlan` gerade einnimmt — am
+schmalen Schirm der ganze, klappt die Breite die Regler daneben, endet er vor
+ihnen. Der Grund ist derselbe wie eh: die Reglerfläche trägt die
+Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
+ihre eigenen Belege zudeckt, ist keine Meldung.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
 Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
@@ -415,8 +422,10 @@ _Label_: **Prepare** — das Wort bietet eine Handlung an („was muss ich
 vorbereiten?") statt einen Gegenstand zu benennen. *Preparation* wäre
 deckungsgleich, liest sich aber wie eine Überschrift; *List* ist am Schirm
 ohnehin falsch, weil die Sicht kein Verzeichnis ist. Erste gezogene
-`_Label_`-Zeile seit der Regel aus #27. Es ist seit #36 der Name einer der drei
-Seiten, nicht mehr der eines Griffs — an der Begründung ändert das nichts.
+`_Label_`-Zeile seit der Regel aus #27. Was es benennt, hängt seit #37 von der
+Breite ab — eine Seite im Fuss, einen eingefalteten Streifen am Rand, oder eine
+Spalte neben dem Plan. An der Begründung ändert das nichts: das Wort bietet in
+allen dreien dieselbe Handlung an.
 _Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
 
 ## Turnier und Personen
