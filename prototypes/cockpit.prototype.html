@@ -529,6 +529,31 @@
   .slot .badge.pk { bottom: 4px; right: 4px; }
   .legend { text-align: center; padding: 6px 0 0; }
   .lg { display: inline-flex; align-items: center; gap: 4px; }
+  /* Runde 15: der Griff traegt sein Legendenplaettchen mit. Der Unterschied zum
+     Nachbarn liegt in der *Form* — Pille, Schatten, Wuerfel, Zaehler —, nicht im
+     Verhalten: eine Legende, die zufaellig reagiert, lehrt eine Regel, die nur
+     halb gilt. `pack` bleibt flacher Text und wird nie angefasst. */
+  button.lg.handle { font: inherit; font-size: inherit; color: var(--ink);
+    border: 0; background: var(--accent-soft); border-radius: var(--r-pill);
+    padding: 3px 8px 3px 6px; gap: 5px; cursor: pointer;
+    box-shadow: var(--btn-shadow); }
+  button.lg.handle .dice { font-size: 12px; line-height: 1; }
+  button.lg.handle .cnt { font-variant-numeric: tabular-nums; font-weight: 700;
+    background: var(--gold); color: #4a3600; border-radius: 999px;
+    min-width: 15px; height: 15px; display: inline-grid; place-items: center;
+    font-size: 10px; padding: 0 3px; }
+  button.lg.handle[aria-expanded="true"] { background: var(--accent);
+    color: var(--on-accent); box-shadow: var(--glow); }
+  button.lg.handle:disabled { opacity: .45; box-shadow: none; cursor: default; }
+
+  /* Der Treffer pulst, er bleibt nicht. Eine bleibende Marke waere Herkunft,
+     und #10 hat festgelegt, dass eine gewuerfelte Zuteilung von einer
+     getippten nicht zu unterscheiden ist — sie leben im selben Zaehler. */
+  @keyframes hitpulse {
+    0%, 100% { box-shadow: var(--tile-shadow), inset 0 0 0 3px transparent; }
+    18%, 58% { box-shadow: var(--tile-shadow), inset 0 0 0 3px var(--gold); }
+  }
+  .slot.hit, .sheetbtn.hit { animation: hitpulse 1.5s ease-out 2; }
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
   .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
@@ -547,6 +572,16 @@
   .sheet.open { transform: translateY(0); visibility: visible;
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
+  /* Runde 15: das Vollbild mittet ein. Die Kacheln klebten oben und liessen am
+     Release 403 von 797px unter sich brach — ausgerechnet dort, wo eine Blase
+     am wenigsten stoert. Eingemittet liegt ueber der Legende wieder Platz, und
+     die Verlosungsblase geht *ueberall* nach oben, statt hier als einzige nach
+     unten. `margin:auto` statt `justify-content:center`: waechst das Raster
+     ueber die Flaeche, faellt der Rand von selbst auf 0 und nichts wird oben
+     abgeschnitten — dann ist „eingemittet" wieder „oben angeschlagen". */
+  #fs { display: flex; flex-direction: column; }
+  #fs .shead { flex: none; }
+  #fs .body { margin-top: auto; margin-bottom: auto; }
   /* Eine Seite fährt nicht herein, sie ist da. Das Hereinfahren von unten ist
      die Geste des Blattes — es kommt aus dem Griff heraus, den man gezogen hat.
      Zwischen Seiten wird gewechselt, und ein Wechsel hat keine Richtung, weil
@@ -978,6 +1013,13 @@ const st = {
   manualWinner: {}, displays: [],
   openSlot: null,                    // Rang, dessen ±-Blase offen ist
   openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
+  // Es gibt genau *eine* Blase (#pop). Die Verlosung ist ihr dritter Bewohner,
+  // und die Ausschliesslichkeit ist kein Zusatzaufwand, sondern ein Geschenk:
+  // wer die Kachel greift, um zurückzunehmen, wirft die Verlosung von selbst
+  // raus — das automatische Schliessen nach dem Wurf braucht es nicht (#35).
+  openRaffle: false,
+  lastDraw: null,                    // reiner Sitzungszustand, nie im SetupLink:
+                                     // die Ansage des letzten Wurfs, keine Historie
   offerOff: null,                    // weggeklicktes Offer, an seinem Inhalt erkannt:
                                      // reiner Sitzungszustand, nie im SetupLink
   // Minimiert ist nicht weggeklickt: ADR 0002 verlangt Anwesenheit, nicht
@@ -1186,7 +1228,9 @@ function doRaffle(plan) {
   if (!pot.length) return;
   const pick = pot[Math.floor(Math.random() * pot.length)];
   st.manualWinner[pick] = (st.manualWinner[pick] || 0) + 1;
+  st.lastDraw = pick;
   render();
+  showHit(pick);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1690,10 +1734,99 @@ function slotFoot(plan) {
 }
 
 /* Die Legende steht oben, wo sie stehen bleibt — unter dem Raster wäre sie
-   weggescrollt, sobald mehr als zwei Reihen da sind. */
-function slotLegend() {
-  return `<span class="lg"><i class="badge win"></i>winner</span>
-    <span class="lg"><i class="badge pk"></i>pack</span>`;
+   weggescrollt, sobald mehr als zwei Reihen da sind.
+
+   Runde 15: sie trägt jetzt die Verlosung. Der Griff sitzt auf `winner`, also
+   auf dem Schlüssel zu genau der Marke, die die Verlosung erzeugt — er sässe
+   sonst weit weg von seiner eigenen Ausgabe. `pack` steht neu voran, damit die
+   Reihe nicht mit einem Knopf beginnt: was flach ist, kommt zuerst, und der
+   Griff ist die Ausnahme am Ende statt die Regel am Anfang. */
+/* Der Griff wird **nie** gesperrt, auch wenn nichts mehr auszulösen ist. Beim
+   ersten Bauen hing er an `open > 0` — und damit war nach dem letzten Wurf die
+   Rücknahmeliste unerreichbar, also genau dann, wenn man sie am ehesten
+   braucht. Gesperrt wird der Würfel *in* der Blase, nie der Weg zu ihr: der
+   Griff führt zum einzigen Rückweg, den es nach #33 gibt. */
+function slotLegend(plan) {
+  const open = plan.allocation.open;
+  return `<span class="lg"><i class="badge pk"></i>pack</span>
+    <button class="lg handle" data-raffleopen="1"
+      aria-expanded="${!!st.openRaffle}"
+      title="Winner raffle"><i class="badge win"></i>winner<span class="dice">🎲</span>${
+      open > 0 ? `<span class="cnt">${open}</span>` : ''}</button>`;
+}
+
+/* Die Verlosungsblase. Vier Dinge, in dieser Ordnung — auslösen, Bereich,
+   Ansage, Rückweg —, und bewusst *ohne* eigene Kopfzeile: sie hängt an einem
+   Griff, den man gerade gedrückt hat, und der trägt das Wort schon. `slotPop`
+   braucht seinen Kopf, weil die Kachel nicht sagt, welcher Rang gemeint ist;
+   hier sagt der Griff es. Das spart 25px — und das ist die Stelle, an der zu
+   sparen ist: das dreizehnstufige Raster kostet gemessen nur 28 von 227px,
+   Kürzen oder Falten kauft also 12% Höhe und kostet Stufen, die #10 bewusst
+   hat, oder einen Tipp in genau dem Fall, für den der Bereich hier steht.
+
+   Die Ansage bekommt *kein* ✕. Zurückgenommen wird nur in der Liste, und die
+   ist nach Rang sortiert, nicht nach Reihenfolge — sonst wären „einmal zu oft
+   geklickt" und „mir gefällt nicht, wen es getroffen hat" wieder einen Tipp
+   voneinander entfernt, und genau diese Reibung hat #33 dem Ticket mitgegeben.
+   Die Ansage *nennt* den Rang, die Liste lässt ihn *benennen*. */
+function rafflePop(plan) {
+  const pot = rafflePot(plan);
+  const open = plan.allocation.open;
+  const can = open > 0 && pot.length > 0;
+  const manual = plan.allocation.manual;
+  const list = Object.keys(manual).sort((a, b) => a - b)
+    .map((r) => `<button class="sheetbtn tiny" data-unmanual="${r}"
+      data-rankchip="${r}">Rank ${r} ✕</button>`).join(' ');
+  // Die Ansage überlebt das Zurücknehmen nicht: wer den Rang aus der Liste
+  // wirft, hat den Wurf ungeschehen gemacht, und ein Satz darüber wäre eine
+  // Behauptung über einen Zustand, den es nicht mehr gibt.
+  const hit = st.lastDraw && manual[st.lastDraw] ? st.lastDraw : null;
+  return `<div class="bar" style="gap:9px;margin-bottom:9px">
+      <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
+        >🎲&nbsp; Draw</button>
+      <div class="tiny muted" style="min-width:0;line-height:1.3">${
+        pot.length} in the pot<br>${open} still open</div>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button>
+    </div>
+    ${rangeGrid(get('raffleRange'), 'data-set-range', true)}
+    ${hit ? `<div class="tiny" style="margin-top:9px"><strong>Rank ${hit}</strong>
+        <span class="muted">drew a winner pack</span></div>` : ''}
+    ${list ? `<div class="tiny muted" style="margin:9px 0 4px">Placed by hand —
+        tap to take back:</div><div>${list}</div>` : ''}`;
+}
+
+/* Der Treffer wird gezeigt, nicht behauptet. Zwei Kanäle, beide flüchtig: das
+   Raster scrollt hin — und tut nichts, wenn die Kachel schon sichtbar ist, was
+   im Vollbild seit der Einmittung der Normalfall ist — und die Kachel pulst.
+   Kein `if` auf die Fläche: dieselbe Regel gibt im Vollbild nichts und im
+   engen Fenster einen Sprung. */
+function scrollParent(el) {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+function showHit(rank) {
+  const host = fsOpen ? fsEl : appEl;
+  const tile = host.querySelector(`.slot[data-rank="${rank}"]`);
+  if (!tile) return;
+  tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  // Liegt die Kachel trotzdem unter der Blase, noch ein Stück weiter. Die Blase
+  // geht nach oben, also ist das der Ausweichfall — aber er kommt vor.
+  const sc = scrollParent(tile);
+  requestAnimationFrame(() => {
+    const p = popEl.getBoundingClientRect(), t = tile.getBoundingClientRect();
+    if (sc && p.bottom > t.top && p.top < t.bottom) sc.scrollTop += p.bottom - t.top + 8;
+  });
+  pulse(tile);
+  const chip = popEl.querySelector(`[data-rankchip="${rank}"]`);
+  if (chip) pulse(chip);
+}
+function pulse(el) {
+  el.classList.remove('hit');
+  void el.offsetWidth;                 // Neustart erzwingen, sonst läuft nichts
+  el.classList.add('hit');
 }
 
 /* Die Blase: ein Griff an einer Kachel — und der gilt jetzt zwei Aufgaben.
@@ -1759,7 +1892,7 @@ function slotBlock(plan, stack) {
   return `<div style="padding:8px 12px 0;flex:1 1 auto;min-height:0;display:flex;
       flex-direction:column;position:relative">
     <div class="bar tiny muted" style="margin-bottom:5px;flex:none">
-      ${slotLegend()}
+      ${slotLegend(plan)}
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
@@ -1903,30 +2036,9 @@ function reservationBlock(plan) {
       : '<div class="tiny muted">None — tap a rank tile to reserve one.</div>'}`;
 }
 
-/* Beim Würfel steht, aus welchem Bereich gezogen wird — dasselbe Icon wie im Blatt.
-   Diese Zeile ist zugleich das Sperrgebiet des Knopfes: sie ist so hoch wie
-   er und lässt rechts seinen Platz frei, damit er nie auf Zahlen liegt. */
-function raffleRow(plan) {
-  const pot = rafflePot(plan);
-  const can = plan.allocation.open > 0 && pot.length > 0;
-  const range = get('raffleRange');
-  // Das `padding-right: 88px` ist weg: es hielt die Zeile vom schwebenden
-  // #morph frei, und der steht seit Runde 13 im Fuss. Die Zeile bekommt damit
-  // 88px zurück — sie ist es, die den Fuss bezahlt hat. Sie zieht ohnehin bald
-  // an die Legende um (#35).
-  return `<div class="bar tiny" style="margin-top:2px;min-height:52px;gap:7px">
-    <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-      title="Winner raffle: einen offenen WinnerPack auslosen">🎲</button>
-    <div class="preset">${rangeChip(range, true, 'data-sheet-range')}</div>
-    <div style="min-width:0;line-height:1.25">
-      <div style="font-weight:600">Winner raffle</div>
-      <div class="muted" style="font-size:10.5px">${esc(RANGE_NAME[range])} · ${
-        pot.length} in the pot</div>
-    </div>
-    <span class="muted num" style="margin-left:auto;white-space:nowrap">${
-      plan.allocation.open} open</span>
-  </div>`;
-}
+/* `raffleRow` ist weg (#35). Sie stand vorne bei den Reglern und damit weit
+   von den Kacheln, auf die sie zeigt — man würfelte blind. Ihr Platz ist jetzt
+   der Griff auf der Legende, direkt über dem Raster. */
 
 /* Der Deckel ueber allem, was mit WinnerPacks passiert: die Kuverts geben eine
    Zahl her, aber es liegt am Tisch, nicht an der Rechnung, wie viele wirklich
@@ -1956,26 +2068,20 @@ function winnerTotalRow(plan) {
   </div>`;
 }
 
+/* Frage 3 des Tickets, so beantwortet: der *Bedienschritt* wandert samt Bereich
+   und Rückweg an den Griff, das Blatt behält die Zahlen (`winnerTotalRow`,
+   `ranked`). Was hier stehen bleibt, ist ein Zeiger — und vor allem der
+   Erklärungstext: die Blase hat für `desc` keinen Platz, und ohne diese Zeile
+   verlöre der `RaffleRange` seine einzige Erklärung im ganzen Programm. */
 function winnerBlock(plan) {
-  const pot = rafflePot(plan);
-  const can = plan.allocation.open > 0 && pot.length > 0;
-  const list = Object.keys(plan.allocation.manual).sort((a, b) => a - b)
-    .map((r) => `<button class="sheetbtn tiny" data-unmanual="${r}">Rank ${r} ✕</button>`).join(' ');
-  // Kein Kasten mehr: die Linie über dem Gruppentitel grenzt ab, und ein
-  // einzelner Kasten mitten in einer Liste sah nach Sonderfall aus.
   return `<div>
     <div class="subhead">${LABEL.raffleRange}</div>
     ${explain('raffleRange')}
-    <div style="margin:6px 0 10px">${rangeGrid(get('raffleRange'),
-      'data-set-range', true)}</div>
-    <div class="bar">
-      <button class="sheetbtn" data-raffle="1" ${can ? '' : 'disabled style="opacity:.4"'}
-        >🎲&nbsp; Winner raffle</button>
-      <span class="tiny muted">${esc(RANGE_NAME[get('raffleRange')])} · ${
-        pot.length} in the pot · ${plan.allocation.open} open</span>
-    </div>
-    ${list ? `<div class="desc" style="margin:10px 0 4px">Placed by hand — tap to take back:</div>
-      <div>${list}</div>` : ''}
+    <div class="desc">Drawn from the legend above the tiles — the handle on
+      <i class="badge win" style="position:static;vertical-align:-1px"></i>
+      <strong>winner</strong>, where the range is set too. Currently
+      <strong>${esc(RANGE_NAME[get('raffleRange')])}</strong>, ${
+      plan.allocation.open} still open.</div>
   </div>`;
 }
 
@@ -1996,8 +2102,7 @@ function screen(plan, sugg, off) {
     ${slider('players', plan)}
     ${depthControl(plan)}
     ${curveGlyphs(plan, true)}
-    ${floorRow(plan)}
-    ${raffleRow(plan)}`;
+    ${floorRow(plan)}`;
   return `<div style="height:100%;display:flex;flex-direction:${side ? 'row' : 'column'};
       overflow:hidden">
     <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
@@ -2075,14 +2180,20 @@ function sheetContent(plan) {
    Der Griff sitzt, wo der zum Öffnen sass — dieselbe Ecke, das Zeichen
    umgedreht. Ein Zustand, der sich am selben Ort ein- und ausschalten lässt,
    braucht keine Erklärung. */
+/* Runde 15: die Legende verlässt den Kopf und stellt sich über das Raster —
+   dorthin, wo sie in der Planansicht ohnehin steht. Damit ist `slotLegend()`
+   nicht nur dieselbe Funktion an zwei Orten, sondern an derselben *Stelle*,
+   und der Griff wandert von y≈15 auf y≈236, also in Daumenreichweite. Der
+   Kopf behält, was ihn zum Kopf macht: wo man ist, und wie man hier raus. */
 function fsContent(plan) {
   return `<div class="shead">
       <span>${TYPES[st.type].title} · ${st.players}</span>
-      <span class="tiny muted bar">${slotLegend()}</span>
       <button class="sheetbtn tiny" data-fs="close" style="margin-left:auto"
         title="Vollbild verlassen">⤡</button>
     </div>
-    <div class="body">${slotGrid(plan)}${slotFoot(plan)}</div>`;
+    <div class="body">
+      <div class="bar tiny muted" style="margin-bottom:5px">${slotLegend(plan)}</div>
+      ${slotGrid(plan)}${slotFoot(plan)}</div>`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -2156,6 +2267,7 @@ function render() {
   // Eine andere Seite deckt Kacheln und Kopf zu, also keine Blase offen dort.
   if (away || st.openSlot > st.players) st.openSlot = null;
   if (away || fsOpen) st.openInfo = null;
+  if (away) st.openRaffle = false;
   appEl.innerHTML = screen(plan, sugg, off);
   /* Der Stapel hängt im #stage, nicht im Planblock — sonst liegt er unter dem
      Reglerblatt, und genau dort dreht man an den Reglern, die den Konflikt
@@ -2170,11 +2282,13 @@ function render() {
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
-  popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
+  popEl.innerHTML = st.openRaffle ? rafflePop(plan)
+    : st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
   sheetEl.classList.toggle('open', page === 'details');
   prepEl.classList.toggle('open', page === 'prepare');
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
-  popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
+  popEl.classList.toggle('show',
+    st.openSlot != null || st.openInfo != null || st.openRaffle);
   stage.classList.toggle('onplan', !away);
   stage.classList.toggle('anyopen', away || fsOpen);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
@@ -2188,17 +2302,30 @@ function render() {
 /* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
    oben, wenn unten kein Platz mehr ist. */
 function placePop() {
-  if (st.openSlot == null && st.openInfo == null) return;
+  if (st.openSlot == null && st.openInfo == null && !st.openRaffle) return;
   const host = fsOpen ? fsEl : appEl;
-  const tile = st.openInfo
+  const tile = st.openRaffle
+    ? host.querySelector('[data-raffleopen]')
+    : st.openInfo
     ? host.querySelector(`[data-info="${st.openInfo}"]`)
     : host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
   if (!tile) { popEl.classList.remove('show'); return; }
   const s = stage.getBoundingClientRect();
   const t = tile.getBoundingClientRect();
   const w = popEl.offsetWidth, h = popEl.offsetHeight;
-  let y = t.bottom - s.top + 6;
-  if (y + h > s.height - 8) y = t.top - s.top - h - 6;
+  /* Die Verlosungsblase sucht *zuerst* nach oben: unter der Legende liegen die
+     Kacheln, auf die sie zeigt, über ihr Kopf und Diagramm. Seit das Vollbild
+     einmittet, ist oben überall Platz — die Umkehr ist der Ausweichfall, nicht
+     die halbe Regel. Jede andere Blase hängt an einer Kachel und sucht wie
+     bisher zuerst nach unten. */
+  let y;
+  if (st.openRaffle) {
+    y = t.top - s.top - h - 6;
+    if (y < 8) y = t.bottom - s.top + 6;
+  } else {
+    y = t.bottom - s.top + 6;
+    if (y + h > s.height - 8) y = t.top - s.top - h - 6;
+  }
   const x = t.left - s.left + t.width / 2 - w / 2;
   popEl.style.left = `${Math.max(8, Math.min(x, s.width - w - 8))}px`;
   popEl.style.top = `${Math.max(8, Math.min(y, s.height - h - 8))}px`;
@@ -2230,26 +2357,37 @@ stage.addEventListener('click', (e) => {
     const tile = e.target.closest('.slot');
     if (tile) {
       const r = Number(tile.dataset.rank);
-      st.openInfo = null;
+      st.openInfo = null; st.openRaffle = false;
       st.openSlot = st.openSlot === r ? null : r;
       render();
       return;
     }
-    if ((st.openSlot != null || st.openInfo != null) && !e.target.closest('#pop')) {
-      st.openSlot = null; st.openInfo = null; render();
+    if ((st.openSlot != null || st.openInfo != null || st.openRaffle)
+        && !e.target.closest('#pop')) {
+      st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
     }
     return;
   }
   const d = t.dataset;
   // Der Erklärer ist ein Umschalter: derselbe ⓘ schliesst ihn wieder.
   if (d.info) {
-    st.openSlot = null;
+    st.openSlot = null; st.openRaffle = false;
     st.openInfo = st.openInfo === d.info ? null : d.info;
     render(); return;
   }
+  // Der Griff auf der Legende ist ein Umschalter wie der Kachel-Griff und der
+  // ⓘ. Er schliesst nie von selbst (#35): nach dem Wurf will man den Rückweg
+  // und oft den nächsten Wurf, und beide stehen in derselben Blase.
+  if (d.raffleopen) {
+    st.openSlot = null; st.openInfo = null;
+    st.openRaffle = !st.openRaffle;
+    render(); return;
+  }
   // Jeder Knopf ausserhalb der Blase schliesst sie.
-  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; }
-  if (d.closepop) { st.openSlot = null; st.openInfo = null; render(); return; }
+  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; st.openRaffle = false; }
+  if (d.closepop) {
+    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render(); return;
+  }
   if (d.win) {
     const r = st.openSlot;
     if (Number(d.win) > 0) st.manualWinner[r] = (st.manualWinner[r] || 0) + 1;
@@ -2281,10 +2419,16 @@ stage.addEventListener('click', (e) => {
   if (d.page) {
     page = d.page;
     if (page !== 'plan') fsOpen = false;
-    st.openSlot = null; render(); return;
+    st.openSlot = null; st.openRaffle = false; render(); return;
   }
-  if (d.fs) { fsOpen = d.fs === 'open'; st.openSlot = null; render(); return; }
-  if (d.sheetRange != null) { page = 'details'; fsOpen = false; render(); return; }
+  /* Der Wechsel ins Vollbild und zurück schliesst die Blase — sie hängt an
+     einer Legende, die es im Ziel zwar auch gibt, aber als anderes Element.
+     Seit die Einmittung beide Flächen gleich baut, wäre Mitnehmen denkbar;
+     es bleibt eine eigene Frage und nicht die dieses Tickets. */
+  if (d.fs) {
+    fsOpen = d.fs === 'open';
+    st.openSlot = null; st.openRaffle = false; render(); return;
+  }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
   // Regler (#26). „Alles zurück" muss sie also mitnehmen — sonst bliebe ein Rang
@@ -2345,13 +2489,13 @@ window.addEventListener('resize', placePop);
    Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
 document.addEventListener('click', (e) => {
   const inside = stage.contains(e.target);
-  if (!inside && (st.openSlot != null || st.openInfo != null)) {
-    st.openSlot = null; st.openInfo = null; render();
+  if (!inside && (st.openSlot != null || st.openInfo != null || st.openRaffle)) {
+    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
   }
 }, true);
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && (st.openSlot != null || st.openInfo != null)) {
-    st.openSlot = null; st.openInfo = null; render();
+  if (e.key === 'Escape' && (st.openSlot != null || st.openInfo != null || st.openRaffle)) {
+    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
   }
 });
 
