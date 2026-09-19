@@ -253,7 +253,11 @@
      *Plan* sitzt oben bei den Kacheln, die Meldung über die *Eingabe* unten
      bei den Reglern. Eine vierte müsste man nicht einsortieren, sondern nur
      fragen, worüber sie redet. */
-  .stack { position: absolute; left: 0; right: 0; bottom: var(--foot); z-index: 35;
+  /* `--raffleh` ist 0, solange die Verlosungsleiste zu ist — der Stapel steht
+     dann wie bisher direkt auf dem Fuss. Ist sie offen, rueckt er um ihre
+     gemessene Hoehe hoch, statt von ihr zugedeckt zu werden (Runde 16). */
+  .stack { position: absolute; left: 0; right: 0; z-index: 35;
+           bottom: calc(var(--foot) + var(--raffleh));
            padding: 0 12px 8px; display: flex; flex-direction: column; gap: 6px;
            pointer-events: none; max-height: 100%; overflow-y: auto; }
   /* Wo die Regler als Schiene rechts stehen (#15), hört der Stapel vor ihr auf:
@@ -572,16 +576,37 @@
   .sheet.open { transform: translateY(0); visibility: visible;
                 transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s 0s; }
   .sheet.fs { background: var(--bg); z-index: 25; }
-  /* Runde 15: das Vollbild mittet ein. Die Kacheln klebten oben und liessen am
-     Release 403 von 797px unter sich brach — ausgerechnet dort, wo eine Blase
-     am wenigsten stoert. Eingemittet liegt ueber der Legende wieder Platz, und
-     die Verlosungsblase geht *ueberall* nach oben, statt hier als einzige nach
-     unten. `margin:auto` statt `justify-content:center`: waechst das Raster
-     ueber die Flaeche, faellt der Rand von selbst auf 0 und nichts wird oben
-     abgeschnitten — dann ist „eingemittet" wieder „oben angeschlagen". */
+  /* Runde 15 mittete das Vollbild ein, Runde 16 nimmt es zurueck. Die
+     Einmittung war die Antwort darauf, dass die Blase nach oben Platz
+     brauchte — und diese Frage stellt sich nicht mehr, seit die Verlosung als
+     feste Leiste unten sitzt. Oben angeschlagen ist ausserdem das, was bei
+     vielen Kacheln ohnehin herauskommt, also die eine Fassung statt der
+     halben. `#fs` bleibt Flex-Spalte, damit `.body` scrollt statt das Blatt. */
   #fs { display: flex; flex-direction: column; }
   #fs .shead { flex: none; }
-  #fs .body { margin-top: auto; margin-bottom: auto; }
+  #fs .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+  /* ── Die Verlosung: eine feste Leiste unten, keine Blase ────────────────
+     Runde 15 haengte sie an den Griff und liess sie nach oben aufgehen. Das
+     trug genau so lange, wie sie klein war: die Ruecknahmeliste waechst mit
+     jedem Wurf, und beim zweiten kippte die Blase nach unten und deckte die
+     Kacheln zu — sie sprang also genau dann, wenn man sie benutzt. Eine
+     Flaeche, deren Hoehe von den Daten abhaengt, darf nicht an einem Anker
+     kleben.
+
+     Unten ist sie ortsfest, der Daumen findet sie blind, und die Kacheln
+     scrollen *hinter* ihr durch statt unter ihr zu verschwinden. Der Griff
+     bleibt auf der Legende — er oeffnet, er beherbergt nicht. */
+  #raffle { position: absolute; left: 0; right: 0; bottom: var(--foot);
+            z-index: 40; background: var(--paper); box-shadow: var(--panel-shadow);
+            padding: 10px 12px 12px; display: none; }
+  #raffle.open { display: block; }
+  body.wide #stage.onplan #raffle, body.land #stage.onplan #raffle { right: var(--rail); }
+  /* Der Meldungsstapel und das Verlaufsband ruecken um die Leiste nach oben —
+     sonst legt sich die Verlosung ueber die ConflictNotice, die nach ADR 0002
+     anwesend sein *muss*. Die Hoehe misst render(), weil sie mit der Liste
+     waechst. */
+  #stage { --raffleh: 0px; }
   /* Eine Seite fährt nicht herein, sie ist da. Das Hereinfahren von unten ist
      die Geste des Blattes — es kommt aus dem Griff heraus, den man gezogen hat.
      Zwischen Seiten wird gewechselt, und ein Wechsel hat keine Richtung, weil
@@ -632,7 +657,8 @@
 
   /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
      lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
-  #fade { position: absolute; left: 0; right: 0; bottom: var(--foot); height: 60px; z-index: 28;
+  #fade { position: absolute; left: 0; right: 0; height: 60px; z-index: 28;
+          bottom: calc(var(--foot) + var(--raffleh));
           display: none; pointer-events: none;
           background: linear-gradient(to bottom, transparent, var(--fadeto) 62%); }
   #stage { --fadeto: var(--paper); }
@@ -1755,21 +1781,22 @@ function slotLegend(plan) {
       open > 0 ? `<span class="cnt">${open}</span>` : ''}</button>`;
 }
 
-/* Die Verlosungsblase. Vier Dinge, in dieser Ordnung — auslösen, Bereich,
-   Ansage, Rückweg —, und bewusst *ohne* eigene Kopfzeile: sie hängt an einem
-   Griff, den man gerade gedrückt hat, und der trägt das Wort schon. `slotPop`
-   braucht seinen Kopf, weil die Kachel nicht sagt, welcher Rang gemeint ist;
-   hier sagt der Griff es. Das spart 25px — und das ist die Stelle, an der zu
-   sparen ist: das dreizehnstufige Raster kostet gemessen nur 28 von 227px,
-   Kürzen oder Falten kauft also 12% Höhe und kostet Stufen, die #10 bewusst
-   hat, oder einen Tipp in genau dem Fall, für den der Bereich hier steht.
+/* Die Verlosungsleiste. Vier Dinge, in dieser Ordnung — auslösen, Bereich,
+   Ansage, Rückweg —, und bewusst *ohne* eigene Kopfzeile: sie geht aus einem
+   Griff auf, den man gerade gedrückt hat, und der trägt das Wort schon.
+   `slotPop` braucht seinen Kopf, weil die Kachel nicht sagt, welcher Rang
+   gemeint ist; hier sagt der Griff es. Das spart 25px — und das ist die
+   Stelle, an der zu sparen ist: das dreizehnstufige Raster kostet gemessen nur
+   28 von 227px, Kürzen oder Falten kauft also 12% Höhe und kostet Stufen, die
+   #10 bewusst hat, oder einen Tipp in genau dem Fall, für den der Bereich hier
+   steht.
 
    Die Ansage bekommt *kein* ✕. Zurückgenommen wird nur in der Liste, und die
    ist nach Rang sortiert, nicht nach Reihenfolge — sonst wären „einmal zu oft
    geklickt" und „mir gefällt nicht, wen es getroffen hat" wieder einen Tipp
    voneinander entfernt, und genau diese Reibung hat #33 dem Ticket mitgegeben.
    Die Ansage *nennt* den Rang, die Liste lässt ihn *benennen*. */
-function rafflePop(plan) {
+function raffleBar(plan) {
   const pot = rafflePot(plan);
   const open = plan.allocation.open;
   const can = open > 0 && pot.length > 0;
@@ -1786,7 +1813,7 @@ function rafflePop(plan) {
         >🎲&nbsp; Draw</button>
       <div class="tiny muted" style="min-width:0;line-height:1.3">${
         pot.length} in the pot<br>${open} still open</div>
-      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button>
+      <button class="reset" data-closeraffle="1" style="margin-left:auto">✕</button>
     </div>
     ${rangeGrid(get('raffleRange'), 'data-set-range', true)}
     ${hit ? `<div class="tiny" style="margin-top:9px"><strong>Rank ${hit}</strong>
@@ -1796,10 +1823,32 @@ function rafflePop(plan) {
 }
 
 /* Der Treffer wird gezeigt, nicht behauptet. Zwei Kanäle, beide flüchtig: das
-   Raster scrollt hin — und tut nichts, wenn die Kachel schon sichtbar ist, was
-   im Vollbild seit der Einmittung der Normalfall ist — und die Kachel pulst.
-   Kein `if` auf die Fläche: dieselbe Regel gibt im Vollbild nichts und im
-   engen Fenster einen Sprung. */
+   Raster scrollt hin — und tut nichts, wenn die Kachel schon sichtbar ist —
+   und die Kachel pulst. Kein `if` auf die Fläche: dieselbe Regel gibt im
+   Vollbild meist nichts und im engen Fenster einen Sprung.
+
+   Seit Runde 16 ist „sichtbar" schärfer zu nehmen: die Leiste liegt *über* dem
+   Raster, also zählt nicht der Rand des Scrollfensters, sondern ihre Oberkante.
+   Genau das ist der Gewinn der festen Leiste — die Grenze steht still, statt
+   mit der Rücknahmeliste zu wandern. */
+/* Damit man „hinter" die Leiste scrollen kann. Das Scrollfenster bekommt unten
+   so viel Polster, wie die Leiste es überlappt — sonst hört das Raster an ihr
+   auf, und die letzten Ränge sind genau dann unerreichbar, wenn ein Wurf sie
+   trifft. In der Planansicht ist die Überlappung null (das Fenster endet weit
+   über der Leiste), dort passiert also von selbst nichts: eine Regel, zwei
+   Ergebnisse, kein `if` auf die Fläche. */
+function padBottom() {
+  for (const box of [appEl.querySelector('.gridwin'), fsEl.querySelector('.body')]) {
+    if (!box) continue;
+    let pad = 0;
+    if (st.openRaffle) {
+      const b = raffleEl.getBoundingClientRect(), r = box.getBoundingClientRect();
+      pad = Math.max(0, r.bottom - b.top);
+    }
+    box.style.paddingBottom = pad ? `${pad + 10}px` : '';
+  }
+}
+
 function scrollParent(el) {
   for (let p = el.parentElement; p; p = p.parentElement) {
     const o = getComputedStyle(p).overflowY;
@@ -1811,16 +1860,20 @@ function showHit(rank) {
   const host = fsOpen ? fsEl : appEl;
   const tile = host.querySelector(`.slot[data-rank="${rank}"]`);
   if (!tile) return;
-  tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  // Liegt die Kachel trotzdem unter der Blase, noch ein Stück weiter. Die Blase
-  // geht nach oben, also ist das der Ausweichfall — aber er kommt vor.
   const sc = scrollParent(tile);
+  tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  // Liegt die Kachel hinter der Leiste, noch so weit weiter, bis sie frei
+  // steht. Das ist kein Ausweichfall, sondern der Normalfall bei vielen
+  // Kacheln — und er geht nur auf, weil das Raster unter der Leiste
+  // weiterscrollt statt an ihr aufzuhören (siehe `padBottom`).
   requestAnimationFrame(() => {
-    const p = popEl.getBoundingClientRect(), t = tile.getBoundingClientRect();
-    if (sc && p.bottom > t.top && p.top < t.bottom) sc.scrollTop += p.bottom - t.top + 8;
+    const b = raffleEl.getBoundingClientRect(), t = tile.getBoundingClientRect();
+    if (sc && raffleEl.classList.contains('open') && t.bottom > b.top - 8) {
+      sc.scrollTop += t.bottom - b.top + 8;
+    }
   });
   pulse(tile);
-  const chip = popEl.querySelector(`[data-rankchip="${rank}"]`);
+  const chip = raffleEl.querySelector(`[data-rankchip="${rank}"]`);
   if (chip) pulse(chip);
 }
 function pulse(el) {
@@ -1896,7 +1949,7 @@ function slotBlock(plan, stack) {
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
-    <div style="flex:1 1 auto;min-height:0;overflow:auto">${slotGrid(plan)}</div>
+    <div class="gridwin" style="flex:1 1 auto;min-height:0;overflow:auto">${slotGrid(plan)}</div>
     ${slotFoot(plan)}${stack || ''}</div>`;
 }
 
@@ -2227,6 +2280,7 @@ stage.innerHTML = `
   <div id="fs" class="sheet fs"></div>
   <div id="prep" class="sheet fs page"></div>
   <div id="pop" class="pop"></div>
+  <div id="raffle"></div>
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
   <div id="foot">${PAGES.map(([id, ico, label]) =>
@@ -2237,6 +2291,7 @@ const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
 const prepEl = document.getElementById('prep');
 const popEl = document.getElementById('pop');
+const raffleEl = document.getElementById('raffle');
 const stackEl = document.getElementById('stack');
 
 function render() {
@@ -2282,13 +2337,19 @@ function render() {
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
-  popEl.innerHTML = st.openRaffle ? rafflePop(plan)
-    : st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
+  popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
+  raffleEl.innerHTML = st.openRaffle ? raffleBar(plan) : '';
+  raffleEl.classList.toggle('open', st.openRaffle);
+  /* Die Höhe wächst mit der Rücknahmeliste, also wird sie gemessen statt
+     geraten — Stapel und Verlaufsband hängen daran, und das Scrollpolster
+     unter den Kacheln auch. */
+  stage.style.setProperty('--raffleh',
+    st.openRaffle ? `${raffleEl.offsetHeight}px` : '0px');
+  padBottom();
   sheetEl.classList.toggle('open', page === 'details');
   prepEl.classList.toggle('open', page === 'prepare');
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
-  popEl.classList.toggle('show',
-    st.openSlot != null || st.openInfo != null || st.openRaffle);
+  popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
   stage.classList.toggle('onplan', !away);
   stage.classList.toggle('anyopen', away || fsOpen);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
@@ -2302,30 +2363,17 @@ function render() {
 /* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
    oben, wenn unten kein Platz mehr ist. */
 function placePop() {
-  if (st.openSlot == null && st.openInfo == null && !st.openRaffle) return;
+  if (st.openSlot == null && st.openInfo == null) return;
   const host = fsOpen ? fsEl : appEl;
-  const tile = st.openRaffle
-    ? host.querySelector('[data-raffleopen]')
-    : st.openInfo
+  const tile = st.openInfo
     ? host.querySelector(`[data-info="${st.openInfo}"]`)
     : host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
   if (!tile) { popEl.classList.remove('show'); return; }
   const s = stage.getBoundingClientRect();
   const t = tile.getBoundingClientRect();
   const w = popEl.offsetWidth, h = popEl.offsetHeight;
-  /* Die Verlosungsblase sucht *zuerst* nach oben: unter der Legende liegen die
-     Kacheln, auf die sie zeigt, über ihr Kopf und Diagramm. Seit das Vollbild
-     einmittet, ist oben überall Platz — die Umkehr ist der Ausweichfall, nicht
-     die halbe Regel. Jede andere Blase hängt an einer Kachel und sucht wie
-     bisher zuerst nach unten. */
-  let y;
-  if (st.openRaffle) {
-    y = t.top - s.top - h - 6;
-    if (y < 8) y = t.bottom - s.top + 6;
-  } else {
-    y = t.bottom - s.top + 6;
-    if (y + h > s.height - 8) y = t.top - s.top - h - 6;
-  }
+  let y = t.bottom - s.top + 6;
+  if (y + h > s.height - 8) y = t.top - s.top - h - 6;
   const x = t.left - s.left + t.width / 2 - w / 2;
   popEl.style.left = `${Math.max(8, Math.min(x, s.width - w - 8))}px`;
   popEl.style.top = `${Math.max(8, Math.min(y, s.height - h - 8))}px`;
@@ -2354,17 +2402,21 @@ stage.addEventListener('click', (e) => {
     // 11px-Dreieck ist kein Ziel für einen Daumen.
     if (e.target.closest('.brief')) { st.headOpen = true; render(); return; }
     // Ein Griff an die Kachel öffnet die Blase, derselbe schliesst sie.
+    /* Der Kachel-Griff schliesst die Verlosungsleiste *nicht* mehr. Als Blase
+       musste er das (eine Blase, ein Bewohner); als Leiste unten deckt sie
+       keine Kachel zu, und beides zugleich offen zu haben ist genau der Fall
+       „ich nehme den eben Getroffenen zurück und würfle nochmal". */
     const tile = e.target.closest('.slot');
     if (tile) {
       const r = Number(tile.dataset.rank);
-      st.openInfo = null; st.openRaffle = false;
+      st.openInfo = null;
       st.openSlot = st.openSlot === r ? null : r;
       render();
       return;
     }
-    if ((st.openSlot != null || st.openInfo != null || st.openRaffle)
-        && !e.target.closest('#pop')) {
-      st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
+    if ((st.openSlot != null || st.openInfo != null)
+        && !e.target.closest('#pop') && !e.target.closest('#raffle')) {
+      st.openSlot = null; st.openInfo = null; render();
     }
     return;
   }
@@ -2383,11 +2435,13 @@ stage.addEventListener('click', (e) => {
     st.openRaffle = !st.openRaffle;
     render(); return;
   }
-  // Jeder Knopf ausserhalb der Blase schliesst sie.
-  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; st.openRaffle = false; }
-  if (d.closepop) {
-    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render(); return;
-  }
+  // Jeder Knopf ausserhalb der Blase schliesst sie — die Leiste zählt hier
+  // dazu, denn sie ist eine eigene Fläche und keine zweite Blase.
+  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; }
+  // Die Leiste schliesst nur ihr eigenes ✕ und ihr Griff. Ein Regler daneben
+  // lässt sie stehen: man dreht am Bereich *während* gezogen wird (#35).
+  if (d.closeraffle) { st.openRaffle = false; render(); return; }
+  if (d.closepop) { st.openSlot = null; st.openInfo = null; render(); return; }
   if (d.win) {
     const r = st.openSlot;
     if (Number(d.win) > 0) st.manualWinner[r] = (st.manualWinner[r] || 0) + 1;
@@ -2421,13 +2475,14 @@ stage.addEventListener('click', (e) => {
     if (page !== 'plan') fsOpen = false;
     st.openSlot = null; st.openRaffle = false; render(); return;
   }
-  /* Der Wechsel ins Vollbild und zurück schliesst die Blase — sie hängt an
-     einer Legende, die es im Ziel zwar auch gibt, aber als anderes Element.
-     Seit die Einmittung beide Flächen gleich baut, wäre Mitnehmen denkbar;
-     es bleibt eine eigene Frage und nicht die dieses Tickets. */
+  /* Die Verlosungsleiste überlebt den Wechsel ins Vollbild und zurück — als
+     Blase konnte sie das nicht, sie hing an einer Legende, die es im Ziel als
+     anderes Element gibt. Die Leiste liegt über beiden Flächen und gehört
+     keiner. Genau dafür ist man im Vollbild: dort sieht man alle Ränge, und
+     die Verlosung soll nicht ausgerechnet dort abreissen (#35). */
   if (d.fs) {
     fsOpen = d.fs === 'open';
-    st.openSlot = null; st.openRaffle = false; render(); return;
+    st.openSlot = null; render(); return;
   }
   if (d.rotate) { setDev(document.body.classList.contains('land') ? 'phone' : 'land'); return; }
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
