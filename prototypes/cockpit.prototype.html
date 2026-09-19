@@ -552,12 +552,28 @@
 
   /* Der Treffer pulst, er bleibt nicht. Eine bleibende Marke waere Herkunft,
      und #10 hat festgelegt, dass eine gewuerfelte Zuteilung von einer
-     getippten nicht zu unterscheiden ist — sie leben im selben Zaehler. */
+     getippten nicht zu unterscheiden ist — sie leben im selben Zaehler.
+
+     Runde 17: der Puls war ein goldener Ring — auf einer Kachel, die im selben
+     Moment `win` wird und dadurch einen *goldenen Rahmen* bekommt. Gold auf
+     Gold sieht niemand. Jetzt hebt die Kachel sich kurz heraus: ein Sprung in
+     der Groesse liest sich auch dort, wo die Farbe schon besetzt ist, und der
+     Ring liegt aussen statt innen. */
   @keyframes hitpulse {
-    0%, 100% { box-shadow: var(--tile-shadow), inset 0 0 0 3px transparent; }
-    18%, 58% { box-shadow: var(--tile-shadow), inset 0 0 0 3px var(--gold); }
+    0%   { transform: scale(1);    box-shadow: var(--tile-shadow), 0 0 0 0 var(--accent); }
+    28%  { transform: scale(1.11); box-shadow: var(--tile-shadow), 0 0 0 5px var(--accent); }
+    100% { transform: scale(1);    box-shadow: var(--tile-shadow), 0 0 0 11px transparent; }
   }
-  .slot.hit, .sheetbtn.hit { animation: hitpulse 1.5s ease-out 2; }
+  .slot.hit { animation: hitpulse .85s ease-out 3; z-index: 3; }
+  .sheetbtn.hit { animation: hitpulse .85s ease-out 3; }
+  /* Der Puls liegt *ausserhalb* der Kachel — Ring und Vergroesserung. Am Rand
+     des Scrollfensters schnitt `overflow:auto` ihn darum ab: die Kachel blinkte
+     nur nach innen und sah aus, als hinge sie halb unter der Kante. Das Polster
+     wandert deshalb vom Block an das Fenster selbst, mit einem negativen Rand
+     dagegen — die Kacheln stehen gleich wie vorher, nur die Beschnittkante
+     liegt 12px weiter aussen. Im Vollbild traegt `.body` sein Polster schon
+     selbst und ist zugleich der Scroller, dort war nie etwas abgeschnitten. */
+  .gridwin { margin: -5px -12px 0; padding: 5px 12px 0; }
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
   .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
@@ -596,12 +612,23 @@
 
      Unten ist sie ortsfest, der Daumen findet sie blind, und die Kacheln
      scrollen *hinter* ihr durch statt unter ihr zu verschwinden. Der Griff
-     bleibt auf der Legende — er oeffnet, er beherbergt nicht. */
-  #raffle { position: absolute; left: 0; right: 0; bottom: var(--foot);
-            z-index: 40; background: var(--paper); box-shadow: var(--panel-shadow);
+     bleibt auf der Legende — er oeffnet, er beherbergt nicht.
+
+     Runde 17 gibt ihr Luft. Randlos ueber die ganze Breite sass sie im Licht
+     auf `--paper` neben einem Reglerblock, der ebenfalls `--paper` ist — zwei
+     erhobene Flaechen ohne Fuge lesen sich als eine kaputte. Kein Rahmen
+     dagegen: #15 hat „keine Raender, Tiefe aus Schatten" entschieden, und eine
+     Linie hier waere die erste, die keine Daten trennt. Also ein Spalt ringsum,
+     durch den `--bg` durchsieht, und der Schattensatz der Blase — im Dunkeln
+     traegt `--tile-shadow` ohnehin einen goldenen Haarstrich als Kante. */
+  #raffle { position: absolute; left: 8px; right: 8px;
+            bottom: calc(var(--foot) + 8px);
+            z-index: 40; background: var(--paper); border-radius: var(--r-tile);
+            box-shadow: var(--tile-shadow), var(--panel-shadow);
             padding: 10px 12px 12px; display: none; }
   #raffle.open { display: block; }
-  body.wide #stage.onplan #raffle, body.land #stage.onplan #raffle { right: var(--rail); }
+  body.wide #stage.onplan #raffle, body.land #stage.onplan #raffle {
+    right: calc(var(--rail) + 8px); }
   /* Der Meldungsstapel und das Verlaufsband ruecken um die Leiste nach oben —
      sonst legt sich die Verlosung ueber die ConflictNotice, die nach ADR 0002
      anwesend sein *muss*. Die Hoehe misst render(), weil sie mit der Liste
@@ -1860,18 +1887,23 @@ function showHit(rank) {
   const host = fsOpen ? fsEl : appEl;
   const tile = host.querySelector(`.slot[data-rank="${rank}"]`);
   if (!tile) return;
+  /* Ein Zug, nicht zwei. Runde 16 scrollte erst `nearest` und schob danach um
+     die Leistenüberlappung nach — und ein gesetztes `scrollTop` bricht das
+     weiche Scrollen ab. Im Vollbild sah man die Kachel darum gerade so an die
+     Kante rutschen, in der Planansicht die Bewegung gar nicht.
+
+     Jetzt wird das Ziel einmal gerechnet: die Mitte des *freien* Streifens —
+     Scrollfenster, unten um die Leiste beschnitten. „Gerade so hinein" ist
+     die falsche Absicht; man will dorthin sehen, wo es gelandet ist. */
   const sc = scrollParent(tile);
-  tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  // Liegt die Kachel hinter der Leiste, noch so weit weiter, bis sie frei
-  // steht. Das ist kein Ausweichfall, sondern der Normalfall bei vielen
-  // Kacheln — und er geht nur auf, weil das Raster unter der Leiste
-  // weiterscrollt statt an ihr aufzuhören (siehe `padBottom`).
-  requestAnimationFrame(() => {
-    const b = raffleEl.getBoundingClientRect(), t = tile.getBoundingClientRect();
-    if (sc && raffleEl.classList.contains('open') && t.bottom > b.top - 8) {
-      sc.scrollTop += t.bottom - b.top + 8;
-    }
-  });
+  if (sc) {
+    const s = sc.getBoundingClientRect(), t = tile.getBoundingClientRect();
+    const barTop = raffleEl.classList.contains('open')
+      ? raffleEl.getBoundingClientRect().top - 8 : Infinity;
+    const lo = s.top, hi = Math.min(s.bottom, barTop);
+    const delta = t.top + t.height / 2 - (lo + (hi - lo) / 2);
+    sc.scrollTo({ top: sc.scrollTop + delta, behavior: 'smooth' });
+  }
   pulse(tile);
   const chip = raffleEl.querySelector(`[data-rankchip="${rank}"]`);
   if (chip) pulse(chip);
@@ -1949,7 +1981,8 @@ function slotBlock(plan, stack) {
       <button class="sheetbtn tiny" data-fs="open" style="margin-left:auto"
         title="Vollbild">⛶</button>
     </div>
-    <div class="gridwin" style="flex:1 1 auto;min-height:0;overflow:auto">${slotGrid(plan)}</div>
+    <div class="gridwin" style="flex:1 1 auto;min-height:0;overflow:auto;overflow-x:hidden"
+      >${slotGrid(plan)}</div>
     ${slotFoot(plan)}${stack || ''}</div>`;
 }
 
@@ -2344,7 +2377,7 @@ function render() {
      geraten — Stapel und Verlaufsband hängen daran, und das Scrollpolster
      unter den Kacheln auch. */
   stage.style.setProperty('--raffleh',
-    st.openRaffle ? `${raffleEl.offsetHeight}px` : '0px');
+    st.openRaffle ? `${raffleEl.offsetHeight + 16}px` : '0px');
   padBottom();
   sheetEl.classList.toggle('open', page === 'details');
   prepEl.classList.toggle('open', page === 'prepare');
