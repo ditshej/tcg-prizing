@@ -207,6 +207,19 @@ nie einen Gewinner. Steht neben der Handzuteilung, ersetzt sie nicht. Nicht
 auslösbar, wenn kein `manual`-`WinnerPack` mehr offen oder der `RafflePot` leer
 ist. Der Zusatz `Winner` gehört zum Namen, weil `Raffle` allein nicht sagt, was
 verlost wird; die zwei Ableitungen tragen ihn nicht, weil sie niemand ausspricht.
+Bedient wird sie über einen Griff auf dem `winner`-Eintrag der Legende über den
+Kacheln — dem Schlüssel zu genau der Marke, die sie erzeugt —, der eine feste
+Leiste über der Fussnavigation aufgehen lässt; die Leiste trägt Auslöser,
+`RaffleRange`, die Ansage des letzten Treffers und die nach `Rank` sortierte
+Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbild
+und deckt keine Kachel zu. Ein Treffer wird **flüchtig** markiert — das Raster
+scrollt zu ihm, die Kachel hebt sich kurz heraus —, nie bleibend: eine bleibende
+Marke wäre die Herkunft, die das Modell bewusst nicht führt. Die Ansage nennt
+den `Rank` und trägt **keinen** Rückweg; zurückgenommen wird in der Liste oder an
+der Kachel, also nur, indem man den `Rank` benennt. Das ist der Unterschied
+zwischen Korrigieren und Neuwürfeln, und er trägt, weil es kein Undo gibt.
+Der Auslöser heisst am Schirm `Raffle` — eine Kürzung des Terms und damit keine
+Ersetzung, also ohne `_Label_`-Zeile; `Draw` ist unten ausgeschlossen.
 _Avoid_: Shuffle (heisst im TCG das Mischen des eigenen Decks — und es benennt eine Reihenfolge, keinen Empfänger: ein gemischtes Deck hat niemanden gewinnen lassen), Draw (heisst im TCG das Ziehen einer Karte), Lottery (klingt nach Geld und Recht), Verlosung als Name für den Bereich
 
 **RaffleRange**:
@@ -229,7 +242,13 @@ abzüglich aller `Rank`s, die schon einen `WinnerPack` haben — `ranked` wie
 Siegerkarte gewinnt niemand zweimal. Über `open` gebliebene `WinnerPack`s sagt er
 nichts, weil sie keinen Empfänger haben. Er hängt am laufenden Zuteilstand und
 kann leer sein, während die `RaffleRange` es nicht ist — genau dann ist die
-`WinnerRaffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind.
+`WinnerRaffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind. Er wird
+**nicht als Zahl angezeigt**, und das ist Absicht: er beantwortet „wie viele",
+während am Tisch „wo" gefragt ist, und das beantwortet die `RaffleRange`. Vor
+dem ersten Wurf ist er ausserdem genau so gross wie sie, wiederholte also im
+Moment des ersten Hinsehens nur die eben getroffene Wahl. Sichtbar wird allein
+sein **leerer** Zustand, als Satz neben dem gesperrten Auslöser — sonst wäre das
+ein toter Knopf ohne Grund.
 _Avoid_: RafflePool (kein `Pool`, er verteilt nichts, sondern begrenzt die Empfängerwahl), RaffleGroup, Lostopf als Identifier
 
 **DisplayReservation**:
