@@ -66,11 +66,19 @@
     --fabsafe: 70px;
     /* Zwei Fusshöhen, eine Regel: *der Fuss ist so hoch wie sein Inhalt.* Am
        Handy steht Icon *über* Wort (18 + 4 + 10 plus Polster) — 56. Ab 774
-       stehen die Plätze einzeilig, Icon *neben* Wort — 36. Damit bleibt #37s
-       Einwand beantwortet statt überstimmt: quer sind 36 px ein Elftel der
-       Höhe, wo 56 ein Siebtel waren. */
+       stehen die Plätze einzeilig, Icon *neben* Wort.
+
+       36 war zuerst gesetzt, nach der Höhe des Umschalters, und am Bild zu
+       knapp: der grösste Bewohner ist nicht er, sondern der **Chip** mit
+       gemessenen 34 px — er klebte mit einem Pixel oben und unten an. 48 gibt
+       ihm sieben auf jeder Seite.
+
+       Ehrlich dazu: #37s Einwand („56 px quer sind ein Siebtel der Höhe")
+       ist damit nur halb beantwortet. 48 sparen acht Pixel, nicht zwanzig.
+       Der Fuss steht dafür jetzt auch bei drei Spalten und trägt die Ecke der
+       Notices — er hält mehr als der eine Knopf, gegen den der Einwand ging. */
     --foot: 56px;
-    --footw: 36px;
+    --footw: 48px;
     /* Die Kachel ist das Mass der Dinge: so gross wie im Hochformat bei
        sechs Spalten. Alles andere richtet sich danach. */
     --cell: 54px;
@@ -412,6 +420,13 @@
   #stage:not([data-cols="1"]):not(.fsfocus) #badges {
     bottom: 0; right: 0; height: var(--foot); align-items: center;
     padding-bottom: 0; z-index: 46; }
+  /* `align-self: flex-end` an `.badges` stammt aus der Zeit als Kind des
+     Stapels: dort war die Richtung Spalte, und flex-end hiess *rechts*. In
+     der Zeile des Streifens heisst dasselbe *unten* — gemessen 14 px Luft
+     oben und 0 unten, genau das Angeklebte. Rechtsbündig macht hier
+     `justify-content`, die Mitte macht das hier. */
+  #stage:not([data-cols="1"]):not(.fsfocus) #badges > .badges {
+    align-self: center; }
   .badges { display: flex; gap: 8px; align-items: center; align-self: flex-end;
             max-width: 100%; overflow-x: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt wäre er ein
@@ -831,15 +846,24 @@
           max-width: 40em; }
   .grouphead + .desc { margin-bottom: 12px; }
 
-  /* Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
-     lässt ihn auslaufen, statt Zahlen halb zu verdecken. */
-  #fade { position: absolute; left: 0; right: 0; height: 60px; z-index: 28;
-          bottom: calc(var(--foot) + var(--raffleh));
-          display: none; pointer-events: none;
-          background: linear-gradient(to bottom, transparent, var(--fadeto) 62%); }
-  #stage { --fadeto: var(--paper); }
-  #stage.fsopen { --fadeto: var(--bg); }
-  #stage.anyopen #fade { display: block; }
+  /* ── Verlaufsbänder: eines je scrollender Fläche ───────────────────────
+     Im Blatt scrollt Inhalt unter dem Knopf durch. Ein Verlaufsband darüber
+     lässt ihn auslaufen, statt Zahlen halb zu verdecken.
+
+     Bis Runde 21 war das *ein* Band über die ganze Bühne, angeschlagen über
+     dem Fuss, mit einer Farbe `--fadeto` an der Bühne. Mit den Spalten stimmt
+     daran beides nicht mehr, und beides ist am Bild aufgefallen: holt man
+     `Prepare` bei zwei Spalten, liegt das Band über der *ganzen* Breite und
+     in `--bg` — braun quer über die weisse `Details`-Spalte, die dort gar
+     nicht scrollt. Und `Details` selbst, die einzige Spalte, die bei 900 wirk-
+     lich scrollt (#38: 2748 px Inhalt auf 682), bekam gar keines.
+
+     Eine Fläche kann nicht sagen, wo eine andere aufhört. Also gehört das
+     Band nicht der Bühne, sondern **der Fläche, die scrollt** — und seine
+     Farbe ist deren eigene, nachgeschlagen statt gesetzt. Gebaut wird es in
+     `paintFades()`, gemessen wie alles andere hier: kein Band, wo nichts
+     überläuft, und keines mehr, sobald man unten angekommen ist. */
+  .fade { position: absolute; z-index: 28; height: 60px; pointer-events: none; }
 
   /* ── Der Fuss trägt die Navigation, sonst nichts ───────────────────────
      Runde 13 hatte hier Meldungen links und Aktionen rechts. Seit dem Fuss
@@ -2113,6 +2137,64 @@ function padBottom() {
   }
 }
 
+/* ── Verlaufsbänder, eines je scrollender Fläche ────────────────────────────
+   Siehe `.fade`. Drei Dinge werden hier *gemessen* statt gesetzt, und jedes
+   davon war in der einen Bühnen-Fassung eine stille Annahme:
+
+   1. **Wo.** Das Band liegt auf dem unteren Rand seiner Fläche, nicht auf dem
+      der Bühne. Damit hört `Details` an ihrem eigenen Rand auf und nicht dort,
+      wo zufällig der Fuss beginnt.
+   2. **Welche Farbe.** Nachgeschlagen an der Fläche selbst und, wo sie
+      durchsichtig ist, an ihren Eltern. `--fadeto` musste raten — und riet bei
+      zwei Spalten falsch, weil `Prepare` und `Details` verschiedene Gründe
+      haben, verschieden auszulaufen.
+   3. **Ob überhaupt.** Nur wenn wirklich etwas darunter liegt. Ein Band ohne
+      überlaufenden Inhalt behauptet, es gehe weiter — die `Prepare`-Spalte
+      scrollt bei 760 px Höhe gar nicht (#38), und dort wäre es glatt gelogen.
+      Aus demselben Grund verschwindet es am unteren Anschlag. */
+function bgOf(el) {
+  for (let p = el; p; p = p.parentElement) {
+    const c = getComputedStyle(p).backgroundColor;
+    if (c && c !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(c)) return c;
+  }
+  return 'transparent';
+}
+function fadeBoxes() {
+  return [
+    appEl.querySelector('.gridwin'),
+    appEl.querySelector('.detc'),
+    appEl.querySelector('.prepc'),
+    /* Welches Element scrollt, ist je Blatt verschieden und nicht zu raten:
+       `.sheet` trägt selbst `overflow:auto`, also scrollen `#sheet` und `#prep`
+       als Ganzes — nur `#fs` ist eine Flex-Spalte, damit der Kopf stehen
+       bleibt, und dort scrollt der `.body`. Die erste Fassung griff überall
+       nach `.body` und liess das `Details`-Blatt ohne Band: 2748 px Inhalt und
+       kein Zeichen, dass es weitergeht. */
+    sheetEl.classList.contains('open') ? sheetEl : null,
+    prepEl.classList.contains('open') ? prepEl : null,
+    fsEl.classList.contains('open') ? fsEl.querySelector('.body') : null,
+  ].filter(Boolean);
+}
+function paintFades() {
+  const boxes = fadeBoxes();
+  const s = stage.getBoundingClientRect();
+  while (fadeEl.children.length < boxes.length) {
+    fadeEl.appendChild(document.createElement('div')).className = 'fade';
+  }
+  [...fadeEl.children].forEach((el, i) => {
+    const box = boxes[i];
+    const left = box && box.scrollHeight - box.clientHeight - box.scrollTop;
+    if (!box || left <= 2) { el.style.display = 'none'; return; }
+    const r = box.getBoundingClientRect();
+    el.style.display = 'block';
+    el.style.left = `${r.left - s.left}px`;
+    el.style.width = `${r.width}px`;
+    el.style.top = `${r.bottom - s.top - 60}px`;
+    el.style.background =
+      `linear-gradient(to bottom, transparent, ${bgOf(box)} 62%)`;
+  });
+}
+
 function scrollParent(el) {
   for (let p = el.parentElement; p; p = p.parentElement) {
     const o = getComputedStyle(p).overflowY;
@@ -2639,6 +2721,7 @@ const popEl = document.getElementById('pop');
 const raffleEl = document.getElementById('raffle');
 const stackEl = document.getElementById('stack');
 const badgesEl = document.getElementById('badges');
+const fadeEl = document.getElementById('fade');
 const gripEl = document.getElementById('foldgrip');
 
 function render() {
@@ -2715,7 +2798,6 @@ function render() {
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
   popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
   stage.classList.toggle('onplan', !away);
-  stage.classList.toggle('anyopen', away || fsOpen);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
   /* Nur das *Kachel*-Vollbild ist der Fokus-Modus ohne Fuss. `.fsopen` gilt
      auch für Prepare, und dort trägt der Fuss den Rückweg. */
@@ -2724,8 +2806,16 @@ function render() {
     if (b.dataset.page === page) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   }
+  /* Zuletzt, weil es misst: die Blätter müssen ihre `open`-Klasse schon haben
+     und der Streifen seine Höhe, sonst liegt das Band eine Fläche daneben. */
+  paintFades();
   placePop();
 }
+
+/* Scrollen bubbelt nicht, also mit `capture` an der Bühne. Das Band gehört zum
+   Stand des Scrollens, nicht zum Stand der App — es geht am Anschlag aus, ohne
+   dass irgendetwas neu gezeichnet würde. */
+stage.addEventListener('scroll', paintFades, true);
 
 /* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
    oben, wenn unten kein Platz mehr ist. */
