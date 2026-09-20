@@ -438,8 +438,17 @@
   /* Was zu Beginn rausgeht: eine Zeile, punktiert abgesetzt vom Beschaffungsteil
      darüber — sie sagt nicht, was zu holen ist, sondern was sofort weggeht. */
   .handout { font-size: 11.5px; line-height: 1.5; margin-top: 7px; padding-top: 6px;
-             max-width: 520px; border-top: 1px dotted var(--line); }
-  .handout .bar { gap: 5px; }
+             max-width: 520px; border-top: 1px dotted var(--line);
+             display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  /* Runde 20: Etikett und Zahlen sind *eine* Zeile, die umbricht, wo sie muss —
+     vorher waren es zwei, immer. Der Grund für die zwei war das Hochformat (die
+     einzeilige Fassung brach mitten durch „1 pack"), und dort bricht sie
+     weiterhin, weil neben dem Etikett keine 260 px übrig sind. In der
+     Plan-Spalte sind es 588, also steht sie auf einer Zeile — und erst damit
+     sind die drei Spaltenköpfe gleich hoch. Kein `if` auf die Fläche: der
+     Inhalt entscheidet. */
+  .handout > .muted { flex: 0 0 auto; }
+  .handout .bar { gap: 5px; flex: 1 1 260px; }
   /* Die Einheit klebt an ihrer Zahl: „1 pack" darf nie umbrechen. */
   .handout strong { white-space: nowrap; }
   /* Zahl und Etikett im Beschaffungsteil bleiben zusammen, sonst rutscht der
@@ -702,12 +711,36 @@
      hier steht etwas darüber, also braucht sie ihre Linie. */
   .detc .grouphead.first { margin-top: 26px; padding-top: 16px;
                            border-top: 1px solid var(--line); }
-  /* Prepare als Spalte bringt sein eigenes `.shead` mit — dieselbe Form wie
-     als Seite, nur schmaler. Die Polsterung hing bisher an `.sheet`. */
-  .prepc .shead { position: sticky; top: 0; background: var(--paper); z-index: 2;
-                  box-shadow: var(--panel-shadow); padding: 9px 12px;
-                  display: flex; align-items: center; gap: 9px; font-size: 14px;
-                  font-weight: 600; white-space: nowrap; }
+  /* ── Der Spaltenkopf ───────────────────────────────────────────────────
+     Runde 20 (#38). Eine Form für alle drei Spalten, und sie ist die des
+     Plans: Titelzeile in 17 px, daneben die Eckdaten klein und still, darunter
+     eine zweite Zeile für das, was die Spalte über sich selbst zu sagen hat.
+
+     Der Kopf ist **kein Zierrat, sondern der Ersatz für den Nav-Eintrag**:
+     #37 löst den Fuss bei 774 auf, und damit verschwindet die einzige Stelle,
+     an der eine Spalte ihren Namen trug. Eine Beschriftung, zwei mögliche
+     Orte — Fuss, solange die Seite eine Seite ist, Kopf, sobald sie eine
+     Spalte ist —, und immer genau einer davon da. `Details` hatte als einzige
+     Spalte keinen, darum klebte dort der erste Regler titellos an der Kante.
+
+     Stillstehen tun alle drei, auf zwei Wegen: der Plan-Kopf steht *ausserhalb*
+     seines Scrollers (`flex: none`), die zwei scrollenden Spalten tragen ihren
+     Kopf innen und kleben ihn fest. Gleiche Form heisst hier auch gleiches
+     Verhalten. */
+  .colhead { padding: 9px 12px 8px; background: var(--paper); flex: none;
+             box-shadow: var(--panel-shadow); position: relative; z-index: 2; }
+  .colhead > .bar > strong { font-size: 17px; letter-spacing: -.01em; }
+  .detc > .colhead, .prepc > .colhead { position: sticky; top: 0; }
+  /* Die zweite Zeile: dieselbe Stelle, an der beim Plan die Ausgabezeile
+     steht. Sie darf fehlen — beim Plan tut sie das, sobald die Teilnahme bei
+     null steht oder gemeinsam ausgegeben wird —, darum ist die Kopfhöhe
+     nirgends festgenagelt. */
+  /* Dieselbe Zeilenhöhe und derselbe Abstand wie `.handout` — die zweite Zeile
+     des Plan-Kopfs ist das Mass, dem die anderen zwei folgen. Ohne die
+     punktierte Linie: beim Plan trennt sie zwei *Tatsachen* voneinander, hier
+     steht nur eine Bildunterschrift. */
+  .colsub { font-size: 11.5px; line-height: 1.5; color: var(--muted);
+            margin-top: 7px; padding-top: 6px; }
   .prepc .body { padding: 12px 14px 22px; }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
                   box-shadow: var(--panel-shadow); padding: 9px 12px;
@@ -1595,6 +1628,18 @@ function badgeRow(plan, sugg, off) {
   return b ? `<div class="badges">${b}</div>` : '';
 }
 
+/* Der Kopf einer Spalte — eine Form, dreimal benutzt. Siehe `.colhead`. */
+function colHead({ title, facts = '', sub = '', extra = '' }) {
+  return `<div class="colhead">
+    <div class="bar">
+      <strong>${title}</strong>
+      ${facts}
+      <span style="margin-left:auto">${extra}</span>
+    </div>
+    ${sub}
+  </div>`;
+}
+
 function headerBlock(plan) {
   const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
              + st.displays.filter(Boolean).length;
@@ -1603,17 +1648,14 @@ function headerBlock(plan) {
          title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
  pins} ↺</button>`
     : '';
-  return `<div style="padding:9px 12px 8px;background:var(--paper);
-      box-shadow:var(--panel-shadow);position:relative;z-index:1;flex:none">
-    <div class="bar">
-      <strong style="font-size:17px;letter-spacing:-.01em">${TYPES[st.type].title}</strong>
-      <span class="tiny muted num">${st.players} players</span>
+  return colHead({
+    title: TYPES[st.type].title,
+    facts: `<span class="tiny muted num">${st.players} players</span>
       <span class="tiny muted">·</span>
-      <span class="tiny num" style="font-weight:600">${plan.pool.booster} boosters</span>
-      <span style="margin-left:auto">${status}</span>
-    </div>
-    ${handoutRow(plan)}
-  </div>`;
+      <span class="tiny num" style="font-weight:600">${plan.pool.booster} boosters</span>`,
+    sub: handoutRow(plan),
+    extra: status,
+  });
 }
 
 /* Die PreparationList als eigene Fläche (#11: eine Sicht, kein Rechenschritt).
@@ -1632,10 +1674,11 @@ function prepContent(plan) {
   const nextAt = p.partialYield < y ? p.thresholds[p.partialYield] : null;
   const need = nextAt == null ? 0 : nextAt - p.opened;
   const loosePacks = p.partialYield > 0 ? 0 : p.opened;
-  return `<div class="shead">
-      <span>Prepare · ${TYPES[st.type].title} · ${st.players}</span>
-      <span class="tiny muted">everything the pool holds</span>
-    </div>
+  return colHead({
+      title: 'Prepare',
+      facts: `<span class="tiny muted num">${TYPES[st.type].title} · ${st.players}</span>`,
+      sub: '<div class="colsub">everything the pool holds</div>',
+    }) + `
     <div class="body prep">
 
     <div class="prepitem">
@@ -2331,11 +2374,25 @@ function screen(plan, sugg, off) {
   /* Die Schiene *ist* Details. Sie war nie ein eigener Inhalt: vier Regler aus
      derselben Menge, ohne eigenen Namen im Fuss und ohne eigenen Griff — nur
      die handgemachte Fassung für einen Fall. Vom Sonderstatus der vier bleibt
-     genau das, was noch trägt: die Reihenfolge. („Diese vier sieht man ohne
-     Handgriff" ist in der Breite wahr für alle siebzehn.) */
+     genau das, was noch trägt: die Reihenfolge.
+
+     Runde 20 (#38) nimmt die Begründung dafür zurück, ohne die Anordnung
+     anzutasten: „diese vier sieht man ohne einen Handgriff" ist in der Breite
+     **für keinen** der siebzehn wahr — die Spalte ist 2748 px hoch und zeigt
+     auf der 900er Leinwand 682 davon, also scrollen auch die vier weg, sobald
+     man zum Promo-Envelope hinunter muss. Gemessen, nicht überlegt. Zuoberst
+     ist damit eine **Anordnung, keine Zusicherung**; ein festgeklebter
+     Viererblock wäre die naheliegende Rettung und kostet 330 der 682 px, im
+     Querformat 330 von 375 — er würde die dreizehn auf einen Drittelregler
+     eindampfen. Also bleibt es beim Mitscrollen.
+
+     Einen Titel bekommt der Viererblock trotzdem nicht: der Spaltenkopf steht
+     jetzt direkt über ihm und ist sein Titel. */
   const detCol = `
     <div class="detc" style="width:var(--det);flex:none;overflow:auto;
         background:var(--paper);box-shadow:var(--panel-shadow)">
+      ${colHead({ title: 'Details',
+                  sub: '<div class="colsub">everything you can turn</div>' })}
       <div style="padding:9px 12px 8px">${controls}${sheetContent(plan)}</div>
     </div>`;
   const hotBar = `
