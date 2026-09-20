@@ -286,19 +286,11 @@
          box-shadow: 0 8px 26px rgba(0,0,0,.34); font-size: 11.5px; }
   #r23 h4 { margin: 0 0 7px; font-size: 11px; letter-spacing: .1em;
             text-transform: uppercase; opacity: .55; font-weight: 700; }
-  #r23 .q { margin-bottom: 8px; }
-  #r23 .q:last-child { margin-bottom: 0; }
-  #r23 .q > span { display: block; opacity: .62; margin-bottom: 3px; }
-  #r23 .opts { display: flex; gap: 3px; }
+  #r23 .opts { display: flex; gap: 3px; flex-wrap: wrap; }
   #r23 button { font: inherit; font-size: 11px; color: #fff; background: #ffffff18;
                 border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
   #r23 button:hover { background: #ffffff30; }
-  #r23 [aria-pressed="true"] { background: #fff; color: #16191c; }
-  #r23 .peek { opacity: .5; margin-top: 4px; line-height: 1.35;
-               font-style: italic; }
-  #r23 .case { margin-left: auto; background: #ffffff10; opacity: .8; }
-  #r23 .hint { opacity: .42; line-height: 1.35; margin-top: 9px;
-               padding-top: 8px; border-top: 1px solid #ffffff1f; }
+  #r23 .hint { opacity: .42; line-height: 1.35; margin-top: 8px; }
 
   /* ── Primitives ────────────────────────────────────────────────────── */
   .bar { display: flex; align-items: center; gap: 8px; }
@@ -1135,12 +1127,12 @@
     auch.
   </p>
   <p>
-    Offen sind noch die zwei Wörter — der <em>Offer</em>-Satz auf dem exakten
-    Vielfachen und der Knopf im <em>CarryOverNotice</em>. Sie stehen
-    <strong>oben links</strong> als Fassungen zum Durchschalten, je mit einem
-    Knopf <em>Fall herstellen</em>, der die Regler so setzt, dass die Meldung
-    aufgeht — sonst schaltet man A/B/C und nichts bewegt sich, weil nichts
-    dasteht.
+    Auch die zwei Wörter sind entschieden und stehen an ihrer Stelle:
+    <em>„Rank 1 could take 1 sealed display instead of 24 loose boosters"</em>
+    für das <em>Offer</em> auf dem exakten Vielfachen, und
+    <em>„Drop all 2 and follow Release"</em> im <em>CarryOverNotice</em>.
+    Beide Meldungen erscheinen nur in einem hergestellten Zustand — die zwei
+    Knöpfe <strong>oben links</strong> stellen ihn her.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
@@ -1225,23 +1217,13 @@
   <button data-mode="dark"  style="background:#1e1b16;color:#f2ece0"><i style="background:#c9992e"></i>☾ Dark — Foil</button>
 </div>
 
-<div id="r23"><h4>Runde 23 · #41 — zwei Wörter</h4>
-  <div class="q" data-q="offer"><span>Offer auf dem exakten Vielfachen</span>
-    <div class="opts">
-      <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
-      <button class="case" data-case="offer">Fall herstellen</button>
-    </div>
-    <div class="peek"></div>
+<div id="r23"><h4>Fälle herstellen</h4>
+  <div class="opts">
+    <button data-case="offer">Offer auf dem Vielfachen</button>
+    <button data-case="carry">CarryOverNotice</button>
   </div>
-  <div class="q" data-q="carry"><span>Knopf im CarryOverNotice</span>
-    <div class="opts">
-      <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
-      <button class="case" data-case="carry">Fall herstellen</button>
-    </div>
-    <div class="peek"></div>
-  </div>
-  <div class="hint">„Fall herstellen" setzt die Regler so, dass die Meldung
-    aufgeht — dann ändert A/B/C den Satz, der wirklich dasteht.</div>
+  <div class="hint">Zwei Meldungen, die nur in einem hergestellten Zustand
+    erscheinen — sonst dreht man jedes Mal dieselben Regler nach.</div>
 </div>
 
 <script>
@@ -1700,24 +1682,17 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ══════════════════════════════════════════════════════════════════════
-   Runde 23 — die vier offenen Stellen als umschaltbare Fassungen
+   Runde 23 — die zwei seltenen Fälle auf Knopfdruck
    ══════════════════════════════════════════════════════════════════════
-   Ticket #41 stellt vier Fragen an *ein* Bild. Drei davon haben eine Fassung,
-   die ich für richtig halte, und mindestens eine, die ebenso begründbar ist —
-   und bei zwei von ihnen ist die Frage ein **Satz**, den man nur nebeneinander
-   beurteilen kann. Also stehen sie hier als Tabelle und werden über eine
-   Leiste in der Prototyp-Umrandung umgeschaltet, nicht über eine Entscheidung
-   im Code. Die Vorwahl ist jeweils der Vorschlag, nicht der Zufall.
+   Die Fassungstabelle ist weg: beide Wörter sind entschieden und stehen als
+   Satz an ihrer Stelle. Was bleibt, ist der Teil, der sich als eigenständig
+   nützlich erwiesen hat — die zwei Meldungen, um die es ging, erscheinen nur
+   in einem Zustand, den man von Hand herstellen muss, und wer sie ansehen
+   will, hat sonst jedes Mal dieselbe Regler-Fummelei vor sich. Genau daran
+   ist die Vorführung der Fassungen beim ersten Mal gescheitert: man schaltete
+   A/B/C gegen einen Satz, der gar nicht am Schirm stand.
 
-   Das ist Prototyp-Gerüst und geht mit der Antwort weg: was gewinnt, wird ein
-   Satz, und die Tabelle fällt ersatzlos. */
-const V = { offer: 1, carry: 0 };
-
-/* Ein Satz ist nur zu beurteilen, wenn er dasteht — und diese zwei stehen nur
-   in einem Zustand da, den man erst herstellen muss. Die Leiste stellt ihn
-   her, statt ihn zu beschreiben: ein Knopf je Frage, der die Regler so setzt,
-   dass die Meldung aufgeht. Ohne das schaltet man A/B/C und nichts bewegt
-   sich, weil es nichts zu bewegen gibt. */
+   Prototyp-Umrandung, kein Entwurf. */
 const CASES = {
   // Weekend, 27 Player: Rank 1 landet auf genau 24 Boostern, also exakt auf
   // einem Vielfachen der Display-Grösse. Gesucht, nicht gewählt — s. Kommentar
@@ -1738,31 +1713,37 @@ const CASES = {
   },
 };
 
-/* Frage 3 — wie das `Offer` heisst, wenn der `Rank` *exakt* auf einem
-   Vielfachen steht. „Rank 1 is 0 off a full display" klingt nach Nichtstun;
-   angenommen macht der Vorschlag aus losen `Booster`n eine ungeöffnete
-   `PackagingUnit` und ändert die `PreparationList`. Die Bedingung ist nicht
-   strittig (#21), nur ihr Satz — also muss er den Tausch benennen, nicht den
-   Abstand, den es hier nicht gibt. */
-const OFFER0 = [
-  (r, k) => `Rank ${r} lands exactly on ${k} full display${k > 1 ? 's' : ''}.`,
-  (r, k, b) => `Rank ${r} could take ${k} sealed display${k > 1 ? 's' : ''}
-    instead of ${b} loose boosters.`,
-  (r, k, b) => `Rank ${r}'s ${b} boosters are exactly ${k} sealed display${
-    k > 1 ? 's' : ''} — hand them over unopened.`,
-];
+/* Frage 3, entschieden — wie das `Offer` heisst, wenn der `Rank` *exakt* auf
+   einem Vielfachen steht. „Rank 1 is 0 off a full display" klang nach
+   Nichtstun; angenommen macht der Vorschlag aus losen `Booster`n eine
+   ungeöffnete `PackagingUnit` und ändert die `PreparationList`. Die Bedingung
+   war nie strittig (#21), nur ihr Satz — und der benennt jetzt den **Tausch**
+   statt den Abstand, den es hier nicht gibt.
 
-/* Frage 4 — wie der Knopf im `CarryOverNotice` heisst. Er liest sich heute als
-   „nimm meine Sachen mit" und lässt in Wahrheit alle gelisteten Pins **fallen**.
-   Unter der Regel aus #27: Deckungsgleichheit mit dem Modell ist das Ziel, und
-   das Modell hat für diesen Zustand ein Wort — `pinned`, das ohnehin am Schirm
-   steht. Ein Etikett, das selbst ein anderer Glossarbegriff ist, ist
-   ausgeschlossen: `Release` fällt damit weg, es ist ein `TournamentType`. */
-const CARRY_BTN = [
-  (n, to) => n > 1 ? `Drop all ${n} and follow ${to}` : `Drop it and follow ${to}`,
-  (n, to) => n > 1 ? `Unpin all ${n} — ${to} takes over` : `Unpin it — ${to} takes over`,
-  (n, to) => n > 1 ? `Let ${to} set all ${n}` : `Let ${to} set it`,
-];
+   Verworfen wurden „lands exactly on N full displays" (liest sich als
+   Feststellung, nicht als Angebot) und „… are exactly N sealed displays —
+   hand them over unopened" (sagt die Handlung doppelt; der Knopf darunter
+   sagt sie schon). */
+const offerExact = (r, k, b) => `Rank ${r} could take ${k} sealed display${
+  k > 1 ? 's' : ''} instead of ${b} loose boosters.`;
+
+/* Frage 4, entschieden — wie der Knopf im `CarryOverNotice` heisst. Er las
+   sich als „nimm meine Sachen mit" und lässt in Wahrheit alle gelisteten Pins
+   **fallen**; es ist der Knopf mit der grössten Zerstörung im Programm, und
+   seit #33 ohne Rückweg. Also steht die Zerstörung vorn.
+
+   `Drop` beschriftet schon die Wege aus der `ConflictNotice` (`Drop rank 1's
+   display`) — dasselbe Wort für dieselbe Art Handlung. Unter der Regel aus
+   #27 ist das keine Abweichung, die eine `_Label_`-Zeile bräuchte: der Satz
+   benennt eine Handlung, keinen Term. Mitbewertet und verworfen: „Unpin all N
+   — <Typ> takes over" (deckungsgleich mit dem Modell, `pinned` steht ohnehin
+   am Schirm, aber es benennt den Zustand statt den Verlust) und „Let <Typ>
+   set all N" (die ruhigste Fassung, und darum hier die falsche).
+   Ausgeschlossen war „Release them to …": `Release` ist selbst ein
+   `TournamentType`, und ein Etikett, das ein anderer Glossarbegriff ist,
+   zeigt auf den falschen Eintrag. */
+const carryLabel = (n, to) => n > 1
+  ? `Drop all ${n} and follow ${to}` : `Drop it and follow ${to}`;
 
 /* Am Release fällt die Beschaffung erstmals auf *ein* Kuvert — „1 Promo-
    Envelopes" stand da, seit die Zahl im Kopf steht, nur nie mit einer 1 davor. */
@@ -2261,7 +2242,7 @@ function infoWinners(plan) {
    Der Kontaktkanal steht beim `Game` und nur dort — er ist die Einladung, und
    die gilt der Ebene mit einem Eintrag. Der Tag ist sichtbar, weil man ihn
    auch abtippen können muss, wenn der Link ins Leere führt. */
-const DISCORD = { tag: 'ditshej', id: '000000000000000000' };  // TODO: echte ID
+const DISCORD = { tag: 'ditshej', id: '428891117220659241' };
 function infoGame() {
   return `<div class="pophead"><strong>Game</strong>
       <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
@@ -2748,7 +2729,7 @@ function offerBox(off) {
      Pfeilzeile fällt mit weg — `48 → 48` ist keine Bewegung. */
   const exact = off.from === off.to;
   const head = exact
-    ? OFFER0[V.offer](off.rank, off.value, off.from)
+    ? offerExact(off.rank, off.value, off.from)
     : `Rank ${off.rank} is ${Math.abs(off.from - off.to)} off a full display.`;
   return `<div class="deal">
     <div class="bar tiny" style="align-items:flex-start;gap:8px">
@@ -2800,7 +2781,7 @@ function carryBox() {
       <button class="fold" data-fold="carry" title="minimieren">▾</button>
       <button class="reset" data-carryoff="1" title="wegklicken">✕</button>
     </div>
-    <button data-carryall="1">${esc(CARRY_BTN[V.carry](c.keys.length, c.to))}</button>
+    <button data-carryall="1">${esc(carryLabel(c.keys.length, c.to))}</button>
   </div>`;
 }
 
@@ -3548,29 +3529,13 @@ function setMode(m) {
    Vorschau zeigt den Satz in der Fassung, die gerade gewählt ist, mit den
    Zahlen eines Beispiels: der Knopf allein („B") sagt nichts. */
 const r23El = document.getElementById('r23');
-const PEEK = {
-  offer: (i) => OFFER0[i](1, 1, 24).replace(/\s+/g, ' '),
-  carry: (i) => CARRY_BTN[i](2, 'Release'),
-};
-function paintR23() {
-  for (const q of r23El.querySelectorAll('.q')) {
-    const key = q.dataset.q;
-    q.querySelectorAll('button[data-v]').forEach((b) =>
-      b.setAttribute('aria-pressed', String(Number(b.dataset.v) === V[key])));
-    q.querySelector('.peek').textContent = PEEK[key](V[key]);
-  }
-}
 r23El.addEventListener('click', (e) => {
   const b = e.target.closest('button');
-  if (!b) return;
-  if (b.dataset.case) {
-    // Der Fall wird auf dem Plan hergestellt: dort hängt der Meldungsstapel.
-    CASES[b.dataset.case]();
-    page = 'plan'; fsOpen = false;
-    render(); return;
-  }
-  V[b.closest('.q').dataset.q] = Number(b.dataset.v);
-  paintR23(); render();
+  if (!b || !b.dataset.case) return;
+  // Der Fall wird auf dem Plan hergestellt: dort hängt der Meldungsstapel.
+  CASES[b.dataset.case]();
+  page = 'plan'; fsOpen = false;
+  render();
 });
 
 document.getElementById('themes').addEventListener('click', (e) => {
@@ -3584,7 +3549,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'm') setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark');
 });
 
-paintR23();
 // Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
 setDev(window.innerWidth < 560 ? 'bare' : 'phone');
 // Ohne Angabe folgt der Modus dem Gerät — genau wie die echte App es täte.
