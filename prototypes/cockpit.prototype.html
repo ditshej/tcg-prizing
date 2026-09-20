@@ -278,6 +278,25 @@
                      box-shadow: inset 0 0 0 1px #ffffff40; }
   #themes [aria-pressed="true"] { outline: 2px solid #6b6b6b; outline-offset: 1px; }
 
+  /* Die Fassungsleiste zu Runde 23 — Prototyp-Umrandung, nicht Entwurf. Sie
+     steht unten rechts, weil die anderen zwei Ecken belegt sind, und sie geht
+     mit der Antwort weg. */
+  #r23 { position: fixed; left: 10px; top: 10px; z-index: 99; width: 248px;
+         background: #16191c; color: #fff; border-radius: 10px; padding: 9px 10px;
+         box-shadow: 0 8px 26px rgba(0,0,0,.34); font-size: 11.5px; }
+  #r23 h4 { margin: 0 0 7px; font-size: 11px; letter-spacing: .1em;
+            text-transform: uppercase; opacity: .55; font-weight: 700; }
+  #r23 .q { margin-bottom: 8px; }
+  #r23 .q:last-child { margin-bottom: 0; }
+  #r23 .q > span { display: block; opacity: .62; margin-bottom: 3px; }
+  #r23 .opts { display: flex; gap: 3px; }
+  #r23 button { font: inherit; font-size: 11px; color: #fff; background: #ffffff18;
+                border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+  #r23 button:hover { background: #ffffff30; }
+  #r23 [aria-pressed="true"] { background: #fff; color: #16191c; }
+  #r23 .peek { opacity: .5; margin-top: 4px; line-height: 1.35;
+               font-style: italic; }
+
   /* ── Primitives ────────────────────────────────────────────────────── */
   .bar { display: flex; align-items: center; gap: 8px; }
   .grow { flex: 1; }
@@ -736,9 +755,18 @@
   .gridwin { margin: -5px -12px 0; padding: 5px 12px 0; }
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
-  .pop { position: absolute; z-index: 30; display: none; background: var(--paper);
+  /* z 38, nicht mehr 30: seit Runde 23 hängt die Blase auch an einem Knopf
+     *im Meldungsstapel* (z 35) — die Rückfrage des `CarryOverNotice`. Auf 30
+     deckte die Meldung die untere Hälfte ihrer eigenen Rückfrage zu. Eine
+     Blase gehört über das, woran sie hängt; unter dem Streifen (45) bleibt sie,
+     denn der trägt den Weg heraus. */
+  .pop { position: absolute; z-index: 38; display: none; background: var(--paper);
          border: 0; border-radius: var(--r-tile); padding: 9px 10px;
-         box-shadow: var(--tile-shadow), var(--panel-shadow); min-width: 168px; }
+         box-shadow: var(--tile-shadow), var(--panel-shadow); min-width: 168px;
+         /* Seit Runde 23 steht Prosa darin — ein ⓘ je Ebene und die Rückfrage.
+            Ohne Deckel lief die Blase auf die Breite ihres längsten Satzes und
+            damit über die Spalte hinaus, an der sie hängt. */
+         max-width: 292px; }
   .pop.show { display: block; }
   /* Zwei Aufgaben in einer Blase: Titel links, Zählwerk rechts, beide Zeilen
      auf derselben Kante — sonst liest es sich als zwei Blasen untereinander. */
@@ -828,6 +856,10 @@
     column-gap: 34px; align-items: start; align-content: start; }
   #stage.widesheet #sheet .grouphead,
   #stage.widesheet #sheet .subhead,
+  /* Der Set-Block ist keine Reglerzelle, sondern das, was über allen steht —
+     also beide Spalten. Ohne diese Zeile sass er in der linken und sein
+     Schatten hörte auf halber Breite auf. */
+  #stage.widesheet #sheet .setblk,
   #stage.widesheet #sheet .desc { grid-column: 1 / -1; }
   /* Prepare bekommt dieselbe Behandlung: die Posten sind Kacheln, die
      nebeneinander lesbar sind, und je zwei nebeneinander halbiert den Weg. */
@@ -1037,24 +1069,104 @@
     border-radius: var(--r-ctl); padding: 4px 9px; font: inherit; font-size: 12px;
     cursor: pointer; }
   .prepnote { font-size: 11px; color: var(--muted); padding: 2px 4px 0; }
+
+  /* ── Runde 23: die zwei Ebenen stehen übereinander (#26) ────────────────
+     `Game` oben, `TournamentType` eingerückt darunter. Die Einrückung ist die
+     ganze Form der Verschachtelung — keine Klapper, kein Rahmen und auch kein
+     Strich davor: #15 lässt eine Linie nur dort zu, wo sie Daten trennt, und
+     hier trennt sie nichts, sie ordnet unter.
+
+     Die Reihe steht **immer**, auch mit einem Eintrag. Ein Umschalter mit einem
+     Knopf wäre Ballast — eine *Ebene* mit einem Eintrag ist es nicht: sie sagt,
+     dass hier ein zweites Spiel stehen könnte, und der ⓘ sagt, wie es dahin
+     kommt. Darum trägt jede Ebene ihren eigenen Satz und nicht die Gruppe
+     beide. */
+  .setblk { margin: 0 0 14px; }
+  /* Umbrechen darf die *Reihe*, nicht die Knopfgruppe. Als `.setchips` selbst
+     umbrach, fiel `Release` allein auf eine zweite Zeile und die Ebene sah
+     kaputt aus; so rutscht die ganze Gruppe unter ihr Etikett. Nötig wird das
+     erst, wenn der Reset-Chip dazukommt — die Höhe kostet also genau der
+     Zustand, der sie rechtfertigt. */
+  .setrow { display: flex; align-items: center; gap: 8px; min-height: 21px;
+            flex-wrap: wrap; row-gap: 6px; }
+  .setlbl { font: 700 11px/1 var(--font-head); letter-spacing: var(--head-ls);
+            text-transform: var(--head-tr); color: var(--muted); flex: none; }
+  .setchips { display: flex; gap: 5px; flex-wrap: nowrap; }
+  .setchips .sheetbtn { padding: 5px 9px; font-size: 13.5px; }
+  .setsub { margin: 8px 0 0 15px; }
+  /* Der Einladungsknopf ist gewählt und trotzdem kein Bedienelement: er ist der
+     einzige Eintrag seiner Ebene. Er sieht aus wie der gewählte Typ, weil er
+     dasselbe ist — nur ohne Nachbarn. */
+  .setchips .sheetbtn[aria-pressed="true"] { background: var(--accent);
+    color: var(--on-accent); box-shadow: var(--glow); }
+  /* Im Spaltenkopf trägt der Block keinen Abstand nach unten — der Kopf hat
+     seinen eigenen. */
+  .colhead .setblk { margin-bottom: 0; }
+  /* Variante „Kopf": der Block klebt oben in der scrollenden Fläche. Die
+     negativen Ränder heben das Polster des `.body` auf, damit der Schatten
+     über die ganze Spaltenbreite läuft statt in der Mitte aufzuhören. */
+  .setblk.sticky { position: sticky; top: 0; z-index: 3; background: var(--paper);
+    margin: -14px -20px 12px; padding: 12px 20px 10px;
+    box-shadow: var(--panel-shadow); }
+
+  /* Prosa in der Blase: `.popline` ist eine Zeile mit rechtsbündiger Zahl, und
+     ein Erklärsatz hat keine. */
+  .poptext { font-size: 11.5px; line-height: 1.45; margin-bottom: 6px; }
+  .popfoot a { color: inherit; }
+  /* Die Rückfrage (#33): zwei Knöpfe nebeneinander, der gefährliche zuerst
+     benannt und trotzdem nicht der ruhige. Kein Overlay — die App hat ihr
+     einziges schon vergeben. */
+  .popask { display: flex; gap: 6px; margin-top: 8px; }
+  .popask button { font: inherit; font-size: 12px; border: 0; cursor: pointer;
+    border-radius: var(--r-pill); padding: 5px 11px; box-shadow: var(--btn-shadow); }
+  .popask .go { background: var(--warn); color: var(--warn-soft); }
+  .popask .no { background: var(--paper); color: var(--ink); }
 </style>
 </head>
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 11 zu Ticket #32</h1>
+  <h1>Prizing Cockpit — Runde 23 zu Ticket #41</h1>
   <p>
-    Der dritte <strong>TournamentType: Release</strong> ist da, und mit ihm das Bild,
-    um das es geht: <strong>Release, 32 Spieler</strong> bedient alle 32 Ränge, die
-    Kurve läuft bei Rang 15 aus, <strong>17 Kacheln</strong> stehen identisch auf
-    <code>2</code>. Das Raster hat auf dem Handy Platz für zweieinhalb Reihen —
-    <code>⛶</code> zeigt alle 32 auf einmal. Im Kopf die Summenprobe über drei
-    Stellen: <code>288</code> Booster, <code>192</code> ausgeteilt,
-    <code>96</code> in die Ränge.
+    Vier Fragen an einem Bild. Die <strong>Game-Ebene</strong> steht jetzt am
+    Schirm — eine Reihe mit einem Eintrag, eingerückt darunter die Typenreihe,
+    ein ⓘ je Ebene. Der <strong>Reset mit voller Reichweite</strong> fragt nicht
+    mehr zweistufig, sondern mit einer am Knopf verankerten Blase, und derselbe
+    Knopf im <em>CarryOverNotice</em> fragt jetzt auch. Die zwei Wörter
+    — der <em>Offer</em>-Satz auf dem exakten Vielfachen und der Knopf im
+    <em>CarryOverNotice</em> — stehen als <strong>Fassungen unten rechts</strong>
+    zum Durchschalten.
+  </p>
+  <p>
+    Zum Nachstellen: <code>Weekend</code> wählen, ein paar Regler anfassen, dann
+    auf <code>Release</code> wechseln — das gibt den <em>CarryOverNotice</em>.
+    Für den <em>Offer</em> auf dem exakten Vielfachen: <code>Release</code>,
+    Spielerzahl so drehen, bis ein Rang glatt auf 24 · n steht.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
     <div class="note">
+      <strong>Frage 1 — die Game-Reihe.</strong> Sie steht immer, auch mit einem
+      Eintrag: der Knopf ist keine Bedienung, sondern die Einladung. Die
+      Typenreihe ist <em>eingerückt</em> darunter, das ist die ganze Form der
+      Verschachtelung — keine Klapper, kein Rahmen, kein Strich (#15 lässt eine
+      Linie nur zu, wo sie Daten trennt). Der ⓘ am <code>Game</code> trägt den
+      Kontaktkanal: sichtbarer Discord-Tag <code>ditshej</code>, hinterlegt mit
+      <code>discord.com/users/…</code> — die ID ist im Code noch ein
+      Platzhalter.<br><br>
+      <strong>Frage 2 — der Reset.</strong> Gezeichnet ist #33s Fassung, nicht
+      #26s: eine am Knopf verankerte Blase mit <em>Drop N</em> und
+      <em>Keep them</em>, die aufzählt, was fällt, und sagt, dass es kein Zurück
+      gibt. Kein Overlay — die App behält ihr einziges. Weil derselbe Rückweg
+      auch im <em>CarryOverNotice</em> steht, fragt der Knopf dort jetzt
+      dieselbe Frage in derselben Blase. Der <em>Ort</em> ist die offene Stelle:
+      drei Fassungen in der Leiste.<br><br>
+      <strong>Nebenbei richtiggestellt.</strong> Der Satz über den Typ-Knöpfen
+      sagte noch „Switching it drops every value you set by hand" — die Fassung
+      aus #12, die #26 umgeworfen hat. Er steht jetzt richtig im ⓘ des Typs.
+      Und der Pin-Zähler zählt neu dasselbe wie die Meldung: Posten, nicht
+      einzelne Zuteilungen.<br><br>
+      <hr>
       <strong>Der Umschlag ist zwei Zahlen.</strong> Grösse <em>und</em> Ausbeute
       (#25), am Release ⟨32, 2⟩. Die Zwei-Drittel-Schwelle ist damit eine Staffel:
       <code>min(Ausbeute, ⌊3·Ausbeute·angebrochen / (2·Grösse)⌋)</code> — bei
@@ -1110,6 +1222,29 @@
 <div id="themes">
   <button data-mode="light" style="background:#fffcf5;color:#241c12"><i style="background:#8c5a2b"></i>☀ Light — Bronze</button>
   <button data-mode="dark"  style="background:#1e1b16;color:#f2ece0"><i style="background:#c9992e"></i>☾ Dark — Foil</button>
+</div>
+
+<div id="r23"><h4>Runde 23 · #41</h4>
+  <div class="q" data-q="set"><span>Game-Reihe &amp; voller Reset</span>
+    <div class="opts">
+      <button data-v="head">im Kopf</button>
+      <button data-v="body">im Körper</button>
+      <button data-v="split">geteilt</button>
+    </div>
+    <div class="peek"></div>
+  </div>
+  <div class="q" data-q="offer"><span>Offer auf dem Vielfachen</span>
+    <div class="opts">
+      <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
+    </div>
+    <div class="peek"></div>
+  </div>
+  <div class="q" data-q="carry"><span>Knopf im CarryOverNotice</span>
+    <div class="opts">
+      <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
+    </div>
+    <div class="peek"></div>
+  </div>
 </div>
 
 <script>
@@ -1306,6 +1441,10 @@ function distribute(s) {
 /* ══════════════════════════════════════════════════════════════════════
    DefaultSet, Zustand, Pins
    ══════════════════════════════════════════════════════════════════════ */
+/* Es gibt genau ein `Game`, und das bleibt in diesem Prototyp so. Die Liste
+   existiert trotzdem als Liste — die Ebene ist am Schirm sichtbar (#26), und
+   eine Ebene, die im Code keine ist, wäre eine Behauptung. */
+const GAMES = { onepiece: { title: 'One Piece' } };
 const GAME = {
   boosterRate: 3, envelopeSize: 9, envelopeYield: 1, displaySize: 24,
   participationBooster: 2, participationPack: 1,
@@ -1327,11 +1466,16 @@ const TYPES = {
 };
 
 const st = {
+  game: 'onepiece',
   type: 'weekly', players: 32,
   pin: {}, val: {},                  // Pinned ist gespeichert, nicht abgeleitet (ADR 0006)
   manualWinner: {}, displays: [],
   openSlot: null,                    // Rang, dessen ±-Blase offen ist
-  openInfo: null,                    // 'displays' | 'winners' — nie zugleich mit openSlot
+  openInfo: null,                    // 'displays' | 'winners' | 'game' | 'type'
+  // Die Rückfrage der beiden *vollen* Reichweiten (#33). Sie ist der dritte
+  // Bewohner der einen Blase und damit von selbst ausschliesslich: wer während
+  // der Frage eine Kachel greift, hat abgelehnt.
+  confirm: null,                     // null | 'all' | 'carry'
   // Es gibt genau *eine* Blase (#pop). Die Verlosung ist ihr dritter Bewohner,
   // und die Ausschliesslichkeit ist kein Zusatzaufwand, sondern ein Geschenk:
   // wer die Kachel greift, um zurückzunehmen, wirft die Verlosung von selbst
@@ -1558,6 +1702,46 @@ function doRaffle(plan) {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+/* ══════════════════════════════════════════════════════════════════════
+   Runde 23 — die vier offenen Stellen als umschaltbare Fassungen
+   ══════════════════════════════════════════════════════════════════════
+   Ticket #41 stellt vier Fragen an *ein* Bild. Drei davon haben eine Fassung,
+   die ich für richtig halte, und mindestens eine, die ebenso begründbar ist —
+   und bei zwei von ihnen ist die Frage ein **Satz**, den man nur nebeneinander
+   beurteilen kann. Also stehen sie hier als Tabelle und werden über eine
+   Leiste in der Prototyp-Umrandung umgeschaltet, nicht über eine Entscheidung
+   im Code. Die Vorwahl ist jeweils der Vorschlag, nicht der Zufall.
+
+   Das ist Prototyp-Gerüst und geht mit der Antwort weg: was gewinnt, wird ein
+   Satz, und die Tabelle fällt ersatzlos. */
+const V = { set: 'head', offer: 1, carry: 0 };
+
+/* Frage 3 — wie das `Offer` heisst, wenn der `Rank` *exakt* auf einem
+   Vielfachen steht. „Rank 1 is 0 off a full display" klingt nach Nichtstun;
+   angenommen macht der Vorschlag aus losen `Booster`n eine ungeöffnete
+   `PackagingUnit` und ändert die `PreparationList`. Die Bedingung ist nicht
+   strittig (#21), nur ihr Satz — also muss er den Tausch benennen, nicht den
+   Abstand, den es hier nicht gibt. */
+const OFFER0 = [
+  (r, k) => `Rank ${r} lands exactly on ${k} full display${k > 1 ? 's' : ''}.`,
+  (r, k, b) => `Rank ${r} could take ${k} sealed display${k > 1 ? 's' : ''}
+    instead of ${b} loose boosters.`,
+  (r, k, b) => `Rank ${r}'s ${b} boosters are exactly ${k} sealed display${
+    k > 1 ? 's' : ''} — hand them over unopened.`,
+];
+
+/* Frage 4 — wie der Knopf im `CarryOverNotice` heisst. Er liest sich heute als
+   „nimm meine Sachen mit" und lässt in Wahrheit alle gelisteten Pins **fallen**.
+   Unter der Regel aus #27: Deckungsgleichheit mit dem Modell ist das Ziel, und
+   das Modell hat für diesen Zustand ein Wort — `pinned`, das ohnehin am Schirm
+   steht. Ein Etikett, das selbst ein anderer Glossarbegriff ist, ist
+   ausgeschlossen: `Release` fällt damit weg, es ist ein `TournamentType`. */
+const CARRY_BTN = [
+  (n, to) => n > 1 ? `Drop all ${n} and follow ${to}` : `Drop it and follow ${to}`,
+  (n, to) => n > 1 ? `Unpin all ${n} — ${to} takes over` : `Unpin it — ${to} takes over`,
+  (n, to) => n > 1 ? `Let ${to} set all ${n}` : `Let ${to} set it`,
+];
+
 /* Am Release fällt die Beschaffung erstmals auf *ein* Kuvert — „1 Promo-
    Envelopes" stand da, seit die Zahl im Kopf steht, nur nie mit einer 1 davor. */
 const plural = (n, one, many) => (n === 1 ? one : many || `${one}s`);
@@ -1598,8 +1782,13 @@ const DESC = {
   ranked: 'How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the raffle.',
   raffleRange: 'Which ranks the Winner raffle may draw from when it places an open winner pack.',
 };
+/* `type` ist hier ausgezogen. Der Satz stand als Gruppenbeschreibung über den
+   drei Knöpfen und war ausserdem falsch — „Switching it drops every value you
+   set by hand" ist die Fassung aus #12, die #26 umgeworfen hat: ein Wechsel
+   überschreibt gerade *nichts* von Hand Gesetztes. Richtiggestellt steht er
+   jetzt im ⓘ der Ebene, zu der er gehört (`infoType`), und die Ebene darüber
+   hat ihren eigenen. */
 const GROUP_DESC = {
-  type: 'Picks the whole default set. Switching it drops every value you set by hand.',
   supply: 'What is in the box before anything is split — the boosters, the packs, and how they are boxed.',
   split: 'What comes off the top for everyone and for the judge, before the ranks are served.',
   rank: 'What is left goes down the standings: how deep, how flat, how steep.',
@@ -1789,25 +1978,87 @@ function badgeRow(plan, sugg, off) {
 }
 
 /* Der Kopf einer Spalte — eine Form, dreimal benutzt. Siehe `.colhead`. */
-function colHead({ title, facts = '', sub = '', extra = '' }) {
+function colHead({ title, facts = '', sub = '', extra = '', below = '' }) {
   return `<div class="colhead">
     <div class="bar">
       <strong>${title}</strong>
       ${facts}
       <span style="margin-left:auto">${extra}</span>
     </div>
-    ${sub}
+    ${sub}${below}
   </div>`;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   Runde 23 · Frage 1 — die `Game`-Reihe, und Frage 2 — der Reset daneben
+   ══════════════════════════════════════════════════════════════════════
+   Was von Hand gesetzt ist, als *Liste* statt als Zahl. Der Zähler im Kopf
+   addierte bisher jede manual-Zuteilung einzeln, die Meldung zählte sie als
+   einen Posten — zwei Zahlen für dieselbe Sache. Die Rückfrage muss aufzählen,
+   was fällt, also gewinnt die Liste und der Zähler folgt ihr. */
+function pinnedKeys() {
+  const keys = Object.keys(st.pin);
+  if (st.displays.some((x) => x > 0)) keys.push('displays');
+  if (Object.keys(st.manualWinner).length) keys.push('manualWinner');
+  return keys;
+}
+
+/* Die volle Reichweite. Sie löst nicht mehr aus, sondern *fragt* — die Blase
+   hängt an genau diesem Knopf (#33). */
+function resetAllChip() {
+  const n = pinnedKeys().length;
+  if (!n) return '';
+  return `<button class="pinchip" data-resetall="1"
+     title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
+     n} ↺</button>`;
+}
+
+/* Zwei Ebenen, übereinander statt nebeneinander (#26). Zwei gleich aussehende
+   Knopfreihen nebeneinander hätten versteckt, dass ein Wechsel oben auch die
+   Liste unten ersetzt; eingerückt sagt es die Form.
+
+   Der `Game`-Knopf ist gewählt und trotzdem keine Bedienung: er ist der einzige
+   Eintrag. Er steht da als Einladung — hier könnte deins stehen —, und der Weg
+   dahin steht im ⓘ und nicht als zweiter Knopf daneben. Ein „+ dein Spiel"
+   wäre ein Bedienelement, das nichts bedient. */
+/* Etikett *neben* den Knöpfen, nicht darüber. Zwei Zeilen je Ebene waren am
+   Bild 148 px — im Handy-Querformat 40 % der Höhe, und damit wäre die Fassung
+   `head` gestorben, bevor man sie ansehen kann. Nebeneinander sind es 76.
+
+   Darum heisst die untere Ebene am Schirm `Type` und nicht `Tournament type`:
+   ausgeschrieben bleiben neben ihr auf 352 px keine 220 px für drei Knöpfe.
+   Das ist eine **Kürzung des Terms**, keine Ersetzung — sie braucht nach
+   `AGENTS.md` keine `_Label_`-Zeile, genau wie `Raffle` für `WinnerRaffle`. Der
+   ganze Name steht zwei Zentimeter weiter im ⓘ. */
+function setBlock(plan, sticky) {
+  return `<div class="setblk${sticky ? ' sticky' : ''}">
+    <div class="setrow"><span class="setlbl">Game</span>
+      <span class="setchips">${Object.entries(GAMES).map(([id, g]) =>
+        `<button class="sheetbtn" data-game="${id}"
+          aria-pressed="${id === st.game}">${esc(g.title)}</button>`).join('')}</span>
+      ${infoBtn('game')}</div>
+    <div class="setsub">
+      <div class="setrow"><span class="setlbl">Type</span>
+        <span class="setchips">${Object.entries(TYPES).map(([id, t]) =>
+          `<button class="sheetbtn" data-type="${id}"
+            aria-pressed="${id === st.type}">${esc(t.title)}</button>`).join('')}</span>
+        ${infoBtn('type')}
+        <span style="margin-left:auto">${
+          V.set === 'split' ? '' : resetAllChip()}</span></div>
+    </div>
+  </div>`;
+}
+
+/* Runde 23 · Frage 2 — wo der Reset mit voller Reichweite steht.
+   `CONTEXT.md` sagt „der Knopf neben dem `TournamentType`-Titel", der Prototyp
+   hatte ihn im Plan-Kopf, und #33 hat den Unterschied gemessen statt ihn zu
+   entscheiden. Beides ist jetzt zu sehen: in den Fassungen `head` und `body`
+   steht er am Typ-Titel, in `split` bleibt er hier. Das Argument für hier ist
+   nicht der Ort, sondern das Scrollen — `Details` ist 2748 px hoch, und ein
+   Rückweg, der wegscrollt, ist keiner. Genau deshalb klebt ihn die Fassung
+   `head` fest, statt ihn einfach hinüberzuschieben. */
 function headerBlock(plan) {
-  const pins = Object.keys(st.pin).length + Object.keys(st.manualWinner).length
-             + st.displays.filter(Boolean).length;
-  const status = pins
-    ? `<button class="pinchip" data-resetall="1"
-         title="alle von Hand gesetzten Regler zurücksetzen"><span class="pindot"></span>${
- pins} ↺</button>`
-    : '';
+  const status = V.set === 'split' ? resetAllChip() : '';
   return colHead({
     title: TYPES[st.type].title,
     facts: `<span class="tiny muted num">${st.players} players</span>
@@ -1979,7 +2230,69 @@ function infoWinners(plan) {
           >Set packs to ${packs + need}</button></div>` : ''}`;
 }
 
-const INFO = { displays: infoDisplays, winners: infoWinners };
+/* ── Ein Satz je Ebene (#26) ───────────────────────────────────────────────
+   Nicht ein Satz über „die Sets", sondern einer je Ebene: die zwei sind
+   verschachtelt, und was sie unterscheidet, ist genau das, was erklärt werden
+   muss. Oben das vollständige Blatt, unten die Abweichungen.
+
+   Der Kontaktkanal steht beim `Game` und nur dort — er ist die Einladung, und
+   die gilt der Ebene mit einem Eintrag. Der Tag ist sichtbar, weil man ihn
+   auch abtippen können muss, wenn der Link ins Leere führt. */
+const DISCORD = { tag: 'ditshej', id: '000000000000000000' };  // TODO: echte ID
+function infoGame() {
+  return `<div class="pophead"><strong>Game</strong>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
+    <div class="poptext">The card game this tournament runs for. It carries a full
+      sheet of starting values — every slider below starts somewhere here.</div>
+    <div class="poptext muted">One Piece is the only one set up so far.</div>
+    <div class="popfoot">Run a different game? Say so on Discord —
+      <a href="https://discord.com/users/${DISCORD.id}" target="_blank"
+         rel="noreferrer"><strong>${DISCORD.tag}</strong></a></div>`;
+}
+function infoType() {
+  return `<div class="pophead"><strong>Tournament type</strong>
+      <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
+    <div class="poptext">The format inside ${esc(GAMES[st.game].title)} — a Weekly is
+      set up differently from a weekend event. A type carries only what it does
+      differently; the rest it takes from the game above.</div>
+    <div class="poptext muted">Switching replaces the whole sheet. Sliders you set
+      by hand stay where you put them — the notice then lists which.</div>`;
+}
+
+const INFO = { displays: infoDisplays, winners: infoWinners,
+               game: infoGame, type: infoType };
+
+/* ── Die Rückfrage der vollen Reichweite (#33) ─────────────────────────────
+   Zwei Knöpfe lösen dieselbe Handlung aus — der am Typ-Titel und der im
+   `CarryOverNotice` —, also stellen beide dieselbe Frage, in derselben Blase,
+   verankert an dem Knopf, den man gedrückt hat. Kein Overlay: das eine, das
+   die App hat, ist vergeben.
+
+   Was #26 als zweistufigen Knopf mit Verfallsklausel hatte, ist beides nicht
+   mehr: die Klausel hing an einem sitzungsweiten Undo, und das kommt nicht.
+   Damit ist die Rückfrage nicht mehr die billigere Variante einer Sicherung,
+   sondern die einzige — und darum nennt sie, was fällt, statt nur zu fragen. */
+function confirmPop() {
+  const keys = pinnedKeys();
+  const to = TYPES[st.type].title;
+  const names = keys.map((k) => LABEL[k] || k).join(', ');
+  const carry = st.confirm === 'carry';
+  const n = keys.length, many = n > 1;
+  return `<div class="pophead"><strong>${n} ${plural(n, 'slider')} back to ${
+        esc(to)}?</strong>
+      <button class="reset" data-confirm="no" style="margin-left:auto">✕</button></div>
+    <div class="poptext">${esc(names)}</div>
+    <div class="poptext muted">${carry
+      ? `${many ? 'They' : 'It'} stayed behind when you switched. Following ${
+         esc(to)} now means ${many ? 'they take its' : 'it takes those'} values
+         instead of yours.`
+      : `${many ? 'Each one goes' : 'It goes'} back to what ${
+         esc(to)} says.`} There is no undo.</div>
+    <div class="popask">
+      <button class="go" data-confirm="ok">Drop ${keys.length}</button>
+      <button class="no" data-confirm="no">Keep them</button>
+    </div>`;
+}
 
 /* Die Zahl, die in die Ränge geht — oben rechts über den Balken, wo ohnehin
    Platz ist. Nullachsen bleiben weg: „0 packs" ist keine Information. */
@@ -2404,12 +2717,29 @@ function offerBox(off) {
   // stehen: minimieren heisst „später", wegklicken heisst „nein". Beim Offer
   // darf man beides, bei der ConflictNotice nur das erste.
   if (!st.offerOpen) return '';
+  /* Runde 23 · Frage 3. Steht der `Rank` exakt auf einem Vielfachen, ist der
+     Abstand null — und ein Satz über einen Abstand, den es nicht gibt, klingt
+     nach Nichtstun („is 0 off a full display"). Der Vorschlag tut dann
+     trotzdem etwas: aus losen `Booster`n wird eine ungeöffnete `PackagingUnit`,
+     und die `PreparationList` ändert sich. Also ein eigener Satz, und die
+     Pfeilzeile fällt mit weg — `48 → 48` ist keine Bewegung. */
+  const exact = off.from === off.to;
+  const head = exact
+    ? OFFER0[V.offer](off.rank, off.value, off.from)
+    : `Rank ${off.rank} is ${Math.abs(off.from - off.to)} off a full display.`;
   return `<div class="deal">
     <div class="bar tiny" style="align-items:flex-start;gap:8px">
       <div style="flex:1">
-        <strong>Rank ${off.rank} is ${Math.abs(off.from - off.to)} off a full display.</strong>
-        <div class="muted" style="margin-top:2px">${off.from} → ${off.to} boosters
-          — ${off.value} sealed display${off.value > 1 ? 's' : ''} of ${S}, handed over unopened.${
+        <strong>${head}</strong>
+        <div class="muted" style="margin-top:2px">${exact
+          /* Die Nebenzeile sagt im Gleichstand das, was der Kopf nicht sagen
+             kann: die Kachel ändert sich nicht, die *Beschaffung* schon. Das
+             ist der ganze Unterschied zwischen Annehmen und Nichtstun. */
+          ? `The tile keeps its ${off.from} — what changes is the packaging:
+             ${off.value} sealed display${off.value > 1 ? 's' : ''} of ${S} instead
+             of loose boosters, and the preparation list follows.`
+          : `${off.from} → ${off.to} boosters
+          — ${off.value} sealed display${off.value > 1 ? 's' : ''} of ${S}, handed over unopened.`}${
           off.also.length ? ` Also moves rank${off.also.length > 1 ? 's' : ''} ${
             off.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(', ')}.` : ''}</div>
       </div>
@@ -2447,7 +2777,7 @@ function carryBox() {
       <button class="fold" data-fold="carry" title="minimieren">▾</button>
       <button class="reset" data-carryoff="1" title="wegklicken">✕</button>
     </div>
-    <button data-carryall="1">Carry them over to ${esc(c.to)}</button>
+    <button data-carryall="1">${esc(CARRY_BTN[V.carry](c.keys.length, c.to))}</button>
   </div>`;
 }
 
@@ -2654,12 +2984,35 @@ function screen(plan, sugg, off) {
 
      Einen Titel bekommt der Viererblock trotzdem nicht: der Spaltenkopf steht
      jetzt direkt über ihm und ist sein Titel. */
+  /* Runde 23 · Frage 1, am Bild. Die `Game`-Reihe konkurriert mit den heissen
+     Vier um den oberen Rand der Spalte, und es gibt zwei ehrliche Antworten:
+
+       head   Der Block gehört in den *Spaltenkopf*. Er ist nicht Regler,
+              sondern das, was allen Reglern ihre Startwerte gibt — und der
+              Kopf ist die einzige Stelle der Spalte, die stehen bleibt. Die
+              Vier behalten damit den oberen Rand des Scrollbereichs, und der
+              Reset am Typ-Titel scrollt nicht weg. Preis: ~58 px Kopf, im
+              Handy-Querformat ein Siebtel der Höhe.
+
+       body   Der Block steht *über* den Vieren und scrollt mit. Billiger im
+              Kopf, aber dann ist er nach dem ersten Wisch weg — und mit ihm
+              der Reset. #38 hat für die Vier schon festgehalten, dass
+              „zuoberst" in einer scrollenden Spalte keine Zusicherung ist;
+              das gilt hier genauso.
+
+       split  Wie `body`, aber der Reset bleibt im Plan-Kopf, wo der Prototyp
+              ihn hat. Die Fassung, die `CONTEXT.md` widerspricht — und die
+              einzige, in der der Rückweg nie wegscrollt, ohne dafür Kopfhöhe
+              zu kaufen. */
   const detCol = `
     <div class="detc" style="width:var(--det);flex:none;overflow:auto;
         background:var(--paper);box-shadow:var(--panel-shadow)">
       ${colHead({ title: 'Details',
-                  facts: '<span class="tiny muted">everything you can turn</span>' })}
-      <div style="padding:9px 12px 8px">${controls}${sheetContent(plan)}</div>
+                  facts: '<span class="tiny muted">everything you can turn</span>',
+                  below: V.set === 'head'
+                    ? `<div style="margin-top:9px">${setBlock(plan)}</div>` : '' })}
+      <div style="padding:9px 12px 8px">${
+        V.set === 'head' ? '' : setBlock(plan)}${controls}${sheetContent(plan, false)}</div>
     </div>`;
   const hotBar = `
     <div style="flex:none;background:var(--paper);box-shadow:var(--panel-shadow)">
@@ -2698,17 +3051,14 @@ function screen(plan, sugg, off) {
   </div>`;
 }
 
-function sheetContent(plan) {
+/* Die Typenreihe ist hier ausgezogen: sie steht seit Runde 23 als untere Ebene
+   im `setBlock`, weil sie ohne ihr `Game` darüber nur die halbe Aussage war.
+   `head` sagt, ob der Block vom Aufrufer selbst gesetzt wird (Spalte) oder
+   hier oben mitkommen soll (Blatt bei einer Spalte). */
+function sheetContent(plan, withSet) {
   ctx = 'sheet';
   const out = `
-    <div class="grouphead first">Tournament type</div>
-    <div class="desc">${esc(GROUP_DESC.type)}</div>
-    <div class="bar" style="gap:6px">${Object.entries(TYPES).map(([id, t]) =>
-      `<button class="sheetbtn" data-type="${id}"
-       style="${id === st.type
-         ? 'background:var(--accent);color:var(--on-accent);box-shadow:var(--glow)' : ''}"
-       >${t.title}</button>`).join('')}</div>
-
+    ${withSet ? setBlock(plan, V.set === 'head') : ''}
     <div class="grouphead">Supply</div>
     <div class="desc">${esc(GROUP_DESC.supply)}</div>
     ${slider('boosterRate', plan, { alwaysReset: true })}
@@ -2874,10 +3224,13 @@ function render() {
   /* Runde 21: die Chip-Zeile hat ihren eigenen Anker, damit sie ab 774 in den
      Streifen fallen kann, während die offenen Panels darüber bleiben. */
   badgesEl.innerHTML = badgeRow(plan, sugg, off);
-  sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
+  sheetEl.querySelector('.body').innerHTML = sheetContent(plan, true);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
-  popEl.innerHTML = st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
+  /* Drei Bewohner, eine Blase — und die Rückfrage kommt zuoberst: sie ist die
+     einzige, die auf eine Antwort wartet. */
+  popEl.innerHTML = st.confirm ? confirmPop()
+    : st.openInfo ? INFO[st.openInfo](plan) : slotPop(plan);
   raffleEl.innerHTML = st.openRaffle ? raffleBar(plan) : '';
   raffleEl.classList.toggle('open', st.openRaffle);
   /* Die Höhe wächst mit der Rücknahmeliste, also wird sie gemessen statt
@@ -2896,7 +3249,8 @@ function render() {
   gripEl.innerHTML = gripTo === 'plan'
     ? '<span class="ico">⊞</span>Plan' : '<span class="ico">🛒</span>Prepare';
   fsEl.classList.toggle('open', fsOpen && page === 'plan');
-  popEl.classList.toggle('show', st.openSlot != null || st.openInfo != null);
+  popEl.classList.toggle('show',
+    st.openSlot != null || st.openInfo != null || st.confirm != null);
   stage.classList.toggle('onplan', !away);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
   /* Nur das *Kachel*-Vollbild ist der Fokus-Modus ohne Fuss. `.fsopen` gilt
@@ -2919,13 +3273,30 @@ stage.addEventListener('scroll', paintFades, true);
 
 /* Die Blase hängt an ihrer Kachel, bleibt aber im Rahmen — und klappt nach
    oben, wenn unten kein Platz mehr ist. */
+/* Der ⓘ und die Rückfrage stehen an Knöpfen, die es *mehrfach* gibt: die
+   `Game`-Reihe wird für die Spalte und für das Blatt gebaut, der Rückweg in
+   voller Reichweite einmal am Typ-Titel und einmal im `CarryOverNotice`. Also
+   wird nicht das erste Vorkommen genommen, sondern das sichtbare — ein
+   geschlossenes Blatt hat seine Knöpfe noch, nur sieht sie niemand. */
+function liveAnchor(sel) {
+  for (const el of stage.querySelectorAll(sel)) {
+    const sh = el.closest('.sheet');
+    if (sh && !sh.classList.contains('open')) continue;
+    if (el.getClientRects().length) return el;
+  }
+  return null;
+}
 function placePop() {
-  if (st.openSlot == null && st.openInfo == null) return;
+  if (st.openSlot == null && st.openInfo == null && st.confirm == null) return;
   const host = fsOpen ? fsEl : appEl;
-  const tile = st.openInfo
-    ? host.querySelector(`[data-info="${st.openInfo}"]`)
+  const tile = st.confirm
+    ? liveAnchor(st.confirm === 'carry' ? '[data-carryall]' : '[data-resetall]')
+    : st.openInfo
+    ? liveAnchor(`[data-info="${st.openInfo}"]`)
     : host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
-  if (!tile) { popEl.classList.remove('show'); return; }
+  // Deckt eine Seite den Anker zu, ist die Frage weg statt unsichtbar offen:
+  // eine Rückfrage ohne den Knopf, zu dem sie gehört, ist keine.
+  if (!tile) { popEl.classList.remove('show'); st.confirm = null; return; }
   const s = stage.getBoundingClientRect();
   const t = tile.getBoundingClientRect();
   const w = popEl.offsetWidth, h = popEl.offsetHeight;
@@ -2994,11 +3365,25 @@ stage.addEventListener('click', (e) => {
   }
   // Jeder Knopf ausserhalb der Blase schliesst sie — die Leiste zählt hier
   // dazu, denn sie ist eine eigene Fläche und keine zweite Blase.
-  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; }
+  // Die Rückfrage zählt hier mit: wer daneben etwas anderes drückt, hat sie
+  // beantwortet, und zwar mit nein. Ein Knopf, der die Frage erst stellt,
+  // setzt sie weiter unten wieder — er kommt nach dieser Zeile.
+  if (!t.closest('#pop')) { st.openSlot = null; st.openInfo = null; st.confirm = null; }
   // Die Leiste schliesst nur ihr eigenes ✕ und ihr Griff. Ein Regler daneben
   // lässt sie stehen: man dreht am Bereich *während* gezogen wird (#35).
   if (d.closeraffle) { st.openRaffle = false; render(); return; }
   if (d.closepop) { st.openSlot = null; st.openInfo = null; render(); return; }
+  /* Die Antwort auf die Rückfrage. Beide Reichweiten lassen dieselben Pins
+     fallen — die am Typ-Titel und die im `CarryOverNotice` —, also steht die
+     Handlung einmal da und der Unterschied ist nur, ob die Meldung mit
+     verschwindet. */
+  if (d.confirm) {
+    if (d.confirm === 'ok') {
+      st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
+      if (st.confirm === 'carry') st.carry = null;
+    }
+    st.confirm = null; render(); return;
+  }
   if (d.win) {
     const r = st.openSlot;
     if (Number(d.win) > 0) st.manualWinner[r] = (st.manualWinner[r] || 0) + 1;
@@ -3018,9 +3403,9 @@ stage.addEventListener('click', (e) => {
   if (d.offeroff) { st.offerOff = d.offeroff; render(); return; }
   if (d.carryoff) { st.carry = null; render(); return; }
   // „Alle übernehmen" heisst: die Pins fallen, die Regler folgen wieder dem
-  // neuen Set-Blatt. Es ist ein Reset mit Reichweite, kein eigener Mechanismus.
-  if (d.carryall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
-                    st.carry = null; render(); return; }
+  // neuen Set-Blatt. Es ist ein Reset mit Reichweite, kein eigener Mechanismus —
+  // und weil es derselbe ist, fragt er seit Runde 23 dieselbe Frage.
+  if (d.carryall) { st.confirm = 'carry'; render(); return; }
   if (d.applyd != null) { setDisplay(Number(d.applyd) + 1, Number(d.v)); return; }
   /* Ein Tippen wählt eine Seite — es schaltet nicht um. Auf der Seite, die
      schon aktiv ist, passiert nichts; ein zweites Tippen auf `Plan` bringt
@@ -3045,10 +3430,15 @@ stage.addEventListener('click', (e) => {
   // Reservation und manual-WinnerPacks sind nach ADR 0006 gewöhnliche pinned
   // Regler (#26). „Alles zurück" muss sie also mitnehmen — sonst bliebe ein Rang
   // mit 24 reservierten Boostern stehen, während der Zähler 0 sagt.
-  if (d.resetall) { st.pin = {}; st.val = {}; st.displays = []; st.manualWinner = {};
-                    render(); return; }
+  if (d.resetall) { st.confirm = 'all'; render(); return; }
   if (d.reset) { reset(d.reset); return; }
   if (d.type) { switchType(d.type); return; }
+  /* Die `Game`-Reihe hat einen Eintrag, also tut ein Tippen darauf nichts — sie
+     steht als Ebene da, nicht als Umschalter (#26). Der Weg ist trotzdem
+     gebaut: ein zweites `Game` wechselt genau wie ein `TournamentType`, samt
+     `CarryOverNotice`. */
+  if (d.game) { if (d.game !== st.game) { st.game = d.game; switchType(st.type); }
+                render(); return; }
   if (d.setCurve) { setVal('curve', d.setCurve); return; }
   if (d.setRange) { setVal('raffleRange', d.setRange); return; }
   // Eine Stufe zu wählen heisst: der Regler folgt wieder der Rechnung.
@@ -3075,10 +3465,9 @@ stage.addEventListener('click', (e) => {
    ganze Set-Blatt ausgetauscht worden — minimiert stehen zu bleiben läse sich,
    als sei sie danach noch einmal geprüft worden. */
 function switchType(id) {
-  const keys = Object.keys(st.pin);
-  if (st.displays.some((x) => x > 0)) keys.push('displays');
-  if (Object.keys(st.manualWinner).length) keys.push('manualWinner');
+  const keys = pinnedKeys();
   st.type = id;
+  st.confirm = null;                   // eine offene Frage gilt dem alten Blatt
   st.carryEvent += 1;
   st.carry = keys.length ? { to: TYPES[id].title, keys } : null;
   st.carryOpen = true;                 // Ereignismeldung: öffnet immer
@@ -3107,16 +3496,17 @@ new ResizeObserver(() => {
 }).observe(stage);
 /* Aufsammeln in der Einfangphase: danach hat render() das angeklickte
    Element längst ersetzt, und ein losgelöster Knoten liegt nirgends mehr. */
+const popOpen = () => st.openSlot != null || st.openInfo != null
+  || st.openRaffle || st.confirm != null;
+const closePops = () => {
+  st.openSlot = null; st.openInfo = null; st.openRaffle = false; st.confirm = null;
+  render();
+};
 document.addEventListener('click', (e) => {
-  const inside = stage.contains(e.target);
-  if (!inside && (st.openSlot != null || st.openInfo != null || st.openRaffle)) {
-    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
-  }
+  if (!stage.contains(e.target) && popOpen()) closePops();
 }, true);
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && (st.openSlot != null || st.openInfo != null || st.openRaffle)) {
-    st.openSlot = null; st.openInfo = null; st.openRaffle = false; render();
-  }
+  if (e.key === 'Escape' && popOpen()) closePops();
 });
 
 /* Der Modus steht im Attribut, nicht in der Klasse: setDev() schreibt
@@ -3129,6 +3519,37 @@ function setMode(m) {
   u.searchParams.set('mode', m);
   history.replaceState(null, '', u);
 }
+/* Die Fassungsleiste. Sie schreibt in `V` und zeichnet neu — sonst nichts; kein
+   Zustand der App hängt daran, und beim Umschalten geht nichts verloren. Die
+   Vorschau zeigt den Satz in der Fassung, die gerade gewählt ist, mit den
+   Zahlen eines Beispiels: der Knopf allein („B") sagt nichts. */
+const r23El = document.getElementById('r23');
+const PEEK = {
+  set: { head: 'Spaltenkopf, klebt · Vier behalten den Scrollrand',
+         body: 'über den Vieren, scrollt mit',
+         split: 'Block im Körper, Reset bleibt im Plan-Kopf' },
+  offer: (i) => OFFER0[i](1, 2, 48).replace(/\s+/g, ' '),
+  carry: (i) => CARRY_BTN[i](3, 'Weekend'),
+};
+function paintR23() {
+  for (const q of r23El.querySelectorAll('.q')) {
+    const key = q.dataset.q;
+    const cur = V[key];
+    q.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed',
+      String(b.dataset.v === String(cur))));
+    const p = PEEK[key];
+    q.querySelector('.peek').textContent =
+      typeof p === 'function' ? p(cur) : p[cur];
+  }
+}
+r23El.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const key = b.closest('.q').dataset.q;
+  V[key] = key === 'set' ? b.dataset.v : Number(b.dataset.v);
+  paintR23(); render();
+});
+
 document.getElementById('themes').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b) setMode(b.dataset.mode);
@@ -3140,6 +3561,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'm') setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark');
 });
 
+paintR23();
 // Die Leinwand wählt sich selbst: echtes Handy ohne Rahmen, sonst im Rahmen.
 setDev(window.innerWidth < 560 ? 'bare' : 'phone');
 // Ohne Angabe folgt der Modus dem Gerät — genau wie die echte App es täte.
