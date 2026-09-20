@@ -179,13 +179,22 @@
      Organismus wie der Streifen unten, nur hochkant — er trägt weiter genau
      das, was quer zu den Seiten liegt. */
   #stage[data-flat="1"] { --foot: 0px; --planl: 0px; --planr: var(--footw); }
-  #stage[data-flat="1"] #app { width: calc(100% - var(--footw)); }
+  /* Der Streifen nimmt Platz, statt aufzuliegen — dieselbe Zusage wie beim
+     waagerechten Fuss aus #39. Das gilt für *alle* Flächen, auch die, die als
+     Overlay über der ganzen Bühne liegen: sonst liest Details seine rechte
+     Spalte hinter der Navigation. */
+  #stage[data-flat="1"] #app,
+  #stage[data-flat="1"] .sheet.page { width: calc(100% - var(--footw)); }
   #stage[data-flat="1"] #foot { left: auto; top: 0; bottom: 0;
         width: var(--footw); height: auto; flex-direction: column; }
-  #stage[data-flat="1"] .navrow { flex-direction: column; }
-  #stage[data-flat="1"] .navbtn { flex: none; height: 58px; gap: 3px;
+  /* Die drei Punkte verteilen sich über die ganze Höhe, statt oben zu kleben:
+     der Streifen ist so hoch wie die Bühne, und ein Block oben liesse zwei
+     Drittel leer. */
+  #stage[data-flat="1"] .navrow { flex-direction: column;
+        justify-content: space-evenly; }
+  #stage[data-flat="1"] .navbtn { flex: none; gap: 4px;
         font-size: 8px; letter-spacing: .04em; }
-  #stage[data-flat="1"] .navbtn .ico { font-size: 16px; padding: 3px 10px; }
+  #stage[data-flat="1"] .navbtn .ico { font-size: 16px; padding: 4px 10px; }
   #stage[data-flat="1"] #foldgrip { display: none; }
   /* Das Vollbild ist die Faltung in die Gegenrichtung: alles weg ausser dem
      Plan. Also *ist* der Plan der ganze Schirm, und die Einzüge fallen von
@@ -801,11 +810,24 @@
      einspaltig ist — ab da ist Details eine Spalte. Die Zweispaltigkeit von
      Runde 14 trifft damit nur noch den Querformat-Fall unter der Bruchstelle;
      sie hängt an der gemessenen Breite, nicht mehr an der Leinwand-Klasse. */
-  #stage.widesheet #sheet .body { column-count: 2; column-gap: 34px;
-    column-rule: 1px solid var(--line); }
-  #stage.widesheet #sheet .body > * { break-inside: avoid; }
+  /* ── Runde 22: Zeilen statt Spalten ───────────────────────────────────
+     `column-count` fliesst **senkrecht**: die linke Spalte läuft bis unten
+     und setzt sich oben rechts fort. Am Bild heisst das, die Gruppe „Supply"
+     ist in der Mitte durchgeschnitten und man liest sie von unten links nach
+     oben rechts — bei einer Fläche, die man *überfliegt*, ist das falsch
+     herum. Ein Raster fliesst zeilenweise: zwei Regler nebeneinander, die
+     nächsten zwei darunter, und jede Gruppenüberschrift nimmt beide Spalten.
+     Damit bleibt die Gruppe beisammen und die Reihenfolge ist die gelesene. */
+  #stage.widesheet #sheet .body { display: grid; grid-template-columns: 1fr 1fr;
+    column-gap: 34px; align-items: start; align-content: start; }
   #stage.widesheet #sheet .grouphead,
-  #stage.widesheet #sheet .subhead { break-after: avoid; }
+  #stage.widesheet #sheet .subhead,
+  #stage.widesheet #sheet .desc { grid-column: 1 / -1; }
+  /* Prepare bekommt dieselbe Behandlung: die Posten sind Kacheln, die
+     nebeneinander lesbar sind, und je zwei nebeneinander halbiert den Weg. */
+  #stage.widesheet #prep .body.prep { display: grid;
+    grid-template-columns: 1fr 1fr; gap: 12px 34px; align-content: start; }
+  #stage.widesheet #prep .body.prep > .prepnote { grid-column: 1 / -1; }
   /* ── Die zwei Spalten ──────────────────────────────────────────────────
      Details trägt oben die vier heissen Regler, dann die Gruppenlinie, dann
      die übrigen dreizehn. `.grouphead.first` verliert darum seine Sonderrolle:
@@ -2178,10 +2200,16 @@ function bgOf(el) {
   return 'transparent';
 }
 function fadeBoxes() {
+  /* Runde 22: liegt eine Seite als Overlay darüber, sind die Flächen der
+     Faltung *verdeckt* — ihre Bänder aber wurden weitergemalt und lagen als
+     helles Rechteck mitten im Reglerblatt. Ein Band gehört der Fläche, die
+     scrollt (#39), und eine verdeckte Fläche scrollt niemand. */
+  const covered = sheetEl.classList.contains('open')
+    || prepEl.classList.contains('open');
   return [
-    appEl.querySelector('.gridwin'),
-    appEl.querySelector('.detc'),
-    appEl.querySelector('.prepc'),
+    covered ? null : appEl.querySelector('.gridwin'),
+    covered ? null : appEl.querySelector('.detc'),
+    covered ? null : appEl.querySelector('.prepc'),
     /* Welches Element scrollt, ist je Blatt verschieden und nicht zu raten:
        `.sheet` trägt selbst `overflow:auto`, also scrollen `#sheet` und `#prep`
        als Ganzes — nur `#fs` ist eine Flex-Spalte, damit der Kopf stehen
