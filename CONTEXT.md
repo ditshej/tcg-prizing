@@ -384,6 +384,23 @@ nicht Grösse, und die Anwesenheit sagen dann der Chip und die rot markierten
 sie behauptete ein minimierter Konflikt einen gültigen Plan.
 Sie kann nie zugleich mit einem `Offer` stehen: das eine setzt einen ungültigen
 Plan voraus, das andere einen gültigen.
+**Woraus die Wege gewählt werden**, sagt ADR 0002 nicht — das Verfahren schon
+(einen Regler über seinen Bereich variieren, nie zwei zugleich, den
+nächstliegenden Wert nehmen, der räumt). Durchsucht wird ein Regler genau dann,
+wenn **beides** gilt: er ist eine **Stellschraube der Verteilung** und keine
+**Tatsache über den Abend**, und er geht in die **verletzte Bedingung** ein.
+Die erste Hälfte hält Spielerzahl, `Booster`-Rate und `Display`-Grösse draussen
+— ein Weg heraus darf den Lead nie bitten, über sein Turnier zu lügen. Die
+zweite braucht keine Ausnahmen: die `DistributionCurve` räumt die Überholung,
+steht aber im Bedarf `RankFloor · RankPoolDepth + 1` nicht drin und erscheint
+beim Bodenkonflikt darum von selbst nicht.
+Die **Ordnung** läuft auf einer zweiten Achse, **Zusage gegen Formgebung**:
+zuerst die Wege, die keine Zusage zurücknehmen, dahinter die übrigen in der
+Vorrangkette aus ADR 0001. Heute steht damit die `DistributionCurve` allein
+vorn — dass sie `steep` statt `moderate` zeigt, sagt kein Lead je an, während
+„die oberen acht bekommen etwas", „jeder bekommt einen `Booster`" und „`Rank` 1
+bekommt ein `Display`" angesagte Dinge sind. Die Kette bleibt davon unberührt:
+sie ordnet die Zusagen untereinander, und die `DistributionCurve` war nie eine.
 _Avoid_: Error, Warning (die Rechnung ist nie fehlgeschlagen), Validation
 
 **Offer**:
