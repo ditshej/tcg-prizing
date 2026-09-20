@@ -170,10 +170,28 @@
   #stage[data-cols="2"] { --planr: var(--det); --foot: var(--footw); }
   #stage[data-cols="3"] { --planr: var(--det); --planl: var(--prep);
                           --foot: var(--footw); }
+  /* ── Runde 22 (#40): die flache Bühne ────────────────────────────────
+     Breite lässt sich auf zwei Arten ausgeben — als Seiten nebeneinander
+     (Gleichzeitigkeit) oder als Spalten *innerhalb* einer Seite (Weglänge).
+     Die Höhe entscheidet, welche mehr kauft. Unter der Ersthöhe des Plans
+     (s. BPH im Skript) bleibt es bei **einer** Seite, und die Breite geht
+     nach innen. Der Fuss dreht sich dabei an die rechte Kante: derselbe
+     Organismus wie der Streifen unten, nur hochkant — er trägt weiter genau
+     das, was quer zu den Seiten liegt. */
+  #stage[data-flat="1"] { --foot: 0px; --planl: 0px; --planr: var(--footw); }
+  #stage[data-flat="1"] #app { width: calc(100% - var(--footw)); }
+  #stage[data-flat="1"] #foot { left: auto; top: 0; bottom: 0;
+        width: var(--footw); height: auto; flex-direction: column; }
+  #stage[data-flat="1"] .navrow { flex-direction: column; }
+  #stage[data-flat="1"] .navbtn { flex: none; height: 58px; gap: 3px;
+        font-size: 8px; letter-spacing: .04em; }
+  #stage[data-flat="1"] .navbtn .ico { font-size: 16px; padding: 3px 10px; }
+  #stage[data-flat="1"] #foldgrip { display: none; }
   /* Das Vollbild ist die Faltung in die Gegenrichtung: alles weg ausser dem
      Plan. Also *ist* der Plan der ganze Schirm, und die Einzüge fallen von
      selbst auf null — dieselbe Regel, kein Sonderfall. */
   #stage.fsopen { --planl: 0px; --planr: 0px; }
+  #stage[data-flat="1"].fsfocus #app { width: 100%; }
   /* Runde 21: und *alles weg* heisst auch der Fuss. Bis hierher stand er im
      Kachel-Vollbild weiter da — am Handy gemessen mit vollen 56 px und drei
      Nav-Einträgen unter den Kacheln, weil `#foot` im #stage auf z 45 liegt und
@@ -2513,9 +2531,37 @@ const COLW = { plan: 388, det: 352, prep: 356 };
    liefert 388 + 352. Die Zahl war nie gesetzt, sie war immer eine Summe. */
 const BP2 = COLW.plan + COLW.det;               // 740
 const BP3 = COLW.plan + COLW.det + COLW.prep;   // 1096
+/* ── Runde 22 (#40): dieselbe Regel, um eine Achse gedreht ─────────────────
+   #37 rechnete die Bruchstellen allein aus der Breite, und im Querformat
+   bricht das: gemessen 812×375 mit zwei Spalten zeigt der Plan **eine**
+   Kachelreihe (82 px Fenster) und Details 8,5 Bildschirme.
+
+   Gegen den Wegvergleich, den der Ticket-Body vorschlägt: er misst Details
+   richtig und den Plan falsch. Das Kachelfenster steht bei 1,4 Bildschirmen
+   und sieht damit gesund aus, während es eine Reihe zeigt — der Plan
+   scheitert nicht an der Weglänge, sondern daran, dass sein Fenster unter
+   seine Brauchbarkeitsgrenze fällt. Also dieselbe Bauart wie die
+   Erstbreiten: eine **Ersthöhe**, und nur der Plan hat eine (Details und
+   Prepare scrollen von Natur aus).
+
+   Die Zahl ist gemessen, nicht gewählt: 245 px trägt die Plan-Spalte ausser
+   dem Kachelfenster (Kopf, Handout-Zeile, Balken, Legende, Rangmeldung), und
+   der Hochformat-Master zeigt **zwei** Kachelreihen. Was er zeigt, ist die
+   Ersthöhe — genau wie die Erstbreite die Breite war, die eine Spalte beim
+   ersten Erscheinen hatte. */
+const PLANCHROME = 245;                          // gemessen, ohne Kachelfenster
+const ROWS0 = 2;                                 // Kachelreihen des Masters
+const BPH = PLANCHROME + ROWS0 * 54 + (ROWS0 - 1) * 5 + 48;   // 406
 function colCount() {
   const w = stage.clientWidth;
+  if (isFlat()) return 1;
   return w >= BP3 ? 3 : w >= BP2 ? 2 : 1;
+}
+/* Flach heisst: zu wenig Höhe für Spalten, aber genug Breite, dass sie
+   irgendwohin soll. Unter BP2 ist es der Hochformat-Master, und der wird von
+   diesem Ticket nicht angefasst. */
+function isFlat() {
+  return stage.clientHeight < BPH && stage.clientWidth >= BP2;
 }
 
 function screen(plan, sugg, off) {
@@ -2575,6 +2621,14 @@ function screen(plan, sugg, off) {
     <div style="flex:none;background:var(--paper);box-shadow:var(--panel-shadow)">
       <div style="padding:9px 12px 8px">${controls}</div>
     </div>`;
+  /* Runde 22: auf der flachen Bühne stellt sich dieselbe heisse Leiste hoch-
+     kant neben den Plan. Kein neuer Inhalt und keine zweite Anordnung — die
+     Breite geht nach innen, statt eine zweite Seite aufzumachen. */
+  const hotCol = `
+    <div class="hotc" style="width:var(--det);flex:none;overflow:auto;
+        background:var(--paper);box-shadow:var(--panel-shadow)">
+      <div style="padding:9px 12px 8px">${controls}</div>
+    </div>`;
   const prepCol = `
     <div class="prepc" style="width:var(--prep);flex:none;overflow:auto;
         background:var(--paper);box-shadow:var(--panel-shadow)">${prepContent(plan)}</div>`;
@@ -2591,11 +2645,12 @@ function screen(plan, sugg, off) {
   /* Runde 21: kein Einzug links mehr. Der Griff hielt hier einen 34-px-Streifen
      frei; er sitzt jetzt unten im Fuss, also beginnt der Plan bei zwei Spalten
      wieder an der Kante — dieselbe Null wie am Handy. */
+  const flat = isFlat();
   return `<div style="height:100%;display:flex;
-      flex-direction:${cols >= 2 ? 'row' : 'column'};overflow:hidden">
+      flex-direction:${cols >= 2 || flat ? 'row' : 'column'};overflow:hidden">
     ${cols >= 3 ? prepCol : ''}
     ${cols === 2 && page === 'prepare' ? prepMain : planCol}
-    ${cols >= 2 ? detCol : hotBar}
+    ${cols >= 2 ? detCol : flat ? hotCol : hotBar}
   </div>`;
 }
 
@@ -2731,6 +2786,7 @@ function render() {
      aufzieht, landet auf `Plan` und sieht seine Regler daneben stehen. */
   const cols = colCount();
   stage.dataset.cols = cols;
+  stage.dataset.flat = isFlat() ? '1' : '0';
   if (cols >= 2 && page === 'details') page = 'plan';
   if (cols >= 3 && page === 'prepare') page = 'plan';
   const plan = distribute(settings());
