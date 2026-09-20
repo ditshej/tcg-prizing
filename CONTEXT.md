@@ -368,6 +368,15 @@ also einem anderen `Rank` mehr wegnehmen, als das Fenster je erlaubt hätte. Er
 wird deshalb nicht enger gefasst, sondern **benennt die mitbewegten `Rank`s**
 samt ihrer Zahlen: ein Vorschlag, den man nicht annehmen muss, darf teuer sein,
 solange er seinen Preis nennt.
+Liegt der `Rank` **exakt** auf einem Vielfachen, ist der Abstand null — und ein
+Satz über einen Abstand, den es nicht gibt, klingt nach Nichtstun („is 0 off a
+full display"). Der Vorschlag tut dann trotzdem etwas: aus losen `Booster`n
+wird eine ungeöffnete `PackagingUnit`, und die `PreparationList` ändert sich.
+Dieser Fall bekommt darum einen eigenen Satz, der den **Tausch** benennt statt
+den Abstand — `Rank N could take k sealed displays instead of B loose boosters`
+—, und die Vorher-Nachher-Zeile fällt mit weg, weil `24 → 24` keine Bewegung
+ist. An ihrer Stelle steht, was sich wirklich ändert: die Kachel behält ihre
+Zahl, die Verpackung nicht (#41).
 _Avoid_: Hint, Suggestion, Tip — die Wege aus der `ConflictNotice` sind auch
 Vorschläge, und seit dem `NoticeStack` ist das kein blosser Vorbehalt mehr,
 sondern ein herstellbarer Fall: beide Chips können nebeneinander in der Ecke
@@ -383,8 +392,23 @@ einem Klick, der sichtbar wenig getan hat, und trägt deshalb den Weg mit: einen
 Knopf, der alle auf das neue Blatt zieht. Dieser Knopf ist die **dritte
 Reichweite** desselben Rückwegs und keine eigene Handlung — er lässt dieselben
 Pins fallen wie der Knopf am `TournamentType`-Titel, Kachel-Zuteilungen
-eingeschlossen, und fragt darum ebenso vorher nach. Wegklickbar und reiner
-Sitzungszustand, nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
+eingeschlossen, und fragt darum ebenso vorher nach: dieselbe Frage, in
+derselben Blase, verankert an dem Knopf, den man gedrückt hat.
+Er heisst am Schirm **`Drop all N and follow <Typ>`** (#41), und die Zerstörung
+steht vorn, weil sie das Überraschende ist: der Knopf liest sich sonst als
+„nimm meine Sachen mit" und lässt in Wahrheit alle aufgezählten Pins fallen —
+es ist der Knopf mit der grössten Reichweite im Programm, und seit ADR 0006
+ohne Rückweg. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
+also trägt dieselbe Art Handlung dasselbe Wort. Der Satz benennt eine
+**Handlung** und steht nicht für einen Term ein, braucht also keine
+`_Label_`-Zeile. Mitbewertet und verworfen: *Unpin all N — <Typ> takes over*
+(deckungsgleich mit dem Modell, `pinned` steht ohnehin am Schirm, benennt aber
+den Zustand statt den Verlust) und *Let <Typ> set all N* (die ruhigste Fassung,
+und darum hier die falsche). Ausgeschlossen war *Release them to …*: `Release`
+ist selbst ein `TournamentType`, und ein Etikett, das ein anderer Glossarbegriff
+ist, zeigt auf den falschen Eintrag.
+Wegklickbar und reiner Sitzungszustand,
+nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
 verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
 `TournamentType`-Titel (alle) steht.
 Sie ist die einzige **Ereignismeldung** des `NoticeStack`: sie beschreibt keinen
@@ -452,6 +476,17 @@ Turniertypen. Ein unvollständiges `Game` ist ein Fehler und kein
 zulässiger Zustand, weil der Rückfall eines `TournamentType` sonst ins Leere
 zeigt. Diese Werte sind zugleich die des ersten `TournamentType` — keine
 neutrale Grundlinie, sondern der häufigste Fall.
+Am Schirm steht die Ebene **immer**, auch solange sie genau einen Eintrag hat
+(#41). Ein *Umschalter* mit einem Knopf wäre Ballast; eine *Ebene* mit einem
+Eintrag ist es nicht, denn sie sagt, dass hier ein zweites Spiel stehen könnte.
+Der Knopf ist darum keine Bedienung, sondern die **Einladung** — angetippt tut
+er nichts, weil er schon gewählt ist. Der Weg zu einem zweiten `Game` steht
+nicht als zweiter Knopf daneben (ein Bedienelement, das nichts bedient),
+sondern im ⓘ der Ebene, zusammen mit dem Kontaktkanal: Discord, mit dem Tag
+sichtbar und hinterlegt. Jede der zwei Ebenen trägt einen **eigenen** ⓘ mit
+einem eigenen Satz — was sie unterscheidet (vollständiges Blatt oben, nur
+Abweichungen unten), ist genau das, was erklärt werden muss, und ein Satz über
+„die Sets" sagte es nicht.
 _Avoid_: TCG, System; „Game" nie im Sinn einer einzelnen Partie
 
 **TournamentType**:
@@ -461,6 +496,22 @@ nennt, erbt er. Es ist immer genau einer gewählt, einen Leerzustand „kein Typ
 gibt es nicht: der **erste** einer Liste ist die Startwahl und trägt ausser dem
 Titel nichts, seine Werte sind die des `Game`. Damit ist die Reihenfolge der
 Liste bedeutungstragend und keine Sortierung für die Oberfläche.
+Am Schirm steht die Reihe **eingerückt unter** der des `Game` (#41). Die
+Einrückung ist die ganze Form der Verschachtelung: keine Klapper, kein Rahmen
+und kein Strich davor — eine Linie ist nur dort zugelassen, wo sie Daten
+trennt, und hier trennt sie nicht, sie ordnet unter. Zwei gleich aussehende
+Knopfreihen nebeneinander hätten versteckt, dass ein Wechsel auf der oberen
+auch die Liste der unteren ersetzt. Der Block steht **im Körper** der
+`Details`-Spalte, über den heissen vier Reglern, und scrollt mit ihnen: fest
+im Spaltenkopf hätte er gemessen 101 px dauerhaft gekostet, im
+Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
+anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
+Das Etikett der Reihe steht *neben* den Knöpfen und lautet dort `Type` — sonst
+kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
+352 px breiten `Details`-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
+des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
+wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
+weiter im ⓘ der Ebene.
 _Avoid_: Format (bezeichnet im TCG die Kartenpool-Regel), Preset
 
 **DefaultSet**:
@@ -494,7 +545,15 @@ Reichweiten fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
 Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,
 denn dort steht ein sichtbarer Wert, der mit einem Griff wieder gesetzt ist. Die
 Rückfrage hängt an der **Handlung**, nicht am Ort, und bleibt: ein sitzungsweites
-Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006). Die Markierung sagt deshalb „folgt der Rechnung nicht
+Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
+Der Ort „neben dem `TournamentType`-Titel" ist seit #41 auch am Schirm wahr; bis
+dahin sass der Knopf im Kopf des Plans, und zwar nicht aus einem Entscheid,
+sondern weil es den Titel am Schirm noch nicht gab. Der Preis ist benannt und
+angenommen: `Details` scrollt, also scrollt der Rückweg mit — derselbe Preis,
+den die vier heissen Regler in derselben Spalte schon zahlen. Die Blase zählt
+auf, **welche** Regler fallen, nicht nur wie viele, und sagt dazu, dass es kein
+Zurück gibt. Ein Overlay ist sie nicht und darf sie nicht sein: das eine, das
+die App hat, ist vergeben. Die Markierung sagt deshalb „folgt der Rechnung nicht
 mehr", nicht „weicht ab": beides fällt meist zusammen, aber ein `pinned` Regler
 darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
 gleich, auch wenn er nur bei den vieren beisst, deren Startwert eine Rechnung
