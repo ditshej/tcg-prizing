@@ -2604,7 +2604,17 @@ function screen(plan, sugg, off) {
   // Das Diagramm darf nicht die halbe Fläche nehmen: flach im Querformat,
   // mittelhoch, wo Höhe da ist, und im Hochformat darf es wachsen.
   const h = stage.clientHeight;
-  const stripMax = h < 460 ? 96 : cols >= 2 ? 190 : 280;
+  /* Runde 22: auf der flachen Bühne zahlt das Diagramm für die zweite
+     Kachelreihe. Gemessen war sie um 10 px angeschnitten — 121 px Fenster
+     gegen 131 px Inhalt —, und ein Versprechen, das die Schwelle *trägt*,
+     darf nicht am Bild scheitern. Elastisch ist hier genau eine Grösse: das
+     Diagramm. Also wird sie gerechnet statt gesetzt — was nach dem festen
+     Teil der Spalte (158 px: Kopf, Handout-Zeile, Legende, Rangmeldung) und
+     den zwei Reihen übrig bleibt, und nie unter 60. */
+  const CHROME0 = 158, GRID2 = ROWS0 * 54 + (ROWS0 - 1) * 5 + 18;
+  const stripMax = isFlat()
+    ? Math.max(60, Math.min(96, h - CHROME0 - GRID2))
+    : h < 460 ? 96 : cols >= 2 ? 190 : 280;
   const controls = `
     ${slider('players', plan)}
     ${depthControl(plan)}
