@@ -296,6 +296,9 @@
   #r23 [aria-pressed="true"] { background: #fff; color: #16191c; }
   #r23 .peek { opacity: .5; margin-top: 4px; line-height: 1.35;
                font-style: italic; }
+  #r23 .case { margin-left: auto; background: #ffffff10; opacity: .8; }
+  #r23 .hint { opacity: .42; line-height: 1.35; margin-top: 9px;
+               padding-top: 8px; border-top: 1px solid #ffffff1f; }
 
   /* ── Primitives ────────────────────────────────────────────────────── */
   .bar { display: flex; align-items: center; gap: 8px; }
@@ -1099,15 +1102,10 @@
      dasselbe ist — nur ohne Nachbarn. */
   .setchips .sheetbtn[aria-pressed="true"] { background: var(--accent);
     color: var(--on-accent); box-shadow: var(--glow); }
-  /* Im Spaltenkopf trägt der Block keinen Abstand nach unten — der Kopf hat
-     seinen eigenen. */
-  .colhead .setblk { margin-bottom: 0; }
-  /* Variante „Kopf": der Block klebt oben in der scrollenden Fläche. Die
-     negativen Ränder heben das Polster des `.body` auf, damit der Schatten
-     über die ganze Spaltenbreite läuft statt in der Mitte aufzuhören. */
-  .setblk.sticky { position: sticky; top: 0; z-index: 3; background: var(--paper);
-    margin: -14px -20px 12px; padding: 12px 20px 10px;
-    box-shadow: var(--panel-shadow); }
+  /* Bei einer Spalte ist der Block das erste im Blatt und steht am Polster
+     des `.body` an — dort darf er etwas mehr Luft nach unten haben, weil
+     unter ihm eine Gruppenlinie beginnt statt der heissen Vier. */
+  #sheet .setblk { margin-bottom: 18px; }
 
   /* Prosa in der Blase: `.popline` ist eine Zeile mit rechtsbündiger Zahl, und
      ein Erklärsatz hat keine. */
@@ -1130,18 +1128,19 @@
   <p>
     Vier Fragen an einem Bild. Die <strong>Game-Ebene</strong> steht jetzt am
     Schirm — eine Reihe mit einem Eintrag, eingerückt darunter die Typenreihe,
-    ein ⓘ je Ebene. Der <strong>Reset mit voller Reichweite</strong> fragt nicht
-    mehr zweistufig, sondern mit einer am Knopf verankerten Blase, und derselbe
-    Knopf im <em>CarryOverNotice</em> fragt jetzt auch. Die zwei Wörter
-    — der <em>Offer</em>-Satz auf dem exakten Vielfachen und der Knopf im
-    <em>CarryOverNotice</em> — stehen als <strong>Fassungen unten rechts</strong>
-    zum Durchschalten.
+    ein ⓘ je Ebene, im Körper der <code>Details</code>-Spalte über den heissen
+    Vier. Der <strong>Reset mit voller Reichweite</strong> steht neu am
+    Typ-Titel und fragt nicht mehr zweistufig, sondern mit einer am Knopf
+    verankerten Blase; derselbe Knopf im <em>CarryOverNotice</em> fragt jetzt
+    auch.
   </p>
   <p>
-    Zum Nachstellen: <code>Weekend</code> wählen, ein paar Regler anfassen, dann
-    auf <code>Release</code> wechseln — das gibt den <em>CarryOverNotice</em>.
-    Für den <em>Offer</em> auf dem exakten Vielfachen: <code>Release</code>,
-    Spielerzahl so drehen, bis ein Rang glatt auf 24 · n steht.
+    Offen sind noch die zwei Wörter — der <em>Offer</em>-Satz auf dem exakten
+    Vielfachen und der Knopf im <em>CarryOverNotice</em>. Sie stehen
+    <strong>oben links</strong> als Fassungen zum Durchschalten, je mit einem
+    Knopf <em>Fall herstellen</em>, der die Regler so setzt, dass die Meldung
+    aufgeht — sonst schaltet man A/B/C und nichts bewegt sich, weil nichts
+    dasteht.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
@@ -1159,8 +1158,10 @@
       <em>Keep them</em>, die aufzählt, was fällt, und sagt, dass es kein Zurück
       gibt. Kein Overlay — die App behält ihr einziges. Weil derselbe Rückweg
       auch im <em>CarryOverNotice</em> steht, fragt der Knopf dort jetzt
-      dieselbe Frage in derselben Blase. Der <em>Ort</em> ist die offene Stelle:
-      drei Fassungen in der Leiste.<br><br>
+      dieselbe Frage in derselben Blase. Der Ort ist neu der
+      <strong>Typ-Titel</strong>, wie <code>CONTEXT.md</code> es immer sagte —
+      im Plan-Kopf sass er nur, weil es den Typ-Titel am Schirm noch nicht
+      gab.<br><br>
       <strong>Nebenbei richtiggestellt.</strong> Der Satz über den Typ-Knöpfen
       sagte noch „Switching it drops every value you set by hand" — die Fassung
       aus #12, die #26 umgeworfen hat. Er steht jetzt richtig im ⓘ des Typs.
@@ -1224,27 +1225,23 @@
   <button data-mode="dark"  style="background:#1e1b16;color:#f2ece0"><i style="background:#c9992e"></i>☾ Dark — Foil</button>
 </div>
 
-<div id="r23"><h4>Runde 23 · #41</h4>
-  <div class="q" data-q="set"><span>Game-Reihe &amp; voller Reset</span>
-    <div class="opts">
-      <button data-v="head">im Kopf</button>
-      <button data-v="body">im Körper</button>
-      <button data-v="split">geteilt</button>
-    </div>
-    <div class="peek"></div>
-  </div>
-  <div class="q" data-q="offer"><span>Offer auf dem Vielfachen</span>
+<div id="r23"><h4>Runde 23 · #41 — zwei Wörter</h4>
+  <div class="q" data-q="offer"><span>Offer auf dem exakten Vielfachen</span>
     <div class="opts">
       <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
+      <button class="case" data-case="offer">Fall herstellen</button>
     </div>
     <div class="peek"></div>
   </div>
   <div class="q" data-q="carry"><span>Knopf im CarryOverNotice</span>
     <div class="opts">
       <button data-v="0">A</button><button data-v="1">B</button><button data-v="2">C</button>
+      <button class="case" data-case="carry">Fall herstellen</button>
     </div>
     <div class="peek"></div>
   </div>
+  <div class="hint">„Fall herstellen" setzt die Regler so, dass die Meldung
+    aufgeht — dann ändert A/B/C den Satz, der wirklich dasteht.</div>
 </div>
 
 <script>
@@ -1714,7 +1711,32 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
 
    Das ist Prototyp-Gerüst und geht mit der Antwort weg: was gewinnt, wird ein
    Satz, und die Tabelle fällt ersatzlos. */
-const V = { set: 'head', offer: 1, carry: 0 };
+const V = { offer: 1, carry: 0 };
+
+/* Ein Satz ist nur zu beurteilen, wenn er dasteht — und diese zwei stehen nur
+   in einem Zustand da, den man erst herstellen muss. Die Leiste stellt ihn
+   her, statt ihn zu beschreiben: ein Knopf je Frage, der die Regler so setzt,
+   dass die Meldung aufgeht. Ohne das schaltet man A/B/C und nichts bewegt
+   sich, weil es nichts zu bewegen gibt. */
+const CASES = {
+  // Weekend, 27 Player: Rank 1 landet auf genau 24 Boostern, also exakt auf
+  // einem Vielfachen der Display-Grösse. Gesucht, nicht gewählt — s. Kommentar
+  // zu #41: im ganzen Bereich 8–64 gibt es bei den drei Typen zwei Treffer.
+  offer() {
+    Object.assign(st, { type: 'weekend', players: 27, pin: {}, val: {},
+      displays: [], manualWinner: {}, carry: null,
+      offerOff: null, offerOpen: true, noticeOpen: true });
+  },
+  // Zwei gepinnte Regler, dann Typwechsel: das ist der ganze Anlassfall des
+  // CarryOverNotice.
+  carry() {
+    Object.assign(st, { type: 'weekly', players: 32, pin: {}, val: {},
+      displays: [], manualWinner: {}, carry: null });
+    setVal('curve', 'severe');
+    setVal('rankFloor', 3);
+    switchType('release');
+  },
+};
 
 /* Frage 3 — wie das `Offer` heisst, wenn der `Rank` *exakt* auf einem
    Vielfachen steht. „Rank 1 is 0 off a full display" klingt nach Nichtstun;
@@ -1978,14 +2000,14 @@ function badgeRow(plan, sugg, off) {
 }
 
 /* Der Kopf einer Spalte — eine Form, dreimal benutzt. Siehe `.colhead`. */
-function colHead({ title, facts = '', sub = '', extra = '', below = '' }) {
+function colHead({ title, facts = '', sub = '', extra = '' }) {
   return `<div class="colhead">
     <div class="bar">
       <strong>${title}</strong>
       ${facts}
       <span style="margin-left:auto">${extra}</span>
     </div>
-    ${sub}${below}
+    ${sub}
   </div>`;
 }
 
@@ -2030,8 +2052,8 @@ function resetAllChip() {
    Das ist eine **Kürzung des Terms**, keine Ersetzung — sie braucht nach
    `AGENTS.md` keine `_Label_`-Zeile, genau wie `Raffle` für `WinnerRaffle`. Der
    ganze Name steht zwei Zentimeter weiter im ⓘ. */
-function setBlock(plan, sticky) {
-  return `<div class="setblk${sticky ? ' sticky' : ''}">
+function setBlock(plan) {
+  return `<div class="setblk">
     <div class="setrow"><span class="setlbl">Game</span>
       <span class="setchips">${Object.entries(GAMES).map(([id, g]) =>
         `<button class="sheetbtn" data-game="${id}"
@@ -2043,29 +2065,30 @@ function setBlock(plan, sticky) {
           `<button class="sheetbtn" data-type="${id}"
             aria-pressed="${id === st.type}">${esc(t.title)}</button>`).join('')}</span>
         ${infoBtn('type')}
-        <span style="margin-left:auto">${
-          V.set === 'split' ? '' : resetAllChip()}</span></div>
+        <span style="margin-left:auto">${resetAllChip()}</span></div>
     </div>
   </div>`;
 }
 
-/* Runde 23 · Frage 2 — wo der Reset mit voller Reichweite steht.
-   `CONTEXT.md` sagt „der Knopf neben dem `TournamentType`-Titel", der Prototyp
-   hatte ihn im Plan-Kopf, und #33 hat den Unterschied gemessen statt ihn zu
-   entscheiden. Beides ist jetzt zu sehen: in den Fassungen `head` und `body`
-   steht er am Typ-Titel, in `split` bleibt er hier. Das Argument für hier ist
-   nicht der Ort, sondern das Scrollen — `Details` ist 2748 px hoch, und ein
-   Rückweg, der wegscrollt, ist keiner. Genau deshalb klebt ihn die Fassung
-   `head` fest, statt ihn einfach hinüberzuschieben. */
+/* Runde 23 · Frage 2 — wo der Reset mit voller Reichweite steht: **am
+   Typ-Titel**, nicht mehr hier. Der Plan-Kopf war die Fassung, die der
+   Prototyp hatte, nicht die, die je entschieden wurde — `CONTEXT.md` sagt seit
+   jeher „der Knopf neben dem `TournamentType`-Titel", und #26s Beschriftungs-
+   argument („zurück auf den gewählten Typ") hing daran. Es gab ihn hier nur,
+   weil es den Typ-Titel am Schirm noch nicht gab. Jetzt gibt es ihn.
+
+   Der Preis ist benannt und angenommen: `Details` scrollt, also scrollt der
+   Rückweg mit. Das ist derselbe Preis, den #38 für die heissen Vier schon
+   bezahlt hat — „zuoberst" ist in einer scrollenden Spalte eine Anordnung,
+   keine Zusicherung. */
 function headerBlock(plan) {
-  const status = V.set === 'split' ? resetAllChip() : '';
   return colHead({
     title: TYPES[st.type].title,
     facts: `<span class="tiny muted num">${st.players} players</span>
       <span class="tiny muted">·</span>
       <span class="tiny num" style="font-weight:600">${plan.pool.booster} boosters</span>`,
     sub: handoutRow(plan),
-    extra: status,
+    extra: '',
   });
 }
 
@@ -2984,35 +3007,26 @@ function screen(plan, sugg, off) {
 
      Einen Titel bekommt der Viererblock trotzdem nicht: der Spaltenkopf steht
      jetzt direkt über ihm und ist sein Titel. */
-  /* Runde 23 · Frage 1, am Bild. Die `Game`-Reihe konkurriert mit den heissen
-     Vier um den oberen Rand der Spalte, und es gibt zwei ehrliche Antworten:
+  /* Runde 23 · Frage 1, entschieden: der Set-Block steht **im Körper**, über
+     den heissen Vier, und scrollt mit ihnen.
 
-       head   Der Block gehört in den *Spaltenkopf*. Er ist nicht Regler,
-              sondern das, was allen Reglern ihre Startwerte gibt — und der
-              Kopf ist die einzige Stelle der Spalte, die stehen bleibt. Die
-              Vier behalten damit den oberen Rand des Scrollbereichs, und der
-              Reset am Typ-Titel scrollt nicht weg. Preis: ~58 px Kopf, im
-              Handy-Querformat ein Siebtel der Höhe.
+     Zur Wahl stand, ihn in den Spaltenkopf zu kleben — er ist ja kein Regler,
+     sondern das, was allen Reglern ihre Startwerte gibt, und der Kopf ist die
+     einzige Stelle der Spalte, die stehen bleibt. Gekostet hätte das gemessen
+     101 px dauerhaft, im Handy-Querformat ein Viertel der Höhe, für eine Reihe,
+     die man einmal am Abend anfasst. Dafür ist der Preis zu hoch.
 
-       body   Der Block steht *über* den Vieren und scrollt mit. Billiger im
-              Kopf, aber dann ist er nach dem ersten Wisch weg — und mit ihm
-              der Reset. #38 hat für die Vier schon festgehalten, dass
-              „zuoberst" in einer scrollenden Spalte keine Zusicherung ist;
-              das gilt hier genauso.
-
-       split  Wie `body`, aber der Reset bleibt im Plan-Kopf, wo der Prototyp
-              ihn hat. Die Fassung, die `CONTEXT.md` widerspricht — und die
-              einzige, in der der Rückweg nie wegscrollt, ohne dafür Kopfhöhe
-              zu kaufen. */
+     Damit gilt für den Block dieselbe Ehrlichkeit, die #38 den Vieren
+     abverlangt hat: **zuoberst ist eine Anordnung, keine Zusicherung**. Er
+     steht über den Vieren, weil er ihnen ihre Werte gibt, nicht weil er
+     sichtbar bleiben müsste. */
   const detCol = `
     <div class="detc" style="width:var(--det);flex:none;overflow:auto;
         background:var(--paper);box-shadow:var(--panel-shadow)">
       ${colHead({ title: 'Details',
-                  facts: '<span class="tiny muted">everything you can turn</span>',
-                  below: V.set === 'head'
-                    ? `<div style="margin-top:9px">${setBlock(plan)}</div>` : '' })}
+                  facts: '<span class="tiny muted">everything you can turn</span>' })}
       <div style="padding:9px 12px 8px">${
-        V.set === 'head' ? '' : setBlock(plan)}${controls}${sheetContent(plan, false)}</div>
+        setBlock(plan)}${controls}${sheetContent(plan, false)}</div>
     </div>`;
   const hotBar = `
     <div style="flex:none;background:var(--paper);box-shadow:var(--panel-shadow)">
@@ -3058,7 +3072,7 @@ function screen(plan, sugg, off) {
 function sheetContent(plan, withSet) {
   ctx = 'sheet';
   const out = `
-    ${withSet ? setBlock(plan, V.set === 'head') : ''}
+    ${withSet ? setBlock(plan) : ''}
     <div class="grouphead">Supply</div>
     <div class="desc">${esc(GROUP_DESC.supply)}</div>
     ${slider('boosterRate', plan, { alwaysReset: true })}
@@ -3209,7 +3223,14 @@ function render() {
   const away = page !== 'plan';        // eine andere Seite ist aktiv
   // Eine andere Seite deckt Kacheln und Kopf zu, also keine Blase offen dort.
   if (away || st.openSlot > st.players) st.openSlot = null;
-  if (away || fsOpen) st.openInfo = null;
+  /* `openInfo` hing bis Runde 23 an `away`: die zwei Erklärer, die es damals
+     gab, standen im Plan-Kopf, also war „andere Seite aktiv" gleichbedeutend
+     mit „der Knopf ist weg". Seit die `Game`-Reihe ihre zwei ⓘ mitbringt,
+     stimmt das nicht mehr — die stehen auf `Details`, und bei einer Spalte
+     *ist* das die andere Seite. Die Blase ging auf und in derselben Zeichnung
+     wieder zu; am Schirm sah es aus, als tue der Knopf nichts.
+     Zugemacht wird jetzt dort, wo es sich messen lässt: `placePop()` schliesst
+     sie, wenn ihr Anker nicht mehr sichtbar ist. Eine Regel für alle vier. */
   if (away) st.openRaffle = false;
   appEl.innerHTML = screen(plan, sugg, off);
   /* Der Stapel hängt im #stage, nicht im Planblock — sonst liegt er unter dem
@@ -3294,9 +3315,12 @@ function placePop() {
     : st.openInfo
     ? liveAnchor(`[data-info="${st.openInfo}"]`)
     : host.querySelector(`.slot[data-rank="${st.openSlot}"]`);
-  // Deckt eine Seite den Anker zu, ist die Frage weg statt unsichtbar offen:
-  // eine Rückfrage ohne den Knopf, zu dem sie gehört, ist keine.
-  if (!tile) { popEl.classList.remove('show'); st.confirm = null; return; }
+  // Deckt eine Seite den Anker zu, ist die Blase weg statt unsichtbar offen:
+  // eine Rückfrage ohne den Knopf, zu dem sie gehört, ist keine, und ein
+  // Erklärer ohne sein ⓘ auch nicht.
+  if (!tile) {
+    popEl.classList.remove('show'); st.confirm = null; st.openInfo = null; return;
+  }
   const s = stage.getBoundingClientRect();
   const t = tile.getBoundingClientRect();
   const w = popEl.offsetWidth, h = popEl.offsetHeight;
@@ -3525,28 +3549,27 @@ function setMode(m) {
    Zahlen eines Beispiels: der Knopf allein („B") sagt nichts. */
 const r23El = document.getElementById('r23');
 const PEEK = {
-  set: { head: 'Spaltenkopf, klebt · Vier behalten den Scrollrand',
-         body: 'über den Vieren, scrollt mit',
-         split: 'Block im Körper, Reset bleibt im Plan-Kopf' },
-  offer: (i) => OFFER0[i](1, 2, 48).replace(/\s+/g, ' '),
-  carry: (i) => CARRY_BTN[i](3, 'Weekend'),
+  offer: (i) => OFFER0[i](1, 1, 24).replace(/\s+/g, ' '),
+  carry: (i) => CARRY_BTN[i](2, 'Release'),
 };
 function paintR23() {
   for (const q of r23El.querySelectorAll('.q')) {
     const key = q.dataset.q;
-    const cur = V[key];
-    q.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed',
-      String(b.dataset.v === String(cur))));
-    const p = PEEK[key];
-    q.querySelector('.peek').textContent =
-      typeof p === 'function' ? p(cur) : p[cur];
+    q.querySelectorAll('button[data-v]').forEach((b) =>
+      b.setAttribute('aria-pressed', String(Number(b.dataset.v) === V[key])));
+    q.querySelector('.peek').textContent = PEEK[key](V[key]);
   }
 }
 r23El.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
-  const key = b.closest('.q').dataset.q;
-  V[key] = key === 'set' ? b.dataset.v : Number(b.dataset.v);
+  if (b.dataset.case) {
+    // Der Fall wird auf dem Plan hergestellt: dort hängt der Meldungsstapel.
+    CASES[b.dataset.case]();
+    page = 'plan'; fsOpen = false;
+    render(); return;
+  }
+  V[b.closest('.q').dataset.q] = Number(b.dataset.v);
   paintR23(); render();
 });
 
