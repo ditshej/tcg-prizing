@@ -437,8 +437,18 @@
 
   /* Was zu Beginn rausgeht: eine Zeile, punktiert abgesetzt vom Beschaffungsteil
      darüber — sie sagt nicht, was zu holen ist, sondern was sofort weggeht. */
+  /* Runde 21: der Deckel von 520 px ist weg. Er war ein Lesedeckel fürs
+     Hochformat, gedacht für einen Kopf, der damals noch den Beschaffungsteil
+     mittrug — beide sollten nicht beliebig breit auseinanderlaufen. Seit #36
+     ist der Beschaffungsteil die `Prepare`-Seite, die Ausgabezeile steht
+     allein, und der Deckel schnitt nur noch den Kopf ab: bei 1658 ist die
+     Plan-Spalte 966 breit, die Zeile hörte bei 520 auf, und die punktierte
+     Linie endete mitten im Nichts. Im Hochformat ändert das Entfernen nichts,
+     weil die Spalte dort ohnehin schmaler als 520 ist — der Deckel griff nur
+     da, wo er schadete. (Das `.headcols`-Nebeneinander, das dafür gebaut
+     wurde, ist mit demselben #36 inert geworden.) */
   .handout { font-size: 11.5px; line-height: 1.5; margin-top: 7px; padding-top: 6px;
-             max-width: 520px; border-top: 1px dotted var(--line);
+             border-top: 1px dotted var(--line);
              display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
   /* Runde 20: Etikett und Zahlen sind *eine* Zeile, die umbricht, wo sie muss —
      vorher waren es zwei, immer. Der Grund für die zwei war das Hochformat (die
@@ -735,12 +745,12 @@
      steht. Sie darf fehlen — beim Plan tut sie das, sobald die Teilnahme bei
      null steht oder gemeinsam ausgegeben wird —, darum ist die Kopfhöhe
      nirgends festgenagelt. */
-  /* Dieselbe Zeilenhöhe und derselbe Abstand wie `.handout` — die zweite Zeile
-     des Plan-Kopfs ist das Mass, dem die anderen zwei folgen. Ohne die
-     punktierte Linie: beim Plan trennt sie zwei *Tatsachen* voneinander, hier
-     steht nur eine Bildunterschrift. */
-  .colsub { font-size: 11.5px; line-height: 1.5; color: var(--muted);
-            margin-top: 7px; padding-top: 6px; }
+  /* Runde 21: `Prepare` und `Details` sind **einzeilig**. Der Kopf des Plans
+     hat zwei Teile — die Titelzeile und darunter die Ausgabezeile —, und nur
+     der *obere* ist das gemeinsame Mass. Eine zweite Zeile, die bloss eine
+     Bildunterschrift trägt, kostet 12 px in jeder Spalte; im Handy-Querformat
+     sind das 12 von 375. Der Untertitel steht darum wieder neben dem Titel,
+     wo er vor Runde 20 schon stand. */
   .prepc .body { padding: 12px 14px 22px; }
   .sheet .shead { position: sticky; top: 0; background: inherit; z-index: 2;
                   box-shadow: var(--panel-shadow); padding: 9px 12px;
@@ -1676,8 +1686,8 @@ function prepContent(plan) {
   const loosePacks = p.partialYield > 0 ? 0 : p.opened;
   return colHead({
       title: 'Prepare',
-      facts: `<span class="tiny muted num">${TYPES[st.type].title} · ${st.players}</span>`,
-      sub: '<div class="colsub">everything the pool holds</div>',
+      facts: `<span class="tiny muted num">${TYPES[st.type].title} · ${st.players}</span>
+        <span class="tiny muted">everything the pool holds</span>`,
     }) + `
     <div class="body prep">
 
@@ -2392,7 +2402,7 @@ function screen(plan, sugg, off) {
     <div class="detc" style="width:var(--det);flex:none;overflow:auto;
         background:var(--paper);box-shadow:var(--panel-shadow)">
       ${colHead({ title: 'Details',
-                  sub: '<div class="colsub">everything you can turn</div>' })}
+                  facts: '<span class="tiny muted">everything you can turn</span>' })}
       <div style="padding:9px 12px 8px">${controls}${sheetContent(plan)}</div>
     </div>`;
   const hotBar = `
