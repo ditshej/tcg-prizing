@@ -291,12 +291,21 @@ ihre eigenen Belege zudeckt, ist keine Meldung.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
 Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
-Einklappen ist ein **Schrumpfen an Ort**: der Chip bleibt auf derselben Schicht
-wie die offene Meldung, überlebt darum jeden Seitenwechsel und liegt nie unter
-einer Seite. Ein Chip, der ins Seitenlayout einzieht, gehört einer Seite und ist
-auf den übrigen weg — ausgerechnet dort, wo man an den auslösenden Reglern
-dreht. Aus demselben Grund braucht er nicht beweglich zu sein: eine verschobene
-Lage wäre Zustand, und den hat diese App nirgends.
+Einklappen hält die **Schicht**, nicht den Punkt: der Chip bleibt auf derselben
+Schicht wie die offene Meldung, überlebt darum jeden Seitenwechsel und liegt nie
+unter einer Seite. Ein Chip, der ins Seitenlayout einzieht, gehört einer Seite
+und ist auf den übrigen weg — ausgerechnet dort, wo man an den auslösenden
+Reglern dreht. Aus demselben Grund braucht er nicht beweglich zu sein: eine
+verschobene Lage wäre Zustand, und den hat diese App nirgends.
+Sein Platz ist **die unterste freie Ecke rechts**. Am schmalen Schirm ist der
+Fuss von der Navigation belegt, dort sitzt er eine Zeile darüber; klappt die
+Breite die Seiten zu Spalten, hat der Fuss rechts einen freien Platz, und er
+fällt hinein. Eine Regel, zwei Ergebnisse — und keiner der beiden Orte gehört
+einer Seite, weshalb die Schicht dabei nicht verlassen wird.
+Damit trennen sich Chip und offene Meldung in der **Fläche**: die offene folgt
+dem `DistributionPlan`, der Chip nicht. Der Einzug oben hat genau einen Grund,
+nämlich die Pin-Markierungen nicht zuzudecken — und eine Pille in einem
+reservierten Band deckt nichts zu, also geht sie bis an die Kante.
 Der Chip trägt ein **Wort und nach Möglichkeit eine Zahl** (`3 ways out`,
 `2 kept`), kein Zeichen: ein Glyph beschreibt die Meldung und muss gedeutet
 werden, während der Chip zum Antippen auffordern soll. Die Zahl ist dabei der
