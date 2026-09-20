@@ -1116,23 +1116,34 @@
 <body class="phone">
 
 <div class="chrome">
-  <h1>Prizing Cockpit — Runde 23 zu Ticket #41</h1>
+  <h1>Prizing Cockpit — Runde 24 zu Ticket #42</h1>
   <p>
-    Vier Fragen an einem Bild. Die <strong>Game-Ebene</strong> steht jetzt am
-    Schirm — eine Reihe mit einem Eintrag, eingerückt darunter die Typenreihe,
-    ein ⓘ je Ebene, im Körper der <code>Details</code>-Spalte über den heissen
-    Vier. Der <strong>Reset mit voller Reichweite</strong> steht neu am
-    Typ-Titel und fragt nicht mehr zweistufig, sondern mit einer am Knopf
-    verankerten Blase; derselbe Knopf im <em>CarryOverNotice</em> fragt jetzt
-    auch.
+    Die <strong>Curve steht neu in den Wegen heraus</strong>, und zwar
+    <strong>zuvorderst</strong>. Sie war der billigste Ausweg aus der
+    Überholung und wurde als einziger nie angeboten — obwohl die Meldung in
+    ihrem eigenen zweiten Satz auf sie zeigt und ADR 0002 sie im eigenen
+    Beispiel als Weg heraus nennt. „Nächstliegend" misst dabei den Abstand in
+    <strong>Stufen</strong> der Siebener-Liste, nicht im Verhältniswert: die
+    Liste ist das, was am Schirm steht, und ein Vorschlag misst in derselben
+    Einheit, in der man ihn übernimmt.
   </p>
   <p>
-    Auch die zwei Wörter sind entschieden und stehen an ihrer Stelle:
-    <em>„Rank 1 could take 1 sealed display instead of 24 loose boosters"</em>
-    für das <em>Offer</em> auf dem exakten Vielfachen, und
-    <em>„Drop all 2 and follow Release"</em> im <em>CarryOverNotice</em>.
-    Beide Meldungen erscheinen nur in einem hergestellten Zustand — die zwei
-    Knöpfe <strong>oben links</strong> stellen ihn her.
+    Dahinter zwei Regeln, die bisher fehlten. <strong>Woraus</strong> gewählt
+    wird: ein Regler kommt in den Hut, wenn er eine <em>Stellschraube der
+    Verteilung</em> ist und keine <em>Tatsache über den Abend</em> — und wenn
+    er in die verletzte Bedingung eingeht. Spielerzahl, Booster-Rate und
+    Display-Grösse bleiben darum draussen; beim Bodenkonflikt fällt die Curve
+    von selbst wieder heraus, ohne Ausnahme im Code. Und <strong>in welcher
+    Ordnung</strong>: Zusage gegen Formgebung. Vorn steht, was keine Zusage
+    zurücknimmt — dass die Kurve <code>steep</code> zeigt, sagt kein Lead je
+    an, während „top 8 bekommen etwas" und „Rank 1 bekommt ein Display"
+    angesagte Dinge sind. Die Vorrangkette aus ADR 0001 bleibt unberührt: sie
+    ordnet die Zusagen untereinander.
+  </p>
+  <p>
+    Die drei Meldungen erscheinen nur in einem hergestellten Zustand — die
+    Knöpfe <strong>oben links</strong> stellen ihn her; <em>Überholung</em> ist
+    neu in dieser Runde.
   </p>
   <details>
     <summary>Was sich geändert hat</summary>
@@ -1221,6 +1232,7 @@
   <div class="opts">
     <button data-case="offer">Offer auf dem Vielfachen</button>
     <button data-case="carry">CarryOverNotice</button>
+    <button data-case="overtake">Überholung</button>
   </div>
   <div class="hint">Zwei Meldungen, die nur in einem hergestellten Zustand
     erscheinen — sonst dreht man jedes Mal dieselben Regler nach.</div>
@@ -1533,7 +1545,21 @@ const unfit = (p) => !!p.conflict || !!p.overtake;
 
 /* Vorschläge (#19): den Verlierer der Vorrangkette zuerst. Die Kette lautet
    RankFloor → RankPoolDepth → DisplayReservation, also gibt die Reservation als
-   erste nach — sie steht hier neu an der Spitze der Liste. */
+   erste nach — sie steht hier neu an der Spitze der Liste.
+
+   Was überhaupt in den Hut kommt, ist seit #42 eine Regel und keine Liste mehr:
+   ein Regler wird durchsucht, wenn er (i) eine Stellschraube ist und nicht eine
+   Tatsache über den Abend, und (ii) in die verletzte Bedingung eingeht.
+   (i) hält Spielerzahl, boosterRate und displaySize draussen — ein Weg heraus
+   darf den Lead nicht bitten, über sein Turnier zu lügen. (ii) nimmt die Curve
+   beim Bodenkonflikt von selbst wieder heraus (floorNeed enthält sie nicht),
+   ohne dass es dort eine Ausnahme braucht.
+
+   Die Ordnung dahinter ist eine zweite Achse: Zusage gegen Formgebung. Die
+   Curve steht zuvorderst, weil sie als einzige keine Zusage zurücknimmt —
+   niemand sagt an, dass die Kurve `steep` steht, während „top 8 bekommen
+   etwas", „jeder bekommt einen Booster" und „Rank 1 bekommt ein Display"
+   angesagte Dinge sind. Dahinter die Zusagen in der Kette, unverändert. */
 function suggestions(plan) {
   if (!unfit(plan)) return [];
   const out = [];
@@ -1555,6 +1581,22 @@ function suggestions(plan) {
     }
     if (best != null) out.push({ key, value: best, label: label(best, cur) });
   };
+  // Die Curve zuerst. „Nächstliegend" heisst hier Abstand in *Stufen* der
+  // Siebener-Liste, nicht im Verhältniswert — der Abstand zwischen zwei Stufen
+  // ist konstant 0.1, aber die Liste ist das, was am Schirm steht, und ein
+  // Vorschlag misst in derselben Einheit, in der man ihn übernimmt.
+  const curveNow = CURVES.findIndex((c) => c.id === eff('curve', plan));
+  let bestCurve = null;
+  CURVES.forEach((c, i) => {
+    if (i === curveNow || !clears({ ...base, curve: c.id })) return;
+    if (bestCurve == null || Math.abs(i - curveNow) < Math.abs(bestCurve - curveNow)) {
+      bestCurve = i;
+    }
+  });
+  if (bestCurve != null) {
+    out.push({ key: 'curve', value: CURVES[bestCurve].id,
+      label: `Curve to ${CURVES[bestCurve].id}` });
+  }
   // Ein Rang je Reservation, plus der Überholer: ihn auf Gleichstand zu heben
   // bricht den Vorsprung nicht mehr und ist oft der kürzeste Weg heraus.
   const idx = new Set();
@@ -1710,6 +1752,16 @@ const CASES = {
     setVal('curve', 'severe');
     setVal('rankFloor', 3);
     switchType('release');
+  },
+  // Weekend, 48 Player, eine Reservation auf Rank 1: der Kopf steht auf seinen
+  // 24 Schachteln fest und fällt aus der Kurve, worauf der geformte Rest ihn
+  // mit 34 überholt. Der dritte seltene Meldungszustand — und der einzige, den
+  // man bisher nur über dieselbe Regler-Fummelei zu sehen bekam. Der Default
+  // `steep` tut es von selbst, es braucht keinen gepinnten Regler.
+  overtake() {
+    Object.assign(st, { type: 'weekend', players: 48, pin: {}, val: {},
+      displays: [1], manualWinner: {}, carry: null,
+      offerOff: null, offerOpen: true, noticeOpen: true });
   },
 };
 
@@ -3454,7 +3506,10 @@ stage.addEventListener('click', (e) => {
   if (d.setStep) { delete st.pin.depth; delete st.val.depth; setVal('depthStep', d.setStep); return; }
   if (d.raffle) { doRaffle(plan); return; }
   if (d.unmanual) { delete st.manualWinner[d.unmanual]; render(); return; }
-  if (d.apply) { setVal(d.apply, Number(d.v)); return; }
+  // Die Curve ist der erste Vorschlag mit einem Wert, der keine Zahl ist —
+  // ihre Stufen sind benannt. Die Umwandlung gehört darum an den Regler und
+  // nicht pauschal an den Knopf.
+  if (d.apply) { setVal(d.apply, d.apply === 'curve' ? d.v : Number(d.v)); return; }
   if (d.delta && d.key) {
     const key = d.key, step = Number(d.delta);
     if (key === 'players') { st.players = clampKey('players', st.players + step); render(); return; }
