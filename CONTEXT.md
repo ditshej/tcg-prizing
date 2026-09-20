@@ -108,8 +108,16 @@ grosser Tiefe der Normalfall, nicht die Ausnahme. Sie betrifft nur die teilbaren
 tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
 `RankPool` selbst: jeder bediente `Rank` bekommt mindestens den `RankFloor` und
 `Rank` 1 einen mehr, also gilt
-`Tiefe ≤ ⌊(Booster im RankPool − 1) / RankFloor⌋`. Der `RankFloor` deckelt die
-Tiefe, nie umgekehrt. Ob das `Tournament` eine K.-o.-Runde gespielt
+`Tiefe ≤ ⌊(Booster im RankPool − 1) / RankFloor⌋`. Die `− 1` ist ebendieser
+Vorsprung und fällt weg, wo er aussetzt — bei einem durch eine
+`DisplayReservation` abgegoltenen `Rank` 1, siehe `ShapedRemainder`. Der `RankFloor` deckelt die
+Tiefe, nie umgekehrt. Die Formel liefert an zwei Rändern keine brauchbare Zahl,
+und beide sind erreichbar: bei einem `RankFloor` von 0 ist sie nicht definiert,
+und bei einem fast oder ganz leeren `RankPool` wird sie 0 oder negativ. In beiden
+Fällen gilt das **„mindestens 1"** von oben, es ist der stärkere Satz — ein
+`Rank` 1, der nichts bekommt, steht als leere Kachel da und die `ConflictNotice`
+sagt warum. Das ist die ehrlichere Fassung als eine verschwindende `RankPool`-Zeile,
+die den Schirm genau dort stumm machte, wo er warnen soll. Ob das `Tournament` eine K.-o.-Runde gespielt
 hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
 als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
 (siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
@@ -118,7 +126,16 @@ Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nich
 `pinned` Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
 sobald der Deckel wieder steigt. Ein `pinned` Wert dagegen wird vom sinkenden
 Deckel nie gekappt — er bleibt stehen, und die Meldung benennt ihn als den
-Verlierer der Vorrangkette.
+Verlierer der Vorrangkette aus ADR 0001.
+
+**Kein Regler adressiert einen `Rank` jenseits der Spielerzahl.** Das gilt für
+jede Grösse, die Ränge zählt — `RankPoolDepth`, den `ranked`-Anteil der
+`WinnerPackAllocation`, die `RaffleRange`, den `RankCycle` —, und es ist kein
+Kappen im Sinne von ADR 0006: der `pinned` Wert bleibt gespeichert und kommt
+zurück, sobald die Spielerzahl wieder steigt; angezeigt und vergeben wird
+solange, was wirklich hinausgeht. Ein Rang, den es nicht gibt, ist kein Empfänger
+— ein `PrizeItem`, das an ihn ginge, verschwände aus der Bilanz, während die
+`PreparationList` es weiter einkaufen liesse.
 _Avoid_: TopCut (bezeichnet im TCG die K.-o.-Runde nach Swiss, nicht die geformte Verteilung), PrizeDepth, Preisränge
 
 **RankFloor**:
@@ -150,7 +167,14 @@ _Avoid_: Verteilungsschlüssel, Payout-Struktur, Spread
 Was von den teilbaren `PrizeItem`s im `RankPool` übrig ist, nachdem alle
 Reservationen abgezogen sind — `RankFloor`, der Vorsprung für `Rank` 1 und jede
 `DisplayReservation` — und damit die einzige Menge, auf die die
-`DistributionCurve` überhaupt greift. Er kann null sein: dann ist der
+`DistributionCurve` überhaupt greift. Die ersten beiden Abzüge gelten **nur für
+die Ränge, die die Kurve wirklich formt**: ein durch eine `DisplayReservation`
+abgegoltener `Rank` steht auf seinen Schachteln fest, bekommt keinen `RankFloor`
+mehr und trägt auch keinen Vorsprung — die beiden Abzüge und die
+`DisplayReservation` treffen nie denselben `Rank`. Gemessen an `Weekend` mit 32
+`Player` und `d` = (1,0,…): `RankPool` 64, `DisplayReservation` 24, Boden
+2 × 7 = 14 statt 2 × 8 + 1 = 17, `ShapedRemainder` **26** statt 23. Der Vorsprung
+setzt bei abgegoltenem `Rank` 1 aus (ADR 0001, Nachtrag zu #7). Er kann null sein: dann ist der
 `DistributionPlan` der reine Boden und die Stufenwahl ohne Wirkung. Das ist kein
 Fehler, sondern die Folge eines hohen `RankFloor` — wer jedem bedienten `Rank`
 dasselbe zusichert, hat eine flache Verteilung verlangt. Er wird ausgewiesen,
@@ -183,7 +207,8 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
 ihn per `WinnerRaffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
 Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die Zahl `WinnerPack`s im `RankPool`**
-ist, also nach Abzug des `JudgePool`, und der Wert auf ebendiese gedeckelt wird —
+ist, also nach Abzug des `JudgePool`, und der Wert auf ebendiese **und auf die
+Spielerzahl** gedeckelt wird, siehe `RankPoolDepth` —
 auch bei n = 0, wo die Staffel damit selbst auf 0 fällt), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch dieselbe Zahl
 gedeckelt. Die Staffel rechnet nie auf Stücken, die beiseite liegen: ein
@@ -204,8 +229,8 @@ kam, und merkt sich frühere Ziehungen nicht — wird eine Zuteilung entfernt, i
 dieser `Rank` sofort wieder ziehbar. Ein Bedienschritt, kein Rechenschritt: der
 Zufall sitzt in der Eingabe, nicht in der Berechnung, deshalb ändert Neurechnen
 nie einen Gewinner. Steht neben der Handzuteilung, ersetzt sie nicht. Nicht
-auslösbar, wenn kein `manual`-`WinnerPack` mehr offen oder der `RafflePot` leer
-ist. Der Zusatz `Winner` gehört zum Namen, weil `Raffle` allein nicht sagt, was
+auslösbar, wenn kein `manual`-`WinnerPack` mehr zu setzen oder der `RafflePot`
+leer ist. Der Zusatz `Winner` gehört zum Namen, weil `Raffle` allein nicht sagt, was
 verlost wird; die zwei Ableitungen tragen ihn nicht, weil sie niemand ausspricht.
 Bedient wird sie über einen Griff auf dem `winner`-Eintrag der Legende über den
 Kacheln — dem Schlüssel zu genau der Marke, die sie erzeugt —, der eine feste
@@ -242,7 +267,9 @@ abzüglich aller `Rank`s, die schon einen `WinnerPack` haben — `ranked` wie
 Siegerkarte gewinnt niemand zweimal. Über `open` gebliebene `WinnerPack`s sagt er
 nichts, weil sie keinen Empfänger haben. Er hängt am laufenden Zuteilstand und
 kann leer sein, während die `RaffleRange` es nicht ist — genau dann ist die
-`WinnerRaffle` nicht auslösbar, obwohl noch `WinnerPack`s offen sind. Er wird
+`WinnerRaffle` nicht auslösbar, obwohl noch `manual`-`WinnerPack`s zu setzen
+sind. („Offen" ist in diesem Eintrag durchweg der Term `open`, also der dritte
+Anteil der `WinnerPackAllocation` — nie „noch nicht gesetzt".) Er wird
 **nicht als Zahl angezeigt**, und das ist Absicht: er beantwortet „wie viele",
 während am Tisch „wo" gefragt ist, und das beantwortet die `RaffleRange`. Vor
 dem ersten Wurf ist er ausserdem genau so gross wie sie, wiederholte also im
@@ -272,6 +299,16 @@ tiefer, eine bei der Tiefe abgeschnittene Darstellung würde Zuteilungen
 verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
 Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
+Am Schirm ist der **`Master` der Boden** (#40): das Kachelfenster zeigt in jeder
+Fassung mindestens so viel wie das Hochformat — **sechs Kachelspalten und zwei
+Kachelreihen**. Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
+der Blöcke sich mit der Breite ändern darf, darf dieser Boden es nicht. #37 hatte
+„Aufklappen nimmt nie etwas weg" beschlossen; im Querformat reicht das nicht, weil
+dort die Höhe fehlt und nicht die Breite — der Boden ist die Fassung dieses Satzes
+für die zweite Achse. Aus ihm sind sowohl die Höhenschwelle gerechnet, unterhalb
+derer der Schirm einspaltig bleibt, als auch die Grösse des Balkens, der als
+einzige elastische Grösse für die zweite Kachelreihe zahlt. Wer die zwei Reihen
+antastet, verschiebt keine Pixelzahl, sondern nimmt die Zusicherung zurück.
 _Avoid_: Payout
 
 **NoticeStack**:
@@ -445,7 +482,17 @@ eigenen Beschaffungshinweis, weil die Booster einer angebrochenen Einheit in
 mehrere `Pool`s fliessen. Sie rechnet nichts Eigenes und fügt nichts hinzu —
 auch der `JudgePool` ist eine Umschichtung innerhalb des `PrizePool`, keine
 Zusatzbestellung. Eine `DisplayReservation` teilt die Beschaffungszahl in
-„ungeöffnet" und „zum Anbrechen", erhöht sie nie. Auf der `WinnerPack`-Achse
+„ungeöffnet" und „zum Anbrechen", erhöht sie nie.
+Die Achse selbst — eine `PackagingUnit` **so, wie sie aus der Kiste kommt**,
+gegen **einzeln daraus entnommene** `PrizeItem`s — heisst am Schirm `sealed`
+gegen `loose`; so fixiert sie das `Offer`, und das sind die Wörter der Domäne.
+Die deutsche Prosa hier darf weiter „versiegelt", „ungeöffnet", „lose" oder „zum
+Anbrechen" sagen, das ist Stilvielfalt. Die `PreparationList` darf **konkreter**
+werden, wo sie die Herkunft mitsagt (`3 sealed · + 9 from the 4th`, `15 stay in
+the box`) — das ist mehr als `sealed`/`loose` und nicht etwas anderes. Was sie
+nicht darf, ist dieselbe Unterscheidung mit einem dritten Wortpaar benennen, und
+`full` ist deshalb schon eines zu viel: es heisst bei der `PromoEnvelope`
+„randvoll" und beim `WinnerPack` „ungeöffnet". Auf der `WinnerPack`-Achse
 teilt sie ebenso: weicht die Zahl vorhandener `WinnerPack`s von der Ausbeute der
 `PromoEnvelope`s ab, steht die Differenz als Halbsatz an der Ausbeute-Zeile — in
 beide Richtungen, als Herkunftsangabe und nicht als zweiter Hinweis. Kein Zustand und kein
@@ -585,7 +632,7 @@ ist bedeutungstragend und darf sich ändern. Ein Wert aus dem Link ist ein `pinn
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
 `ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
 URL kam.
-_Avoid_: Preset (Oberflächensprache, siehe `DefaultSet`), Permalink, State, Snapshot (sie trägt keinen vollständigen Zustand, nur die Abweichungen)
+_Avoid_: Preset (Oberflächensprache, siehe `DefaultSet`), Permalink, State, Snapshot (sie trägt keinen vollständigen Zustand, nur die `pinned` Regler — ADR 0006)
 
 **LinkMigration**:
 Die Umschreibregel, die einen `SetupLink` einer älteren Formatversion auf die

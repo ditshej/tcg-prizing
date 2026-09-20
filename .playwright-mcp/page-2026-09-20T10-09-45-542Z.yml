@@ -1,0 +1,422 @@
+- generic [ref=f18e1]:
+  - generic [ref=f18e2]:
+    - 'heading "Prizing Cockpit — Runde 23 zu Ticket #41" [level=1] [ref=f18e3]'
+    - paragraph [ref=f18e4]:
+      - text: Vier Fragen an einem Bild. Die
+      - strong [ref=f18e5]: Game-Ebene
+      - text: steht jetzt am Schirm — eine Reihe mit einem Eintrag, eingerückt darunter die Typenreihe, ein ⓘ je Ebene. Der
+      - strong [ref=f18e6]: Reset mit voller Reichweite
+      - text: fragt nicht mehr zweistufig, sondern mit einer am Knopf verankerten Blase, und derselbe Knopf im
+      - emphasis [ref=f18e7]: CarryOverNotice
+      - text: fragt jetzt auch. Die zwei Wörter — der
+      - emphasis [ref=f18e8]: Offer
+      - text: "-Satz auf dem exakten Vielfachen und der Knopf im"
+      - emphasis [ref=f18e9]: CarryOverNotice
+      - text: — stehen als
+      - strong [ref=f18e10]: Fassungen unten rechts
+      - text: zum Durchschalten.
+    - paragraph [ref=f18e11]:
+      - text: "Zum Nachstellen:"
+      - code [ref=f18e12]: Weekend
+      - text: wählen, ein paar Regler anfassen, dann auf
+      - code [ref=f18e13]: Release
+      - text: wechseln — das gibt den
+      - emphasis [ref=f18e14]: CarryOverNotice
+      - text: . Für den
+      - emphasis [ref=f18e15]: Offer
+      - text: "auf dem exakten Vielfachen:"
+      - code [ref=f18e16]: Release
+      - text: ", Spielerzahl so drehen, bis ein Rang glatt auf 24 · n steht."
+    - group [ref=f18e17]:
+      - generic "Was sich geändert hat" [ref=f18e18] [cursor=pointer]
+  - generic [ref=f18e276]:
+    - generic [ref=f18e277]:
+      - generic [ref=f18e279]:
+        - strong [ref=f18e280]: Prepare
+        - generic [ref=f18e281]: Weekly · 32
+        - generic [ref=f18e282]: everything the pool holds
+      - generic [ref=f18e283]:
+        - generic [ref=f18e284]:
+          - generic [ref=f18e285]:
+            - generic [ref=f18e286]: "4"
+            - emphasis [ref=f18e287]: displays
+            - generic [ref=f18e288]: 96 boosters
+          - generic [ref=f18e289]:
+            - generic [ref=f18e290]:
+              - text: 32 players × 3 each
+              - generic [ref=f18e291]: "96"
+            - generic [ref=f18e292]: ÷ 24 per display
+            - generic [ref=f18e293]:
+              - text: 4 sealed
+              - generic [ref=f18e294]: "96"
+            - generic [ref=f18e295]: comes out even
+        - generic [ref=f18e296]:
+          - generic [ref=f18e297]:
+            - generic [ref=f18e298]: "4"
+            - emphasis [ref=f18e299]: Promo-Envelopes
+            - generic [ref=f18e300]: 32 tournament packs
+          - generic [ref=f18e301]:
+            - generic [ref=f18e302]:
+              - text: 32 packs
+              - generic [ref=f18e303]: ÷ 9 per envelope
+            - generic [ref=f18e304]:
+              - text: 3 full
+              - generic [ref=f18e305]: "27"
+            - generic [ref=f18e306]:
+              - text: 5 opened from the next
+              - generic [ref=f18e307]: "32"
+            - generic [ref=f18e308]: the 5 opened yield nothing yet
+        - generic [ref=f18e309]:
+          - generic [ref=f18e310]:
+            - generic [ref=f18e311]: "3"
+            - emphasis [ref=f18e312]: winner packs
+            - generic [ref=f18e313]: from the envelopes
+          - generic [ref=f18e314]:
+            - generic [ref=f18e315]:
+              - text: 3 full envelopes
+              - generic [ref=f18e316]: "3"
+            - generic [ref=f18e317]:
+              - text: 5 opened
+              - generic [ref=f18e318]: 1 at 6
+              - generic [ref=f18e319]: "0"
+            - generic [ref=f18e320]:
+              - text: 1 more pack would make it 4
+              - button "Set packs to 33" [ref=f18e321] [cursor=pointer]
+        - generic [ref=f18e322]: Nothing here is an extra order — the judge's share and the reserved displays are the same pool, moved around.
+    - generic [ref=f18e323]:
+      - generic [ref=f18e324]:
+        - generic [ref=f18e325]:
+          - strong [ref=f18e326]: Weekly
+          - generic [ref=f18e327]: 32 players
+          - generic [ref=f18e328]: ·
+          - generic [ref=f18e329]: 96 boosters
+        - generic [ref=f18e330]:
+          - generic [ref=f18e331]: Handed out at check-in
+          - generic [ref=f18e332]:
+            - strong [ref=f18e333]: 2 boosters · 1 pack
+            - generic [ref=f18e334]: each
+            - generic [ref=f18e335]: 64 · 32 of the pool
+      - generic [ref=f18e336]:
+        - generic:
+          - text: to the ranks
+          - strong: 32 boosters · 3 winner packs
+      - generic [ref=f18e412]:
+        - generic [ref=f18e413]:
+          - generic [ref=f18e414]: pack
+          - button "winner 🎲 1" [ref=f18e416] [cursor=pointer]:
+            - text: winner
+            - generic [ref=f18e418]: 🎲
+            - generic [ref=f18e419]: "1"
+          - button "⛶" [ref=f18e420] [cursor=pointer]
+        - generic [ref=f18e422]:
+          - generic [ref=f18e423] [cursor=pointer]:
+            - generic [ref=f18e424]: "1"
+            - generic "1 winner pack" [ref=f18e425]
+            - strong [ref=f18e426]: "7"
+          - generic [ref=f18e427] [cursor=pointer]:
+            - generic [ref=f18e428]: "2"
+            - generic "1 winner pack" [ref=f18e429]
+            - strong [ref=f18e430]: "5"
+          - generic [ref=f18e431] [cursor=pointer]:
+            - generic [ref=f18e432]: "3"
+            - strong [ref=f18e433]: "4"
+          - generic [ref=f18e434] [cursor=pointer]:
+            - generic [ref=f18e435]: "4"
+            - strong [ref=f18e436]: "4"
+          - generic [ref=f18e437] [cursor=pointer]:
+            - generic [ref=f18e438]: "5"
+            - strong [ref=f18e439]: "3"
+          - generic [ref=f18e440] [cursor=pointer]:
+            - generic [ref=f18e441]: "6"
+            - strong [ref=f18e442]: "3"
+          - generic [ref=f18e443] [cursor=pointer]:
+            - generic [ref=f18e444]: "7"
+            - strong [ref=f18e445]: "3"
+          - generic [ref=f18e446] [cursor=pointer]:
+            - generic [ref=f18e447]: "8"
+            - strong [ref=f18e448]: "3"
+        - generic [ref=f18e449]: ranks 9–32 get nothing
+    - generic [ref=f18e451]:
+      - generic [ref=f18e452]:
+        - generic [ref=f18e453]:
+          - strong [ref=f18e454]: Details
+          - generic [ref=f18e455]: everything you can turn
+        - generic [ref=f18e457]:
+          - generic [ref=f18e458]:
+            - generic [ref=f18e459]: Game
+            - button "i" [ref=f18e460] [cursor=pointer]
+          - button "One Piece" [pressed] [ref=f18e462] [cursor=pointer]
+          - generic [ref=f18e463]:
+            - generic [ref=f18e464]:
+              - generic [ref=f18e465]: Tournament type
+              - button "i" [ref=f18e466] [cursor=pointer]
+            - generic [ref=f18e467]:
+              - button "Weekly" [pressed] [ref=f18e468] [cursor=pointer]
+              - button "Weekend" [ref=f18e469] [cursor=pointer]
+              - button "Release" [ref=f18e470] [cursor=pointer]
+      - generic [ref=f18e471]:
+        - generic [ref=f18e472]:
+          - generic [ref=f18e473]:
+            - generic [ref=f18e474]: Players
+            - generic [ref=f18e476]:
+              - button "−" [ref=f18e477] [cursor=pointer]
+              - generic [ref=f18e478]: "32"
+              - button "+" [ref=f18e479] [cursor=pointer]
+          - slider [ref=f18e480]: "32"
+        - generic [ref=f18e481]:
+          - generic [ref=f18e482]:
+            - generic [ref=f18e483]: Served ranks
+            - generic [ref=f18e484]: top 8
+            - generic [ref=f18e486]:
+              - button "−" [ref=f18e487] [cursor=pointer]
+              - generic [ref=f18e488]: "8"
+              - button "+" [ref=f18e489] [cursor=pointer]
+          - generic [ref=f18e491]:
+            - button "↑8" [pressed] [ref=f18e492] [cursor=pointer]
+            - button "↑16" [ref=f18e493] [cursor=pointer]
+            - button "↑¼" [ref=f18e494] [cursor=pointer]
+            - button "↑⅓" [ref=f18e495] [cursor=pointer]
+            - button "↑½" [ref=f18e496] [cursor=pointer]
+            - button "↑⅔" [ref=f18e497] [cursor=pointer]
+            - button "↑¾" [ref=f18e498] [cursor=pointer]
+            - button "all" [ref=f18e499] [cursor=pointer]
+          - slider [ref=f18e500]: "8"
+          - generic [ref=f18e501]: the pool covers 15 ranks at this floor
+        - generic [ref=f18e502]:
+          - generic [ref=f18e503]:
+            - generic [ref=f18e504]:
+              - button "gentle · ×0.85" [ref=f18e505] [cursor=pointer]
+              - button "mild · ×0.75" [pressed] [ref=f18e510] [cursor=pointer]
+              - button "moderate · ×0.65" [ref=f18e515] [cursor=pointer]
+              - button "firm · ×0.55" [ref=f18e520] [cursor=pointer]
+              - button "steep · ×0.45" [ref=f18e525] [cursor=pointer]
+              - button "severe · ×0.35" [ref=f18e530] [cursor=pointer]
+              - button "extreme · ×0.25" [ref=f18e535] [cursor=pointer]
+            - generic [ref=f18e540]: mild ×0.75
+          - generic [ref=f18e541]: Each rank gets 75% of the rank above.
+        - generic [ref=f18e542]:
+          - generic [ref=f18e543]:
+            - generic [ref=f18e545]: Min boosters per rank
+            - generic [ref=f18e546]:
+              - button "−" [ref=f18e547] [cursor=pointer]
+              - generic [ref=f18e548]: "2"
+              - button "+" [ref=f18e549] [cursor=pointer]
+            - generic [ref=f18e550]: 17/32
+          - generic [ref=f18e551]: +2 participation → 4 effective per served rank
+        - generic [ref=f18e552]: Supply
+        - generic [ref=f18e553]: What is in the box before anything is split — the boosters, the packs, and how they are boxed.
+        - generic [ref=f18e554]:
+          - generic [ref=f18e555]:
+            - generic [ref=f18e556]: Boosters per player (pool)
+            - generic [ref=f18e558]:
+              - button "−" [ref=f18e559] [cursor=pointer]
+              - generic [ref=f18e560]: "3"
+              - button "+" [ref=f18e561] [cursor=pointer]
+            - button "↺" [ref=f18e562] [cursor=pointer]
+          - generic [ref=f18e563]: How many boosters the prize pool holds per player. This is the whole booster supply.
+          - slider [ref=f18e564]: "3"
+        - generic [ref=f18e565]:
+          - generic [ref=f18e566]:
+            - generic [ref=f18e567]: Boosters per display
+            - generic [ref=f18e569]:
+              - button "−" [ref=f18e570] [cursor=pointer]
+              - generic [ref=f18e571]: "24"
+              - button "+" [ref=f18e572] [cursor=pointer]
+            - button "↺" [ref=f18e573] [cursor=pointer]
+          - generic [ref=f18e574]: How many boosters come in one display box — decides how many displays to fetch.
+          - slider [ref=f18e575]: "24"
+        - generic [ref=f18e576]:
+          - generic [ref=f18e577]:
+            - generic [ref=f18e578]: Tournament packs available
+            - generic [ref=f18e579]: auto
+            - generic [ref=f18e581]:
+              - button "−" [ref=f18e582] [cursor=pointer]
+              - generic [ref=f18e583]: "32"
+              - button "+" [ref=f18e584] [cursor=pointer]
+            - button "↺" [ref=f18e585] [cursor=pointer]
+          - generic [ref=f18e586]: How many tournament packs are on hand. Left alone it follows one per player.
+          - slider [ref=f18e587]: "32"
+        - generic [ref=f18e588]:
+          - generic [ref=f18e589]:
+            - generic [ref=f18e590]: Tournament Packs per Promo-Envelope
+            - generic [ref=f18e592]:
+              - button "−" [ref=f18e593] [cursor=pointer]
+              - generic [ref=f18e594]: "9"
+              - button "+" [ref=f18e595] [cursor=pointer]
+            - button "↺" [ref=f18e596] [cursor=pointer]
+          - generic [ref=f18e597]: How many tournament packs one Promo-Envelope holds. Full envelopes are what yield the winner packs.
+          - slider [ref=f18e598]: "9"
+        - generic [ref=f18e599]:
+          - generic [ref=f18e600]:
+            - generic [ref=f18e601]: Winner packs per Promo-Envelope
+            - generic [ref=f18e603]:
+              - button "−" [ref=f18e604] [cursor=pointer]
+              - generic [ref=f18e605]: "1"
+              - button "+" [ref=f18e606] [cursor=pointer]
+            - button "↺" [ref=f18e607] [cursor=pointer]
+          - generic [ref=f18e608]: How many winner packs one Promo-Envelope holds. An opened envelope counts them off as it empties.
+          - slider [ref=f18e609]: "1"
+        - generic [ref=f18e610]: Split the pool
+        - generic [ref=f18e611]: What comes off the top for everyone and for the judge, before the ranks are served.
+        - generic [ref=f18e612]:
+          - generic [ref=f18e613]:
+            - generic [ref=f18e614]: Participation boosters
+            - generic [ref=f18e615]: per player
+            - generic [ref=f18e617]:
+              - button "−" [ref=f18e618] [cursor=pointer]
+              - generic [ref=f18e619]: "2"
+              - button "+" [ref=f18e620] [cursor=pointer]
+            - button "↺" [ref=f18e621] [cursor=pointer]
+          - generic [ref=f18e622]: Boosters every player gets just for showing up. Taken off the pool before the ranks.
+          - slider [ref=f18e623]: "2"
+        - generic [ref=f18e624]:
+          - generic [ref=f18e625]:
+            - generic [ref=f18e626]: Participation packs
+            - generic [ref=f18e627]: per player
+            - generic [ref=f18e629]:
+              - button "−" [ref=f18e630] [cursor=pointer]
+              - generic [ref=f18e631]: "1"
+              - button "+" [ref=f18e632] [cursor=pointer]
+            - button "↺" [ref=f18e633] [cursor=pointer]
+          - generic [ref=f18e634]: Same for tournament packs — handed to everyone before the ranks are served.
+          - slider [ref=f18e635]: "1"
+        - generic [ref=f18e636]:
+          - generic [ref=f18e637]:
+            - generic [ref=f18e638]: Judge boosters
+            - generic [ref=f18e640]:
+              - button "−" [ref=f18e641] [cursor=pointer]
+              - generic [ref=f18e642]: "0"
+              - button "+" [ref=f18e643] [cursor=pointer]
+            - button "↺" [ref=f18e644] [cursor=pointer]
+          - generic [ref=f18e645]: Boosters set aside for the judge before anything else is distributed.
+          - slider [ref=f18e646]: "0"
+        - generic [ref=f18e647]:
+          - generic [ref=f18e648]:
+            - generic [ref=f18e649]: Judge winner packs
+            - generic [ref=f18e651]:
+              - button "−" [ref=f18e652] [cursor=pointer]
+              - generic [ref=f18e653]: "0"
+              - button "+" [ref=f18e654] [cursor=pointer]
+            - button "↺" [ref=f18e655] [cursor=pointer]
+          - generic [ref=f18e656]: Winner packs reserved for the judge.
+          - slider [ref=f18e657]: "0"
+        - generic [ref=f18e658]: Handout
+        - generic [ref=f18e659]: Whether participation prizes travel in the same handful as the rank prizes, instead of being handed out separately.
+        - generic [ref=f18e660]:
+          - checkbox "Hand participation prizes out together with rank prizes" [ref=f18e661]
+          - generic [ref=f18e662]: Hand participation prizes out together with rank prizes
+        - generic [ref=f18e663]: Rank pool
+        - generic [ref=f18e664]: "What is left goes down the standings: how deep, how flat, how steep."
+        - generic [ref=f18e665]:
+          - generic [ref=f18e666]:
+            - generic [ref=f18e667]: Served ranks
+            - generic [ref=f18e668]: top 8
+            - generic [ref=f18e670]:
+              - button "−" [ref=f18e671] [cursor=pointer]
+              - generic [ref=f18e672]: "8"
+              - button "+" [ref=f18e673] [cursor=pointer]
+          - generic [ref=f18e674]: How far down the standings the prizes reach. Ranks below get nothing.
+          - generic [ref=f18e676]:
+            - button "↑8" [pressed] [ref=f18e677] [cursor=pointer]
+            - button "↑16" [ref=f18e678] [cursor=pointer]
+            - button "↑¼" [ref=f18e679] [cursor=pointer]
+            - button "↑⅓" [ref=f18e680] [cursor=pointer]
+            - button "↑½" [ref=f18e681] [cursor=pointer]
+            - button "↑⅔" [ref=f18e682] [cursor=pointer]
+            - button "↑¾" [ref=f18e683] [cursor=pointer]
+            - button "all" [ref=f18e684] [cursor=pointer]
+          - slider [ref=f18e685]: "8"
+          - generic [ref=f18e686]: the pool covers 15 ranks at this floor
+        - generic [ref=f18e687]:
+          - generic [ref=f18e688]:
+            - generic [ref=f18e690]: Min boosters per rank
+            - generic [ref=f18e691]:
+              - button "−" [ref=f18e692] [cursor=pointer]
+              - generic [ref=f18e693]: "2"
+              - button "+" [ref=f18e694] [cursor=pointer]
+            - generic [ref=f18e695]: 17/32
+          - generic [ref=f18e696]: +2 participation → 4 effective per served rank
+          - generic [ref=f18e697]: The smallest number of boosters any served rank may get. Raising it flattens the whole plan.
+        - generic [ref=f18e698]: Display reservations
+        - generic [ref=f18e699]: Whole sealed displays handed to a single rank, taken off the rank pool before the curve shapes the rest. Set them on the tile, not here.
+        - generic [ref=f18e700]: None — tap a rank tile to reserve one.
+        - generic [ref=f18e701]: Curve
+        - generic [ref=f18e702]: How steeply the boosters drop from one rank to the next. It only shapes what is left over the floor.
+        - generic [ref=f18e703]:
+          - generic [ref=f18e704]:
+            - generic [ref=f18e705]:
+              - button "gentle · ×0.85" [ref=f18e706] [cursor=pointer]
+              - button "mild · ×0.75" [pressed] [ref=f18e711] [cursor=pointer]
+              - button "moderate · ×0.65" [ref=f18e716] [cursor=pointer]
+              - button "firm · ×0.55" [ref=f18e721] [cursor=pointer]
+              - button "steep · ×0.45" [ref=f18e726] [cursor=pointer]
+              - button "severe · ×0.35" [ref=f18e731] [cursor=pointer]
+              - button "extreme · ×0.25" [ref=f18e736] [cursor=pointer]
+            - generic [ref=f18e741]: mild ×0.75
+          - generic [ref=f18e742]: Each rank gets 75% of the rank above.
+        - generic [ref=f18e743]: Winner packs
+        - generic [ref=f18e744]: The scarce prize. Either strictly by rank, or drawn by the Winner raffle.
+        - generic [ref=f18e745]:
+          - generic [ref=f18e746]:
+            - generic [ref=f18e747]: Winner packs available
+            - generic [ref=f18e748]: auto
+            - generic [ref=f18e750]:
+              - button "−" [ref=f18e751] [cursor=pointer]
+              - generic [ref=f18e752]: "3"
+              - button "+" [ref=f18e753] [cursor=pointer]
+            - button "↺" [ref=f18e754] [cursor=pointer]
+          - generic [ref=f18e755]: The ceiling for winner packs. The Promo-Envelopes yield a number; by hand you may put more on the table.
+          - generic [ref=f18e756]: 4 Promo-Envelopes yield 3 · 3 for the ranks
+        - generic [ref=f18e757]:
+          - generic [ref=f18e758]:
+            - generic [ref=f18e759]: Winner packs by rank
+            - generic [ref=f18e760]: auto
+            - generic [ref=f18e762]:
+              - button "−" [ref=f18e763] [cursor=pointer]
+              - generic [ref=f18e764]: "2"
+              - button "+" [ref=f18e765] [cursor=pointer]
+            - button "↺" [ref=f18e766] [cursor=pointer]
+          - generic [ref=f18e767]: How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the raffle.
+          - slider [ref=f18e768]: "2"
+        - generic [ref=f18e769]:
+          - generic [ref=f18e770]: Raffle range
+          - generic [ref=f18e771]: Which ranks the Winner raffle may draw from when it places an open winner pack.
+          - generic [ref=f18e772]:
+            - text: Raffled from the legend above the tiles — the handle on
+            - strong [ref=f18e774]: winner
+            - text: ", where the range is set too. Currently"
+            - strong [ref=f18e775]: all ranks
+            - text: ", 1 winner pack still open."
+  - generic [ref=f18e241]:
+    - button "📱 393" [ref=f18e242] [cursor=pointer]
+    - button "📱 830 quer" [ref=f18e243] [cursor=pointer]
+    - button "▭ 900" [ref=f18e244] [cursor=pointer]
+    - button "🖥 1280" [active] [pressed] [ref=f18e245] [cursor=pointer]
+    - button "🖥 1658" [ref=f18e246] [cursor=pointer]
+    - button "⬜ nackt" [ref=f18e247] [cursor=pointer]
+  - generic [ref=f18e248]:
+    - button "☀ Light — Bronze" [pressed] [ref=f18e249] [cursor=pointer]
+    - button "☾ Dark — Foil" [ref=f18e251] [cursor=pointer]
+  - generic [ref=f18e253]:
+    - 'heading "Runde 23 · #41" [level=4] [ref=f18e254]'
+    - generic [ref=f18e255]:
+      - generic [ref=f18e256]: Game-Reihe & voller Reset
+      - generic [ref=f18e257]:
+        - button "im Kopf" [pressed] [ref=f18e258] [cursor=pointer]
+        - button "im Körper" [ref=f18e259] [cursor=pointer]
+        - button "geteilt" [ref=f18e260] [cursor=pointer]
+      - generic [ref=f18e261]: Spaltenkopf, klebt · Vier behalten den Scrollrand
+    - generic [ref=f18e262]:
+      - generic [ref=f18e263]: Offer auf dem Vielfachen
+      - generic [ref=f18e264]:
+        - button "A" [ref=f18e265] [cursor=pointer]
+        - button "B" [pressed] [ref=f18e266] [cursor=pointer]
+        - button "C" [ref=f18e267] [cursor=pointer]
+      - generic [ref=f18e268]: Rank 1 could take 2 sealed displays instead of 48 loose boosters.
+    - generic [ref=f18e269]:
+      - generic [ref=f18e270]: Knopf im CarryOverNotice
+      - generic [ref=f18e271]:
+        - button "A" [pressed] [ref=f18e272] [cursor=pointer]
+        - button "B" [ref=f18e273] [cursor=pointer]
+        - button "C" [ref=f18e274] [cursor=pointer]
+      - generic [ref=f18e275]: Drop all 3 and follow Weekend

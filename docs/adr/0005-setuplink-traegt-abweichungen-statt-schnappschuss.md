@@ -1,5 +1,8 @@
 # SetupLink: die URL trägt Abweichungen, keinen Schnappschuss
 
+Teilweise überholt durch ADR-0006.
+Ergänzt durch ADR-0007.
+
 Der eingestellte Zustand eines `Tournament` steht in der **URL** und schreibt sich
 beim Ziehen mit (`replaceState`, also ohne Browser-Historie). Sie trägt
 **ausschliesslich die Abweichungen** vom `DefaultSet` — nicht jeden Reglerwert.

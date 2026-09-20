@@ -114,3 +114,24 @@ Knappe `PrizeItem`s laufen an der Kurve vorbei. `WinnerPack`s und
 `TournamentPack`s im `RankPool` werden von `Rank` 1 an durchgereicht und
 beginnen wieder oben, wenn mehr davon da sind als bediente Ränge — sonst gehen
 sie verloren, was ein Prototyp-Durchlauf über alle Kombinationen aufgedeckt hat.
+
+## Nachtrag (Durchgang 2): der `RankCycle` im Schlussabsatz ist nicht mehr der von heute
+
+Der Absatz oben — „`WinnerPack`s und `TournamentPack`s im `RankPool` werden von
+`Rank` 1 an durchgereicht und beginnen wieder oben, wenn mehr davon da sind als
+bediente Ränge" — beschreibt einen Kreis, den es in dieser Form nicht mehr gibt.
+Drei Abweichungen gegen den heutigen `RankCycle` in `CONTEXT.md`:
+
+- **Es laufen nur `TournamentPack`s.** `WinnerPack`s gehen über die
+  `WinnerPackAllocation` (`ranked` / `manual` / `open`) und nie im Kreis; ein
+  `Rank` gewinnt eine Siegerkarte nicht zweimal.
+- **Der Kreis beginnt nicht bei `Rank` 1**, sondern beim ersten `Rank` nach dem
+  `ranked`-Anteil — sind zwei `WinnerPack`s automatisch vergeben, startet er bei
+  `Rank` 3 und läuft über den letzten `Rank` zurück auf `Rank` 1.
+- **Er läuft über alle Ränge bis zur Spielerzahl**, nicht bis zur
+  `RankPoolDepth`: „mehr davon da sind als bediente Ränge" wäre der Deckel, den
+  `CONTEXT.md` ausdrücklich verneint („`RankPoolDepth` begrenzt ihn nicht").
+
+Was gültig bleibt, ist der Grund, aus dem der Absatz hier steht: knappe, nicht
+teilbare `PrizeItem`s laufen **an der Kurve vorbei**, und sie gehen nicht
+verloren. Nur die Mechanik ist seither an ihren eigenen Ort gewandert.

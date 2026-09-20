@@ -1,0 +1,147 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - 'heading "Prizing Cockpit — Runde 11 zu Ticket #32" [level=1] [ref=f9e3]'
+    - paragraph [ref=f9e4]:
+      - text: Der dritte
+      - strong [ref=f9e5]: "TournamentType: Release"
+      - text: "ist da, und mit ihm das Bild, um das es geht:"
+      - strong [ref=f9e6]: Release, 32 Spieler
+      - text: bedient alle 32 Ränge, die Kurve läuft bei Rang 15 aus,
+      - strong [ref=f9e7]: 17 Kacheln
+      - text: stehen identisch auf
+      - code [ref=f9e8]: "2"
+      - text: . Das Raster hat auf dem Handy Platz für zweieinhalb Reihen —
+      - code [ref=f9e9]: ⛶
+      - text: "zeigt alle 32 auf einmal. Im Kopf die Summenprobe über drei Stellen:"
+      - code [ref=f9e10]: "288"
+      - text: Booster,
+      - code [ref=f9e11]: "192"
+      - text: ausgeteilt,
+      - code [ref=f9e12]: "96"
+      - text: in die Ränge.
+    - group [ref=f9e13]:
+      - generic "Was sich geändert hat" [ref=f9e14] [cursor=pointer]
+  - generic [ref=f9e16]:
+    - generic [ref=f9e696]:
+      - generic [ref=f9e697]:
+        - generic [ref=f9e698]:
+          - generic [ref=f9e699]:
+            - strong [ref=f9e700]: Weekly
+            - generic [ref=f9e701]: 32 players
+            - generic [ref=f9e702]: ·
+            - generic [ref=f9e703]: 96 boosters
+          - generic [ref=f9e704]:
+            - generic [ref=f9e705]: Handed out at check-in
+            - generic [ref=f9e706]:
+              - strong [ref=f9e707]: 2 boosters · 1 pack
+              - generic [ref=f9e708]: each
+              - generic [ref=f9e709]: 64 · 32 of the pool
+        - generic [ref=f9e710]:
+          - generic:
+            - text: to the ranks
+            - strong: 32 boosters · 3 winner packs
+        - generic [ref=f9e786]:
+          - generic [ref=f9e787]:
+            - generic [ref=f9e788]: pack
+            - button "winner 🎲 1" [ref=f9e790] [cursor=pointer]:
+              - text: winner
+              - generic [ref=f9e792]: 🎲
+              - generic [ref=f9e793]: "1"
+            - button "⛶" [ref=f9e794] [cursor=pointer]
+          - generic [ref=f9e796]:
+            - generic [ref=f9e797] [cursor=pointer]:
+              - generic [ref=f9e798]: "1"
+              - generic "1 winner pack" [ref=f9e799]
+              - strong [ref=f9e800]: "7"
+            - generic [ref=f9e801] [cursor=pointer]:
+              - generic [ref=f9e802]: "2"
+              - generic "1 winner pack" [ref=f9e803]
+              - strong [ref=f9e804]: "5"
+            - generic [ref=f9e805] [cursor=pointer]:
+              - generic [ref=f9e806]: "3"
+              - strong [ref=f9e807]: "4"
+            - generic [ref=f9e808] [cursor=pointer]:
+              - generic [ref=f9e809]: "4"
+              - strong [ref=f9e810]: "4"
+            - generic [ref=f9e811] [cursor=pointer]:
+              - generic [ref=f9e812]: "5"
+              - strong [ref=f9e813]: "3"
+            - generic [ref=f9e814] [cursor=pointer]:
+              - generic [ref=f9e815]: "6"
+              - strong [ref=f9e816]: "3"
+            - generic [ref=f9e817] [cursor=pointer]:
+              - generic [ref=f9e818]: "7"
+              - strong [ref=f9e819]: "3"
+            - generic [ref=f9e820] [cursor=pointer]:
+              - generic [ref=f9e821]: "8"
+              - strong [ref=f9e822]: "3"
+          - generic [ref=f9e823]: ranks 9–32 get nothing
+      - generic [ref=f9e826]:
+        - generic [ref=f9e827]:
+          - generic [ref=f9e828]:
+            - generic [ref=f9e829]: Players
+            - generic [ref=f9e831]:
+              - button "−" [ref=f9e832] [cursor=pointer]
+              - generic [ref=f9e833]: "32"
+              - button "+" [ref=f9e834] [cursor=pointer]
+          - slider [ref=f9e835]: "32"
+        - generic [ref=f9e836]:
+          - generic [ref=f9e837]:
+            - generic [ref=f9e838]: Served ranks
+            - generic [ref=f9e839]: top 8
+            - generic [ref=f9e841]:
+              - button "−" [ref=f9e842] [cursor=pointer]
+              - generic [ref=f9e843]: "8"
+              - button "+" [ref=f9e844] [cursor=pointer]
+          - generic [ref=f9e846]:
+            - button "↑8" [pressed] [ref=f9e847] [cursor=pointer]
+            - button "↑16" [ref=f9e848] [cursor=pointer]
+            - button "↑¼" [ref=f9e849] [cursor=pointer]
+            - button "↑⅓" [ref=f9e850] [cursor=pointer]
+            - button "↑½" [ref=f9e851] [cursor=pointer]
+            - button "↑⅔" [ref=f9e852] [cursor=pointer]
+            - button "↑¾" [ref=f9e853] [cursor=pointer]
+            - button "all" [ref=f9e854] [cursor=pointer]
+          - slider [ref=f9e855]: "8"
+          - generic [ref=f9e856]: the pool covers 15 ranks at this floor
+        - generic [ref=f9e857]:
+          - generic [ref=f9e858]:
+            - generic [ref=f9e859]:
+              - button "gentle · ×0.85" [ref=f9e860] [cursor=pointer]
+              - button "mild · ×0.75" [pressed] [ref=f9e865] [cursor=pointer]
+              - button "moderate · ×0.65" [ref=f9e870] [cursor=pointer]
+              - button "firm · ×0.55" [ref=f9e875] [cursor=pointer]
+              - button "steep · ×0.45" [ref=f9e880] [cursor=pointer]
+              - button "severe · ×0.35" [ref=f9e885] [cursor=pointer]
+              - button "extreme · ×0.25" [ref=f9e890] [cursor=pointer]
+            - generic [ref=f9e895]: mild ×0.75
+          - generic [ref=f9e896]: Each rank gets 75% of the rank above.
+        - generic [ref=f9e897]:
+          - generic [ref=f9e898]:
+            - generic [ref=f9e900]: Min boosters per rank
+            - generic [ref=f9e901]:
+              - button "−" [ref=f9e902] [cursor=pointer]
+              - generic [ref=f9e903]: "2"
+              - button "+" [ref=f9e904] [cursor=pointer]
+            - generic [ref=f9e905]: 17/32
+          - generic [ref=f9e906]: +2 participation → 4 effective per served rank
+    - generic [ref=f9e230]:
+      - button "🛒 Prepare" [ref=f9e231] [cursor=pointer]:
+        - generic [ref=f9e232]: 🛒
+        - text: Prepare
+      - button "⊞ Plan" [ref=f9e233] [cursor=pointer]:
+        - generic [ref=f9e234]: ⊞
+        - text: Plan
+      - button "☰ Details" [ref=f9e235] [cursor=pointer]:
+        - generic [ref=f9e236]: ☰
+        - text: Details
+  - generic [ref=f9e237]:
+    - button "📱 393" [active] [pressed] [ref=f9e238] [cursor=pointer]
+    - button "📱 830 quer" [ref=f9e239] [cursor=pointer]
+    - button "▭ 900" [ref=f9e240] [cursor=pointer]
+    - button "🖥 1280" [ref=f9e241] [cursor=pointer]
+    - button "🖥 1658" [ref=f9e242] [cursor=pointer]
+    - button "⬜ nackt" [ref=f9e243] [cursor=pointer]
+  - generic [ref=f9e244]:
+    - button "☀ Light — Bronze" [pressed] [ref=f9e245] [cursor=pointer]
+    - button "☾ Dark — Foil" [ref=f9e247] [cursor=pointer]

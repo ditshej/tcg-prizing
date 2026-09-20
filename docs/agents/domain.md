@@ -76,6 +76,20 @@ Ergänzt durch ADR-0005.
 Teilweise überholt durch ADR-0007.
 ```
 
+**One line per later ADR**, never several numbers on one line. An earlier ADR
+can be touched more than once, and the two can be touched in different ways —
+ADR-0005 is partly overturned by ADR-0006 and extended by ADR-0007. Stacking the
+lines keeps each word attached to the number it describes; a joint line would
+force one verb onto both and lose exactly the information the words carry.
+Numeric order, because that is the order the reader will follow them in:
+
+```md
+# SetupLink: die URL trägt Abweichungen, keinen Schnappschuss
+
+Teilweise überholt durch ADR-0006.
+Ergänzt durch ADR-0007.
+```
+
 Which of the three cases it is gets **written out**, because that word is itself
 the information the next reader needs: whether the rest of the document still
 holds in full (_ergänzt_), holds in part (_teilweise überholt_), or can be put

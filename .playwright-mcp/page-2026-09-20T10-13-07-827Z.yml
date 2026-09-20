@@ -1,0 +1,178 @@
+- generic [active] [ref=f23e1]:
+  - generic [ref=f23e2]:
+    - 'heading "Prizing Cockpit — Runde 23 zu Ticket #41" [level=1] [ref=f23e3]'
+    - paragraph [ref=f23e4]:
+      - text: Vier Fragen an einem Bild. Die
+      - strong [ref=f23e5]: Game-Ebene
+      - text: steht jetzt am Schirm — eine Reihe mit einem Eintrag, eingerückt darunter die Typenreihe, ein ⓘ je Ebene. Der
+      - strong [ref=f23e6]: Reset mit voller Reichweite
+      - text: fragt nicht mehr zweistufig, sondern mit einer am Knopf verankerten Blase, und derselbe Knopf im
+      - emphasis [ref=f23e7]: CarryOverNotice
+      - text: fragt jetzt auch. Die zwei Wörter — der
+      - emphasis [ref=f23e8]: Offer
+      - text: "-Satz auf dem exakten Vielfachen und der Knopf im"
+      - emphasis [ref=f23e9]: CarryOverNotice
+      - text: — stehen als
+      - strong [ref=f23e10]: Fassungen unten rechts
+      - text: zum Durchschalten.
+    - paragraph [ref=f23e11]:
+      - text: "Zum Nachstellen:"
+      - code [ref=f23e12]: Weekend
+      - text: wählen, ein paar Regler anfassen, dann auf
+      - code [ref=f23e13]: Release
+      - text: wechseln — das gibt den
+      - emphasis [ref=f23e14]: CarryOverNotice
+      - text: . Für den
+      - emphasis [ref=f23e15]: Offer
+      - text: "auf dem exakten Vielfachen:"
+      - code [ref=f23e16]: Release
+      - text: ", Spielerzahl so drehen, bis ein Rang glatt auf 24 · n steht."
+    - group [ref=f23e17]:
+      - generic "Was sich geändert hat" [ref=f23e18] [cursor=pointer]
+  - generic [ref=f23e20]:
+    - generic [ref=f23e22]:
+      - generic [ref=f23e23]:
+        - generic [ref=f23e24]:
+          - generic [ref=f23e25]:
+            - strong [ref=f23e26]: Weekly
+            - generic [ref=f23e27]: 32 players
+            - generic [ref=f23e28]: ·
+            - generic [ref=f23e29]: 96 boosters
+          - generic [ref=f23e30]:
+            - generic [ref=f23e31]: Handed out at check-in
+            - generic [ref=f23e32]:
+              - strong [ref=f23e33]: 2 boosters · 1 pack
+              - generic [ref=f23e34]: each
+              - generic [ref=f23e35]: 64 · 32 of the pool
+        - generic [ref=f23e36]:
+          - generic:
+            - text: to the ranks
+            - strong: 32 boosters · 3 winner packs
+        - generic [ref=f23e112]:
+          - generic [ref=f23e113]:
+            - generic [ref=f23e114]: pack
+            - button "winner 🎲 1" [ref=f23e116] [cursor=pointer]:
+              - text: winner
+              - generic [ref=f23e118]: 🎲
+              - generic [ref=f23e119]: "1"
+            - button "⛶" [ref=f23e120] [cursor=pointer]
+          - generic [ref=f23e122]:
+            - generic [ref=f23e123] [cursor=pointer]:
+              - generic [ref=f23e124]: "1"
+              - generic "1 winner pack" [ref=f23e125]
+              - strong [ref=f23e126]: "7"
+            - generic [ref=f23e127] [cursor=pointer]:
+              - generic [ref=f23e128]: "2"
+              - generic "1 winner pack" [ref=f23e129]
+              - strong [ref=f23e130]: "5"
+            - generic [ref=f23e131] [cursor=pointer]:
+              - generic [ref=f23e132]: "3"
+              - strong [ref=f23e133]: "4"
+            - generic [ref=f23e134] [cursor=pointer]:
+              - generic [ref=f23e135]: "4"
+              - strong [ref=f23e136]: "4"
+            - generic [ref=f23e137] [cursor=pointer]:
+              - generic [ref=f23e138]: "5"
+              - strong [ref=f23e139]: "3"
+            - generic [ref=f23e140] [cursor=pointer]:
+              - generic [ref=f23e141]: "6"
+              - strong [ref=f23e142]: "3"
+            - generic [ref=f23e143] [cursor=pointer]:
+              - generic [ref=f23e144]: "7"
+              - strong [ref=f23e145]: "3"
+            - generic [ref=f23e146] [cursor=pointer]:
+              - generic [ref=f23e147]: "8"
+              - strong [ref=f23e148]: "3"
+          - generic [ref=f23e149]: ranks 9–32 get nothing
+      - generic [ref=f23e152]:
+        - generic [ref=f23e153]:
+          - generic [ref=f23e154]:
+            - generic [ref=f23e155]: Players
+            - generic [ref=f23e157]:
+              - button "−" [ref=f23e158] [cursor=pointer]
+              - generic [ref=f23e159]: "32"
+              - button "+" [ref=f23e160] [cursor=pointer]
+          - slider [ref=f23e161]: "32"
+        - generic [ref=f23e162]:
+          - generic [ref=f23e163]:
+            - generic [ref=f23e164]: Served ranks
+            - generic [ref=f23e165]: top 8
+            - generic [ref=f23e167]:
+              - button "−" [ref=f23e168] [cursor=pointer]
+              - generic [ref=f23e169]: "8"
+              - button "+" [ref=f23e170] [cursor=pointer]
+          - generic [ref=f23e172]:
+            - button "↑8" [pressed] [ref=f23e173] [cursor=pointer]
+            - button "↑16" [ref=f23e174] [cursor=pointer]
+            - button "↑¼" [ref=f23e175] [cursor=pointer]
+            - button "↑⅓" [ref=f23e176] [cursor=pointer]
+            - button "↑½" [ref=f23e177] [cursor=pointer]
+            - button "↑⅔" [ref=f23e178] [cursor=pointer]
+            - button "↑¾" [ref=f23e179] [cursor=pointer]
+            - button "all" [ref=f23e180] [cursor=pointer]
+          - slider [ref=f23e181]: "8"
+          - generic [ref=f23e182]: the pool covers 15 ranks at this floor
+        - generic [ref=f23e183]:
+          - generic [ref=f23e184]:
+            - generic [ref=f23e185]:
+              - button "gentle · ×0.85" [ref=f23e186] [cursor=pointer]
+              - button "mild · ×0.75" [pressed] [ref=f23e191] [cursor=pointer]
+              - button "moderate · ×0.65" [ref=f23e196] [cursor=pointer]
+              - button "firm · ×0.55" [ref=f23e201] [cursor=pointer]
+              - button "steep · ×0.45" [ref=f23e206] [cursor=pointer]
+              - button "severe · ×0.35" [ref=f23e211] [cursor=pointer]
+              - button "extreme · ×0.25" [ref=f23e216] [cursor=pointer]
+            - generic [ref=f23e221]: mild ×0.75
+          - generic [ref=f23e222]: Each rank gets 75% of the rank above.
+        - generic [ref=f23e223]:
+          - generic [ref=f23e224]:
+            - generic [ref=f23e226]: Min boosters per rank
+            - generic [ref=f23e227]:
+              - button "−" [ref=f23e228] [cursor=pointer]
+              - generic [ref=f23e229]: "2"
+              - button "+" [ref=f23e230] [cursor=pointer]
+            - generic [ref=f23e231]: 17/32
+          - generic [ref=f23e232]: +2 participation → 4 effective per served rank
+    - generic [ref=f23e234]:
+      - button "🛒 Prepare" [ref=f23e235] [cursor=pointer]:
+        - generic [ref=f23e236]: 🛒
+        - text: Prepare
+      - button "⊞ Plan" [ref=f23e237] [cursor=pointer]:
+        - generic [ref=f23e238]: ⊞
+        - text: Plan
+      - button "☰ Details" [ref=f23e239] [cursor=pointer]:
+        - generic [ref=f23e240]: ☰
+        - text: Details
+  - generic [ref=f23e241]:
+    - button "📱 393" [pressed] [ref=f23e242] [cursor=pointer]
+    - button "📱 830 quer" [ref=f23e243] [cursor=pointer]
+    - button "▭ 900" [ref=f23e244] [cursor=pointer]
+    - button "🖥 1280" [ref=f23e245] [cursor=pointer]
+    - button "🖥 1658" [ref=f23e246] [cursor=pointer]
+    - button "⬜ nackt" [ref=f23e247] [cursor=pointer]
+  - generic [ref=f23e248]:
+    - button "☀ Light — Bronze" [pressed] [ref=f23e249] [cursor=pointer]
+    - button "☾ Dark — Foil" [ref=f23e251] [cursor=pointer]
+  - generic [ref=f23e253]:
+    - 'heading "Runde 23 · #41" [level=4] [ref=f23e254]'
+    - generic [ref=f23e255]:
+      - generic [ref=f23e256]: Game-Reihe & voller Reset
+      - generic [ref=f23e257]:
+        - button "im Kopf" [pressed] [ref=f23e258] [cursor=pointer]
+        - button "im Körper" [ref=f23e259] [cursor=pointer]
+        - button "geteilt" [ref=f23e260] [cursor=pointer]
+      - generic [ref=f23e261]: Spaltenkopf, klebt · Vier behalten den Scrollrand
+    - generic [ref=f23e262]:
+      - generic [ref=f23e263]: Offer auf dem Vielfachen
+      - generic [ref=f23e264]:
+        - button "A" [ref=f23e265] [cursor=pointer]
+        - button "B" [pressed] [ref=f23e266] [cursor=pointer]
+        - button "C" [ref=f23e267] [cursor=pointer]
+      - generic [ref=f23e268]: Rank 1 could take 2 sealed displays instead of 48 loose boosters.
+    - generic [ref=f23e269]:
+      - generic [ref=f23e270]: Knopf im CarryOverNotice
+      - generic [ref=f23e271]:
+        - button "A" [pressed] [ref=f23e272] [cursor=pointer]
+        - button "B" [ref=f23e273] [cursor=pointer]
+        - button "C" [ref=f23e274] [cursor=pointer]
+      - generic [ref=f23e275]: Drop all 3 and follow Weekend
