@@ -200,6 +200,12 @@
      Plan. Also *ist* der Plan der ganze Schirm, und die Einzüge fallen von
      selbst auf null — dieselbe Regel, kein Sonderfall. */
   #stage.fsopen { --planl: 0px; --planr: 0px; }
+  /* …aber nur, wenn wirklich alles weg ist. Im flachen Modus kommt `Prepare`
+     als Vollbild-Blatt und trägt darum dieselbe Klasse, während der Streifen
+     stehen bleibt — der Einzug wurde trotzdem genullt, und die Chips fielen
+     an die Schirmkante und damit *unter* die Navigation. Den Einzug nimmt
+     allein der echte Fokus-Modus weg, in dem es keinen Streifen gibt. */
+  #stage[data-flat="1"].fsopen:not(.fsfocus) { --planr: var(--footw); }
   #stage[data-flat="1"].fsfocus #app { width: 100%; }
   /* Runde 21: und *alles weg* heisst auch der Fuss. Bis hierher stand er im
      Kachel-Vollbild weiter da — am Handy gemessen mit vollen 56 px und drei
