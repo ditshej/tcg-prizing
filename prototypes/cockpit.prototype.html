@@ -1208,7 +1208,7 @@
   <button data-dev="land">📱 830 quer</button>
   <button data-dev="tab">▭ 900</button>
   <button data-dev="wide">🖥 1280</button>
-  <button data-dev="max">🖥 1658</button>
+  <button data-dev="max">🖥 1674</button>
   <button data-dev="bare">⬜ nackt</button>
 </div>
 
@@ -1294,7 +1294,7 @@ function distribute(s) {
   const rankWP = wpTotal - judgeWP;
 
   const rankedAuto = Math.min(Math.floor(rankWP / 2) + 1, rankWP);
-  const ranked = Math.min(s.ranked == null ? rankedAuto : s.ranked, rankWP);
+  const ranked = Math.min(s.ranked == null ? rankedAuto : s.ranked, rankWP, n);
   const manual = {}; let manualCount = 0;
   for (const [rank, cnt] of Object.entries(s.manualWinner || {})) {
     const r = Number(rank);
@@ -1868,7 +1868,11 @@ function numChip(key, plan, small) {
 function maxOf(key, plan, opts) {
   if (opts && opts.max != null) return opts.max;
   if (key === 'depth') return st.players;
-  if (key === 'ranked') return plan.rank.winners;
+  // Kein Regler adressiert einen Rang jenseits der Spielerzahl. `depth` trug den
+  // Deckel von Anfang an, `ranked` fehlte er — ein Pack galt dann als vergeben an
+  // einen Rang, den es nicht gibt, und fiel aus der Bilanz, während Prepare es
+  // weiter einkaufen liess.
+  if (key === 'ranked') return Math.min(plan.rank.winners, st.players);
   return (RANGE_OF[key] || (() => [0, 10]))()[1];
 }
 function minOf(key) {
