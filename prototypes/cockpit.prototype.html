@@ -64,7 +64,13 @@
 
     /* Sperrgebiet des Knopfes unten rechts: 52 Knopf + 12 Abstand + 6 Luft. */
     --fabsafe: 70px;
+    /* Zwei Fusshöhen, eine Regel: *der Fuss ist so hoch wie sein Inhalt.* Am
+       Handy steht Icon *über* Wort (18 + 4 + 10 plus Polster) — 56. Ab 774
+       stehen die Plätze einzeilig, Icon *neben* Wort — 36. Damit bleibt #37s
+       Einwand beantwortet statt überstimmt: quer sind 36 px ein Elftel der
+       Höhe, wo 56 ein Siebtel waren. */
     --foot: 56px;
+    --footw: 36px;
     /* Die Kachel ist das Mass der Dinge: so gross wie im Hochformat bei
        sechs Spalten. Alles andere richtet sich danach. */
     --cell: 54px;
@@ -146,17 +152,32 @@
      an der bis Runde 18 drei standen: `--rail`, `--foot` und `.onplan`.
      Bei einer Spalte ist der Plan der ganze Schirm, also sind beide null;
      das gilt damit auch am Handy, ohne eigene Regel. */
-  #stage { --planl: 0px; --planr: 0px; --grip: 34px; }
-  /* Der Griff ist die eingefaltete Spalte, also *nimmt* er Platz statt darauf
-     zu liegen — gemessen: schwebend deckte er die Legende und die erste Kachel
-     zu. Sein Streifen ist damit derselbe Rand wie der der Spalte, nur 34 statt
-     340 breit, und bei 1080 wächst er in sie hinein. */
-  #stage[data-cols="2"] { --planl: var(--grip); --planr: var(--det); --foot: 0px; }
-  #stage[data-cols="3"] { --planr: var(--det); --planl: var(--prep); --foot: 0px; }
+  #stage { --planl: 0px; --planr: 0px; }
+  /* Runde 21: der Griff an der linken Kante ist weg. Er nahm über die ganze
+     Höhe einen Balken für ein einziges Wort, und der Umschalter sitzt jetzt
+     unten im Streifen. Damit fällt `--planl` bei zwei Spalten auf null zurück
+     — dieselbe Null wie am Handy und im Vollbild —, und `--grip` verschwindet
+     ersatzlos aus dem Regelwerk. Einzug hat nur noch, wo wirklich eine Spalte
+     steht. */
+  #stage[data-cols="2"] { --planr: var(--det); --foot: var(--footw); }
+  #stage[data-cols="3"] { --planr: var(--det); --planl: var(--prep);
+                          --foot: var(--footw); }
   /* Das Vollbild ist die Faltung in die Gegenrichtung: alles weg ausser dem
      Plan. Also *ist* der Plan der ganze Schirm, und die Einzüge fallen von
      selbst auf null — dieselbe Regel, kein Sonderfall. */
   #stage.fsopen { --planl: 0px; --planr: 0px; }
+  /* Runde 21: und *alles weg* heisst auch der Fuss. Bis hierher stand er im
+     Kachel-Vollbild weiter da — am Handy gemessen mit vollen 56 px und drei
+     Nav-Einträgen unter den Kacheln, weil `#foot` im #stage auf z 45 liegt und
+     das Vollbildblatt in `#app` auf z 25. Ein unbemerkter Rest, kein
+     Entscheid: #37s eigener Satz verlangt ihn weg. Das Vollbild ist damit ein
+     Fokus-Modus mit genau einem Ausgang — dem `⤡` in seinem Kopf, den #36 ihm
+     gegeben hat, und jetzt ist es auch der einzige.
+
+     Eigene Klasse statt `.fsopen`, weil die auch für die Prepare-Seite
+     gesetzt wird und dort der Fuss bleiben muss: er trägt den Rückweg. */
+  #stage.fsfocus { --foot: 0px; }
+  #stage.fsfocus #foot { display: none; }
   /* Runde 13: der Fuss ist eine eigene Zeile, keine schwebenden Griffe mehr.
      Der #morph schwebte über den vorderen Reglern — `raffleRow` trug dafür ein
      `padding-right: 88px`, also war die Fläche ohnehin bezahlt, nur verdeckt
@@ -354,6 +375,43 @@
      eine Teilung *des Fusses* in zwei Zonen, und die gibt es nicht mehr, seit
      er ganz der Navigation gehört. Übrig bleibt der Daumen, und der greift
      rechts: ein Badge ist ein Griff, kein Text. */
+  /* ── Runde 21: der Chip wechselt seinen Schwebepunkt, nicht seine Ecke ──
+     Er zieht in den rechten Platz des Streifens — aber nicht als dessen Kind.
+     Er schwebt ohnehin, also ändert sich genau eine Zahl: `bottom` fällt von
+     `--foot + --raffleh` auf 0. Dieselbe Pille, ein Anker tiefer, und die
+     Ecke bleibt dieselbe (unten rechts an der Plan-Spalte, so tief wie
+     möglich). Runde 14s Satz gilt wörtlich weiter: er schwebt über den
+     Seiten, also überlebt er den Seitenwechsel — der Streifen tut das auch.
+
+     Eigenes Element statt Kind von `.stack`, weil der Stapel die *offenen*
+     Meldungen trägt, und die sind Panels: sie müssen über dem Streifen
+     bleiben, während der Chip hineinfällt. Ein Anker pro Grösse.
+
+     Gewinn, den es zu messen gilt: im Plan-Block deckte die Chip-Zeile eine
+     Kachelreihe zu — genau die Fläche, die #32 (148 → 213) und #35 mühsam
+     zurückgeholt haben. Im Streifen steht sie auf Platz, der bezahlt ist. */
+  #badges { position: absolute; right: var(--planr); z-index: 36;
+            bottom: calc(var(--foot) + var(--raffleh));
+            padding: 0 12px 8px; pointer-events: none;
+            display: flex; justify-content: flex-end; }
+  #badges > * { pointer-events: auto; }
+  /* Ab 774 fällt er in den Streifen. Im Kachel-Vollbild gibt es keinen, also
+     greift die Regel dort nicht und er steht wieder an der Kante — `--foot`
+     ist dann 0, dieselbe Formel, kein `if` auf die Fläche.
+
+     Und `--planr` fällt mit: im Streifen ist die rechte Ecke die des Schirms,
+     nicht die der Plan-Spalte. Der Einzug aus Runde 19 hatte genau einen
+     Grund — ein Panel darf die Pin-Markierungen nicht zudecken, die der
+     CarryOverNotice aufzählt. Eine Pille in einem reservierten Band deckt
+     nichts zu, also gilt der Grund für sie nicht. Der Stapel behält ihn. */
+  /* Und eine Schicht höher als der Fuss (45). Am Handy steht der Chip *über*
+     dem Band, da genügt 36; im Streifen steht er *darin*, und dessen Papier
+     ist deckend — auf 36 war er da, nur unsichtbar. #37s Regel („eine Meldung
+     darf zudecken, nur nicht den Weg heraus") bleibt gewahrt: der Chip ist
+     rechtsbündig, der Umschalter steht links. */
+  #stage:not([data-cols="1"]):not(.fsfocus) #badges {
+    bottom: 0; right: 0; height: var(--foot); align-items: center;
+    padding-bottom: 0; z-index: 46; }
   .badges { display: flex; gap: 8px; align-items: center; align-self: flex-end;
             max-width: 100%; overflow-x: auto; }
   /* Der Chip trägt seine Farbe als Ring, nicht als Füllung: gefüllt wäre er ein
@@ -798,33 +856,55 @@
 
      Die Meldungen sind hier ausgezogen: sie sind etwas anderes als eine
      Navigation — flüchtig und mit einem Thema, wo die Leiste ständig und
-     ortsfest ist. Sie sitzen jetzt im Kopf, siehe `.badges`. */
+     ortsfest ist. Sie sitzen jetzt im Kopf, siehe `.badges`.
+
+     ── Runde 21: der Fuss bleibt in der Breite ──────────────────────────
+     Runde 19 hat ihn bei 774 aufgelöst und die eingefaltete Spalte als
+     34-px-Griff an die linke Kante gelegt. Am Bild nimmt der über die *ganze
+     Höhe* einen Balken weg für ein einziges Wort. Der Fuss kommt darum
+     zurück, aber als flacher Streifen über die ganze Breite mit drei Plätzen:
+
+         ┌──┬────────────────────┬────┐
+         │🛒│                    │ ⚠3 │
+         └──┴────────────────────┴────┘
+          Umschalter    (leer)    Chip
+
+     Der linke Platz trägt die eingefaltete Spalte und ist bei drei Spalten
+     leer — #37s Regel läuft weiter, ein Griff zu etwas Sichtbarem ist keiner.
+     Der Streifen selbst bleibt trotzdem an *jeder* Breite ab 774 stehen: er
+     ist die Ecke der Notices, und eine Ecke, die je nach Breite da ist oder
+     nicht, ist keine Ecke.
+
+     Der mittlere Platz bleibt leer. `ranks 57–59 get nothing` sollte hierher
+     ziehen und tut es nicht: der Satz zieht seine Bedeutung aus der
+     Nachbarschaft zu den Kacheln, und auf breitem Schirm nimmt er dort
+     ohnehin kaum Platz weg.
+
+     Dass der Umschalter links steht und die Meldungen rechts, ist die
+     Umkehrung von Runde 13 („Meldungen links, Aktionen rechts"). Kein
+     Widerspruch: jene Regel hing am Daumen, und ab 774 greift keiner. Der
+     Umschalter steht links, weil dort seine Spalte aufklappt — das Argument
+     des Griffs, das seinen Umzug überlebt hat. */
   #foot { position: absolute; left: 0; right: 0; bottom: 0; height: var(--foot);
           z-index: 45; background: var(--paper); box-shadow: var(--panel-shadow);
           display: flex; align-items: stretch; }
   /* Runde 19: ein Eintrag, dessen Seite als Spalte dasteht, verschwindet —
      ein Griff zu etwas, das man sieht, ist kein Griff. Damit schrumpft die
      Leiste drei → einer → keiner, und `aria-current` entfällt ersatzlos: nie
-     führt ein Eintrag zu etwas Offenem. Bei zwei Spalten löst sich das Band
-     ganz auf, statt 56 px für einen Knopf zu halten. */
-  #stage:not([data-cols="1"]) #foot { display: none; }
-  /* Der übrige Griff steht an der linken Kante — dort, wo seine Spalte bei
-     1080 aufklappt. Nicht unten in einem Band: aus dem Griff *wird* die
-     Spalte, statt dass unten etwas verschwindet und links etwas erscheint.
-     Er liegt auf der Höhe des Fusses (45) und damit über dem Stapel (35):
-     eine Meldung darf zudecken, nur nicht den Weg heraus. */
-  #prepgrip { position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-              z-index: 45; display: none; border: 0; cursor: pointer;
-              background: var(--paper); color: var(--muted);
-              box-shadow: var(--panel-shadow);
-              border-radius: 0 var(--r-ctl) var(--r-ctl) 0;
-              padding: 16px 5px 16px 3px;
+     führt ein Eintrag zu etwas Offenem. */
+  #stage:not([data-cols="1"]) .navrow { display: none; }
+  #stage[data-cols="1"] #foldgrip { display: none; }
+  #stage[data-cols="3"] #foldgrip { visibility: hidden; }
+  .navrow { flex: 1; display: flex; align-items: stretch; }
+  /* Der Umschalter ist der Fussplatz links, nicht mehr der Balken an der
+     Kante: Icon *neben* Wort, weil der Streifen einzeilig ist. */
+  #foldgrip { border: 0; background: transparent; color: var(--muted);
+              cursor: pointer; display: flex; align-items: center; gap: 7px;
+              padding: 0 14px;
               font: 700 10px/1 var(--font-head); letter-spacing: var(--head-ls);
-              text-transform: var(--head-tr);
-              writing-mode: vertical-rl; transform-origin: center; }
-  #stage[data-cols="2"] #prepgrip { display: flex; align-items: center; gap: 7px; }
-  #prepgrip .ico { writing-mode: horizontal-tb; font-size: 16px; opacity: .85; }
-  #prepgrip:active { box-shadow: var(--btn-shadow); }
+              text-transform: var(--head-tr); }
+  #foldgrip .ico { font-size: 15px; line-height: 1; opacity: .85; }
+  #foldgrip:active { transform: translateY(1px); }
   .navbtn { flex: 1; border: 0; background: transparent; color: var(--muted);
             font: 700 10px/1 var(--font-head); letter-spacing: var(--head-ls);
             text-transform: var(--head-tr);
@@ -2344,8 +2424,12 @@ function winnerBlock(plan) {
    kaputtmacht: ein 900er Schirm hätte dann drei Spalten und *weniger* Kacheln
    zu sehen als derselbe hochkant mit einer. */
 const COLW = { plan: 388, det: 352, prep: 356 };
-const GRIP = 34;                                // der eingefaltete Prepare-Streifen
-const BP2 = COLW.plan + COLW.det + GRIP;        // 774
+/* Runde 21 senkt BP2 von 774 auf 740, und zwar *gerechnet*, nicht gewählt: der
+   34-px-Griff war die einzige Breite, die die eingefaltete Prepare-Spalte bei
+   zwei Spalten noch kostete. Er sitzt jetzt unten im Streifen, also kostet sie
+   Höhe statt Breite, und die Regel („keine Spalte fällt unter ihre Erstbreite")
+   liefert 388 + 352. Die Zahl war nie gesetzt, sie war immer eine Summe. */
+const BP2 = COLW.plan + COLW.det;               // 740
 const BP3 = COLW.plan + COLW.det + COLW.prep;   // 1096
 function colCount() {
   const w = stage.clientWidth;
@@ -2358,7 +2442,7 @@ function screen(plan, sugg, off) {
   // Breite wirklich profitiert (Details sind Regler fester Breite, Prepare ist
   // Prosa). Der Kopf teilt sich erst, wenn *sie* breit ist.
   const planW = stage.clientWidth - (cols >= 2 ? COLW.det : 0)
-    - (cols === 2 ? GRIP : 0) - (cols >= 3 ? COLW.prep : 0);
+    - (cols >= 3 ? COLW.prep : 0);
   stage.classList.toggle('wideplan', planW >= 620);
   stage.classList.toggle('widesheet', stage.clientWidth >= 700);
   // Das Diagramm darf nicht die halbe Fläche nehmen: flach im Querformat,
@@ -2422,11 +2506,11 @@ function screen(plan, sugg, off) {
   const prepMain = `
     <div class="prepc" style="flex:1;min-width:0;overflow:auto;
         background:var(--paper)">${prepContent(plan)}</div>`;
-  // Bei zwei Spalten hält der Griff seinen Streifen links frei; bei dreien ist
-  // dort die Spalte selbst, also kein Rand.
+  /* Runde 21: kein Einzug links mehr. Der Griff hielt hier einen 34-px-Streifen
+     frei; er sitzt jetzt unten im Fuss, also beginnt der Plan bei zwei Spalten
+     wieder an der Kante — dieselbe Null wie am Handy. */
   return `<div style="height:100%;display:flex;
-      flex-direction:${cols >= 2 ? 'row' : 'column'};overflow:hidden;
-      padding-left:${cols === 2 ? 'var(--grip)' : '0'}">
+      flex-direction:${cols >= 2 ? 'row' : 'column'};overflow:hidden">
     ${cols >= 3 ? prepCol : ''}
     ${cols === 2 && page === 'prepare' ? prepMain : planCol}
     ${cols >= 2 ? detCol : hotBar}
@@ -2540,10 +2624,13 @@ stage.innerHTML = `
   <div id="raffle"></div>
   <div id="fade"></div>
   <div id="stack" class="stack"></div>
-  <div id="foot">${PAGES.map(([id, ico, label]) =>
-    `<button class="navbtn" data-page="${id}"><span class="ico">${ico}</span>${label}</button>`
-  ).join('')}</div>
-  <button id="prepgrip" data-page="prepare"><span class="ico">🛒</span>Prepare</button>`;
+  <div id="badges"></div>
+  <div id="foot">
+    <div class="navrow">${PAGES.map(([id, ico, label]) =>
+      `<button class="navbtn" data-page="${id}"><span class="ico">${ico}</span>${label}</button>`
+    ).join('')}</div>
+    <button id="foldgrip" data-page="prepare"><span class="ico">🛒</span>Prepare</button>
+  </div>`;
 const appEl = document.getElementById('app');
 const sheetEl = document.getElementById('sheet');
 const fsEl = document.getElementById('fs');
@@ -2551,7 +2638,8 @@ const prepEl = document.getElementById('prep');
 const popEl = document.getElementById('pop');
 const raffleEl = document.getElementById('raffle');
 const stackEl = document.getElementById('stack');
-const gripEl = document.getElementById('prepgrip');
+const badgesEl = document.getElementById('badges');
+const gripEl = document.getElementById('foldgrip');
 
 function render() {
   /* Erst falten, dann zeichnen: steht eine Seite als Spalte da, gibt es sie
@@ -2599,8 +2687,10 @@ function render() {
      Kacheln, Eingabe unten bei den Reglern), und darunter die Badges in einer
      Zeile — dort, wo Runde 13 sie hatte, nur eine Zeile höher, weil der Fuss
      jetzt der Navigation gehört. */
-  stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()
-    }${badgeRow(plan, sugg, off)}`;
+  stackEl.innerHTML = `${conflictBox(plan, sugg)}${off ? offerBox(off) : ''}${carryBox()}`;
+  /* Runde 21: die Chip-Zeile hat ihren eigenen Anker, damit sie ab 774 in den
+     Streifen fallen kann, während die offenen Panels darüber bleiben. */
+  badgesEl.innerHTML = badgeRow(plan, sugg, off);
   sheetEl.querySelector('.body').innerHTML = sheetContent(plan);
   fsEl.innerHTML = fsContent(plan);
   prepEl.innerHTML = prepContent(plan);
@@ -2627,6 +2717,9 @@ function render() {
   stage.classList.toggle('onplan', !away);
   stage.classList.toggle('anyopen', away || fsOpen);
   stage.classList.toggle('fsopen', fsOpen || page === 'prepare');
+  /* Nur das *Kachel*-Vollbild ist der Fokus-Modus ohne Fuss. `.fsopen` gilt
+     auch für Prepare, und dort trägt der Fuss den Rückweg. */
+  stage.classList.toggle('fsfocus', fsOpen && page === 'plan');
   for (const b of document.querySelectorAll('#foot .navbtn')) {
     if (b.dataset.page === page) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
