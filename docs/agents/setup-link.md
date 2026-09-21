@@ -3,9 +3,22 @@
 The `SetupLink` carries the `pinned` sliders of a `Tournament` in the URL. People
 bookmark it — pinned in Discord, kept in a note, opened again months later. Between
 sending and opening, the code moves on and the link does not. **The encoding is
-therefore an interface, and it is versioned.**
+therefore an interface, and it must be versioned.**
 
 Decided in ADR 0007. This file is the working rule that follows from it.
+
+## Not yet — the rule has a start date
+
+**There is no encoding yet, no version, and no `SetupLink` in circulation.** Until
+there is, renaming a slider key is free: there is no version to bump and no old link
+a migration could rewrite. Decided in
+[Etiketten weichen von den Identifiern ab](https://github.com/ditshej/tcg-prizing/issues/27),
+which set the deadline in those words — no code, no link out there — and applied it
+again in [WinnerPack-Zahl](https://github.com/ditshej/tcg-prizing/issues/29).
+
+From v1 on, everything below holds without exception. Write it down now anyway: the
+expensive renames are the ones nobody thought were renames, and the list is easier
+to keep honest than to reconstruct.
 
 ## The rule
 
