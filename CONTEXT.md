@@ -106,15 +106,23 @@ bedienter `Rank`, bei dem die Kurve nichts mehr abwirft, bleibt bedient — bei
 grosser Tiefe der Normalfall, nicht die Ausnahme. Sie betrifft nur die teilbaren Mengen, also die
 `Booster`; knappe unteilbare `PrizeItem`s laufen den `RankCycle` und reichen
 tiefer. Nach oben begrenzt sie nicht nur die Zahl der `Player`, sondern auch der
-`RankPool` selbst: jeder bediente `Rank` bekommt mindestens den `RankFloor` und
-`Rank` 1 einen mehr, also gilt
-`Tiefe ≤ ⌊(Booster im RankPool − 1) / RankFloor⌋`. Die `− 1` ist ebendieser
-Vorsprung und fällt weg, wo er aussetzt — bei einem durch eine
-`DisplayReservation` abgegoltenen `Rank` 1, siehe `ShapedRemainder`. Der `RankFloor` deckelt die
-Tiefe, nie umgekehrt. Die Formel liefert an zwei Rändern keine brauchbare Zahl,
-und beide sind erreichbar: bei einem `RankFloor` von 0 ist sie nicht definiert,
-und bei einem fast oder ganz leeren `RankPool` wird sie 0 oder negativ. In beiden
-Fällen gilt das **„mindestens 1"** von oben, es ist der stärkere Satz — ein
+`RankPool` selbst: der Deckel ist die **nach der Tiefe aufgelöste
+Reservationsbedingung** vom `ShapedRemainder` — die grösste Tiefe, bei der die
+Bedingung noch hält. Ausgeschrieben, mit `a` als der Zahl der abgegoltenen Ränge:
+`Tiefe ≤ a + ⌊(Booster im RankPool − reservierte Booster − Vorsprung) / RankFloor⌋`.
+Der Vorsprung ist die `− 1` und fällt weg, wo er aussetzt — bei einem durch eine
+`DisplayReservation` abgegoltenen `Rank` 1, siehe `ShapedRemainder`. Ohne
+Reservation sind `a` und die reservierten `Booster` null, und es bleibt der
+frühere Deckel `⌊(Booster im RankPool − 1) / RankFloor⌋` übrig. Dass die
+`DisplayReservation` darin vorkommt, kehrt die Vorrangkette **nicht** um: ein
+Deckel bindet nur den nachziehenden Wert, ein `pinned` Wert wird nach ADR 0006
+nie gekappt, und die `DisplayReservation` wird nie automatisch gesetzt, zieht
+also nie nach — die Kette bleibt azyklisch, weil eine ihrer beiden Richtungen
+nie feuert. Der `RankFloor` deckelt
+die Tiefe, nie umgekehrt. An zwei Rändern liefert die Auflösung keine brauchbare
+Zahl, und beide sind erreichbar: bei einem `RankFloor` von 0 ist sie nicht
+definiert, und bei einem fast oder ganz leeren `RankPool` wird sie 0 oder negativ.
+In beiden Fällen gilt das **„mindestens 1"** von oben, es ist der stärkere Satz — ein
 `Rank` 1, der nichts bekommt, steht als leere Kachel da und die `ConflictNotice`
 sagt warum. Das ist die ehrlichere Fassung als eine verschwindende `RankPool`-Zeile,
 die den Schirm genau dort stumm machte, wo er warnen soll. Ob das `Tournament` eine K.-o.-Runde gespielt
@@ -125,8 +133,12 @@ Stufen unbrauchbar. Der Regler selbst bleibt absolut: die Stufe liefert nur den
 Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nicht
 `pinned` Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
 sobald der Deckel wieder steigt. Ein `pinned` Wert dagegen wird vom sinkenden
-Deckel nie gekappt — er bleibt stehen, und die Meldung benennt ihn als den
-Verlierer der Vorrangkette aus ADR 0001.
+Deckel nie gekappt — er bleibt stehen, und die `ConflictNotice` zeigt die Wege
+heraus, **geordnet** nach der Vorrangkette aus ADR 0001. Die Kette wählt dabei
+keinen Verlierer: sind Tiefe und `DisplayReservation` beide `pinned` und zusammen
+nicht machbar, stehen beide Wege nebeneinander und der Lead wählt. Einen
+einzelnen Verlierer gibt es nur, wo ein `pinned` Wert einem nachziehenden
+gegenübersteht — dann folgt immer der nachziehende.
 
 **Kein Regler adressiert einen `Rank` jenseits der Spielerzahl.** Das gilt für
 jede Grösse, die Ränge zählt — `RankPoolDepth`, den `ranked`-Anteil der
@@ -174,7 +186,21 @@ mehr und trägt auch keinen Vorsprung — die beiden Abzüge und die
 `DisplayReservation` treffen nie denselben `Rank`. Gemessen an `Weekend` mit 32
 `Player` und `d` = (1,0,…): `RankPool` 64, `DisplayReservation` 24, Boden
 2 × 7 = 14 statt 2 × 8 + 1 = 17, `ShapedRemainder` **26** statt 23. Der Vorsprung
-setzt bei abgegoltenem `Rank` 1 aus (ADR 0001, Nachtrag zu #7). Er kann null sein: dann ist der
+setzt bei abgegoltenem `Rank` 1 aus (ADR 0001, Nachtrag zu #7).
+
+Dass die Reservationen zusammen in den `RankPool` passen, ist die
+**Reservationsbedingung**, und sie steht hier, weil sie nichts anderes ist als
+`ShapedRemainder ≥ 0`:
+`reservierte Booster + RankFloor · (Tiefe − abgegoltene Ränge) + Vorsprung ≤ Booster im RankPool`.
+Sie ist die einzige Quelle für alle Deckel dieser Achse — nach der Tiefe
+aufgelöst ergibt sie den Deckel der `RankPoolDepth`, nach der Anzahl `Display`s
+aufgelöst den der `DisplayReservation`. Beide Einträge tragen nur ihre
+Auflösung und zeigen hierher; wer eine davon ändert, ändert diese Zeile.
+**Eine Bedingung, zwei Grössen**: hält sie, ist der Überschuss der
+`ShapedRemainder`; hält sie nicht, ist die Unterdeckung das, was die
+`ConflictNotice` benennt. Der `ShapedRemainder` wird dabei nicht negativ — im
+Konfliktfall wird gar nichts geformt, es bleibt echt nichts übrig, und eine
+Menge von −20 `Booster` gibt es nicht. Er kann null sein: dann ist der
 `DistributionPlan` der reine Boden und die Stufenwahl ohne Wirkung. Das ist kein
 Fehler, sondern die Folge eines hohen `RankFloor` — wer jedem bedienten `Rank`
 dasselbe zusichert, hat eine flache Verteilung verlangt. Er wird ausgewiesen,
@@ -284,7 +310,12 @@ zugeteilt bekommt, bevor die `DistributionCurve` den Rest formt. Nach oben
 begrenzt durch den `Rank` darüber, sodass sie über die Ränge nie steigt. Betrifft
 nur `Booster`. Wird nie vorbelegt, weil sie einen `Rank` benennt (ADR 0003), und
 nie automatisch gesetzt — der `CommunityLead` greift dafür an die Kachel des
-`Rank`, wie bei den `manual`-`WinnerPack`s der `WinnerPackAllocation`.
+`Rank`, wie bei den `manual`-`WinnerPack`s der `WinnerPackAllocation`. Nach oben
+gedeckelt ist sie durch die **Reservationsbedingung** beim `ShapedRemainder`,
+nach der Anzahl `Display`s aufgelöst: `Booster im RankPool − Displaygrösse · N`
+muss den Boden der nicht abgegoltenen Ränge noch tragen. Eine Überholung deckelt
+dagegen nicht — sie ist genau der Fall, der nach ADR 0002 gemeldet und nicht
+verhindert wird, also muss er erreichbar bleiben.
 **Abgegolten** sind alle Ränge oberhalb des obersten Gleichstands im Vektor: sie
 bekommen genau ihre `Display`s und fallen aus der Kurve, die von dort abwärts
 läuft. Bei `Rank` 1 heisst das, der Vorsprung aus ADR 0001 setzt aus und eine

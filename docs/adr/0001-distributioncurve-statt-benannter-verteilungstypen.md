@@ -135,3 +135,33 @@ Drei Abweichungen gegen den heutigen `RankCycle` in `CONTEXT.md`:
 Was gültig bleibt, ist der Grund, aus dem der Absatz hier steht: knappe, nicht
 teilbare `PrizeItem`s laufen **an der Kurve vorbei**, und sie gehen nicht
 verloren. Nur die Mechanik ist seither an ihren eigenen Ort gewandert.
+
+## Nachtrag (#43): der Deckel der Tiefe muss die `DisplayReservation` sehen
+
+Der Kettenabsatz oben schreibt den Deckel der `RankPoolDepth` als
+`⌊(Booster im RankPool − 1) / RankFloor⌋`. Das ist die Reservationsbedingung
+nach der Tiefe aufgelöst — aber mit **einer** der Reservationen unterschlagen:
+die `DisplayReservation` leert denselben Topf und kommt nicht vor. Am `Weekend`
+mit 32 `Player` und `d` = (1,0,…) versprach der Deckel deshalb 31 bediente Ränge,
+machbar waren 21; am Prototyp (Runde 25) nachgemessen.
+
+Richtig lautet er, mit `a` als der Zahl der abgegoltenen Ränge:
+`Tiefe ≤ a + ⌊(Booster im RankPool − reservierte Booster − Vorsprung) / RankFloor⌋`.
+Ohne Reservation sind `a` und die reservierten `Booster` null und es bleibt die
+alte Fassung übrig — es ist dieselbe Verallgemeinerung wie oben `RankFloor`
+statt 1, eine Stufe weiter. Die massgebliche Fassung steht ab jetzt einmal in
+`CONTEXT.md` beim `ShapedRemainder`, weil die Bedingung dort schon einen Namen
+hatte; die beiden Deckel sind ihre zwei Auflösungen.
+
+**Die Kette kehrt sich dadurch nicht um.** Der Absatz oben begründet ihre
+Azyklizität damit, dass der Lead festsässe, „sobald er beide von Hand angefasst
+hat" — dieser Fall entsteht nicht: ein Deckel bindet nur den nachziehenden Wert,
+ein `pinned` Wert wird nach ADR 0006 nie gekappt, und die `DisplayReservation`
+wird nie automatisch gesetzt. Eine der beiden Richtungen feuert also nie.
+Sichtbar wird das an einem Nebeneffekt, der am Prototyp gemessen ist: eine von
+Hand gesetzte Reservation, die vorher am Machbarkeitsdeckel scheiterte, geht
+jetzt durch, weil die nachziehende Tiefe ihr ausweicht. Das ist die Kette, nicht
+ihr Bruch — sie ordnet, wer verliert, wenn **beide** `pinned` sind. Sind beide
+`pinned` und zusammen nicht machbar, wählt sie trotzdem keinen Verlierer,
+sondern nur die Reihenfolge, in der die `ConflictNotice` die Wege heraus zeigt
+(Resolution zu #19).
