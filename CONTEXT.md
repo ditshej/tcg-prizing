@@ -330,7 +330,7 @@ tiefer, eine bei der Tiefe abgeschnittene Darstellung würde Zuteilungen
 verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
 Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
-Am Schirm ist der **`Master` der Boden** (#40): das Kachelfenster zeigt in jeder
+Am Schirm ist das **Hochformat der Boden** (#40): das Kachelfenster zeigt in jeder
 Fassung mindestens so viel wie das Hochformat — **sechs Kachelspalten und zwei
 Kachelreihen**. Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
 der Blöcke sich mit der Breite ändern darf, darf dieser Boden es nicht. #37 hatte
@@ -601,13 +601,13 @@ und kein Strich davor — eine Linie ist nur dort zugelassen, wo sie Daten
 trennt, und hier trennt sie nicht, sie ordnet unter. Zwei gleich aussehende
 Knopfreihen nebeneinander hätten versteckt, dass ein Wechsel auf der oberen
 auch die Liste der unteren ersetzt. Der Block steht **im Körper** der
-`Details`-Spalte, über den heissen vier Reglern, und scrollt mit ihnen: fest
+Details-Spalte, über den heissen vier Reglern, und scrollt mit ihnen: fest
 im Spaltenkopf hätte er gemessen 101 px dauerhaft gekostet, im
 Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
 anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
 Das Etikett der Reihe steht *neben* den Knöpfen und lautet dort `Type` — sonst
 kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
-352 px breiten `Details`-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
+352 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
 wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
 weiter im ⓘ der Ebene.
@@ -648,7 +648,7 @@ Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
 Der Ort „neben dem `TournamentType`-Titel" ist seit #41 auch am Schirm wahr; bis
 dahin sass der Knopf im Kopf des Plans, und zwar nicht aus einem Entscheid,
 sondern weil es den Titel am Schirm noch nicht gab. Der Preis ist benannt und
-angenommen: `Details` scrollt, also scrollt der Rückweg mit — derselbe Preis,
+angenommen: die Details-Spalte scrollt, also scrollt der Rückweg mit — derselbe Preis,
 den die vier heissen Regler in derselben Spalte schon zahlen. Die Blase zählt
 auf, **welche** Regler fallen, nicht nur wie viele, und sagt dazu, dass es kein
 Zurück gibt. Ein Overlay ist sie nicht und darf sie nicht sein: das eine, das
