@@ -591,6 +591,10 @@ nennt, erbt er. Es ist immer genau einer gewählt, einen Leerzustand „kein Typ
 gibt es nicht: der **erste** einer Liste ist die Startwahl und trägt ausser dem
 Titel nichts, seine Werte sind die des `Game`. Damit ist die Reihenfolge der
 Liste bedeutungstragend und keine Sortierung für die Oberfläche.
+Der erste Typ ist zugleich der Ausgang für einen `SetupLink`, dessen Typnamen wir
+nicht lesen können — aber **nur** dafür: keine `LinkMigration` darf sich auf ihn
+stützen, sonst hinge ein Link an einer Position statt an einem Namen (Nachtrag zu
+ADR 0007).
 Am Schirm steht die Reihe **eingerückt unter** der des `Game` (#41). Die
 Einrückung ist die ganze Form der Verschachtelung: keine Klapper, kein Rahmen
 und kein Strich davor — eine Linie ist nur dort zugelassen, wo sie Daten
@@ -676,7 +680,11 @@ Sie wird als **Lesezeichen** abgelegt und Monate später wieder geöffnet, also 
 ihre Kodierung eine Schnittstelle: sie trägt eine **Formatversion**, und was nicht
 mehr passt, richtet eine `LinkMigration`. `Game` und `TournamentType` stehen darin
 als **stabiler Name**, nie als Position — die Reihenfolge der `TournamentType`-Liste
-ist bedeutungstragend und darf sich ändern. Ein Wert aus dem Link ist ein `pinned`
+ist bedeutungstragend und darf sich ändern. Seine **Basis** nennt der Link
+**immer**, `Game` wie `TournamentType`, auch wenn der Absender die Startwahl nie
+angefasst hat: „nur der Unterschied" gilt für Regler, weil ein ungenannter Regler
+weiterrechnet — ein ungenannter Typ würde gewählt, und „erster der Liste" ist eine
+stille Entscheidung (Nachtrag zu ADR 0007). Ein Wert aus dem Link ist ein `pinned`
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
 `ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
 URL kam.
@@ -690,8 +698,12 @@ Link nie standen, solange der `DistributionPlan` möglichst derselbe bleibt.
 Mechanisch erfunden wird dabei nichts — wo ein Regler ersatzlos verschwunden ist
 und die Kette keinen Nachfolger nennt, fällt der Wert weg, statt dass ein
 ausgedachter als `pinned` eine Entscheidung behauptet, die nie jemand getroffen
-hat. Beim Öffnen läuft die Kette hoch und der migrierte Stand gilt sofort; die
-Adresszeile schreibt sich als heutige Version mit, und ein einmaliges Overlay
+hat. Ein abgeschaffter `TournamentType` ist die Ausnahme vom Wegfallen und keine
+vom Erfinden: er lässt sich nicht weglassen, weil es keinen typlosen Zustand gibt,
+also **nennt die Migration seinen Nachfolger** — auf den ersten Typ des `Game` als
+Auffangnetz darf sie sich nicht stützen, sonst hinge der Link doch an einer
+Position (Nachtrag zu ADR 0007). Beim Öffnen läuft die Kette hoch und der
+migrierte Stand gilt sofort; die Adresszeile schreibt sich als heutige Version mit, und ein einmaliges Overlay
 berichtet, was umgeschrieben und was weggefallen ist, samt der Aufforderung, das
 Lesezeichen zu erneuern. Es liegt über allem statt in der Reihe unter dem Plan,
 weil es nicht den Plan kommentiert, sondern die Herkunft der Eingabe — wegklickbar,

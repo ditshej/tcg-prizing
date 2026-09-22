@@ -94,3 +94,37 @@ Deploy-Ziel gehört **vor** den ersten Link im Umlauf festgelegt. Entschieden in
 [Deploy-Ziel: optcg.ch statt ditshej.ch?](https://github.com/ditshej/tcg-prizing/issues/34)
 als `prizing.optcg.ch`, solange die Einrichtung noch nicht gelaufen war — danach wäre
 derselbe Entscheid eine Weiterleitung ohne Ablaufdatum gewesen.
+
+## Nachtrag (#44): das Auffangnetz ist kein Weg für eine Migration
+
+Der Satz oben — „nennt die Kette keinen Nachfolger, greift der **erste** Typ des
+`Game` als Auffangnetz" — fasst zwei Fälle zusammen, die sich verschieden verhalten.
+Für den einen wird er **zurückgezogen**.
+
+Wo wir einen `TournamentType` selbst abschaffen, muss die `LinkMigration` seinen
+Nachfolger **benennen**. Die Abkürzung „nichts nennen, Position 1 fängt" entfällt: sie
+war eine mechanische Erfindung mit Alibi. Position 1 steht in keinem Link, und jedes
+spätere Umsortieren — nach ADR 0003 ausdrücklich erlaubt und bedeutungstragend —
+verschöbe das Ziel still und ohne Versionssprung. Der Preis ist, dass auch das
+offensichtliche Entfernen einen benannten Entscheid kostet; er ist kleiner als eine
+Dauerregel „an Position 1 nichts einschieben", die beim Sortieren niemand liest.
+
+**Das Netz selbst bleibt** — aber nur für Namen, die keine Kette je kannte: eine von
+Hand verbogene URL, ein Typ, der ohne Migration aus einer Liste fiel. Dort behauptet
+es kein erhaltenes Ergebnis, sondern verhindert bloss den typlosen Zustand, den ADR
+0003 nicht kennt, und der Bericht sagt es weiterhin. Es ist damit kein Werkzeug der
+Versionierung, sondern der Ausgang für eine Eingabe, die wir nicht lesen können.
+
+**Der Link nennt seine Basis immer.** `Game` und `TournamentType` stehen in jedem
+`SetupLink`, auch wenn der Absender die Startwahl nie angefasst hat. Das ist keine
+Ausnahme von ADR 0005s „nur Abweichungen": diese Regel trägt bei **Reglern**, weil ein
+ungenannter Regler weiter *rechnet* und mit der Spielerzahl nachzieht. Ein ungenannter
+Typ rechnet nicht nach, er würde *gewählt* — „erster der Liste" ist eine stille
+Entscheidung, keine Fortschreibung. Die Basis, von der ein Link abweicht, muss er
+darum benennen, sonst zeigt jeder heutige Link auf den ersten Typ von morgen. Kosten:
+zwei Angaben mehr je URL, auch solange es genau ein `Game` gibt — gerade dann.
+
+Damit ist die Freigabe in `docs/agents/setup-link.md`, dass Einschieben und Umsortieren
+keine Migration braucht, ohne Vorbehalt wahr: nach beiden Entscheiden hängt kein Link
+mehr an einer Position. Position 1 trägt wieder nur, was ADR 0003 ihr gab — die
+Startwahl mit dem leeren Blatt.

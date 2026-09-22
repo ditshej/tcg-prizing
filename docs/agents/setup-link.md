@@ -30,6 +30,14 @@ Same for `Game` and `TournamentType` identifiers. They appear in the link as
 is meaningful and may change, so inserting a type is free, but renaming its
 identifier is a migration.
 
+**Every link names its base**, `Game` and `TournamentType` both, even when the
+sender never touched the start choice. "Only deviations" is a rule about
+_sliders_: an absent slider keeps computing and tracks the player count. An absent
+type would not compute — it would be _picked_, and "first of the list" is a silent
+decision. A link that leaves its base out points at whatever tops the list
+tomorrow. Decided in
+[Position 1 der TournamentType-Liste](https://github.com/ditshej/tcg-prizing/issues/44).
+
 A version bump without its migration is worse than no version: the app then claims
 a compatibility it does not have.
 
@@ -42,7 +50,7 @@ a compatibility it does not have.
 | Change a slider's meaning or unit (count → fraction, absolute → rate) | **Yes** — this is the one a name-stability contract would miss |
 | Rename a named step (a `DistributionCurve` level, a `RaffleRange` level) | **Yes** — rewrite old label to new |
 | Rename a `Game` or `TournamentType` identifier | **Yes** |
-| Remove a `TournamentType` | **Yes** — name its successor, or the first type of the `Game` catches it |
+| Remove a `TournamentType` | **Yes** — name its successor; leaving it open is not an option |
 | Add a new slider | No — an absent key means "not `pinned`" |
 | Insert or reorder `TournamentType`s | No — the link names them, not their position |
 | Change a default value in a `DefaultSet` | No — the link carries `pinned` sliders, not defaults |
@@ -60,6 +68,12 @@ gone with no successor, the value is dropped and the report names it. A made-up
 replacement would sit there as `pinned` and assert a decision nobody made. What you
 write by hand into a migration, you own; what the app would derive on its own, it
 must not.
+
+A `TournamentType` is the one thing that cannot simply be dropped — there is no
+typeless state. The migration therefore **names the successor**, always; it may not
+lean on the first type of the `Game` to catch it. That net still exists, but only
+for a name no migration ever knew — a hand-edited URL, a type that left a list
+without one. It is an exit for input we cannot read, not a tool of versioning.
 
 Migrations chain: a `v1` link runs `v1→v2` then `v2→v3`. Keep each step small and
 mechanical enough to read in one sitting — the chain is only as trustworthy as its
