@@ -1316,7 +1316,22 @@ function distribute(s) {
 
   const m = s.rankFloor;
   const depthStepValue = rangeSize(s.depthStep, n);
-  const depthCap = Math.max(1, Math.min(n, Math.floor((rankB - 1) / Math.max(1, m))));
+  // Der Deckel ist die nach der Tiefe aufgelöste Bedingung `ShapedRemainder ≥ 0`
+  // (#43). Er muss die `DisplayReservation` sehen, weil sie denselben Topf
+  // leert: `⌊(rankB − 1) / m⌋` versprach am Weekend mit d=(1) eine Tiefe von 31,
+  // machbar waren 21. Gerechnet statt geschlossen hingeschrieben, weil die
+  // abgegoltenen Ränge mit der Tiefe selbst wandern — sie zahlen keinen Boden.
+  const needAt = (T) => {
+    const dd = [];
+    for (let i = 0; i < T; i++) dd.push((s.displays || [])[i] || 0);
+    let j = 0;
+    while (j < T && dd[j] > 0 && (j + 1 === T || dd[j] > dd[j + 1])) j++;
+    const from = (j > 0 && dd[0] > 0) ? j : 0;
+    return dd.reduce((a, b) => a + b, 0) * s.displaySize
+         + m * (T - from) + (from ? 0 : 1);
+  };
+  let depthCap = 1;
+  for (let T = n; T >= 1; T--) if (needAt(T) <= rankB) { depthCap = T; break; }
   const depth = s.depth == null ? Math.min(depthStepValue, depthCap)
                                 : Math.max(1, Math.min(n, s.depth));
 
@@ -1597,6 +1612,15 @@ function suggestions(plan) {
     out.push({ key: 'curve', value: CURVES[bestCurve].id,
       label: `Curve to ${CURVES[bestCurve].id}` });
   }
+  // Die Richtung gehört in den Text. Beim Bodenkonflikt fiel der Boden immer,
+  // also stimmte „down" von selbst; die Überholung räumt er, indem er *steigt*.
+  const dir = (v, cur) => (v > cur ? 'up' : 'down');
+  // Dann die Zusagen in der Kette aus ADR 0001: RankFloor → RankPoolDepth →
+  // DisplayReservation. Der Prototyp hat die Reservation bis hierher *zuerst*
+  // ausgegeben — genau die Gegenrichtung, gegen #19 und gegen den Kommentar
+  // über dieser Funktion (#43).
+  tryKey('rankFloor', 0, 8, (v, cur) => `Floor ${dir(v, cur)} to ${v}`);
+  tryKey('depth', 1, st.players, (v) => `Serve ${v} rank${v > 1 ? 's' : ''}`);
   // Ein Rang je Reservation, plus der Überholer: ihn auf Gleichstand zu heben
   // bricht den Vorsprung nicht mehr und ist oft der kürzeste Weg heraus.
   const idx = new Set();
@@ -1622,11 +1646,9 @@ function suggestions(plan) {
             best > 1 ? 's' : ''}` });
     }
   });
-  // Die Richtung gehört in den Text. Beim Bodenkonflikt fiel der Boden immer,
-  // also stimmte „down" von selbst; die Überholung räumt er, indem er *steigt*.
-  const dir = (v, cur) => (v > cur ? 'up' : 'down');
-  tryKey('depth', 1, st.players, (v) => `Serve ${v} rank${v > 1 ? 's' : ''}`);
-  tryKey('rankFloor', 0, 8, (v, cur) => `Floor ${dir(v, cur)} to ${v}`);
+  // Zuletzt die Teilnahmerate: sie steht in keiner Kette — ADR 0001 ordnet nur
+  // die Regler, die in denselben `RankPool` greifen, und sie sitzt eine Ebene
+  // darüber. Nach hinten, weil sie die lauteste Zusage ist: sie gilt allen.
   tryKey('participationBooster', 0, 8, (v, cur) =>
     `Participation boosters ${dir(v, cur)} to ${v}`);
   return out;
