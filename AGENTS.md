@@ -43,6 +43,12 @@ Commit messages are written in English.
 
 Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure` is one.
 
+### From a cleared map to tickets
+
+`/to-spec` → `/to-tickets` → `/implement` is the flow, and we follow it. Where
+this repo departs: the map is too big for the one-window rule, so it is one
+session per spec. Measured numbers and the cost in `docs/agents/spec-flow.md`.
+
 ### Issue tracker
 
 Issues live in this repo's GitHub Issues, driven via the `gh` CLI. See `docs/agents/issue-tracker.md`.
