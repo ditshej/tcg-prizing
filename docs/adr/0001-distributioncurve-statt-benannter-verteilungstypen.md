@@ -165,3 +165,35 @@ ihr Bruch — sie ordnet, wer verliert, wenn **beide** `pinned` sind. Sind beide
 `pinned` und zusammen nicht machbar, wählt sie trotzdem keinen Verlierer,
 sondern nur die Reihenfolge, in der die `ConflictNotice` die Wege heraus zeigt
 (Resolution zu #19).
+
+## Nachtrag (#45): bei gleichem Rest bekommt der höhere `Rank`
+
+Der Absatz oben legt fest, dass nach **grösstem Rest** verteilt wird, und sagt
+nicht, was bei **gleichen** Resten geschieht. Der Fall ist erreichbar und kein
+Rundungszufall: die Kurvengewichte sind geometrisch, und bei `extreme` stehen
+sie wie 16 : 4 : 1 — alle drei ≡ 1 mod 3. Mit 8 `Player`, `RankPool` 14,
+`RankFloor` 2 und Tiefe 3 ergeben sich die Sollanteile 5⅓ / 1⅓ / 0⅓: drei
+gleiche Reste, ein offener `Booster`. Der Stand ist **gültig** — die
+Reservationsbedingung hält, ADR 0002 greift nicht, hier ist nichts zu melden,
+sondern zu rechnen.
+
+Er bekommt ihn nach oben: **der höhere `Rank`**. Sind die Reste gleich,
+unterscheidet die Ränge nur noch das Gewicht, und das fällt per Konstruktion
+(eine flache Stufe gibt es nicht) — der höhere `Rank` hat im stetigen Anspruch
+mehr stehen und verliert beim Abschneiden mehr, also bekommt er das Stück
+zurück. Das ist keine Wertung „Spitze vor Breite": die Breite trägt der
+`RankFloor`, die Form ist Sache der Kurve, und der Satz vom Nachtrag oben — die
+Kette sei keine Leitlinie der App — gilt hier unverändert. Die
+Monotonie-Zusicherung, die die Frage umsonst entschiede, gibt es weiterhin
+nicht; sie schnitte auch nicht, weil 9/3/2, 8/4/2 und 8/3/3 alle drei schwach
+fallend sind.
+
+**Nicht zu verwechseln mit dem anderen Gleichstand.** „Abgegolten sind alle
+Ränge oberhalb des obersten Gleichstands im `DisplayReservation`-Vektor"
+entscheidet, welche Ränge **aus der Kurve fallen**; diese Regel entscheidet, wer
+ein **übriges Stück** bekommt. Die beiden treffen einander nirgends und dürfen
+nicht gegeneinander gelesen werden — die eine legt keine Richtung für die andere
+fest.
+
+Die massgebliche Fassung steht in `CONTEXT.md` beim `ShapedRemainder`, wo das
+Verfahren schon wohnt.

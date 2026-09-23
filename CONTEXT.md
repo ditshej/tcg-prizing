@@ -188,6 +188,21 @@ mehr und trägt auch keinen Vorsprung — die beiden Abzüge und die
 2 × 7 = 14 statt 2 × 8 + 1 = 17, `ShapedRemainder` **26** statt 23. Der Vorsprung
 setzt bei abgegoltenem `Rank` 1 aus (ADR 0001, Nachtrag zu #7).
 
+Verteilt wird nach grösstem Rest, und **bei gleichem Rest bekommt der höhere
+`Rank`**. Der Rest ist die abgeschnittene Hälfte eines Anspruchs; sind zwei
+Reste gleich, unterscheidet die Ränge nur noch das Gewicht der
+`DistributionCurve` — und das fällt per Konstruktion, eine flache Stufe gibt es
+nicht. Der Gleichstand ist kein Rundungszufall, sondern in den geometrischen
+Gewichten angelegt: bei `extreme` stehen sie wie 16 : 4 : 1 und sind alle
+≡ 1 mod 3. Mit 8 `Player`, `RankPool` 14, `RankFloor` 2 und Tiefe 3 sind die
+Sollanteile 5⅓ / 1⅓ / 0⅓, drei gleiche Reste gegen einen einzigen offenen
+`Booster` — und der Stand ist gültig, es ist nichts zu melden, sondern zu
+rechnen. Mit dem Gleichstand im `DisplayReservation`-Vektor (ADR 0001:
+„abgegolten sind alle Ränge oberhalb des obersten Gleichstands") hat die Regel
+**nichts** zu tun: der entscheidet, welche Ränge aus der Kurve fallen, dieser,
+wer ein übriges Stück bekommt. Die beiden dürfen nicht gegeneinander gelesen
+werden.
+
 Dass die Reservationen zusammen in den `RankPool` passen, ist die
 **Reservationsbedingung**, und sie steht hier, weil sie nichts anderes ist als
 `ShapedRemainder ≥ 0`:
@@ -425,6 +440,19 @@ Die erste Hälfte hält Spielerzahl, `Booster`-Rate und `Display`-Grösse drauss
 zweite braucht keine Ausnahmen: die `DistributionCurve` räumt die Überholung,
 steht aber im Bedarf `RankFloor · RankPoolDepth + 1` nicht drin und erscheint
 beim Bodenkonflikt darum von selbst nicht.
+**Räumen zwei gleich weit entfernte Werte desselben Reglers**, werden **beide**
+gezeigt — „der nächstliegende Wert" meint die Menge, nicht einen Einzelwert.
+ADR 0002s eigenes Beispiel lebt das schon: bei `d` = (1,0,…) sind „Reservation
+auf 2 `Display`s" und „Reservation entfernen" beide einen Schritt vom Ist-Wert
+entfernt und stehen beide in der Meldung. Die Meldung wählt hier so wenig wie
+bei zwei `pinned` Reglern, sie zeigt. Untereinander steht der **höhere Wert
+zuerst**, weil Wegnehmen der drastischere Griff ist; die Ordnung unten bleibt
+davon unberührt, sie ordnet zwischen Reglern. Die `DistributionCurve` kann
+diesen Gleichstand trotz äquidistanter Stufen nicht auslösen: sie räumt allein
+die Überholung, und der Anteil des obersten geformten `Rank` ist
+`1 / (1 + q + q² + …)` — streng fallend im Stufenwert `q`. Härter hebt ihn
+immer, weicher senkt ihn immer, also räumt je genau eine Richtung und nie zwei
+gleich weite zugleich.
 Die **Ordnung** läuft auf einer zweiten Achse, **Zusage gegen Formgebung**:
 zuerst die Wege, die keine Zusage zurücknehmen, dahinter die übrigen in der
 Vorrangkette aus ADR 0001. Heute steht damit die `DistributionCurve` allein
