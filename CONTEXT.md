@@ -215,7 +215,18 @@ Auflösung und zeigen hierher; wer eine davon ändert, ändert diese Zeile.
 `ShapedRemainder`; hält sie nicht, ist die Unterdeckung das, was die
 `ConflictNotice` benennt. Der `ShapedRemainder` wird dabei nicht negativ — im
 Konfliktfall wird gar nichts geformt, es bleibt echt nichts übrig, und eine
-Menge von −20 `Booster` gibt es nicht. Er kann null sein: dann ist der
+Menge von −20 `Booster` gibt es nicht. Im Konfliktfall wird **von oben eingegossen**, in der Reihenfolge
+`DisplayReservation` → Vorsprung → `RankFloor`, bis der `RankPool` leer ist; was
+danach kommt, bekommt nichts. Drei Durchgänge und nicht Rang für Rang, weil die
+Reservation die lauteste Zusage ist und über **alle** Ränge bedient wird, bevor
+irgendein Boden gezahlt wird. Von oben, weil das die einzige Reihenfolge ist, bei
+der die Unterdeckung unten sichtbar wird — gleichmässig verteilt läge jeder Rang
+unter dem Boden, und eine Markierung, die das ganze Raster trifft, sagt nichts
+mehr. Ausgeteilt wird dabei nie mehr, als der `RankPool` hergibt, auch nicht an
+eine `DisplayReservation`, die er nicht mehr trägt: der `pinned` Wert bleibt
+gespeichert und kommt zurück, gezeigt wird, was wirklich hinausgeht — dieselbe
+Bauart wie beim `Rank` jenseits der Spielerzahl.
+Er kann null sein: dann ist der
 `DistributionPlan` der reine Boden und die Stufenwahl ohne Wirkung. Das ist kein
 Fehler, sondern die Folge eines hohen `RankFloor` — wer jedem bedienten `Rank`
 dasselbe zusichert, hat eine flache Verteilung verlangt. Er wird ausgewiesen,
@@ -331,6 +342,12 @@ nach der Anzahl `Display`s aufgelöst: `Booster im RankPool − Displaygrösse �
 muss den Boden der nicht abgegoltenen Ränge noch tragen. Eine Überholung deckelt
 dagegen nicht — sie ist genau der Fall, der nach ADR 0002 gemeldet und nicht
 verhindert wird, also muss er erreichbar bleiben.
+Steht sie auf einem `Rank`, den die `RankPoolDepth` **nicht bedient**, ist das
+ein Konflikt und keine stille Kürzung: eine Zusage, die nicht gehalten wird. Der
+Deckel der Tiefe zählt den ganzen Vektor, also wäre das Gegenteil — sie bis zur
+Tiefe lesen und den Rest verschwinden lassen — ausgerechnet der Zustand, gegen
+den ADR 0002 geschrieben ist. Die Wege heraus stehen ohnehin schon in der
+`ConflictNotice`: tiefer bedienen, oder die Reservation fallen lassen.
 **Abgegolten** sind alle Ränge oberhalb des obersten Gleichstands im Vektor: sie
 bekommen genau ihre `Display`s und fallen aus der Kurve, die von dort abwärts
 läuft. Bei `Rank` 1 heisst das, der Vorsprung aus ADR 0001 setzt aus und eine
