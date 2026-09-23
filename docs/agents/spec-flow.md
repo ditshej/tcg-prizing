@@ -49,6 +49,36 @@ compliance.
 - **Never edit the vendored skill text.** Corrections live here (see
   `CLAUDE.md`).
 
+## The three specs of map #1, and the edges nobody derives
+
+One session per spec means no session ever sees the whole picture. What follows
+are the facts that fall **between** them. They live here because this file is
+the first thing every spec session is told to read — a fact parked anywhere else
+is a fact that session never meets.
+
+| Spec | Issue | Tickets | State |
+|---|---|---|---|
+| 1 — the core, `distribute(settings)` | #46 | none yet | spec written |
+| 2 — the surface and the `NoticeStack` | — | — | not written |
+| 3 — `SetupLink` and `LinkMigration` | #47 | #48–#52 | spec written, ticketed |
+
+Two edges are set by hand. Both are obvious once seen and invisible from inside
+a single session:
+
+- **#49 (the read path of Spec 3) hangs on #46 as a whole**, and that is a
+  placeholder, not the real edge: Spec 1 has no child tickets yet. Whoever runs
+  `/to-tickets` on #46 re-points it at the core tickets it actually needs —
+  `distribute()` and the `DefaultSet` sheets — and drops the edge to the spec
+  issue. A comment on #46 says the same thing, because that is the session which
+  will be looking; this table is for everyone else.
+- **Spec 2 consumes two things from Spec 3**: the report structure from #51 and
+  the always-complete copy form from #50. The dependency runs one way only —
+  Spec 3 never needs the surface — so the edge is Spec 2's to add when it gets
+  ticketed, not Spec 3's to anticipate.
+
+Keep the table current as the specs land. It is three lines, and it is the only
+place where the shape of the whole thing is written down.
+
 ## What it costs, stated plainly
 
 The three specs do not come out of one mind. The flow's reason for the single
