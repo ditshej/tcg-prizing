@@ -75,6 +75,19 @@ einen Umbau verlangen, betrifft er die Vorlagen. Dieselbe Trennung macht die
 harte Summenregel aus `CONTEXT.md` prüfbar — die Summe über alle `Pool`s ist der
 `PrizePool`, exakt, immer —, weil der Kern ohne Browser importierbar ist.
 
+Nachtrag: **Die Signatur oben ist einstellig zu lesen.** Der Kopf dieses ADR
+schreibt `distribute(prizePool, settings)`; beim Ausformulieren der Spec fiel
+auf, dass zwei Argumente genau das wieder ausdrückbar machen, was
+[Woraus entsteht der verfügbare Pool?](https://github.com/ditshej/tcg-prizing/issues/3)
+abgeschafft hat — eine Bestandseingabe. Der `PrizePool` ist zu 100 % errechnet,
+also fällt er aus den Settings und wird nicht neben sie gestellt: `distribute(settings)`
+ruft `derivePool(settings)` selbst auf und legt das Ergebnis als `plan.pool` ab.
+Die Fuge, für die die zwei Argumente gedacht waren, bleibt — die
+`PreparationList` braucht die Pool-Hälfte allein und bekommt `derivePool` als
+einzeln exportierte reine Funktion. Am Entscheid dieses ADR ändert das nichts:
+es bleibt eine Naht, reine ES-Module ohne DOM-Berührung, geprüft mit Nodes
+eingebautem Runner.
+
 **Der Preis ist die Sprache.** Die Substanz dieses Projekts —
 `DistributionCurve`, `RankFloor`, `ShapedRemainder`, `RankCycle`, die
 Vorrangkette — steht in JavaScript, nicht in der Sprache, die der Maintainer am
