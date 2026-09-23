@@ -491,9 +491,9 @@ den Abstand — `Rank N could take k sealed displays instead of B loose boosters
 ist. An ihrer Stelle steht, was sich wirklich ändert: die Kachel behält ihre
 Zahl, die Verpackung nicht (#41).
 _Avoid_: Hint, Suggestion, Tip — die Wege aus der `ConflictNotice` sind auch
-Vorschläge, und seit dem `NoticeStack` ist das kein blosser Vorbehalt mehr,
-sondern ein herstellbarer Fall: beide Chips können nebeneinander in der Ecke
-stehen, `⚠ 3 ways out` neben dem, was dann „Suggestion" hiesse.
+Vorschläge, und beide Meldungen belegen dieselbe Ecke, nur nie zugleich. Wer
+dort einmal `⚠ 3 ways out` liest und einmal „Suggestion", hält die Wege heraus
+für dasselbe wie das Angebot.
 
 **CarryOverNotice**:
 Die Meldung nach einem Wechsel von `Game` oder `TournamentType`, die auflistet,
