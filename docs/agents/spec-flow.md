@@ -59,8 +59,13 @@ is a fact that session never meets.
 | Spec | Issue | Tickets | State |
 |---|---|---|---|
 | 1 — the core, `distribute(settings)` | #46 | #53–#60 | spec written, ticketed |
-| 2 — the surface and the `NoticeStack` | — | — | not written |
+| 2 — the surface and the `NoticeStack` | #61 | #62–#73 | spec written, ticketed |
 | 3 — `SetupLink` and `LinkMigration` | #47 | #48–#52 | spec written, ticketed |
+
+All three specs are written and ticketed; nothing is built. Every ticket of
+Spec 2 hangs off Spec 1 or Spec 3, so the buildable frontier sits at the other
+two: **#53** (the bare distribution) and **#48** (the v1 key register) are the
+only tickets across all three specs with no open blocker.
 
 Two edges are set by hand. Both are obvious once seen and invisible from inside
 a single session:
