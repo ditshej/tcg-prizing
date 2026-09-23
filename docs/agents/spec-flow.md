@@ -58,19 +58,20 @@ is a fact that session never meets.
 
 | Spec | Issue | Tickets | State |
 |---|---|---|---|
-| 1 — the core, `distribute(settings)` | #46 | none yet | spec written |
+| 1 — the core, `distribute(settings)` | #46 | #53–#60 | spec written, ticketed |
 | 2 — the surface and the `NoticeStack` | — | — | not written |
 | 3 — `SetupLink` and `LinkMigration` | #47 | #48–#52 | spec written, ticketed |
 
 Two edges are set by hand. Both are obvious once seen and invisible from inside
 a single session:
 
-- **#49 (the read path of Spec 3) hangs on #46 as a whole**, and that is a
-  placeholder, not the real edge: Spec 1 has no child tickets yet. Whoever runs
-  `/to-tickets` on #46 re-points it at the core tickets it actually needs —
-  `distribute()` and the `DefaultSet` sheets — and drops the edge to the spec
-  issue. A comment on #46 says the same thing, because that is the session which
-  will be looking; this table is for everyone else.
+- **#49 (the read path of Spec 3) was re-pointed and the placeholder is gone.**
+  It hung on #46 as a whole while Spec 1 had no child tickets; it now hangs on
+  **#54** (the `DefaultSet` sheets) and **#56** (the conflict branch), and the
+  edge to the spec issue is removed. #56 rather than #53, because #49's own
+  criterion — a `depth` above today's cap **stands** and carries a
+  `ConflictNotice` — needs the conflict branch, not just a plan; #53 and #55
+  come along transitively.
 - **Spec 2 consumes two things from Spec 3**: the report structure from #51 and
   the always-complete copy form from #50. The dependency runs one way only —
   Spec 3 never needs the surface — so the edge is Spec 2's to add when it gets
