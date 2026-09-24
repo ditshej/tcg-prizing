@@ -25,6 +25,36 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either — resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
+## The closing keyword is English, inside a German description
+
+PR descriptions in this repo are German (`AGENTS.md`). The keyword that makes
+GitHub close the ticket on merge is **not** — it only recognises `closes`,
+`fixes`, `resolves` and their variants, in English. „Schliesst #53" links
+nothing: the PR merges, the ticket stays open, and every ticket blocked by it
+stays blocked.
+
+So a PR that finishes a ticket carries a bare English line, on its own, at the
+top of the German body:
+
+```md
+Closes #53
+
+Der Rechenkern, die nackte Verteilung über die Ränge. …
+```
+
+This is not an exception to the language rule but an instance of it: `AGENTS.md`
+puts "everything an agent or a compiler reads" in English, and this line is read
+by GitHub, not by the maintainer.
+
+Verify it took, rather than trusting the wording — the failure is silent:
+
+```sh
+gh api graphql -f query='{repository(owner:"ditshej",name:"tcg-prizing"){
+  pullRequest(number:<n>){closingIssuesReferences(first:10){nodes{number}}}}}'
+```
+
+An empty list means nothing is linked.
+
 ## When a skill says "publish to the issue tracker"
 
 Create a GitHub issue.

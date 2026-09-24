@@ -67,6 +67,15 @@ Where we depart from the vendored `/domain-modeling` skill: when a later ADR tou
 
 Form per case, mockups marked as reference-only, one throwaway branch per map. See `docs/agents/prototyping.md`.
 
+### Core workbench
+
+`dev/` holds a workbench that imports `public/core/` live and lets the core be
+driven by hand — sliders, the rank rows as bars, and an invariant line that goes
+red when one breaks. It is a tool, **not the app's surface**: Spec 2 (#61) builds
+that, and nothing in `dev/` is a decision about it or a template for it. It sits
+outside `public/`, so the docroot never serves it. See `dev/README.md` — it
+carries the one command that starts it.
+
 ### SetupLink encoding
 
 The URL encoding is a versioned public interface. Renaming or removing a slider key, or changing what one means, requires a version bump and a `LinkMigration` in the same commit. See `docs/agents/setup-link.md`.
