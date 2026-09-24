@@ -301,15 +301,17 @@ _Avoid_: Shuffle (heisst im TCG das Mischen des eigenen Decks — und es benennt
 
 **RaffleRange**:
 Der `Rank`-Bereich, aus dem eine `WinnerRaffle` zieht — dreizehn benannte Stufen über
-der Spielerzahl. Obere acht: `all`, `top8`, `top16`, `topQuarter`, `topThird`,
-`topHalf`, `topTwoThirds`, `topThreeQuarters`. Untere fünf als deren
+der Spielerzahl. Obere acht: `top8`, `top16`, `topQuarter`, `topThird`,
+`topHalf`, `topTwoThirds`, `topThreeQuarters`, `all`. Untere fünf als deren
 Komplemente: `bottomThreeQuarters`, `bottomTwoThirds`, `bottomHalf`,
 `bottomThird`, `bottomQuarter`. Der obere Teil umfasst `⌈n × Anteil⌉` Ränge, der
 untere ist dessen Komplement, sodass sich die Paare lückenlos und
 überlappungsfrei ergänzen; absolute Stufen werden auf die Spielerzahl gekappt.
 Dieselbe Liste liefert die Startwerte für `RankPoolDepth`, dort auf die oberen
 acht beschränkt. Bemessungsgrundlage ist immer die Spielerzahl, nie
-`RankPoolDepth`. Default ist `all`.
+`RankPoolDepth`. Die **Reihenfolge ist bedeutungstragend**: sie ist die des
+Reglers, die oberen acht steigen darum der Grösse nach und `all` steht am Ende.
+Sie ist deshalb nicht dasselbe wie der Default, und der ist `all`.
 _Avoid_: RaffleMode (es ist ein Bereich, kein zweiter Rechenweg), Lostopf (das ist der `RafflePot`)
 
 **RafflePot**:
