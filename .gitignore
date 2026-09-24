@@ -1,0 +1,17 @@
+# Agent session artifacts. The Playwright MCP writes screenshots, console logs
+# and accessibility snapshots into the working directory as it drives the app.
+# They are session debris, not sources — the prototype they were taken from
+# lives on `prototype/rank-distribution`.
+.playwright-mcp/
+
+# Machine-local Claude Code settings: permissions granted on this machine only.
+# The shared configuration is `.claude/settings.json`.
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# There is no build step (ADR 0004) and the core runs under `node --test`
+# without packages, so this directory should never appear. If it does,
+# something pulled in a dependency and that is a decision, not a side effect.
+node_modules/
