@@ -139,9 +139,18 @@ test('a ShapedRemainder of 0 is the pure floor, and curveSilent stands', () => {
 });
 
 test('derivePool is exported on its own and needs no distribution', () => {
+  // envelopeSize 24, envelopeYield 1 (the fixture default): 32 packs open one
+  // full envelope plus 8 loose ones. 8 is below the two-thirds mark of 16, so
+  // the envelope has not yielded its WinnerPack yet; the one full envelope
+  // gives the other.
   assert.deepEqual(derivePool(settings({ players: 32, boosterRate: 3 })), {
     booster: 96,
     packs: 32,
+    winners: 1,
+    winnersDerived: 1,
+    opened: 8,
+    partialYield: 0,
+    thresholds: [16],
   });
   // tournamentPacks is a trailing slider: null means the player count.
   assert.equal(derivePool(settings({ players: 32, tournamentPacks: 7 })).packs, 7);
@@ -201,6 +210,135 @@ test('the pool split is exhaustive: participation + judge + rank is the pool', (
       }
     }
   }
+});
+
+test('the indivisible axes are exhaustive: the RankCycle spends the whole rank.packs, the WinnerPackAllocation the whole rank.winners', () => {
+  for (const players of [2, 5, 8, 32]) {
+    for (const tournamentPacks of [0, 1, 7, 40, 300]) {
+      for (const winnerPacks of [0, 1, 5, 30]) {
+        for (const judgeWinner of [0, 2, 100]) {
+          for (const ranked of [null, 0, 3]) {
+            const plan = distribute(
+              settings({ players, tournamentPacks, winnerPacks, judgeWinner, ranked }),
+            );
+            const where = JSON.stringify({ players, tournamentPacks, winnerPacks, judgeWinner, ranked });
+
+            assert.equal(plan.judge.winners + plan.rank.winners, plan.pool.winners, `winners sum at ${where}`);
+            assert.equal(
+              plan.rows.reduce((a, row) => a + row.packs, 0),
+              plan.rank.packs,
+              `RankCycle spends rank.packs exactly at ${where}`,
+            );
+            // Rows only carry ranked + manual; `open` WinnerPacks have no
+            // recipient by definition, so the row sum falls short by exactly
+            // that count.
+            assert.equal(
+              plan.rows.reduce((a, row) => a + row.winners, 0) + plan.allocation.open,
+              plan.rank.winners,
+              `WinnerPackAllocation accounts for rank.winners at ${where}`,
+            );
+          }
+        }
+      }
+    }
+  }
+});
+
+test('the PromoEnvelope staffel <32, 2> gives 1 at 11 opened packs and 2 at 22', () => {
+  const at = (opened) =>
+    derivePool(settings({ tournamentPacks: opened, envelopeSize: 32, envelopeYield: 2 }));
+  assert.equal(at(11).partialYield, 1);
+  assert.equal(at(11).winnersDerived, 1);
+  assert.equal(at(22).partialYield, 2);
+  assert.equal(at(22).winnersDerived, 2);
+});
+
+test('at Ausbeute 1 the staffel falls back exactly to the two-thirds threshold', () => {
+  // envelopeSize 24, yieldPer 1: the old single threshold is ceil(2*24/3) = 16.
+  const below = derivePool(settings({ tournamentPacks: 15, envelopeSize: 24, envelopeYield: 1 }));
+  const at = derivePool(settings({ tournamentPacks: 16, envelopeSize: 24, envelopeYield: 1 }));
+  assert.equal(below.winnersDerived, 0);
+  assert.equal(at.winnersDerived, 1);
+  assert.deepEqual(at.thresholds, [16]);
+});
+
+test('a Judge WinnerPack shortens the automatic ranked prefix, not the open rest', () => {
+  // 10 WinnerPacks, 2 to the Judge: rankWP = 8, rankedAuto = floor(8/2)+1 = 5.
+  // Had the Judge instead eaten into `open`, rankedAuto would still read the
+  // staffel off the full 10 (floor(10/2)+1 = 6).
+  const plan = distribute(settings({ winnerPacks: 10, judgeWinner: 2 }));
+  assert.equal(plan.judge.winners, 2);
+  assert.equal(plan.rank.winners, 8);
+  assert.equal(plan.allocation.rankedAuto, 5);
+  assert.equal(plan.allocation.ranked, 5);
+  assert.equal(plan.allocation.open, 3);
+});
+
+test('at rankWP = 0 the ranked staffel itself falls to 0', () => {
+  const plan = distribute(settings({ winnerPacks: 0 }));
+  assert.equal(plan.rank.winners, 0);
+  assert.equal(plan.allocation.rankedAuto, 0);
+  assert.equal(plan.allocation.ranked, 0);
+  assert.equal(plan.allocation.open, 0);
+});
+
+test('the RankCycle starts at Rank 3 when two WinnerPacks are auto-assigned, and wraps from the last Rank back to Rank 1', () => {
+  // 5 Players, 7 TournamentPacks in the RankPool, ranked pinned to 2: the
+  // cycle starts at index 2 (Rank 3) and wraps.
+  // g=0..6 -> ranks 3,4,5,1,2,3,4 -> counts [1,1,2,2,1] for ranks 1..5.
+  const plan = distribute(
+    settings({ players: 5, tournamentPacks: 7, winnerPacks: 4, ranked: 2 }),
+  );
+  assert.equal(plan.rank.packs, 7);
+  assert.deepEqual(
+    plan.rows.map((row) => row.packs),
+    [1, 1, 2, 2, 1],
+  );
+});
+
+test('the RankCycle reaches beyond the RankPoolDepth', () => {
+  const plan = distribute(
+    settings({ players: 5, tournamentPacks: 7, winnerPacks: 4, ranked: 2, depth: 1 }),
+  );
+  assert.equal(plan.depth, 1);
+  const unserved = plan.rows.filter((row) => !row.served);
+  assert.equal(unserved.length, 4);
+  assert.equal(
+    unserved.reduce((a, row) => a + row.packs, 0),
+    6, // all 7 packs but the one landing on the single served Rank 1
+  );
+});
+
+test('CombinedHandout shifts the participation shares into the rows and does not add them', () => {
+  const base = { players: 8, boosterRate: 2, participationBooster: 1, tournamentPacks: 16, participationPack: 1 };
+  const apart = distribute(settings({ ...base, combinedHandout: false }));
+  const combined = distribute(settings({ ...base, combinedHandout: true }));
+
+  const rowBoosterSum = (plan) => plan.rows.reduce((a, row) => a + row.booster, 0);
+  const rowPacksSum = (plan) => plan.rows.reduce((a, row) => a + row.packs, 0);
+
+  // Shifted, not added: the row sum grows by exactly the participation share,
+  // and the whole-PrizePool sum (rows + judge, participation folded in either
+  // way) stays the same.
+  assert.equal(rowBoosterSum(combined), rowBoosterSum(apart) + apart.participation.booster);
+  assert.equal(rowPacksSum(combined), rowPacksSum(apart) + apart.participation.packs);
+  assert.equal(
+    rowBoosterSum(combined) + combined.judge.booster,
+    apart.participation.booster + apart.judge.booster + rowBoosterSum(apart),
+  );
+});
+
+test('manual WinnerPack shares are free over the whole Ranking, several per Rank allowed, even on a ranked Rank', () => {
+  // rankWP 10, ranked pinned to 2 (Ranks 1-2 auto), manual gives Rank 1 one
+  // more and Rank 5 three.
+  const plan = distribute(
+    settings({ players: 8, winnerPacks: 10, ranked: 2, manualWinner: { 1: 1, 5: 3 } }),
+  );
+  assert.equal(plan.allocation.manualCount, 4);
+  assert.equal(plan.allocation.open, 10 - 2 - 4);
+  assert.equal(plan.rows[0].winners, 2); // ranked auto (1) plus manual (1)
+  assert.equal(plan.rows[4].winners, 3); // manual only, not ranked
+  assert.equal(plan.rows[1].winners, 1); // ranked auto only
 });
 
 test('the core touches no DOM', () => {

@@ -2,11 +2,13 @@
  * The core: Settings in, a DistributionPlan out. No DOM, no state, no clock,
  * no randomness (ADR 0004), and total over every input combination (ADR 0002).
  *
- * This file carries the narrow complete path — the pools and the sum rule, the
- * RankPoolDepth with its computed cap, and the divisible axis shaped by the
- * DistributionCurve. The indivisible axes (#57), the DisplayReservation with
- * its settlement and overtaking (#55), and the conflict branch (#56) are not
- * here yet; `displays` is read for the depth cap and otherwise assumed empty.
+ * This file carries the pools and the sum rule, the RankPoolDepth with its
+ * computed cap, the divisible axis shaped by the DistributionCurve, and the
+ * two indivisible axes that run past it — the RankCycle for TournamentPacks
+ * and the WinnerPackAllocation for WinnerPacks (#57). The DisplayReservation
+ * with its settlement and overtaking (#55), and the conflict branch (#56) are
+ * not here yet; `displays` is read for the depth cap and otherwise assumed
+ * empty.
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -20,13 +22,31 @@ function int(value, fallback = 0) {
  * The PrizePool, computed in full — there is no stock entry (#3). Exported on
  * its own because the PreparationList needs this half alone (Spec 2).
  *
- * The WinnerPack axis needs the PromoEnvelope and arrives with #57.
+ * The WinnerPacks fall out of the PromoEnvelope, evenly on the way to the
+ * two-thirds mark: at a yield of 1 that is exactly the old single threshold.
+ * `winnerPacks` binds the starting value, not the amount — it is a slider in
+ * both directions (#29), and `winnersDerived` stays in the plan as the `auto`
+ * value.
  */
 export function derivePool(settings) {
   const players = Math.max(2, int(settings.players, 2));
   const booster = Math.max(0, int(settings.boosterRate)) * players;
   const packs = Math.max(0, int(settings.tournamentPacks, players));
-  return { booster, packs };
+  const envelopeSize = Math.max(1, int(settings.envelopeSize, 1));
+  const yieldPer = Math.max(1, int(settings.envelopeYield, 1));
+
+  const opened = packs % envelopeSize;
+  const partialYield = Math.min(yieldPer, Math.floor((3 * yieldPer * opened) / (2 * envelopeSize)));
+  const winnersDerived = Math.floor(packs / envelopeSize) * yieldPer + partialYield;
+  const winners = Math.max(0, settings.winnerPacks == null ? winnersDerived : int(settings.winnerPacks));
+  const thresholds = Array.from({ length: yieldPer }, (_, k) => thresholdAt(k + 1, envelopeSize, yieldPer));
+
+  return { booster, packs, winners, winnersDerived, opened, partialYield, thresholds };
+}
+
+/** The number of opened packs at which the k-th WinnerPack starts counting. */
+function thresholdAt(k, envelopeSize, yieldPer) {
+  return Math.ceil((2 * envelopeSize * k) / (3 * yieldPer));
 }
 
 /**
@@ -49,10 +69,12 @@ function splitPool(pool, settings, players) {
   };
   const judge = {
     booster: clamp(int(settings.judgeBooster), 0, pool.booster - participation.booster),
+    winners: clamp(int(settings.judgeWinner), 0, pool.winners),
   };
   const rank = {
     booster: pool.booster - participation.booster - judge.booster,
     packs: pool.packs - participation.packs,
+    winners: pool.winners - judge.winners,
   };
   return { participation, judge, rank };
 }
@@ -92,6 +114,50 @@ function deriveDepthCap(players, rankBooster, displays, displaySize, rankFloor) 
     if (needAt(depth, displays, displaySize, rankFloor) <= rankBooster) return depth;
   }
   return 1;
+}
+
+/**
+ * WinnerPackAllocation: how the WinnerPacks in the RankPool reach recipients.
+ * `rankWinners` is the count *after* the JudgePool's cut — the staffel never
+ * counts on pieces set aside there, so a Judge WinnerPack shortens the
+ * automatic prefix instead of eating into `open` (#29).
+ */
+function allocateWinners(settings, rankWinners, players) {
+  const rankedAuto = Math.min(Math.floor(rankWinners / 2) + 1, rankWinners);
+  const ranked = clamp(
+    settings.ranked == null ? rankedAuto : int(settings.ranked),
+    0,
+    Math.min(rankWinners, players),
+  );
+
+  const manual = {};
+  let manualCount = 0;
+  const manualWinner =
+    settings.manualWinner && typeof settings.manualWinner === 'object' ? settings.manualWinner : {};
+  for (const [rankKey, count] of Object.entries(manualWinner)) {
+    const rank = Math.trunc(Number(rankKey));
+    const c = Math.max(0, int(count));
+    if (rank >= 1 && rank <= players && c > 0) {
+      manual[rank] = c;
+      manualCount += c;
+    }
+  }
+
+  const open = Math.max(0, rankWinners - ranked - manualCount);
+  return { ranked, rankedAuto, manual, manualCount, open };
+}
+
+/**
+ * The RankCycle: a circle over all Ranks up to the player count, one
+ * TournamentPack per Rank and lap, until the stock is empty. RankPoolDepth
+ * does not bound it. It starts at the first Rank after the `ranked` share;
+ * `manual` and `open` WinnerPacks never move the start.
+ */
+function rankCycle(rankPacks, ranked, players) {
+  const packs = new Array(players).fill(0);
+  const start = ranked >= players ? 0 : ranked;
+  for (let g = 0; g < rankPacks; g++) packs[(start + g) % players] += 1;
+  return packs;
 }
 
 /**
@@ -137,9 +203,24 @@ export function distribute(settings) {
   const shaped = largestRemainder(weights, shapedRemainder);
   for (let j = 0; j < curveCount; j++) booster[j] += shaped[j];
 
+  // The two indivisible axes run past the DistributionCurve (#57): the
+  // RankCycle hands out the RankPool's TournamentPacks, and the
+  // WinnerPackAllocation says who gets the RankPool's WinnerPacks.
+  const allocation = allocateWinners(settings, rank.winners, players);
+  const packsCycle = rankCycle(rank.packs, allocation.ranked, players);
+
+  // CombinedHandout shifts the participation shares into the rank rows
+  // instead of adding them: the same numbers, differently grouped, so the
+  // sum over the PrizePool never changes.
+  const combinedHandout = !!settings.combinedHandout;
+  const pbRate = combinedHandout ? participation.rate.booster : 0;
+  const ppRate = combinedHandout ? participation.rate.packs : 0;
+
   const rows = Array.from({ length: players }, (_, i) => ({
     rank: i + 1,
-    booster: booster[i],
+    booster: booster[i] + pbRate,
+    packs: packsCycle[i] + ppRate,
+    winners: (i < allocation.ranked ? 1 : 0) + (allocation.manual[i + 1] ?? 0),
     floor: i < depth ? rankFloor + (i === 0 ? lead : 0) : 0,
     served: i < depth,
   }));
@@ -158,6 +239,7 @@ export function distribute(settings) {
     shapedRemainder,
     curveSilent: shapedRemainder === 0,
     curveCount,
+    allocation,
     rows,
   };
 }
