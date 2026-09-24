@@ -18,7 +18,8 @@ three specs and their tickets in this repo's GitHub issues:
 
 There is no build step (see [ADR 0004](docs/adr/0004-kein-build-schritt-alpine-ueber-reinen-es-modulen.md)):
 the browser imports the core straight from the docroot, and the same files run
-under `node --test`.
+under `node --test` — run them from the repository root, with no packages
+installed.
 
 ## Predecessor
 

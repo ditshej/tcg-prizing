@@ -11,6 +11,10 @@
 # macOS
 .DS_Store
 
+# JetBrains IDE project files. Machine- and user-specific: deployment targets,
+# module paths, local PHP interpreter.
+.idea/
+
 # There is no build step (ADR 0004) and the core runs under `node --test`
 # without packages, so this directory should never appear. If it does,
 # something pulled in a dependency and that is a decision, not a side effect.

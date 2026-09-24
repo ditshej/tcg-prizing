@@ -1,0 +1,332 @@
+<!doctype html>
+<!--
+  ============================================================================
+  DEVELOPER WORKBENCH — NOT A PROTOTYPE, NOT A HEAD START ON THE APP.
+
+  To the agent that later builds Spec 2 (#61, tickets #62-#73): do NOT take
+  this file as a starting point, and do not copy anything out of it. Nothing
+  here was decided — not the layout, not the controls, not the wording, not
+  the colours. This is a bench vice for the core: it exists so the maintainer
+  can pull the sliders of `public/core/distribute.mjs` by hand while #54-#60
+  extend it. The real surface is Alpine over plain ES modules (ADR 0004),
+  built from CONTEXT.md and the Spec 2 tickets, and it looks nothing like
+  this on purpose.
+
+  The bench lives outside `public/`, which is the docroot (#30), so it is
+  never reachable on the web. It imports the core directly from
+  `../public/core/` — never copy the core in here, a copy would age.
+  ============================================================================
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Core workbench — tcg-prizing</title>
+    <style>
+      :root {
+        --ink: #1b1b1f;
+        --dim: #6a6a75;
+        --line: #d5d5dd;
+        --served: #2f6f4f;
+        --unserved: #b6b6c0;
+        --bad: #b3261e;
+        --good: #2f6f4f;
+        --bench: #f4efe4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0 0 4rem;
+        font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: var(--ink);
+        background: var(--bench);
+      }
+      .warning {
+        background: #3a2f1c;
+        color: #f6e7c8;
+        padding: 0.75rem 1rem;
+        font-size: 12px;
+      }
+      .warning strong {
+        color: #ffd479;
+      }
+      header {
+        padding: 1rem 1rem 0;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 0.25rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      h2 {
+        font-size: 12px;
+        margin: 0 0 0.5rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      main {
+        display: grid;
+        grid-template-columns: 22rem minmax(0, 1fr);
+        gap: 1rem;
+        padding: 1rem;
+        align-items: start;
+      }
+      section {
+        background: #fff;
+        border: 1px solid var(--line);
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .field {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.25rem 0.5rem;
+        margin-bottom: 0.6rem;
+      }
+      .field label {
+        font-size: 12px;
+      }
+      .field output {
+        font-variant-numeric: tabular-nums;
+        color: var(--dim);
+      }
+      .field input[type='range'],
+      .field select,
+      .field input[type='text'] {
+        grid-column: 1 / -1;
+        width: 100%;
+        font: inherit;
+      }
+      .note {
+        grid-column: 1 / -1;
+        font-size: 11px;
+        color: var(--dim);
+      }
+      .toggle {
+        grid-column: 1 / -1;
+        font-size: 11px;
+        color: var(--dim);
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        padding: 0.3rem 0.6rem;
+        border: 1px solid var(--line);
+        background: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f0f0f4;
+      }
+      #presets {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .preset {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.4rem;
+        align-items: center;
+      }
+      .preset .verdict {
+        font-size: 11px;
+        text-align: right;
+      }
+      .ok {
+        color: var(--good);
+      }
+      .fail {
+        color: var(--bad);
+        font-weight: 700;
+      }
+      #invariants li {
+        list-style: none;
+        font-size: 12px;
+      }
+      #invariants ul {
+        margin: 0.4rem 0 0;
+        padding: 0;
+      }
+      #invariantBanner {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid var(--line);
+        font-weight: 700;
+      }
+      #invariantBanner.broken {
+        background: #fde7e5;
+        border-color: var(--bad);
+        color: var(--bad);
+      }
+      #invariantBanner.held {
+        background: #e8f3ec;
+        border-color: var(--good);
+        color: var(--good);
+      }
+      #series {
+        font-size: 13px;
+        word-break: break-all;
+        user-select: all;
+      }
+      table.derived {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+      }
+      table.derived th,
+      table.derived td {
+        text-align: left;
+        padding: 0.15rem 0.5rem 0.15rem 0;
+        border-bottom: 1px solid #eee;
+      }
+      table.derived td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 3.5rem 3rem minmax(0, 1fr);
+        gap: 0.4rem;
+        align-items: center;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .row .rank {
+        color: var(--dim);
+      }
+      .row .value {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .bar {
+        height: 10px;
+        background: var(--served);
+        min-width: 1px;
+      }
+      .row.unserved .bar {
+        background: var(--unserved);
+      }
+      .row.unserved .rank,
+      .row.unserved .value {
+        color: var(--unserved);
+      }
+      pre {
+        margin: 0;
+        font-size: 11px;
+        max-height: 26rem;
+        overflow: auto;
+        background: #fafafa;
+        padding: 0.5rem;
+        border: 1px solid #eee;
+      }
+      textarea {
+        width: 100%;
+        height: 6rem;
+        font: inherit;
+        font-size: 11px;
+      }
+      .barlegend {
+        font-size: 11px;
+        color: var(--dim);
+        margin-bottom: 0.4rem;
+      }
+      .swatch {
+        display: inline-block;
+        width: 0.7rem;
+        height: 0.7rem;
+        vertical-align: -1px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="warning">
+      <strong>Developer workbench — not a prototype and not a template.</strong> Nothing here is a
+      decision about the app's surface. Spec 2 (#61) builds that from CONTEXT.md and its own
+      tickets, in Alpine over plain ES modules (ADR 0004). Do not copy out of this file. It exists
+      only so the core can be pulled by hand while #54&ndash;#60 extend it.
+    </p>
+
+    <header>
+      <h1>Core workbench &mdash; distribute(settings)</h1>
+      <p class="note" style="color: var(--dim); font-size: 12px; margin: 0">
+        Imported live from <code>../public/core/distribute.mjs</code> and
+        <code>../public/core/rules.mjs</code>. No copy, no build step, no dependencies.
+      </p>
+    </header>
+
+    <main>
+      <div>
+        <section>
+          <h2>Measured stands (#53)</h2>
+          <div id="presets"></div>
+        </section>
+
+        <section>
+          <h2>Settings</h2>
+          <div id="controls"></div>
+        </section>
+
+        <section>
+          <h2>Settings as JSON</h2>
+          <p class="note">
+            No URL encoding here on purpose: that is <code>SetupLink</code>, a versioned public
+            interface (#48). A bench must not invent a second one.
+          </p>
+          <button id="copySettings" type="button">Copy Settings to clipboard</button>
+          <span id="copyState" class="note"></span>
+          <textarea id="settingsIn" spellcheck="false" placeholder="paste Settings JSON here"></textarea>
+          <button id="loadSettings" type="button">Load Settings from JSON</button>
+          <span id="loadState" class="note"></span>
+        </section>
+      </div>
+
+      <div>
+        <section>
+          <h2>Invariants</h2>
+          <div id="invariantBanner"></div>
+          <ul id="invariants"></ul>
+        </section>
+
+        <section>
+          <h2>Booster per Rank</h2>
+          <p class="barlegend">
+            <span class="swatch" style="background: var(--served)"></span> served &mdash;
+            <span class="swatch" style="background: var(--unserved)"></span> unserved (beyond the
+            <code>RankPoolDepth</code>)
+          </p>
+          <div id="bars"></div>
+        </section>
+
+        <section>
+          <h2>Series (served ranks)</h2>
+          <div id="series"></div>
+        </section>
+
+        <section>
+          <h2>Derived</h2>
+          <table class="derived">
+            <tbody id="derived"></tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Raw DistributionPlan</h2>
+          <p class="note">
+            Dumped whole, so fields added by #55&ndash;#57 show up without anyone touching the
+            bench.
+          </p>
+          <pre id="raw"></pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./bench.mjs"></script>
+  </body>
+</html>
