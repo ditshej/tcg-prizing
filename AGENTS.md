@@ -61,6 +61,26 @@ session per spec. Measured numbers and the cost in `docs/agents/spec-flow.md`.
 
 Issues live in this repo's GitHub Issues, driven via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
+### A decided number is looked up, never back-computed
+
+Starting values, rates and named steps are **decisions**, and they are written
+down where they were made — in a ticket's resolution comment, and from there
+into the prototype. Deriving one instead, from plan numbers or from what the
+core happens to read today, produces a value that looks right and is not.
+
+This has now cost two sessions. #21 and #25 wrote their tables out precisely
+because #20 had back-computed and drifted, and both say so in their first line.
+The session that built #54 derived the sheet anyway and got every value wrong
+but one — and the test it wrote alongside went green, because it measured
+against the same derivation. A wrong number and its own justification arrive
+together.
+
+So: before writing a constant, find the comment that decided it. If no decision
+exists, that absence is the finding — say it, rather than picking a plausible
+value. Where a decision is only implicit in a measured plan, the guard is a test
+that runs the real code against that plan; `test/onepiece.test.mjs` is the
+pattern.
+
 ### Triage labels
 
 The five canonical triage roles, each label string equal to its role name. See `docs/agents/triage-labels.md`.

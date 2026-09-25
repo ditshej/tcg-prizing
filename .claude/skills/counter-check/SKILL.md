@@ -10,6 +10,12 @@ The second pass over `review/<batch>-befunde.md`, the file `/fan-out` leaves
 behind. Its format, the hand run it came out of, and the recomputation command
 live in [`docs/agents/fan-out.md`](../../../docs/agents/fan-out.md).
 
+**Start at that file's run log.** Every lens below exists because a run went
+wrong in a particular way, and the log says which — including the defects that
+have already recurred. A class of failure the last pass found is the first
+place to look in this one, not a closed case. Done when you can name what the
+previous run turned up before you open the findings file.
+
 ## Fresh context, or this is theatre
 
 Run this in **its own session or a subagent with fresh context** — never as a

@@ -131,3 +131,40 @@ Two sections carry more than they look like:
 - **Nicht geprüft** is the map of the gaps, and `/counter-check` reads it
   first. Left empty to look tidy, it hides precisely the region nobody has
   looked at.
+
+## Run log
+
+**Append three lines per run, and read this before starting one.** A skill that
+only accumulates advice drifts into opinion; what keeps these two honest is
+that every claim in them is traceable to a run that went wrong in a particular
+way. The log is also how a *recurring* failure becomes visible — one green test
+that proves nothing is an accident, three across two runs is a class.
+
+### Run 1 · 2026-09-24 · #54, #57, #48 · three Sonnet agents
+
+Detailed above. What it produced: **three green tests that checked nothing** —
+one restating its own claim, one omitting the disputed term from one side of an
+equation, and a data sheet with no test against the measured plans at all. A
+double count in `CombinedHandout` (40 where 32 was owed). A wrong curve step.
+
+The counter-check **refuted one of the parent's own findings**: the parent had
+read two sections of the spec and filed a contradiction that a third section,
+two screens down, resolved. Every number in that finding was right.
+
+Corrected in the skills afterwards: the forbidden-path check compared tips
+instead of the fork point (`main..HEAD` → `main...HEAD`); `## Quellen` named as
+the second map of gaps; mutation hygiene; nil returns for criteria no test
+carries; a method for lens 3 (cross the ticket pairs that read the same source).
+
+### Run 2 · 2026-09-25 · #54, #57 corrections · two Opus agents
+
+The four decisions from run 1, implemented in parallel. Both verified against
+freshly built states; the cross-check across both worktrees held — corrected
+sheets through the corrected core still hit all three measured plans, and the
+sum rule closed in both `CombinedHandout` branches.
+
+The finding that mattered most came from **outside the machinery**: the
+counter-check found one wrong curve value, and the maintainer recognised it as
+a symptom — the values had all been decided long before, in #21 and #25, and
+the sheet had been derived rather than read. No lens found that. See
+`AGENTS.md`, "A decided number is looked up, never back-computed".
