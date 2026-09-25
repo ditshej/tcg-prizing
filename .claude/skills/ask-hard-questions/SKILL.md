@@ -53,9 +53,17 @@ Run both, per finding, in this order.
 ### Gate 1 — find the source that already decides it
 
 Go looking for the place where this was settled: a ticket comment, an ADR, a
-section of the spec, a term in `CONTEXT.md`. A finding whose answer is written
-down somewhere is **not** a question — it is a lookup, and the answer goes into
-the handover report with its location.
+section of the spec, a term in `CONTEXT.md` — **and the working tree you are
+standing in.** A finding whose answer is written down somewhere is **not** a
+question; it is a lookup, and the answer goes into the handover report with its
+location.
+
+The working tree is the source that gets forgotten, because a findings file
+points backwards: its `**Beleg:**` commands name the worktrees of the day it was
+written, and reading only those keeps you in that day. Meanwhile the branches
+merged and the repairs landed. In the trial run this nearly produced a card
+whose answer stood in the same worktree, in code — the skeptic caught it, which
+is no way to run a gate. Ask of every finding: **does `main` still do this?**
 
 This gate is the skill's reason for existing, and it comes from
 `AGENTS.md`, "A decided number is looked up, never back-computed". In run 2 the
@@ -72,8 +80,26 @@ The gate cuts both ways, and the second direction is the surprising one:
   value plausible" but "does the sheet say what was decided" — and that is a
   different, usually sharper, card.
 
+**A lookup is not automatically a repair**, and this is the seam where the two
+gates rub. Sort by whether the source and the code agree:
+
+- **They agree** — nothing to ask. Repair or note.
+- **They disagree, and only the code can move** — a repair. An agent writes the
+  decided value back.
+- **They disagree, and moving the source is live** — a card. `B4` is the worked
+  case: #21 and #25 had written the sheet out cell by cell, the sheet said
+  something else, and the maintainer was still owed the choice between taking
+  the canonical values and changing one of them.
+
 Done when every finding names either the source that settles it, or the search
 that came up empty.
+
+**On a second pass over the same findings file, Gate 1 eats everything.** The
+answers of the first round were filed into ticket comments, so they are now
+sources — in the trial run nine of ten findings came back as lookups, five of
+them against comments written the day before. That is the gate working. It also
+means a findings file is **spent** once its round closed: re-running it tests
+Gate 1 and nothing else.
 
 ### Gate 2 — two defensible ways, and they differ in outcome
 
@@ -110,6 +136,13 @@ Where nothing is runnable — a reading question, a documentation decision — t
 card says so. A **nil return is evidence**; a borrowed number dressed as a
 fresh one is not.
 
+**The sharpest evidence is usually a mutation**, and a mutation writes: turn the
+implementation wrong on purpose and show the suite staying green. The worktree
+under review is read-only, so copy the files aside and mutate the copy —
+`git checkout -- <file>` is on this machine's deny list and `git stash` leaves
+an entry behind when the pass is interrupted (`/counter-check`, same move). Say
+in `git status` terms that the tree you touched is clean before you report.
+
 Then ask the form question from `.claude/tools/README.md`: which statement does
 this evidence carry, and which shape makes that statement visible. A number
 block in a `<pre>` is the **fallback**, and it stays under the picture so the
@@ -139,18 +172,27 @@ two jobs:
 
 Fresh context is the whole point: you have read the finding and your options
 already agree with your reading of it. Give the skeptic the cards, not your
-reasoning. If it runs as a subagent it gets its own worktree, and so does any
-other agent in the run — the parent counts as a writer (`docs/agents/fan-out.md`,
-run 3).
+reasoning. It reads and writes nothing, so it needs no worktree of its own —
+the rule in `docs/agents/fan-out.md` binds writers, and an agent that writes
+anything in this skill's run does get one, parent included.
 
-Done when every skeptic answer has been taken up or written off in a sentence.
+Expect it to kill a card, not just widen one. In the trial run it struck out a
+whole card whose decision had already been made in code, and took apart both
+options of the card that survived. A skeptic that only adds a third option has
+probably been given the reasoning along with the cards.
+
+Done when every skeptic answer has been taken up or written off in a sentence,
+in the handover report — the question file has no field for it.
 
 ## Stage 4 — write it, serve it, stop
 
 Write `review/<batch>-fragen.json` — one file per pass, German content, stable
 `id`s, `origin` pointing back at the PR and the finding (`"neu"` where Gate 1
-produced it). `severity` on a card is your own judgement after the gates, not
-the line copied from the findings file.
+produced it). `<batch>` is the **findings file's own stem**, so the two lie
+beside each other in `review/`: `…-befunde.md` → `…-fragen.json` →
+`…-antworten.json`. The `batch` field inside the file stays the readable name
+("#54 · #57 · #48"). `severity` on a card is your own judgement after the
+gates, not the line copied from the findings file.
 
 Then:
 
@@ -161,6 +203,11 @@ node .claude/tools/fragebogen.mjs review/<batch>-fragen.json
 Hand over the URL it prints, and the handover report below. Then stop. The
 server writes `review/<batch>-antworten.json` and shuts itself down when the
 maintainer sends.
+
+Done when the question file exists, the server is running under a URL the
+maintainer has been given, and every finding has its line in the report. Where
+the run is a rehearsal and no server is wanted, the report alone ends it —
+the question file is not the deliverable, the report is what gets read.
 
 ## The handover report
 

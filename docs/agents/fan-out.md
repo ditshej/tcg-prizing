@@ -201,3 +201,24 @@ about the agents, and a single agent looks like a case it does not cover. It
 covers every run with more than one writer, and the parent is always a writer.
 A single agent still gets its own tree — or the parent stops committing until
 it returns.
+
+### Run 4 · 2026-09-25 · `/ask-hard-questions` against run 1's findings · one Opus agent
+
+A rehearsal, not a round: the skill was pointed at the findings file of run 1,
+whose decisions had already been answered and filed. The three worktrees were
+rebuilt from the merge commits' second parents (`5709ab0`, `687757a`,
+`02ee4fa`) so the `**Beleg:**` commands would run verbatim, and the two example
+question files were withheld — they are the answer key for exactly this batch.
+
+Nine of ten findings came back as **lookups**, five of them against ticket
+comments written the day before: the answers of the first round had become
+sources. So the rehearsal tested Gate 1 hard and card formulation barely, and a
+spent findings file cannot test more than that.
+
+Two defects it found, both corrected in the skill: the **working tree was
+missing from Gate 1's list of sources** — a findings file points backwards, and
+the agent nearly carded a question the merged code had already settled — and
+the seam where a looked-up finding is a repair rather than a card was
+undefined. The one surviving card (`B3`, the tautological completeness test)
+was verified independently in the parent session: removing a field from all
+three hand-kept lists leaves `test/onepiece.test.mjs` at 13/13 green.
