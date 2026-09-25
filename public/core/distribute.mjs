@@ -210,11 +210,28 @@ export function distribute(settings) {
   const packsCycle = rankCycle(rank.packs, allocation.ranked, players);
 
   // CombinedHandout shifts the participation shares into the rank rows
-  // instead of adding them: the same numbers, differently grouped, so the
-  // sum over the PrizePool never changes.
+  // instead of adding them: the same numbers, differently grouped, so the sum
+  // over the PrizePool never changes. The shift runs on both levels at once —
+  // every row takes the rate, and on the Pool level the ParticipationPool
+  // falls to 0 while the RankPool takes the whole share. Reporting the shares
+  // in both places would count the same PrizeItems twice.
+  //
+  // It runs *after* the shaping, so depth cap, ShapedRemainder and curve read
+  // the same RankPool in both branches: how the shares are grouped at handout
+  // is not a shaping decision.
   const combinedHandout = !!settings.combinedHandout;
   const pbRate = combinedHandout ? participation.rate.booster : 0;
   const ppRate = combinedHandout ? participation.rate.packs : 0;
+  const handedOut = combinedHandout
+    ? {
+        participation: { rate: participation.rate, booster: 0, packs: 0 },
+        rank: {
+          booster: rank.booster + participation.booster,
+          packs: rank.packs + participation.packs,
+          winners: rank.winners,
+        },
+      }
+    : { participation, rank };
 
   const rows = Array.from({ length: players }, (_, i) => ({
     rank: i + 1,
@@ -228,9 +245,10 @@ export function distribute(settings) {
   return {
     players,
     pool,
-    participation,
+    participation: handedOut.participation,
     judge,
-    rank,
+    rank: handedOut.rank,
+    combinedHandout,
     depth,
     depthCap,
     depthStepValue,

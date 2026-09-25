@@ -309,23 +309,115 @@ test('the RankCycle reaches beyond the RankPoolDepth', () => {
   );
 });
 
+/**
+ * The sum rule read off the plan itself, in the one shape that cannot be
+ * satisfied by writing the wanted invariant down: every quantity comes from
+ * the same plan, and none of the three terms may be left out.
+ */
+function assertPlanSum(plan, where) {
+  const rowSum = (key) => plan.rows.reduce((a, row) => a + row[key], 0);
+  assert.equal(
+    plan.participation.booster + plan.judge.booster + rowSum('booster'),
+    plan.pool.booster,
+    `Booster sum at ${where}`,
+  );
+  // The JudgePool never touches TournamentPacks, so it has no `packs` term at
+  // all — the sum rule still names it, because leaving a term out silently is
+  // exactly how the double count got through.
+  assert.equal(
+    plan.participation.packs + (plan.judge.packs ?? 0) + rowSum('packs'),
+    plan.pool.packs,
+    `TournamentPack sum at ${where}`,
+  );
+  // The other half of the same rule: the rank rows spend the RankPool down to
+  // the last piece, so the Pool level and the row level tell one story.
+  assert.equal(rowSum('booster'), plan.rank.booster, `rank rows against the RankPool at ${where}`);
+  assert.equal(rowSum('packs'), plan.rank.packs, `rank rows against the RankPool packs at ${where}`);
+}
+
 test('CombinedHandout shifts the participation shares into the rows and does not add them', () => {
-  const base = { players: 8, boosterRate: 2, participationBooster: 1, tournamentPacks: 16, participationPack: 1 };
+  // 8 Players at 4 Boosters each make 32; a participation rate of 1 takes 8,
+  // the Judge 2, so the RankPool carries 22. 16 TournamentPacks at a rate of
+  // 1 take 8, leaving 8 in the RankPool.
+  const base = {
+    players: 8,
+    boosterRate: 4,
+    tournamentPacks: 16,
+    participationBooster: 1,
+    participationPack: 1,
+    judgeBooster: 2,
+  };
   const apart = distribute(settings({ ...base, combinedHandout: false }));
   const combined = distribute(settings({ ...base, combinedHandout: true }));
 
-  const rowBoosterSum = (plan) => plan.rows.reduce((a, row) => a + row.booster, 0);
-  const rowPacksSum = (plan) => plan.rows.reduce((a, row) => a + row.packs, 0);
+  const rowSum = (plan, key) => plan.rows.reduce((a, row) => a + row[key], 0);
 
-  // Shifted, not added: the row sum grows by exactly the participation share,
-  // and the whole-PrizePool sum (rows + judge, participation folded in either
-  // way) stays the same.
-  assert.equal(rowBoosterSum(combined), rowBoosterSum(apart) + apart.participation.booster);
-  assert.equal(rowPacksSum(combined), rowPacksSum(apart) + apart.participation.packs);
-  assert.equal(
-    rowBoosterSum(combined) + combined.judge.booster,
-    apart.participation.booster + apart.judge.booster + rowBoosterSum(apart),
-  );
+  // The sum rule holds on the plan itself, in both branches.
+  assertPlanSum(apart, 'combinedHandout false');
+  assertPlanSum(combined, 'combinedHandout true');
+
+  // Apart: the participation block carries the shares, the rank rows do not.
+  assert.equal(apart.participation.booster, 8);
+  assert.equal(apart.participation.packs, 8);
+  assert.equal(apart.rank.booster, 22);
+  assert.equal(apart.rank.packs, 8);
+  assert.equal(rowSum(apart, 'booster'), 22);
+  assert.equal(rowSum(apart, 'packs'), 8);
+
+  // Combined: the block falls to 0 and the shares stand in the rows instead —
+  // on the Pool level too, or the same PrizeItems would be counted twice.
+  assert.equal(combined.combinedHandout, true);
+  assert.equal(combined.participation.booster, 0);
+  assert.equal(combined.participation.packs, 0);
+  assert.deepEqual(combined.participation.rate, { booster: 1, packs: 1 });
+  assert.equal(combined.rank.booster, 30);
+  assert.equal(combined.rank.packs, 16);
+  assert.equal(rowSum(combined, 'booster'), 30);
+  assert.equal(rowSum(combined, 'packs'), 16);
+
+  // Shifted, not added: every row grew by exactly the rate, and the shaping
+  // of the divisible axis is untouched — the same numbers, differently
+  // grouped.
+  for (let i = 0; i < apart.rows.length; i++) {
+    assert.equal(combined.rows[i].booster, apart.rows[i].booster + 1, `row ${i + 1} Booster`);
+    assert.equal(combined.rows[i].packs, apart.rows[i].packs + 1, `row ${i + 1} TournamentPacks`);
+  }
+  assert.equal(combined.shapedRemainder, apart.shapedRemainder);
+  assert.equal(combined.depth, apart.depth);
+  assert.equal(combined.depthCap, apart.depthCap);
+});
+
+test('the sum rule holds at the plan itself, in both handout branches', () => {
+  for (const players of [2, 5, 8, 32]) {
+    for (const boosterRate of [0, 1, 3, 12]) {
+      for (const participationBooster of [0, 1, 4, 12]) {
+        for (const judgeBooster of [0, 3, 40]) {
+          for (const tournamentPacks of [null, 0, 7, 40]) {
+            for (const participationPack of [0, 1, 4]) {
+              const base = {
+                players,
+                boosterRate,
+                participationBooster,
+                judgeBooster,
+                tournamentPacks,
+                participationPack,
+              };
+              const apart = distribute(settings({ ...base, combinedHandout: false }));
+              // Where the RankPool does not even carry the floor of a single
+              // Rank, the pouring from the top decides what really goes out,
+              // and that is #56. Read off the apart branch, whose RankPool is
+              // the one the shaping sees.
+              if (apart.rank.booster < apart.floorReserved) continue;
+
+              const where = JSON.stringify(base);
+              assertPlanSum(apart, `${where} apart`);
+              assertPlanSum(distribute(settings({ ...base, combinedHandout: true })), `${where} combined`);
+            }
+          }
+        }
+      }
+    }
+  }
 });
 
 test('manual WinnerPack shares are free over the whole Ranking, several per Rank allowed, even on a ranked Rank', () => {
