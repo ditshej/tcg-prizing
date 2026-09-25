@@ -48,8 +48,9 @@ a compatibility it does not have.
 | Rename a slider key | **Yes** — rewrite old key to new |
 | Remove a slider | **Yes** — drop the value, and the report names it |
 | Change a slider's meaning or unit (count → fraction, absolute → rate) | **Yes** — this is the one a name-stability contract would miss |
-| Rename a named step (a `DistributionCurve` level, a `RaffleRange` level) | **Yes** — rewrite old label to new |
+| Rename a named step (a `DistributionCurve` level) | **Yes** — rewrite old label to new |
 | Rename a `Game` or `TournamentType` identifier | **Yes** |
+| Remove a `Game` | **Yes** — name its successor |
 | Remove a `TournamentType` | **Yes** — name its successor; leaving it open is not an option |
 | Add a new slider | No — an absent key means "not `pinned`" |
 | Insert or reorder `TournamentType`s | No — the link names them, not their position |
@@ -88,7 +89,10 @@ everything reports what was rewritten and what was dropped, and tells the reader
 save the bookmark again; the original pinned link stays old forever otherwise.
 
 The overlay is dismissible, never returns, and is never encoded in the `SetupLink`.
-It appears only when the chain actually ran — a current-version link shows nothing.
+It appears whenever the report is non-`null` — not only when the chain ran: a
+current-version link with an unreadable value loses something too, and stays
+silent otherwise (ADR 0007, addendum). A clean link — every key known, every
+value readable, no version to lift — shows nothing.
 
 ## Caps are not a migration concern
 

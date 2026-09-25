@@ -128,3 +128,25 @@ Damit ist die Freigabe in `docs/agents/setup-link.md`, dass Einschieben und Umso
 keine Migration braucht, ohne Vorbehalt wahr: nach beiden Entscheiden hängt kein Link
 mehr an einer Position. Position 1 trägt wieder nur, was ADR 0003 ihr gab — die
 Startwahl mit dem leeren Blatt.
+
+## Nachtrag (#48): der Bericht hängt am Verlust, nicht an der gelaufenen Kette
+
+Der Satz oben — das Overlay erscheine, „wenn die Kette tatsächlich gelaufen ist" —
+ist zu eng gefasst. Er lässt ein Loch: ein Link der **heutigen** Version, in dem ein
+einzelner Schlüssel unlesbar ist (`rankFloor=banana`, ein unbekannter Schlüssel),
+lässt die Migrationskette gar nicht erst anlaufen — sie hat ja nichts zu heben — und
+verliert trotzdem etwas. Nach der engen Fassung schwiege die App genau dort, wo sie
+reden sollte.
+
+Die Absicht bleibt vollständig erhalten: ein **sauberer** Link — jeder Schlüssel
+bekannt, jeder Wert lesbar, keine Version zu heben — soll still bleiben. Die richtige
+Bedingung ist darum nicht „die Kette lief", sondern **„der Bericht ist da, sobald
+irgendetwas nicht so übernommen wurde, wie es dastand"**: umgeschrieben, weggefallen
+oder unlesbar, gleich ob durch eine Migrationsstufe oder durch das Auffangnetz. Sonst
+ist der Bericht `null`. Eine gelaufene Migration ist damit ein Fall, der einen Bericht
+erzeugt, nicht die Bedingung dafür — und `docs/agents/setup-link.md` ist an derselben
+Stelle entsprechend korrigiert.
+
+Kein eigener ADR-Eintrag: die Absicht dieses Dokuments ändert sich nicht, nur ihre zu
+enge Formulierung wird geschärft (`docs/agents/domain.md`, „sharpening your own text
+while writing"). Die nächste freie Nummer wäre 0009 — sie wird hier nicht gezogen.
