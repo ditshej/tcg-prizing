@@ -14,8 +14,8 @@ quotes comes from it.
 | Ticket | What it built            | Worktree                 | Branch                      | Files it owned                                                                     | PR  |
 | ------ | ------------------------ | ------------------------ | --------------------------- | ---------------------------------------------------------------------------------- | --- |
 | #54    | the `DefaultSet` sheets  | `../tcg-prizing-54`      | `feat/54-defaultset-blaetter` | `public/sets/onepiece.mjs`, `test/onepiece.test.mjs`                               | #75 |
-| #57    | the indivisible axes     | `../tcg-prizing-57`      | `feat/57-unteilbare-achsen`   | `public/core/distribute.mjs`, `test/distribute.test.mjs`                            | #76 |
-| #48    | the v1 key register      | `../tcg-prizing-48`      | `feat/48-schluesselregister`  | `public/link/encode.mjs`, `test/link-keys.test.mjs`, `docs/agents/setup-link.md`, `docs/adr/0007-*` | #77 |
+| #57    | the indivisible axes     | `../tcg-prizing-57`      | `feat/57-unteilbare-achsen`   | `public/core/distribute.mjs`, `public/core/rules.mjs`, `test/distribute.test.mjs`   | #77 |
+| #48    | the v1 key register      | `../tcg-prizing-48`      | `feat/48-schluesselregister`  | `public/link/encode.mjs`, `test/link-keys.test.mjs`, `docs/agents/setup-link.md`, `docs/adr/0007-*` | #76 |
 
 Three Sonnet agents, one message, three PRs. What it produced, and what each
 skill draws from it:
