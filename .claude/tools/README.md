@@ -219,3 +219,22 @@ Palette.
   ]
 }
 ```
+
+## Worked examples
+
+`examples/` holds the two question files of 2026-09-25, written by hand and
+answered for real. They are kept because `review/` is gitignored and these are
+the only record of what a good card looks like:
+
+- `zwei-entscheide-mit-diagrammen.json` — a blocking defect and a reading
+  question. Carries the `stacked-bars` chart: three parts against a reference
+  line, the overhang hatched, two equal-width brackets showing that the error
+  is exactly the participation share.
+- `blattwerte-mit-kleinen-vielfachen.json` — a sheet measured against a
+  recorded decision. Carries two `small-multiples` charts: the candidate beside
+  the current value, the measurement behind both as a silhouette.
+
+Read them before writing a new question file. The format is documented above;
+what these show is the part the format cannot — how much stake belongs on a
+card, when a chart earns its place, and that an option's `consequence` says
+what follows rather than repeating the label.

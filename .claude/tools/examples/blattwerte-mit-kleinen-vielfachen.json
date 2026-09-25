@@ -1,0 +1,129 @@
+{
+  "batch": "DefaultSet-Blätter · #54",
+  "date": "2026-09-25",
+  "decisions": [
+    {
+      "id": "blattwerte",
+      "title": "Die Blattwerte aus #21 und #25 ersetzen das heutige `onepiece.mjs`",
+      "origin": { "pr": 75, "finding": "B4 / B6" },
+      "severity": "blockierend",
+      "stake": "Du hattest recht: die Werte sind längst festgelegt. Die Resolution-Kommentare von #21 (Game + Weekend, 22.8.) und #25 (Release, 25.8.) tragen sie vollständig — und beide sagen ausdrücklich dazu, warum sie dort stehen: „damit die nächste Session nachliest statt aus Plan-Zahlen zurückzurechnen\". Der Agent, der #54 gebaut hat, hat sie nicht gelesen und die Werte frei gewählt. Ich habe die kanonischen Werte gegen den Kern gerechnet: sie treffen alle drei gemessenen Reihen aus #46 zeichengenau. Das heutige Blatt trifft eine von dreien.",
+      "note": "`weekend` ist der Zufallstreffer: es stimmt heute schon, weil sich zwei Fehler im `Game` gegenseitig aufheben. `weekly` und `release` liegen daneben.",
+      "evidence": [
+        {
+          "type": "chart",
+          "heading": "Weekly bei 32 Spielern",
+          "chart": {
+            "kind": "small-multiples",
+            "title": "Weekly 32: kanonisches Blatt trifft die Messung, das heutige nicht",
+            "description": "Zwei Säulendiagramme über acht Ränge. Die Zielreihe aus #46 ist als Silhouette hinterlegt. Das kanonische Blatt aus #21 liegt deckungsgleich darauf; das heutige Blatt beginnt bei 11 statt 7 und fällt danach zu steil.",
+            "xLabel": "Rang",
+            "max": 12,
+            "target": { "label": "Messung in #46 (Ziel)", "values": [7, 5, 4, 4, 3, 3, 3, 3] },
+            "matchLabel": "trifft die Messung",
+            "currentLabel": "steht heute im Blatt",
+            "panels": [
+              { "label": "kanonisch (#21)", "tone": "match", "tag": "trifft exakt", "values": [7, 5, 4, 4, 3, 3, 3, 3] },
+              { "label": "heutiges Blatt", "tone": "current", "tag": "daneben", "values": [11, 6, 4, 3, 2, 2, 2, 2] }
+            ]
+          },
+          "caption": "Die Messung in #46 nennt für `Weekly` 32 die Reihe `7·5·4·4·3·3·3·3`. Sie entsteht nur aus `boosterRate` 3 mit `participationBooster` 2 und `curve: 'mild'` — den Werten aus #21.",
+          "text": "kanonisch (#21)   7·5·4·4·3·3·3·3\nheutiges Blatt    11·6·4·3·2·2·2·2\nMessung #46       7·5·4·4·3·3·3·3"
+        },
+        {
+          "type": "chart",
+          "heading": "Release bei 32 Spielern",
+          "chart": {
+            "kind": "small-multiples",
+            "title": "Release 32: kanonisches Blatt trifft die Messung, das heutige nicht",
+            "description": "Zwei Säulendiagramme über die ersten fünfzehn Ränge. Die Zielreihe aus #46 ist als Silhouette hinterlegt. Das kanonische Blatt aus #25 liegt deckungsgleich darauf; das heutige Blatt beginnt bei 12 statt 8 und liegt über die ganze Breite zu hoch.",
+            "xLabel": "Rang",
+            "max": 13,
+            "target": { "label": "Messung in #46 (Ziel)", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+            "matchLabel": "trifft die Messung",
+            "currentLabel": "steht heute im Blatt",
+            "panels": [
+              { "label": "kanonisch (#25)", "tone": "match", "tag": "trifft exakt", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+              { "label": "heutiges Blatt", "tone": "current", "tag": "daneben", "values": [12, 9, 7, 6, 6, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3] }
+            ]
+          },
+          "caption": "Gezeigt sind die ersten 15 von 32 Rängen — dort trennen sich die Reihen. Die kanonische Reihe steht ab Rang 16 durchgehend auf 2.",
+          "text": "kanonisch (#25)   8·6·5·5·5·4·4·4·3·3·3·3·3·3·3·  dann 17× 2\nheutiges Blatt    12·9·7·6·6·5·4·4·4·4·4·3·3·3·3·…\nMessung #46       8·6·5·5·5·4·4·4·3·3·3·3·3·3·3·  dann 17× 2"
+        },
+        {
+          "heading": "Feld für Feld: heute gegen #21/#25",
+          "text": "GAME                    heute        kanonisch\n  players                  8       →    32\n  boosterRate              2       →     3\n  envelopeSize            24       →     9\n  envelopeYield            1             1\n  displaySize             24            24\n  participationBooster     1       →     2\n  participationPack        0       →     1\n  judgeBooster             0             0\n  judgeWinner              0             0\n  rankFloor                2             2\n  depthStep            top8          top8\n  curve                steep       →  mild\n  combinedHandout      false         false\n\nWEEKEND                 heute        kanonisch\n  players                 32       →    (erbt)\n  boosterRate              3       →    (erbt)\n  participationBooster    —        →     1\n  curve                   —        → steep\n\nRELEASE                 heute        kanonisch\n  players                 64       →    (erbt)\n  boosterRate              4       →     9\n  participationBooster    —        →     6\n  envelopeSize            36       →    32\n  envelopeYield            2             2\n  depthStep              all           all\n  curve                 mild       → gentle\n  combinedHandout       true       →    (erbt, false)"
+        },
+        {
+          "heading": "Die Fundstellen im Wortlaut",
+          "text": "#21, Resolution-Kommentar, 2026-08-22:\n\n  „Aufgeschrieben, damit die nächste Session nachliest statt aus\n   Plan-Zahlen zurückzurechnen; ebendas war der Fehler, der #20 und\n   den Body dieses Tickets falsch rechnen liess.\"\n\n#25, Resolution-Kommentar, 2026-08-25:\n\n  „Damit es nicht wieder aus Plan-Zahlen zurückgerechnet werden muss\n   (die Drift, die #21 aufgedeckt hat), steht es hier ganz\"\n\nDieselben Werte stehen verdrahtet im Prototyp:\n  prototypes/cockpit.prototype.html:1454-1472\n\nEin älterer Widerspruch ist datiert aufgelöst: #12 (14.8.) schrieb für\nWeekend noch `severe` und für das Game `topQuarter`; #21 hat das acht\nTage später ersetzt."
+        }
+      ],
+      "options": [
+        {
+          "id": "kanonisch-uebernehmen",
+          "label": "Die Werte aus #21/#25 unverändert übernehmen",
+          "consequence": "Das Blatt wird neu geschrieben, alle drei gemessenen Reihen treffen. Das ist die Fassung, die im Prototyp steht und an der die Zahlen in #46 gemessen wurden."
+        },
+        {
+          "id": "kanonisch-mit-aenderung",
+          "label": "Grundsätzlich #21/#25, aber ich will etwas ändern",
+          "consequence": "Sag im Feld unten, welches Feld welchen Wert bekommt. Achtung: die gemessenen Reihen in #46 hängen daran — ändert sich `boosterRate`, `participationBooster`, `rankFloor` oder `curve`, wird mindestens eine Messung ungültig und muss in #46 nachgezogen werden."
+        }
+      ],
+      "allowFreeText": true
+    },
+    {
+      "id": "abweichungszahl",
+      "title": "Das Abnahmekriterium sagt sieben Abweichungen, das kanonische `release` hat sechs",
+      "origin": { "pr": 75, "finding": "neu" },
+      "severity": "zu entscheiden",
+      "stake": "#54 verlangt, `release` weiche in genau sieben Werten vom `Game` ab. Das kanonische Blatt aus #25 weicht in sechs ab. Die Sieben kommt vermutlich aus #25s eigener Tabelle, die „davon `RankPool` 3\" als fette Zeile führt — das ist aber `boosterRate` minus `participationBooster`, ein abgeleiteter Wert und kein Feld der `Settings`.",
+      "evidence": [
+        {
+          "heading": "Die sechs Abweichungen des kanonischen `release`",
+          "text": "1  boosterRate           9   (Game: 3)\n2  participationBooster  6   (Game: 2)\n3  envelopeSize         32   (Game: 9)\n4  envelopeYield         2   (Game: 1)\n5  depthStep         'all'   (Game: 'top8')\n6  curve          'gentle'   (Game: 'mild')\n\nEin siebtes Settings-Feld ist in #25 nicht genannt.\n`players` erbt, `rankFloor` erbt, `displaySize` erbt,\n`combinedHandout` erbt — #25 Punkt 6 ausdrücklich:\n„Am Release aus … Release trägt die Vorbelegung also nicht\"."
+        }
+      ],
+      "options": [
+        {
+          "id": "kriterium-auf-sechs",
+          "label": "Das Kriterium in #54 auf sechs korrigieren",
+          "consequence": "Der Ticket-Text bekommt einen Kommentar, der die Sieben als Zählfehler ausweist und auf #25 verweist. Test und Blatt zählen dann sechs."
+        },
+        {
+          "id": "siebtes-feld",
+          "label": "Es gibt ein siebtes Feld, ich nenne es",
+          "consequence": "Sag im Feld unten, welches. Dann bleibt das Kriterium stehen und das Blatt bekommt den Wert."
+        }
+      ],
+      "allowFreeText": true
+    },
+    {
+      "id": "rafflerange",
+      "title": "`raffleRange` steht im Prototyp-Blatt, aber in keiner `Settings`-Liste",
+      "origin": { "pr": 75, "finding": "neu" },
+      "severity": "Notiz",
+      "stake": "Das `GAME` im Prototyp trägt `raffleRange: 'all'`, und #21s Tabelle führt es mit. In der `Settings`-Tabelle von #46 fehlt es, im heutigen Blatt auch — vermutlich bewusst, weil die `WinnerRaffle` erst in Spec 2 liegt. Die Frage ist nur, ob das Blatt das erwähnen soll, damit die nächste Sitzung es nicht für ein Versehen hält.",
+      "evidence": [
+        {
+          "heading": "Wo es steht und wo nicht",
+          "text": "Prototyp  cockpit.prototype.html   GAME.raffleRange = 'all'\n#21       Entscheidtabelle          Zeile vorhanden\n#46       ## Input: Settings        fehlt\n#48       Schlüsselregister         ausdrücklich ausgeschlossen,\n                                    mit Begründung am Ort\nheute     onepiece.mjs              fehlt, ohne Erwähnung"
+        }
+      ],
+      "options": [
+        {
+          "id": "im-kommentar-erwaehnen",
+          "label": "Im Blattkommentar erwähnen, warum es fehlt",
+          "consequence": "Ein Satz neben den vier nachziehenden Reglern: `raffleRange` gehört zur `WinnerRaffle` und kommt mit Spec 2, nicht ins Blatt."
+        },
+        {
+          "id": "weglassen",
+          "label": "Weglassen, ohne Erwähnung",
+          "consequence": "Bleibt wie heute. Wer es im Prototyp sieht und im Blatt vermisst, muss selbst nachsehen."
+        }
+      ],
+      "allowFreeText": true
+    }
+  ]
+}

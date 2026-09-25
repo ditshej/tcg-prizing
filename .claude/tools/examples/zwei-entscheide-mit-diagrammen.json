@@ -1,0 +1,137 @@
+{
+  "batch": "#54 · #57 · #48",
+  "date": "2026-09-25",
+  "decisions": [
+    {
+      "id": "combined-handout",
+      "title": "`CombinedHandout` verschiebt nicht, es zählt doppelt",
+      "origin": { "pr": 77, "finding": "B1" },
+      "severity": "blockierend",
+      "stake": "Bei `combinedHandout: true` tragen die Rangzeilen die Teilnahmeanteile — und `plan.participation` meldet sie unverändert weiter. Wer den Plan zusammenzählt, bekommt 40 statt 32. Der Plan trägt das Feld `combinedHandout` selbst nicht, ein Leser kann die Doppelzählung also gar nicht erkennen. Die `PreparationList` aus Spec 2 wird die erste sein, die darüber stolpert.",
+      "note": "An diesem Entscheid hängt auch die Invariantenzeile der Werkbank (`dev/bench.mjs`) — sie prüft heute Zeilensumme gegen `RankPool` und würde eine korrekte Verschiebung ebenfalls rot färben. Sie wird ohnehin nach den Merges nachgezogen.",
+      "evidence": [
+        {
+          "type": "chart",
+          "heading": "Die Summe über den Plan",
+          "chart": {
+            "kind": "stacked-bars",
+            "title": "Plansumme gegen den PrizePool von 32 Boostern",
+            "description": "Bei combinedHandout aus ergeben participation 8, judge 2 und Rangzeilen 22 zusammen 32 und enden auf der Pool-Linie. Bei an bleibt participation bei 8, die Rangzeilen steigen auf 30, und die Summe 40 ragt um 8 über die Linie hinaus — genau um den Teilnahmeanteil.",
+            "max": 42,
+            "rowsLabel": "combinedHandout",
+            "reference": { "value": 32, "label": "PrizePool 32" },
+            "series": [
+              { "key": "participation", "label": "`participation`" },
+              { "key": "judge", "label": "`judge`" },
+              { "key": "rows", "label": "Rangzeilen" }
+            ],
+            "bars": [
+              {
+                "label": "aus",
+                "segments": [
+                  { "key": "participation", "value": 8 },
+                  { "key": "judge", "value": 2 },
+                  { "key": "rows", "value": 22 }
+                ],
+                "total": "32 ✓"
+              },
+              {
+                "label": "an",
+                "segments": [
+                  { "key": "participation", "value": 8 },
+                  { "key": "judge", "value": 2 },
+                  { "key": "rows", "value": 30 }
+                ],
+                "total": "40 ✗"
+              }
+            ],
+            "brackets": [
+              { "bar": 1, "from": 0, "to": 8, "label": "participation 8" },
+              { "bar": 1, "from": 32, "to": 40, "label": "Überhang +8 — dieselbe Breite", "tone": "critical" }
+            ],
+            "overhangLegend": "Überhang über den Pool"
+          },
+          "caption": "Die Werkbank sagt dasselbe: `✗ sum rule: Σ row.booster = RankPool — 30 vs 22`",
+          "text": "combinedHandout   participation + judge + Zeilen      soll\naus               8 + 2 + 22 = 32                     32  ✓\nan                8 + 2 + 30 = 40                     32  ✗\n\nTournamentPacks:  aus 16 ✓ · an 24 ✗"
+        },
+        {
+          "heading": "Warum kein Test das gefangen hat",
+          "text": "Der Test zu Kriterium 7 vergleicht\n  Zeilensumme(an) + judge(an)\ngegen\n  participation(aus) + judge(aus) + Zeilensumme(aus)\nund lässt participation(an) auf der linken Seite weg.\nEr schreibt die gewünschte Invariante hin, statt sie am Plan zu prüfen."
+        },
+        {
+          "heading": "Der PR behauptet die Abnahme",
+          "text": "PR #77 führt Kriterium 7 in seiner Tabelle als erfüllt:\n„✓ … PrizePool-Summe bleibt gleich“"
+        }
+      ],
+      "options": [
+        {
+          "id": "participation-auf-null",
+          "label": "`participation` fällt bei `combinedHandout` auf 0",
+          "consequence": "Die Anteile stehen dann nur noch in den Zeilen. Die Summe geht auf, ohne dass der Plan etwas Neues tragen muss. Wer `participation` liest, um die Teilnahmemenge zu erfahren, bekommt 0 und muss wissen, warum."
+        },
+        {
+          "id": "plan-weist-aus",
+          "label": "Der Plan weist die Verschiebung als eigenes Feld aus",
+          "consequence": "`participation` bleibt stehen, der Plan trägt zusätzlich, dass die Anteile bereits in den Zeilen sind. Mehr Information, aber jeder Leser muss das Feld auswerten."
+        }
+      ],
+      "allowFreeText": true
+    },
+    {
+      "id": "release-kurve",
+      "title": "Das `release`-Blatt wählt `mild`, die Messung in #46 verlangt `gentle`",
+      "origin": { "pr": 75, "finding": "B6" },
+      "severity": "zu entscheiden",
+      "stake": "`## Tests` in #46 misst für „`Release` 32“ eine Zahlenreihe. Von den sieben Kurvenstufen trifft sie genau eine — `gentle`. Im Blatt steht `mild`. Alle übrigen Werte des Blattes sind durch den Treffer mitbewiesen. Die Frage darunter ist eine Lesart: Ist „`Release` 32“ als „das `release`-Blatt bei 32 Spielern“ gemeint? Das Blatt selbst sagt 64.",
+      "evidence": [
+        {
+          "type": "chart",
+          "heading": "Alle sieben Stufen gegen die Messung",
+          "chart": {
+            "kind": "small-multiples",
+            "title": "Sieben Kurvenstufen gegen die in #46 gemessene Reihe",
+            "description": "Je ein Diagramm pro Kurvenstufe, Booster je Rang für die Ränge 1 bis 15, dahinter als helle Silhouette die in #46 gemessene Reihe. Bei gentle decken sich Stufe und Silhouette vollständig. Bei den übrigen sechs ragt der vordere Teil der Reihe über die Silhouette hinaus: mild beginnt mit 11 statt 8, moderate mit 14, firm mit 17, steep mit 20, severe mit 23, extreme mit 26.",
+            "xLabel": "Rang",
+            "target": { "label": "Messung in #46 (Ziel)", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+            "matchLabel": "trifft die Messung",
+            "currentLabel": "steht heute im Blatt",
+            "contextLabel": "übrige Stufen",
+            "panels": [
+              { "label": "gentle", "tone": "match", "tag": "trifft exakt", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+              { "label": "mild", "tone": "current", "tag": "Blattwert heute", "values": [11, 8, 6, 5, 5, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2] },
+              { "label": "moderate", "values": [14, 9, 7, 5, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2] },
+              { "label": "firm", "values": [17, 10, 6, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2] },
+              { "label": "steep", "values": [20, 10, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
+              { "label": "severe", "values": [23, 9, 5, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
+              { "label": "extreme", "values": [26, 8, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] }
+            ]
+          },
+          "caption": "Gezeigt sind die Ränge 1–15. Ab Rang 16 stehen alle sieben Stufen und die Messung auf 2 — dort ist nichts mehr zu unterscheiden.",
+          "numbersLabel": "Alle sieben Stufen als Zahlen",
+          "text": "TREFFER gentle    8·6·5·5·5·4·4·4·3·3·3·3·3·3·3·2·2·…\n        mild      11·8·6·5·5·4·3·3·3·3·3·2·2·2·…       ← der Blattwert\n        moderate  14·9·7·5·4·3·3·3·2·2·2·2·2·2·…\n        firm      17·10·6·4·3·3·3·2·2·2·2·2·2·…\n        steep     20·10·5·4·3·2·2·2·2·2·2·2·2·…\n        severe    23·9·5·3·2·2·2·2·2·2·2·2·2·…\n        extreme   26·8·4·2·2·2·2·2·2·2·2·2·2·…\n\nsoll (#46)        8·6·5·5·5·4·4·4·3·3·3·3·3·3·3·2·2·…"
+        },
+        {
+          "heading": "Die Gegenprobe am zweiten Blatt",
+          "text": "`weekend` trifft seine gemessene Reihe 29·14·7·4·3·3·2·2\nauf die Ziffer, ohne jeden Override. Die Lesart\n„Blatt bei N Spielern“ ist dort also bewiesen."
+        },
+        {
+          "heading": "Eine Falle auf dem Weg",
+          "text": "`release` trägt combinedHandout: true. Dadurch ist jede Zeile\num den Teilnahmeanteil erhöht und KEINE Stufe passt. Erst mit\ncombinedHandout: false wird die Reihe vergleichbar.\nEntscheid 1 schlägt bis in diese Prüfung durch."
+        }
+      ],
+      "options": [
+        {
+          "id": "auf-gentle",
+          "label": "So lesen, `curve: 'gentle'` korrigieren",
+          "consequence": "Das Blatt reproduziert die gemessene Reihe exakt. Die Abweichungszahl bleibt bei sieben, es ändert sich ein Wert."
+        },
+        {
+          "id": "messung-gilt-nicht",
+          "label": "„`Release` 32“ meint nicht das Blatt bei 32 Spielern",
+          "consequence": "Das Blatt bleibt wie es ist, und #46 braucht eine Klarstellung, worauf sich die gemessene Reihe bezieht — sonst fällt die nächste Sitzung über dieselbe Stelle."
+        }
+      ],
+      "allowFreeText": true
+    }
+  ]
+}
