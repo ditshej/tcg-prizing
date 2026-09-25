@@ -21,16 +21,21 @@ This skill **never merges.** It stops at the findings file.
 
 ## Phase 0 — preflight
 
-1. **`main` is clean and pushed.** `git status` empty, `git log origin/main..main` empty.
-2. **The file sets are written out and proved disjoint** — see `docs/agents/fan-out.md`.
+1. **Read the run log** at the end of `docs/agents/fan-out.md` — what the last
+   runs found, and what each of them corrected here. It is short on purpose.
+   Skip it and this skill is advice; read it and it is evidence, including the
+   failures that have already recurred once. Done when you can name the class of
+   defect the previous run turned up.
+2. **`main` is clean and pushed.** `git status` empty, `git log origin/main..main` empty.
+3. **The file sets are written out and proved disjoint** — see `docs/agents/fan-out.md`.
    Write the ticket → files table into the session, compare each pair, and name
    the directories that belong to nobody. Any overlap: stop and re-cut the
    batch. Done when every pair of sets has been named and found empty.
-3. **One worktree per ticket**, with the command from the doc. Done when
+4. **One worktree per ticket**, with the command from the doc. Done when
    `git worktree list` shows one line per ticket and every pre-existing
    worktree is still on its own branch.
-4. **`git log --oneline -20`** — the commit tone goes into the briefings verbatim.
-5. **Name the cross-checks now** (Phase 5). Written down before the start, or
+5. **`git log --oneline -20`** — the commit tone goes into the briefings verbatim.
+6. **Name the cross-checks now** (Phase 5). Written down before the start, or
    they drop out at the end, when everything is green and nothing asks for
    them.
 
@@ -115,7 +120,8 @@ the session.
 For each PR, yourself:
 
 - `node --test` in that worktree.
-- `git diff --stat main..HEAD`, then read the substance of the diff.
+- `git diff --stat main...HEAD`, then read the substance of the diff. Three
+  dots here too, for the reason in `docs/agents/fan-out.md`.
 - **Recompute every acceptance number at a freshly built state**, with the
   import command in `docs/agents/fan-out.md`. Not read off the tests.
 - **Forbidden paths**, with the `grep` from the same file. Empty output.

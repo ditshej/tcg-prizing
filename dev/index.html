@@ -101,6 +101,11 @@
         width: 100%;
         font: inherit;
       }
+      .field input[type='checkbox'] {
+        grid-column: 1 / -1;
+        justify-self: start;
+        margin: 0;
+      }
       .note {
         grid-column: 1 / -1;
         font-size: 11px;
@@ -192,7 +197,7 @@
       }
       .row {
         display: grid;
-        grid-template-columns: 3.5rem 3rem minmax(0, 1fr);
+        grid-template-columns: 3.5rem 3rem 2.2rem 2.2rem minmax(0, 1fr);
         gap: 0.4rem;
         align-items: center;
         font-size: 11px;
@@ -204,6 +209,21 @@
       .row .value {
         text-align: right;
         font-variant-numeric: tabular-nums;
+      }
+      .row .packs,
+      .row .winners {
+        color: var(--dim);
+      }
+      .row .zero {
+        color: var(--line);
+      }
+      .row.head {
+        color: var(--dim);
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 0.2rem;
+      }
+      .row.head .value {
+        color: var(--dim);
       }
       .bar {
         height: 10px;
@@ -295,12 +315,23 @@
         </section>
 
         <section>
-          <h2>Booster per Rank</h2>
+          <h2>Rank rows</h2>
           <p class="barlegend">
+            Only the <code>Booster</code> gets a bar &mdash; it is the axis the
+            <code>DistributionCurve</code> shapes. <code>TournamentPacks</code> and
+            <code>WinnerPacks</code> run past it as whole counts (#57).<br />
             <span class="swatch" style="background: var(--served)"></span> served &mdash;
             <span class="swatch" style="background: var(--unserved)"></span> unserved (beyond the
-            <code>RankPoolDepth</code>)
+            <code>RankPoolDepth</code>) &mdash; the <code>RankCycle</code> and
+            <code>manual</code> reach past the depth on purpose.
           </p>
+          <div class="row head">
+            <span class="rank">Rank</span>
+            <span class="value">Boost</span>
+            <span class="value">TP</span>
+            <span class="value">WP</span>
+            <span></span>
+          </div>
           <div id="bars"></div>
         </section>
 
@@ -319,8 +350,8 @@
         <section>
           <h2>Raw DistributionPlan</h2>
           <p class="note">
-            Dumped whole, so fields added by #55&ndash;#57 show up without anyone touching the
-            bench.
+            Dumped whole, so fields added by #55 and #56 show up without anyone touching the
+            bench &mdash; that is how the fields of #57 first appeared here.
           </p>
           <pre id="raw"></pre>
         </section>
