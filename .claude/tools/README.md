@@ -15,6 +15,10 @@ radio buttons.
 node .claude/tools/fragebogen.mjs review/<name>-fragen.json
 ```
 
+The question file is written by hand or by `/ask-hard-questions`, which selects
+the decisions out of a review pass and formulates the options. The selection is
+the hard part; this tool only serves the result.
+
 It binds the first free port from 7777 upwards, prints the URL and opens it
 with `open` (set `FRAGEBOGEN_NO_OPEN=1` to suppress that). One decision per
 screen with back/forward — answers survive going back. Sending writes

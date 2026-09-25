@@ -41,7 +41,7 @@ Commit messages are written in English.
 
 ## Agent skills
 
-Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out` and `/counter-check` are ours.
+Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out`, `/counter-check` and `/ask-hard-questions` are ours.
 
 ### Building several tickets at once
 
@@ -50,6 +50,11 @@ result from the parent session, against the source rather than against the
 reports; `/counter-check` takes those findings apart again with fresh context.
 The findings file they hand each other, and the facts of the run they were
 written from, are in `docs/agents/fan-out.md`. Neither skill merges.
+
+What survives both passes as an open decision goes to `/ask-hard-questions`:
+it selects the findings only the maintainer can settle — two of eight, the
+first time — and serves those as cards through `.claude/tools/fragebogen.mjs`.
+It decides nothing either.
 
 ### From a cleared map to tickets
 

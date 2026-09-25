@@ -151,4 +151,6 @@ verschärft · abgeschwächt** — each with the evidence you ran yourself, not 
 one you were given. Then the new findings of this pass, in the findings file's
 own form so they append cleanly. Then your own honest `## Nicht geprüft`.
 
-Like `/fan-out`, this skill does not merge.
+Like `/fan-out`, this skill does not merge. The decisions that are left over —
+the ones no source settles and no agent may make alone — go to
+`/ask-hard-questions`, which selects them and serves them as cards.
