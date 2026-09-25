@@ -8,6 +8,12 @@
 # The shared configuration is `.claude/settings.json`.
 .claude/settings.local.json
 
+# Findings files from `/fan-out`, read back by `/counter-check`. They are a
+# session artifact about branches under review, not source: the moment those
+# branches merge, the file describes a state that no longer exists. What
+# survives a review belongs in the PR, the ticket or an ADR.
+review/
+
 # macOS
 .DS_Store
 
