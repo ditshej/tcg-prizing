@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { distribute } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
@@ -147,6 +148,44 @@ test('weekend deviates from the Game sheet in exactly two values', () => {
 test('release deviates from the Game sheet in exactly six values', () => {
   const release = TOURNAMENT_TYPES.find((t) => t.id === 'release');
   assert.equal(deviationCount(release), 6);
+});
+
+/**
+ * A sheet read as Settings: the Game's values, the TournamentType's deviations
+ * on top. The four trailing sliders stay `null`, which is what the core reads
+ * as "compute it" — so this is the sheet alone, no hand-placed override.
+ */
+function settingsFor(id) {
+  const type = TOURNAMENT_TYPES.find((t) => t.id === id);
+  return { ...GAME, ...type, tournamentPacks: null, depth: null, ranked: null, winnerPacks: null };
+}
+
+/** The Booster share of every served Rank, as a row of numbers. */
+function servedBoosters(plan) {
+  return plan.rows.filter((row) => row.served).map((row) => row.booster);
+}
+
+/**
+ * The measured plans of #46 (`## Tests`) and #21's resolution comment. These
+ * numbers were measured on the prototype and worked out by hand, so they are
+ * an independent standard: they say what the sheets are *for*, where the field
+ * lists above only say what shape they have. Without this test a sheet of
+ * freely invented values passes everything else — which is exactly what
+ * happened.
+ */
+test('weekly at 32 players distributes the measured 7·5·4·4·3·3·3·3', () => {
+  assert.deepEqual(servedBoosters(distribute(settingsFor('weekly'))), [7, 5, 4, 4, 3, 3, 3, 3]);
+});
+
+test('weekend at 32 players distributes the measured 29·14·7·4·3·3·2·2', () => {
+  assert.deepEqual(servedBoosters(distribute(settingsFor('weekend'))), [29, 14, 7, 4, 3, 3, 2, 2]);
+});
+
+test('release at 32 players serves all ranks, the curve running out at Rank 15', () => {
+  assert.deepEqual(
+    servedBoosters(distribute(settingsFor('release'))),
+    [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, ...new Array(17).fill(2)],
+  );
 });
 
 test('every curve and depthStep entry names a rule the core actually carries', () => {
