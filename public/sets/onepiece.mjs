@@ -12,6 +12,18 @@
  * the same reason from the other side: their starting value is a calculation
  * the core makes, not sheet data.
  *
+ * A fifth field is absent for a third reason: `raffleRange` appears in the
+ * prototype's own Game sheet and in #21's table, but not in `## Input:
+ * Settings` of #46 and not in the SetupLink key register of #48. It belongs to
+ * the WinnerRaffle and arrives with Spec 2; until then it is no Settings field
+ * and therefore no sheet entry.
+ *
+ * The values are transcribed from the resolution comments of #21 (Game and
+ * weekend, with the full sheet as a table) and #25 (release). Both say in so
+ * many words that they are written down there so the next session reads them
+ * back instead of computing them from plan numbers — the drift that made #20
+ * and #21's body come out wrong.
+ *
  * `TOURNAMENT_TYPES` is a list, not an object: its order is meaningful (ADR
  * 0003) and is not a surface sort. Each entry carries only its deviation from
  * `GAME` — the first entry is the starting choice and carries nothing besides
@@ -19,33 +31,32 @@
  */
 
 export const GAME = {
-  players: 8,
-  boosterRate: 2,
-  envelopeSize: 24,
+  players: 32,
+  boosterRate: 3,
+  envelopeSize: 9,
   envelopeYield: 1,
   displaySize: 24,
-  participationBooster: 1,
-  participationPack: 0,
+  participationBooster: 2,
+  participationPack: 1,
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
   depthStep: 'top8',
-  curve: 'steep',
+  curve: 'mild',
   combinedHandout: false,
 };
 
 export const TOURNAMENT_TYPES = [
   { id: 'weekly', title: 'Weekly' },
-  { id: 'weekend', title: 'Weekend', players: 32, boosterRate: 3 },
+  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'steep' },
   {
     id: 'release',
     title: 'Release',
-    players: 64,
-    boosterRate: 4,
-    envelopeSize: 36,
+    boosterRate: 9,
+    participationBooster: 6,
+    envelopeSize: 32,
     envelopeYield: 2,
     depthStep: 'all',
-    curve: 'mild',
-    combinedHandout: true,
+    curve: 'gentle',
   },
 ];

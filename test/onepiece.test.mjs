@@ -37,22 +37,65 @@ const PRESETTABLE_FIELDS = [
 const NEVER_PRESET = ['displays', 'manualWinner'];
 const TRAILING_SLIDERS = ['tournamentPacks', 'depth', 'ranked', 'winnerPacks'];
 
-test('the Game sheet names every presettable variable from #46, including the expected player count', () => {
-  for (const field of PRESETTABLE_FIELDS) {
-    assert.ok(
-      Object.hasOwn(GAME, field),
-      `Game sheet is missing '${field}' — an incomplete Game is a bug, not a runtime fallback (ADR 0003)`,
-    );
-  }
-  assert.ok(Object.hasOwn(GAME, 'players'), 'the expected player count belongs on the Game sheet');
+/**
+ * The Game sheet's values, transcribed from the resolution comment of #21 —
+ * which spells the sheet out in full precisely so the next session reads it
+ * back instead of recomputing it from plan numbers.
+ */
+const EXPECTED_GAME = {
+  players: 32,
+  boosterRate: 3,
+  envelopeSize: 9,
+  envelopeYield: 1,
+  displaySize: 24,
+  participationBooster: 2,
+  participationPack: 1,
+  judgeBooster: 0,
+  judgeWinner: 0,
+  rankFloor: 2,
+  depthStep: 'top8',
+  curve: 'mild',
+  combinedHandout: false,
+};
+
+/**
+ * The deviations of each TournamentType, transcribed from #21 (weekend) and
+ * the resolution comment of #25 (release). `release` inherits `players`,
+ * `rankFloor`, `displaySize` and `combinedHandout` — #25 point 6 is explicit
+ * that a Release does not carry the CombinedHandout preset.
+ */
+const EXPECTED_TYPES = [
+  { id: 'weekly', title: 'Weekly' },
+  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'steep' },
+  {
+    id: 'release',
+    title: 'Release',
+    boosterRate: 9,
+    participationBooster: 6,
+    envelopeSize: 32,
+    envelopeYield: 2,
+    depthStep: 'all',
+    curve: 'gentle',
+  },
+];
+
+/**
+ * The completeness test compares the **whole** field list with deepEqual, the
+ * pattern `test/link-keys.test.mjs` uses for the SetupLink register (#48). An
+ * `every(hasOwn)` over the same list would pass by construction: shortening
+ * the list shortens the standard it is measured against, and two mistakes
+ * cover for each other (the trap named in #54's comment from #53).
+ */
+test('the Game sheet names every presettable variable from #46, in the order the spec lists them', () => {
+  assert.deepEqual(Object.keys(GAME), PRESETTABLE_FIELDS);
 });
 
-test('the completeness check fails as soon as a presettable variable is missing on the Game level', () => {
-  const { curve, ...incomplete } = GAME;
-  assert.ok(
-    PRESETTABLE_FIELDS.some((field) => !Object.hasOwn(incomplete, field)),
-    'removing a presettable field must be visible to the completeness check',
-  );
+test('the Game sheet carries the values #21 wrote down, not values computed back from a plan', () => {
+  assert.deepEqual(GAME, EXPECTED_GAME);
+});
+
+test('each TournamentType carries the deviations #21 and #25 wrote down, and nothing else', () => {
+  assert.deepEqual(TOURNAMENT_TYPES, EXPECTED_TYPES);
 });
 
 test('no sheet presets displays or the manual share of the WinnerPackAllocation — they always start neutral', () => {
@@ -94,9 +137,16 @@ test('weekend deviates from the Game sheet in exactly two values', () => {
   assert.equal(deviationCount(weekend), 2);
 });
 
-test('release deviates from the Game sheet in exactly seven values', () => {
+/**
+ * #54's acceptance criterion says seven. It is a miscount: #25's table lists
+ * `davon RankPool 3` as a row of its own, but that is `boosterRate` minus
+ * `participationBooster`, a derived number and not a Settings field. The six
+ * deviating fields are `boosterRate`, `participationBooster`, `envelopeSize`,
+ * `envelopeYield`, `depthStep` and `curve`.
+ */
+test('release deviates from the Game sheet in exactly six values', () => {
   const release = TOURNAMENT_TYPES.find((t) => t.id === 'release');
-  assert.equal(deviationCount(release), 7);
+  assert.equal(deviationCount(release), 6);
 });
 
 test('every curve and depthStep entry names a rule the core actually carries', () => {
