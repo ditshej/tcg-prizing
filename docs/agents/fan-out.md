@@ -138,6 +138,17 @@ Two sections carry more than they look like:
   first. Left empty to look tidy, it hides precisely the region nobody has
   looked at.
 
+## Where the round ends
+
+The findings file is a waypoint, not a result. What is still open after
+`/counter-check` goes to `/ask-hard-questions`, which selects the decisions only
+the maintainer can make and serves them as cards
+(`.claude/tools/README.md`). The answer file lands beside the question file in
+`review/` — which is gitignored, so the round is closed only once each answer
+has been written into the ticket comment, the ADR or `CONTEXT.md` it will be
+looked up from later. A decision that stays in `review/` is a decision the next
+session back-computes.
+
 ## Run log
 
 **Append three lines per run, and read this before starting one.** A skill that

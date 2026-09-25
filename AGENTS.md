@@ -49,12 +49,25 @@ Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and 
 result from the parent session, against the source rather than against the
 reports; `/counter-check` takes those findings apart again with fresh context.
 The findings file they hand each other, and the facts of the run they were
-written from, are in `docs/agents/fan-out.md`. Neither skill merges.
+written from, are in `docs/agents/fan-out.md`.
 
-What survives both passes as an open decision goes to `/ask-hard-questions`:
-it selects the findings only the maintainer can settle — two of eight, the
-first time — and serves those as cards through `.claude/tools/fragebogen.mjs`.
-It decides nothing either.
+The whole round, and not one of the three skills merges or decides:
+
+```
+/fan-out → /counter-check → /ask-hard-questions → the maintainer answers
+         → the answers are filed → the next /fan-out builds them
+```
+
+`/ask-hard-questions` selects the findings only the maintainer can settle — two
+of eight, the first time — and serves those as cards through
+`.claude/tools/fragebogen.mjs`.
+
+**Filing the answers closes the round, and it is a session's job, not the
+tool's.** `review/` is gitignored, so a decision left sitting in the answer file
+is gone at the next merge — and the session after it will derive the value
+again instead of looking it up. Each answer goes where the next lookup will
+find it: the ticket comment, an ADR, or `CONTEXT.md`. Only then is there
+anything for the next `/fan-out` to build.
 
 ### From a cleared map to tickets
 

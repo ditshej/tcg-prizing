@@ -24,7 +24,10 @@ serves, and stops.
   `/counter-check` report where one exists.
 - **Output:** `review/<batch>-fragen.json`, then a running server and a URL.
 - **Not yours:** `review/<batch>-antworten.json`. The maintainer writes it by
-  answering; acting on it is the next session's work.
+  answering; acting on it is the next session's work — and that session's first
+  move is to **file each answer** in the ticket comment, the ADR or
+  `CONTEXT.md`, because `review/` is gitignored and a decision left there is
+  gone at the next merge (`AGENTS.md`, "Building several tickets at once").
 
 The file format, the two chart kinds, and the rule that a numeric piece of
 evidence is asked about its **form** before its formatting, live in
