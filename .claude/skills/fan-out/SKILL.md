@@ -157,4 +157,5 @@ caught up once they are in.
 
 The skill is resumable here: if the maintainer says go on, hand over to
 `/counter-check` — in a fresh session, never as a fork of this one. That does
-not happen by itself.
+not happen by itself. The open decisions of either pass are then
+`/ask-hard-questions`'s input.

@@ -41,7 +41,7 @@ Commit messages are written in English.
 
 ## Agent skills
 
-Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out` and `/counter-check` are ours.
+Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out`, `/counter-check` and `/ask-hard-questions` are ours.
 
 ### Building several tickets at once
 
@@ -49,7 +49,25 @@ Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and 
 result from the parent session, against the source rather than against the
 reports; `/counter-check` takes those findings apart again with fresh context.
 The findings file they hand each other, and the facts of the run they were
-written from, are in `docs/agents/fan-out.md`. Neither skill merges.
+written from, are in `docs/agents/fan-out.md`.
+
+The whole round, and not one of the three skills merges or decides:
+
+```
+/fan-out → /counter-check → /ask-hard-questions → the maintainer answers
+         → the answers are filed → the next /fan-out builds them
+```
+
+`/ask-hard-questions` selects the findings only the maintainer can settle — two
+of eight, the first time — and serves those as cards through
+`.claude/tools/fragebogen.mjs`.
+
+**Filing the answers closes the round, and it is a session's job, not the
+tool's.** `review/` is gitignored, so a decision left sitting in the answer file
+is gone at the next merge — and the session after it will derive the value
+again instead of looking it up. Each answer goes where the next lookup will
+find it: the ticket comment, an ADR, or `CONTEXT.md`. Only then is there
+anything for the next `/fan-out` to build.
 
 ### From a cleared map to tickets
 
