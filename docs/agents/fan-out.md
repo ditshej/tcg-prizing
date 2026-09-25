@@ -40,6 +40,12 @@ A directory several tickets would touch is already an overlap. The pattern is
 **forbid it to everyone and catch it up afterwards**, never split it. `dev/`
 is the standing case.
 
+**The parent counts as a writer.** This rule is not only about the agents: a
+working tree with an agent in it is spoken for, and a parent that commits from
+the same one moves the shared HEAD under it. That holds even when there is a
+single agent — see run 3. So the parent either hands out a worktree per agent
+and keeps the root for itself, or it stops committing until they return.
+
 One worktree per ticket:
 
 ```sh
@@ -168,3 +174,19 @@ counter-check found one wrong curve value, and the maintainer recognised it as
 a symptom — the values had all been decided long before, in #21 and #25, and
 the sheet had been derived rather than read. No lens found that. See
 `AGENTS.md`, "A decided number is looked up, never back-computed".
+
+### Run 3 · 2026-09-25 · the workbench catch-up · one Opus agent
+
+One agent, and the rule it broke was mine. The agent was pointed at the repo
+root — the same working tree the parent was committing from. Its `checkout -b`
+moved the shared HEAD, and the parent's next `git add -A` swept the agent's
+open files and three throwaway screenshots into a commit about something else.
+Nothing was lost and `main` was never touched, but the branch had to be rebuilt
+from its own tip to get a readable history.
+
+**"One worktree per ticket" was already written down.** It failed because the
+parent did not count itself among the participants: the rule reads as being
+about the agents, and a single agent looks like a case it does not cover. It
+covers every run with more than one writer, and the parent is always a writer.
+A single agent still gets its own tree — or the parent stops committing until
+it returns.
