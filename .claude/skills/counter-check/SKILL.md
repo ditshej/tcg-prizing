@@ -20,7 +20,29 @@ whole value is the independence. If the only way to start is a fork, stop and
 say so instead of running a pass that can only confirm.
 
 Read `## Nicht geprüft` first. It is the map of where nobody has looked, and it
-is the only part of the file that tells you where to spend the pass.
+tells you where to spend the pass.
+
+Then read `## Quellen, gegen die geprüft wurde` — **the second map, and the one
+that does not announce itself.** A gap in `## Nicht geprüft` is declared; a
+source the first pass never opened is invisible, and every number it derived
+will still check out. In the first run this sank a whole finding: the parent
+had read a spec's settings table and its pool section, filed a contradiction
+between ticket and spec, and the formula it called missing stood spelled out in
+a third section two screens down. Every number in that finding was right. Ask
+of each finding: which section of the source would settle this, and is it in
+the list?
+
+## Nothing here is repaired, and nothing is left turned
+
+You check; you do not fix. The branches under review stay untouched, and so
+does `main`.
+
+Mutation testing turns the implementation wrong on purpose, so it is the one
+move in this skill that can do damage. Copy the file aside, mutate, run, copy
+back — `git checkout -- <file>` is on this machine's deny list and `git stash`
+leaves an entry behind when the pass is interrupted. Before you report, run
+`git status` in every worktree you touched and say that it is clean. Stop any
+server you started.
 
 ## Lens 1 — reproduce each finding, or refute it
 
@@ -53,20 +75,46 @@ The move against this is hand-made mutation testing: **turn the implementation
 wrong and see whether the test goes red.** A test that stays green checks
 nothing. Do this where an acceptance criterion hangs, not across the board.
 
-Done when every acceptance criterion has one mutation run against it, with the
-mutation and the test's colour written down.
+Budget for this: the first run had eighteen criteria across three tickets, and
+this was the longest part of the pass, not an appendix to lens 1.
+
+A criterion no test can carry — two rewritten table rows, an ADR addendum —
+gets **a written nil return, not a mutation**, the same way the visual pass
+does. Inventing a mutation for a documentation criterion produces a result that
+means nothing.
+
+Done when every acceptance criterion has either one mutation with the test's
+colour written down, or a nil return saying why none applies.
 
 ## Lens 3 — what the first pass never looked at
 
-Driven by `## Nicht geprüft`, plus whatever the first two lenses opened up. New
-findings go into the same form as the findings file, so they can be appended.
+Driven by `## Nicht geprüft` and `## Quellen`, plus whatever the first two
+lenses opened up. New findings go into the same form as the findings file, so
+they can be appended.
+
+This lens has a method, and it is the one no single agent in the fan-out could
+ever run: **count the ticket pairs that read the same place in the source, and
+cross one against the other.** They are enumerable before you start. The parent
+session crosses the pairs it thought of; the pairs it did not think of are
+where the defects sit. In the first run the parent crossed the key register
+against the data sheet and found them sound — crossing the *sheet* against the
+*core*, a pair nobody had named, produced the batch's one undiscovered defect
+in a single command. One Node process, absolute imports from two worktrees.
 
 ## The visual pass — conditional, not obligatory
 
 Renderable in this repo today is **exactly one file**: `dev/index.html`. Start
-the server from the repo root, `python3 -m http.server 8000`, then
-<http://localhost:8000/dev/>. `public/` holds only `core/*.mjs` and no HTML.
-Playwright MCP is available.
+the server from the root of the working tree, `python3 -m http.server <port>`,
+then `http://localhost:<port>/dev/`. Pick a free port rather than the 8000 from
+`dev/README.md`; a second pass beside a running server collides silently.
+`public/` holds only `core/*.mjs` and no HTML. Playwright MCP is available.
+
+**A finding is not looked at here, it is reproduced here.** The bench has a
+slider only for what the core already read when it was built, so a field a
+ticket just added has none — the way in is the settings JSON field, which takes
+the finding's fixture verbatim. Load the fixture, then read the invariant line.
+Without this the pass photographs an untouched page, which is the failure the
+last paragraph of this section is about.
 
 The workbench is real evidence when the core changed: it imports `public/core/`
 live, prints a **raw dump of the whole `DistributionPlan` as JSON** — so fields

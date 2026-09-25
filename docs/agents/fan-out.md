@@ -14,7 +14,7 @@ quotes comes from it.
 | Ticket | What it built            | Worktree                 | Branch                      | Files it owned                                                                     | PR  |
 | ------ | ------------------------ | ------------------------ | --------------------------- | ---------------------------------------------------------------------------------- | --- |
 | #54    | the `DefaultSet` sheets  | `../tcg-prizing-54`      | `feat/54-defaultset-blaetter` | `public/sets/onepiece.mjs`, `test/onepiece.test.mjs`                               | #75 |
-| #57    | the indivisible axes     | `../tcg-prizing-57`      | `feat/57-unteilbare-achsen`   | `public/core/distribute.mjs`, `public/core/rules.mjs`, `test/distribute.test.mjs`   | #77 |
+| #57    | the indivisible axes     | `../tcg-prizing-57`      | `feat/57-unteilbare-achsen`   | `public/core/*`, of which it changed `distribute.mjs` and `test/distribute.test.mjs` | #77 |
 | #48    | the v1 key register      | `../tcg-prizing-48`      | `feat/48-schluesselregister`  | `public/link/encode.mjs`, `test/link-keys.test.mjs`, `docs/agents/setup-link.md`, `docs/adr/0007-*` | #76 |
 
 Three Sonnet agents, one message, three PRs. What it produced, and what each
@@ -67,10 +67,19 @@ and turned up the two findings the suites were blind to.
 The forbidden paths are checked the same way, mechanically:
 
 ```sh
-git diff --name-only main..HEAD | grep -E 'dev/|\.claude/skills/|\.agents/skills/'
+git diff --name-only main...HEAD | grep -E 'dev/|\.claude/skills/|\.agents/skills/'
 ```
 
 Empty output is the pass. Add the other agents' files to the pattern.
+
+**Three dots, not two.** `main..HEAD` asks what differs between the two tips,
+so everything that landed on `main` after the branch was cut counts as the
+branch's doing. The batch of 2026-09-24 ran while four commits landed on
+`main`, and the two-dot form accused all three branches of touching
+`.claude/skills/` — the very pattern whose breach is supposed to stop the run.
+`main...HEAD` asks what the branch added since it forked, which is the
+question. The wrong form only ever over-reports, so it is not a breach that
+slips through; it is a check that gets waved away on the second run.
 
 ## The findings file
 
