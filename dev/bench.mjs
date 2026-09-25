@@ -27,7 +27,9 @@ import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
 /**
  * A neutral Settings object. Every field the app will eventually carry is
  * listed, so a dumped JSON stays loadable once more of them are read; the
- * bench only exposes controls for the ones `distribute` reads today.
+ * bench only exposes controls for the ones `distribute` reads today. Since
+ * #57 that is all of them — the last stand that had to be pasted in as JSON
+ * because no control existed was a `combinedHandout` one.
  */
 function neutralSettings() {
   return {
@@ -76,9 +78,41 @@ const CONTROLS = [
     max: 128,
     nullable: 'trailing (= Players)',
   },
+  {
+    key: 'envelopeSize',
+    label: 'PromoEnvelope · TournamentPacks per envelope',
+    kind: 'range',
+    min: 1,
+    max: 64,
+  },
+  {
+    key: 'envelopeYield',
+    label: 'PromoEnvelope · WinnerPacks per envelope',
+    kind: 'range',
+    min: 1,
+    max: 8,
+    note: 'At a yield of 1 the staffel is exactly the old single two-thirds threshold.',
+  },
+  {
+    key: 'winnerPacks',
+    label: 'WinnerPacks',
+    kind: 'range',
+    min: 0,
+    max: 64,
+    nullable: 'trailing (= the envelope staffel)',
+    note: 'The staffel binds the starting value, not the amount (#29).',
+  },
   { key: 'participationBooster', label: 'ParticipationPool · Booster per Player', kind: 'range', min: 0, max: 12 },
   { key: 'participationPack', label: 'ParticipationPool · TournamentPacks per Player', kind: 'range', min: 0, max: 12 },
   { key: 'judgeBooster', label: 'JudgePool · Booster (absolute)', kind: 'range', min: 0, max: 96 },
+  {
+    key: 'judgeWinner',
+    label: 'JudgePool · WinnerPacks (absolute)',
+    kind: 'range',
+    min: 0,
+    max: 24,
+    note: 'Shortens the automatic prefix instead of eating into `open` (#29).',
+  },
   { key: 'rankFloor', label: 'RankFloor', kind: 'range', min: 0, max: 12 },
   {
     key: 'depth',
@@ -116,6 +150,27 @@ const CONTROLS = [
     label: 'DisplayReservation vector',
     kind: 'list',
     note: 'Comma-separated Displays per Rank. Today this only moves depthCap — the rank rows ignore it until #55.',
+  },
+  {
+    key: 'ranked',
+    label: 'WinnerPackAllocation · ranked prefix',
+    kind: 'range',
+    min: 0,
+    max: 64,
+    nullable: 'trailing (= ⌊RankPool WinnerPacks / 2⌋ + 1)',
+    note: 'Moves the RankCycle too: it starts at the first Rank after the prefix.',
+  },
+  {
+    key: 'manualWinner',
+    label: 'WinnerPackAllocation · manual',
+    kind: 'map',
+    note: '`Rank:count` pairs, e.g. 1:2, 5:1. Free over the whole Ranking, independent of the depth.',
+  },
+  {
+    key: 'combinedHandout',
+    label: 'CombinedHandout',
+    kind: 'check',
+    note: 'Shifts the participation shares into the rank rows instead of adding them — on the Pool level and in the rows at once.',
   },
 ];
 
@@ -190,6 +245,10 @@ const PRESETS = [
  * The invariants, checked on every change. A broken one is shown and named,
  * never smoothed over: the `boosterRate` 0 stand really does hand out 3·2·2
  * from a RankPool of 0, and seeing that is the point of the bench (#56).
+ *
+ * There is deliberately no sum rule on the WinnerPacks: the rule binds the Pool
+ * level, not the recipient level, and a WinnerPack left `open` violates
+ * nothing (#46).
  */
 const INVARIANTS = [
   {
@@ -197,6 +256,28 @@ const INVARIANTS = [
     check: (plan) => {
       const sum = plan.rows.reduce((a, row) => a + row.booster, 0);
       return { held: sum === plan.rank.booster, detail: `${sum} vs ${plan.rank.booster}` };
+    },
+  },
+  // The rule at the plan's own level, on both divisible-by-Rank axes. Its
+  // absence is what let the double count through: while CombinedHandout copied
+  // the participation shares into the rows and left them in the pool as well,
+  // `Σ row = RankPool` still held on its own — the RankPool had grown by the
+  // same amount. Only the sum against the PrizePool catches that.
+  {
+    name: 'sum rule: participation + judge + Σ rows = PrizePool · Booster',
+    check: (plan) => {
+      const sum =
+        plan.participation.booster + plan.judge.booster + plan.rows.reduce((a, row) => a + row.booster, 0);
+      return { held: sum === plan.pool.booster, detail: `${sum} vs ${plan.pool.booster}` };
+    },
+  },
+  {
+    name: 'sum rule: participation + judge + Σ rows = PrizePool · TournamentPacks',
+    check: (plan) => {
+      // The JudgePool never touches TournamentPacks, so its term is 0 by
+      // construction and the plan carries no field for it.
+      const sum = plan.participation.packs + (plan.judge.packs ?? 0) + plan.rows.reduce((a, row) => a + row.packs, 0);
+      return { held: sum === plan.pool.packs, detail: `${sum} vs ${plan.pool.packs}` };
     },
   },
   {
@@ -242,11 +323,24 @@ function negativesIn(value, path = 'plan', out = []) {
 const DERIVED = [
   ['PrizePool · Booster', (p) => p.pool.booster],
   ['PrizePool · TournamentPacks', (p) => p.pool.packs],
+  ['PrizePool · WinnerPacks', (p) => p.pool.winners],
+  ['WinnerPacks · staffel value (auto)', (p) => p.pool.winnersDerived],
+  ['PromoEnvelope · opened packs', (p) => p.pool.opened],
+  ['PromoEnvelope · partial yield', (p) => p.pool.partialYield],
+  ['PromoEnvelope · thresholds', (p) => p.pool.thresholds.join('·')],
+  ['CombinedHandout', (p) => String(p.combinedHandout)],
   ['ParticipationPool · Booster', (p) => p.participation.booster],
   ['ParticipationPool · TournamentPacks', (p) => p.participation.packs],
+  ['ParticipationPool · rate (Booster / Packs)', (p) => `${p.participation.rate.booster} / ${p.participation.rate.packs}`],
   ['JudgePool · Booster', (p) => p.judge.booster],
+  ['JudgePool · WinnerPacks', (p) => p.judge.winners],
   ['RankPool · Booster', (p) => p.rank.booster],
   ['RankPool · TournamentPacks', (p) => p.rank.packs],
+  ['RankPool · WinnerPacks', (p) => p.rank.winners],
+  ['WinnerPackAllocation · ranked', (p) => p.allocation.ranked],
+  ['WinnerPackAllocation · rankedAuto', (p) => p.allocation.rankedAuto],
+  ['WinnerPackAllocation · manualCount', (p) => p.allocation.manualCount],
+  ['WinnerPackAllocation · open', (p) => p.allocation.open],
   ['RankPoolDepth', (p) => p.depth],
   ['depthCap', (p) => p.depthCap],
   ['depthStepValue', (p) => p.depthStepValue],
@@ -297,6 +391,13 @@ function buildControls() {
       input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'e.g. 1,0,0';
+    } else if (control.kind === 'map') {
+      input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'e.g. 1:2, 5:1';
+    } else if (control.kind === 'check') {
+      input = document.createElement('input');
+      input.type = 'checkbox';
     } else {
       input = document.createElement('input');
       input.type = 'range';
@@ -334,6 +435,10 @@ function buildControls() {
     input.addEventListener('input', () => {
       if (control.kind === 'list') {
         settings[control.key] = parseVector(input.value);
+      } else if (control.kind === 'map') {
+        settings[control.key] = parseRankMap(input.value);
+      } else if (control.kind === 'check') {
+        settings[control.key] = input.checked;
       } else if (control.kind === 'select') {
         settings[control.key] = input.value;
       } else {
@@ -356,6 +461,25 @@ function parseVector(text) {
     .split(/[\s,]+/)
     .filter((part) => part !== '')
     .map((part) => Math.max(0, Math.trunc(Number(part)) || 0));
+}
+
+/** `Rank:count` pairs for the manual WinnerPacks, e.g. `1:2, 5:1`. */
+function parseRankMap(text) {
+  const map = {};
+  for (const pair of text.split(/[\s,]+/).filter((part) => part !== '')) {
+    const [rankText, countText] = pair.split(':');
+    const rank = Math.trunc(Number(rankText));
+    const count = Math.trunc(Number(countText ?? 1));
+    if (Number.isFinite(rank) && rank >= 1 && Number.isFinite(count) && count > 0) map[rank] = count;
+  }
+  return map;
+}
+
+/** The same pairs written back out, so the field survives a preset or a JSON load. */
+function formatRankMap(map) {
+  return Object.entries(map ?? {})
+    .map(([rank, count]) => `${rank}:${count}`)
+    .join(', ');
 }
 
 function buildPresets() {
@@ -404,12 +528,25 @@ function syncControls() {
       control.output.textContent = `${(value ?? []).length} Rank(s)`;
       continue;
     }
+    if (control.kind === 'map') {
+      if (document.activeElement !== control.input) control.input.value = formatRankMap(value);
+      const count = Object.values(value ?? {}).reduce((a, b) => a + b, 0);
+      control.output.textContent = `${count} WinnerPack(s)`;
+      continue;
+    }
+    if (control.kind === 'check') {
+      control.input.checked = !!value;
+      control.output.textContent = value ? 'on' : 'off';
+      continue;
+    }
     if (control.kind === 'select') {
       control.input.value = value;
       control.output.textContent = '';
       continue;
     }
-    if (control.key === 'depth') control.input.max = String(settings.players);
+    if (control.key === 'depth' || control.key === 'ranked') {
+      control.input.max = String(settings.players);
+    }
     const trailing = value == null;
     if (control.toggle) control.toggle.checked = !trailing;
     if (!trailing) control.input.value = String(value);
@@ -419,6 +556,15 @@ function syncControls() {
   }
 }
 
+/**
+ * One line per Rank. Only the Booster gets a bar: it is the divisible axis, the
+ * one the DistributionCurve shapes, and the only one whose shape is worth
+ * looking at. TournamentPacks and WinnerPacks arrive as small whole counts —
+ * 0, 1, 2 — from the RankCycle and the WinnerPackAllocation, which run past the
+ * curve entirely (#57). A bar of one pixel next to a bar of ninety would say
+ * nothing; two more number columns say it exactly, and a zero is dimmed so the
+ * eye finds where an axis actually reaches.
+ */
 function renderBars(plan) {
   const peak = Math.max(1, ...plan.rows.map((row) => row.booster));
   el.bars.replaceChildren(
@@ -428,16 +574,21 @@ function renderBars(plan) {
       const rank = document.createElement('span');
       rank.className = 'rank';
       rank.textContent = `Rank ${row.rank}`;
-      const value = document.createElement('span');
-      value.className = 'value';
-      value.textContent = String(row.booster);
       const bar = document.createElement('div');
       bar.className = 'bar';
       bar.style.width = `${(row.booster / peak) * 100}%`;
-      line.append(rank, value, bar);
+      line.append(rank, count(row.booster, 'booster'), count(row.packs, 'packs'), count(row.winners, 'winners'), bar);
       return line;
     }),
   );
+}
+
+/** One numeric column of a rank row; a zero is dimmed rather than hidden. */
+function count(value, axis) {
+  const span = document.createElement('span');
+  span.className = value === 0 ? `value ${axis} zero` : `value ${axis}`;
+  span.textContent = String(value);
+  return span;
 }
 
 function renderDerived(plan) {
