@@ -93,3 +93,29 @@ eingebautem Runner.
 Vorrangkette — steht in JavaScript, nicht in der Sprache, die der Maintainer am
 besten liest. PHP bleibt das Zusammensetzen von Text. Das ist der bewusst
 getragene Preis dafür, dass die Regler ohne Verzögerung antworten.
+
+## Nachtrag (#62): die Schale bekommt einen zweiten, schmalen geprüften Rand
+
+Spec 2 (#61) baut auf dieser Naht auf und braucht eine zweite, kleinere: die
+Schale selbst rechnet zweierlei, und nur eines davon braucht ein DOM.
+
+**Geprüft wird ab jetzt nicht mehr nur der Kern, sondern der Kern und die
+reinen Ableitungen der Schale.** Für #62 sind das die Geometrie des
+Kachelfensters — wie viele Kachelspalten eine gemessene Breite trägt — und der
+gerechnete Deckel des Diagramms (`public/ui/geometry.mjs`, geprüft unter
+`test/ui-geometry.test.mjs`). Spätere Tickets tragen hierher nach, was #61s
+Testing Decisions zusätzlich als reine Ableitung ausweist — die Faltung in
+voller Breite, die `PreparationList`-Zerlegung, `rafflePot`.
+
+**Die Schale behält daneben einen ungeprüften Messrand**, bewusst dünn
+gehalten: er liest `clientWidth`/`clientHeight` und vergleichbare Masse aus dem
+DOM und schreibt CSS-Grössen, sonst nichts (`public/ui/measure.mjs`). Dieselbe
+Bauart wie die Empfehlung, die dieses ADR oben für `readLocation`/
+`writeLocation` (#47) skizziert: ein schmaler ungeprüfter Streifen, damit alles
+darunter geprüft werden kann, statt dass Falt- und Deckel-Arithmetik ungeprüft
+mitten im Renderer stünde.
+
+**Das ist kein Stempel und kein ADR 0008** — dieselbe Präzedenz wie die
+Nachträge in ADR 0003, ADR 0006, ADR 0007 und der Signatur-Nachtrag oben in
+diesem Dokument: eine Naht, an derselben Stelle geschärft, bleibt dasselbe
+Dokument.
