@@ -17,6 +17,7 @@ import { distribute } from '../core/distribute.mjs';
 import { CURVES } from '../core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { attachMeasuring } from './measure.mjs';
+import { rankSegments } from './diagram.mjs';
 
 /**
  * The starting Settings: the Game's complete sheet, overridden by the first
@@ -104,23 +105,15 @@ export function planApp() {
 
     /**
      * The diagram's three segments as a percentage of `maxBooster`, bottom to
-     * top: Reservation, floor, shaped rest (#62 AC 7).
-     *
-     * `row.reservation` and `row.settled` do not exist on today's
-     * DistributionPlan — `distribute()`'s own header comment says the
-     * DisplayReservation and its settlement "are not here yet" (#55). Both
-     * default away here (`?? 0` / `?? false`) rather than being reconstructed
-     * from `settings.displays` in the shell, which would be exactly the
-     * "nachrechnen" the ticket rules out. See the PR description: this is the
-     * ticket's one genuine data gap, not a shortcut taken lightly.
+     * top: Reservation, floor, shaped rest (#62 AC 7). The raw arithmetic —
+     * which field to read, the settled branch, the shaping itself — lives in
+     * `rankSegments()` (`diagram.mjs`), on the tested side of the seam; this
+     * method only scales that result for the bar height.
      */
     segments(row) {
-      const reservation = row.reservation ?? 0;
-      const settled = row.settled ?? false;
-      const floor = settled ? 0 : row.floor;
-      const shaped = Math.max(0, row.booster - row.floor - reservation);
+      const raw = rankSegments(row);
       const scale = (value) => (value / this.maxBooster) * 100;
-      return { reservation: scale(reservation), floor: scale(floor), shaped: scale(shaped) };
+      return { reservation: scale(raw.reservation), floor: scale(raw.floor), shaped: scale(raw.shaped) };
     },
 
     /**
