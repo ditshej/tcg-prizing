@@ -69,7 +69,7 @@
 
     <label class="plan-control">
       <span>RankPoolDepth (<span x-text="plan.depth"></span> of <span x-text="plan.depthCap"></span>)</span>
-      <input type="range" min="1" :max="plan.depthCap" :value="plan.depth"
+      <input type="range" min="1" :max="plan.players" :value="plan.depth"
              @input="setDepth($event.target.value)">
     </label>
 
