@@ -1,0 +1,231 @@
+/*
+ * The Plan screen's own styling (#62). Static layout — everything that
+ * changes with the plan is data, never a class this file has to add. The
+ * two variables written by the measuring rind (`measure.mjs`) are the only
+ * numbers this file does not own outright: `--plan-columns` and
+ * `--diagram-height`.
+ */
+
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: light-dark(#f6f4ef, #14120f);
+  color: light-dark(#14120f, #f0ece2);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.plan-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 8px 0;
+}
+
+.plan-head,
+.plan-handout,
+.plan-diagram,
+.plan-legend,
+.plan-rest,
+.plan-ranktotal {
+  flex: 0 0 auto; /* the fixed parts never shrink; only .plan-grid may */
+}
+
+.plan-head h1 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.plan-type {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.plan-output {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.plan-handout {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.plan-diagram {
+  height: var(--diagram-height, 120px);
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.plan-diagram .bar {
+  flex: 1 1 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 1px;
+}
+
+.plan-diagram .bar-unserved {
+  opacity: 0.35;
+}
+
+.seg-reservation {
+  background: light-dark(#8a5cf6, #a98bff);
+}
+
+.seg-floor {
+  background: light-dark(#c9a24b, #e0bd6a);
+}
+
+.seg-shaped {
+  background: light-dark(#3f7a5e, #5fae87);
+}
+
+.plan-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.plan-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.plan-grid {
+  flex: 1 1 auto;
+  min-height: 113px; /* the two-row master floor, MIN_ROWS in geometry.mjs */
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--plan-columns, 6), 54px);
+  gap: 5px;
+  justify-content: center;
+  align-content: start;
+  padding-bottom: 4px;
+}
+
+.tile {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 6px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-unserved {
+  opacity: 0.45;
+}
+
+.tile-rank {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 0.6rem;
+  opacity: 0.6;
+}
+
+.tile-booster {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mark {
+  position: absolute;
+  font-size: 0.55rem;
+  line-height: 1;
+}
+
+.mark.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.mark.circle {
+  min-width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.mark-winner {
+  top: 3px;
+  right: 3px;
+  background: #c9a24b;
+}
+
+.mark-pack {
+  bottom: 3px;
+  right: 3px;
+  background: #3f7a5e;
+}
+
+.plan-ranktotal {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.plan-rest {
+  margin: 0;
+  padding: 4px 0 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.plan-controls {
+  flex: 0 0 auto;
+  display: grid;
+  /* One row where the width allows it, two where it doesn't — the same rule
+     that keeps the tile grid from needing an `if` on the fold, applied to
+     the one other place this ticket's own fixed strip is taller than the
+     footer nav the spec's flat-stage math assumed (that nav is later
+     tickets' work; these are four real controls). */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px 16px;
+  padding: 6px 8px;
+  border-top: 1px solid light-dark(#ddd6c8, #37322a);
+  background: light-dark(#efece3, #1b1812);
+}
+
+.plan-control {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 2px;
+}
+
+.plan-control input,
+.plan-control select {
+  width: 100%;
+}
