@@ -2,11 +2,36 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { derivePool, distribute } from '../public/core/distribute.mjs';
+import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
- * A neutral Settings object, built by hand — the DefaultSet sheets do not
- * exist yet (#54). Everything that would come from a sheet is spelled out at
- * the call site, so a test reads as its own scenario.
+ * The Weekend sheet (#21/#25's resolution comments, transcribed into
+ * `public/sets/onepiece.mjs` by #54), with the four trailing sliders left at
+ * `null` so the core computes them, and `overrides` for what a ticket's
+ * scenario pins by hand (`players`, `displays`, …). #55's acceptance criteria
+ * are measured against this sheet, not a hand-assembled Settings object
+ * (AGENTS.md, "a decided number is looked up, never back-computed").
+ */
+function weekendSettings(overrides = {}) {
+  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  return {
+    ...GAME,
+    ...weekend,
+    tournamentPacks: null,
+    depth: null,
+    ranked: null,
+    winnerPacks: null,
+    manualWinner: {},
+    displays: [],
+    ...overrides,
+  };
+}
+
+/**
+ * A neutral Settings object, built by hand rather than from a DefaultSet
+ * sheet (#54 is closed, but a scenario that is not itself about a named
+ * sheet — a raw settlement or sum-rule case — reads better spelled out at the
+ * call site than pulled from `Weekend` or `Release`).
  */
 function settings(overrides = {}) {
   return {
@@ -437,4 +462,62 @@ test('the core touches no DOM', () => {
   assert.equal(typeof globalThis.document, 'undefined');
   assert.equal(typeof globalThis.window, 'undefined');
   assert.ok(distribute(settings()).rows.length > 0);
+});
+
+// #55: DisplayReservation, settlement and overtaking.
+
+test('Weekend with 32 Players and d = (1) gives 24·16·9·5·3·3·2·2 (#55)', () => {
+  const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
+  assert.equal(plan.rank.booster, 64);
+  assert.deepEqual(served(plan), [24, 16, 9, 5, 3, 3, 2, 2]);
+});
+
+test('the same stand gives a depthCap of 21, not 31 — the reservation pays in (#43, #55)', () => {
+  const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
+  assert.equal(plan.depthCap, 21);
+});
+
+test('Weekend with 48 Players and d = (1) gives 24·34·16·9·5·3·3·2 and reports the overtake', () => {
+  const plan = distribute(weekendSettings({ players: 48, displays: [1] }));
+  assert.equal(plan.rank.booster, 96);
+  assert.deepEqual(served(plan), [24, 34, 16, 9, 5, 3, 3, 2]);
+  assert.deepEqual(plan.overtake, { under: 1, over: 2, has: 24, gets: 34 });
+  assert.deepEqual(plan.flagged, [1, 2]);
+});
+
+test('a tie in the vector settles nobody, and only the topmost tie settles Rank 1', () => {
+  const base = { players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3 };
+
+  const tied = distribute(settings({ ...base, displays: [1, 1, 0] }));
+  assert.equal(tied.settledCount, 0);
+  assert.deepEqual(tied.rows.slice(0, 3).map((r) => r.settled), [false, false, false]);
+
+  const broken = distribute(settings({ ...base, displays: [2, 1, 1, 0] }));
+  assert.equal(broken.settledCount, 1);
+  assert.deepEqual(broken.rows.slice(0, 3).map((r) => r.settled), [true, false, false]);
+});
+
+test('a settled Rank has floor 0 and gets exactly its Displays', () => {
+  const plan = distribute(
+    settings({ players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3, displays: [2, 1, 1, 0] }),
+  );
+  assert.equal(plan.rows[0].settled, true);
+  assert.equal(plan.rows[0].floor, 0);
+  assert.equal(plan.rows[0].displays, 2);
+  assert.equal(plan.rows[0].reserved, 2); // displaySize 1 in this fixture
+  assert.equal(plan.rows[0].booster, 2); // exactly its Displays, no floor, no lead, no curve
+});
+
+test('CombinedHandout neither creates nor hides an overtake — the RankPool share decides, not the row total', () => {
+  const overtaking = weekendSettings({ players: 48, displays: [1] });
+  const withOvertake = distribute({ ...overtaking, combinedHandout: false });
+  const withOvertakeCombined = distribute({ ...overtaking, combinedHandout: true });
+  assert.deepEqual(withOvertakeCombined.overtake, withOvertake.overtake);
+  assert.ok(withOvertakeCombined.overtake); // still reported, not hidden by the shift
+
+  const clean = weekendSettings({ players: 32, displays: [1] });
+  const withoutOvertake = distribute({ ...clean, combinedHandout: false });
+  const withoutOvertakeCombined = distribute({ ...clean, combinedHandout: true });
+  assert.equal(withoutOvertake.overtake, null);
+  assert.equal(withoutOvertakeCombined.overtake, null); // not conjured by the shift either
 });
