@@ -3,12 +3,13 @@
  * no randomness (ADR 0004), and total over every input combination (ADR 0002).
  *
  * This file carries the pools and the sum rule, the RankPoolDepth with its
- * computed cap, the divisible axis shaped by the DistributionCurve, and the
- * two indivisible axes that run past it — the RankCycle for TournamentPacks
- * and the WinnerPackAllocation for WinnerPacks (#57). The DisplayReservation
- * with its settlement and overtaking (#55), and the conflict branch (#56) are
- * not here yet; `displays` is read for the depth cap and otherwise assumed
- * empty.
+ * computed cap, the DisplayReservation with its settlement and overtaking
+ * (#55), the divisible axis shaped by the DistributionCurve, and the two
+ * indivisible axes that run past it — the RankCycle for TournamentPacks and
+ * the WinnerPackAllocation for WinnerPacks (#57). The conflict branch and the
+ * orphaned reservation (#56) are not here yet: the valid branch clamps a
+ * negative ShapedRemainder to 0 rather than pouring from the top, and a
+ * reservation past the depth is read as though it were not there.
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -89,11 +90,21 @@ function splitPool(pool, settings, players) {
  * than written closed (ADR 0001, addendum #43).
  */
 function needAt(depth, displays, displaySize, rankFloor) {
-  const d = Array.from({ length: depth }, (_, i) => Math.max(0, int(displays[i])));
+  const d = displayVector(displays, depth);
   const { settledCount } = settlement(d);
-  const reserved = d.reduce((a, b) => a + b, 0) * displaySize;
+  const reserved = reservedBoosters(d, displaySize);
   const lead = settledCount > 0 ? 0 : 1;
   return reserved + rankFloor * (depth - settledCount) + lead;
+}
+
+/** The DisplayReservation read for a given depth: `displays[0 … depth-1]`, missing entries 0. */
+function displayVector(displays, depth) {
+  return Array.from({ length: depth }, (_, i) => Math.max(0, int(displays[i])));
+}
+
+/** The Boosters a DisplayReservation vector reserves outright. */
+function reservedBoosters(d, displaySize) {
+  return d.reduce((a, b) => a + b, 0) * displaySize;
 }
 
 /**
@@ -186,22 +197,49 @@ export function distribute(settings) {
       ? Math.min(depthStepValue, depthCap)
       : clamp(int(settings.depth, 1), 1, players);
 
-  const curveCount = depth;
-  const lead = 1;
+  // The DisplayReservation vector for this depth, and the ranks it settles:
+  // the strict prefix above the topmost tie. A settled rank stands on its
+  // Displays, gets no RankFloor and carries no lead — the curve runs from
+  // there down (ADR 0001, addendum #7 and #43).
+  const d = displayVector(displays, depth);
+  const { settledCount } = settlement(d);
+  const displayReserved = reservedBoosters(d, displaySize);
+  const curveFrom = settledCount;
+  const curveCount = depth - curveFrom;
+  const lead = settledCount > 0 ? 0 : 1;
   const floorReserved = rankFloor * curveCount + lead;
   // One condition, two quantities: where it holds the surplus is the
   // ShapedRemainder, where it does not the shortfall is what the
   // ConflictNotice names. The shaped remainder itself never goes negative —
   // in the conflict branch nothing is shaped at all (#56).
-  const shapedRemainder = Math.max(0, rank.booster - floorReserved);
+  const available = rank.booster - displayReserved;
+  const shapedRemainder = Math.max(0, available - floorReserved);
 
   const booster = new Array(players).fill(0);
-  for (let i = 0; i < depth; i++) booster[i] += rankFloor;
-  booster[0] += lead;
+  for (let i = 0; i < depth; i++) booster[i] += d[i] * displaySize;
+  for (let i = curveFrom; i < depth; i++) booster[i] += rankFloor;
+  if (lead) booster[0] += 1;
 
   const weights = shapeWeights(curveRatio(settings.curve), curveCount);
   const shaped = largestRemainder(weights, shapedRemainder);
-  for (let j = 0; j < curveCount; j++) booster[j] += shaped[j];
+  for (let j = 0; j < curveCount; j++) booster[curveFrom + j] += shaped[j];
+
+  // Overtaking: Rank 1's lead is a guarantee *inside* the curve and lapses the
+  // moment a DisplayReservation settles it out of the curve — the first pair
+  // i < j < depth with booster[j] > booster[i] is reported, never prevented
+  // (ADR 0001, ADR 0002). Compared on the RankPool share alone, before
+  // CombinedHandout shifts the participation rate in: that shift adds the
+  // same amount to every row, so it can neither create nor hide an overtake.
+  let overtake = null;
+  outer: for (let i = 0; i < depth; i++) {
+    for (let j = i + 1; j < depth; j++) {
+      if (booster[j] > booster[i]) {
+        overtake = { under: i + 1, over: j + 1, has: booster[i], gets: booster[j] };
+        break outer;
+      }
+    }
+  }
+  const flagged = overtake ? [overtake.under, overtake.over] : [];
 
   // The two indivisible axes run past the DistributionCurve (#57): the
   // RankCycle hands out the RankPool's TournamentPacks, and the
@@ -238,8 +276,11 @@ export function distribute(settings) {
     booster: booster[i] + pbRate,
     packs: packsCycle[i] + ppRate,
     winners: (i < allocation.ranked ? 1 : 0) + (allocation.manual[i + 1] ?? 0),
-    floor: i < depth ? rankFloor + (i === 0 ? lead : 0) : 0,
+    displays: i < depth ? d[i] : 0,
+    reserved: i < depth ? d[i] * displaySize : 0,
+    floor: i < curveFrom || i >= depth ? 0 : rankFloor + (i === 0 ? lead : 0),
     served: i < depth,
+    settled: i < curveFrom,
   }));
 
   return {
@@ -253,12 +294,17 @@ export function distribute(settings) {
     depthCap,
     depthStepValue,
     rankFloor,
+    displayVector: d,
+    displayReserved,
+    settledCount,
     floorReserved,
     shapedRemainder,
     curveSilent: shapedRemainder === 0,
     curveCount,
     allocation,
     rows,
+    overtake,
+    flagged,
   };
 }
 
