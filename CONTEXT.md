@@ -122,10 +122,16 @@ nie feuert. Der `RankFloor` deckelt
 die Tiefe, nie umgekehrt. An zwei Rändern liefert die Auflösung keine brauchbare
 Zahl, und beide sind erreichbar: bei einem `RankFloor` von 0 ist sie nicht
 definiert, und bei einem fast oder ganz leeren `RankPool` wird sie 0 oder negativ.
-In beiden Fällen gilt das **„mindestens 1"** von oben, es ist der stärkere Satz — ein
-`Rank` 1, der nichts bekommt, steht als leere Kachel da und die `ConflictNotice`
-sagt warum. Das ist die ehrlichere Fassung als eine verschwindende `RankPool`-Zeile,
-die den Schirm genau dort stumm machte, wo er warnen soll. Ob das `Tournament` eine K.-o.-Runde gespielt
+In beiden Fällen gilt das **„mindestens 1"** von oben, es ist der stärkere Satz:
+`Rank` 1 bleibt bedient, auch wenn für ihn nichts mehr übrig ist. Ob dafür eine
+**Kachel** steht, ist davon unabhängig und hat kein Sonderrecht für `Rank` 1 —
+eine Kachel steht, sobald der `Rank` irgendetwas bekommt, `Booster`,
+`TournamentPack` oder `WinnerPack`, und sonst nicht (Entscheid an #63,
+2026-09-27). Ein bedienter `Rank` mit leeren Händen erscheint also gar nicht, und
+warum der Schirm leer bleibt, sagt die `ConflictNotice`. Das ist die ehrlichere
+Fassung als eine leere Kachel, die etwas verspricht, wo nichts hinausgeht — stumm
+wird der Schirm dabei nicht, die Auskunft steht nur in der Meldung statt in einem
+Feld ohne Inhalt. Ob das `Tournament` eine K.-o.-Runde gespielt
 hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
 als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
 (siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
@@ -389,8 +395,8 @@ has, gets }`), `orphanedReservation` (Reservation auf einem `Rank`, den die
 anderes aus, auch nicht `conflict` und `unclaimedRemainder`: eine Reservation,
 die zugleich die ganze Tiefe abdeckt und für sich allein grösser ist als der
 `RankPool`, erfüllt beide Bedingungen gleichzeitig, und beide Meldungen stehen
-dann nebeneinander statt einander zu verdrängen (Entscheid auf #56,
-2026-09-27). `flagged` sammelt dazu die betroffenen Rang-Nummern — das
+dann nebeneinander statt einander zu verdrängen (Entscheid 3 im Kommentar
+„Drei Entscheide aus der Fragebogenrunde" an #56, 2026-09-27). `flagged` sammelt dazu die betroffenen Rang-Nummern — das
 Überholungspaar, und im Konfliktzweig jeden bedienten `Rank`, der nicht sein
 volles Soll bekommen hat.
 Am Schirm ist das **Hochformat der Boden** (#40): das Kachelfenster zeigt in jeder

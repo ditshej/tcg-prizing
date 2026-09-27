@@ -99,7 +99,8 @@ irgendeinem `Rank` aufzudrängen, der ihn nie verlangt hat. Derselbe Satz wie
 oben trägt weiterhin: der Plan bleibt gültig oder wird als ungültig gemeldet,
 nie verweigert.
 
-Offen und bewusst so entschieden: `conflict` (eine Tiefe über dem Deckel oder
+Bewusst so entschieden (Entscheid 3 im Kommentar „Drei Entscheide aus der
+Fragebogenrunde" an #56, 2026-09-27): `conflict` (eine Tiefe über dem Deckel oder
 eine Reservation, die den `RankPool` allein übersteigt) und
 `unclaimedRemainder` schliessen einander **nicht** aus — eine randabdeckende
 Reservation, die zugleich grösser ist als der `RankPool`, erfüllt beide
