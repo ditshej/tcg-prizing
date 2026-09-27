@@ -8,9 +8,9 @@
 // because this is a planning artifact, not part of the app. See README.md.
 
 import { createServer } from 'node:http';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 
 const FIRST_PORT = 7777;
 const LAST_PORT = 7797;
@@ -415,6 +415,88 @@ function renderCharts(data) {
   return data;
 }
 
+// ---------------------------------------------------------------------------
+// Screenshots
+//
+// An evidence entry of type "image" points at a file beside the question file
+// with a path relative to it. The server serves those files itself, through one
+// deliberately narrow route: only out of that one directory, only the endings
+// below, and every path is checked again on the way out — the check at start-up
+// is for the writer of the question file, the check in the handler is the one
+// that holds.
+
+const IMAGE_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml'
+};
+
+const IMAGE_ROUTE = '/bild/';
+
+// `{ ok: true, full, mime }`, or `{ ok: false, reason }` — the callers differ in
+// what they do with a refusal, so refusing is not allowed to exit here.
+function safeImagePath(baseDir, src) {
+  if (typeof src !== 'string' || src === '') return { ok: false, reason: 'kein Pfad angegeben' };
+  if (src.startsWith('/')) return { ok: false, reason: `absoluter Pfad nicht erlaubt: ${src}` };
+  if (src.split(/[\\/]/).includes('..')) return { ok: false, reason: `".." im Pfad nicht erlaubt: ${src}` };
+  const mime = IMAGE_TYPES[extname(src).toLowerCase()];
+  if (!mime) {
+    return { ok: false, reason: `keine bekannte Bildendung (${Object.keys(IMAGE_TYPES).join(', ')}): ${src}` };
+  }
+  const full = resolve(baseDir, src);
+  if (full !== baseDir && !full.startsWith(baseDir + sep)) {
+    return { ok: false, reason: `Bild liegt nicht neben der Fragendatei: ${src}` };
+  }
+  return { ok: true, full, mime };
+}
+
+const imageUrl = (src) => IMAGE_ROUTE + src.split('/').map(encodeURIComponent).join('/');
+
+// Alt text is mandatory in spirit: an own `alt` wins, otherwise the caption
+// stands in, otherwise the heading. A side's `label` is never the whole alt —
+// it is on screen anyway — but it goes in front, so the two sides of a pair do
+// not read out identically.
+function altFor(image, entry) {
+  if (image.alt) return image.alt;
+  const fallback = entry.alt || entry.caption || entry.heading || '';
+  return image.label ? `${image.label}: ${fallback}` : fallback;
+}
+
+// Walks the question data and turns every image evidence into the list of
+// `{ url, alt, label }` the client drops into `<img>` tags. One entry carries
+// either a single `src` or an `images` array — two side by side is the case it
+// exists for, "before / after".
+function renderImages(data, baseDir) {
+  for (const decision of data.decisions) {
+    for (const entry of decision.evidence || []) {
+      if (entry.type !== 'image') continue;
+      const sources = Array.isArray(entry.images)
+        ? entry.images
+        : [{ src: entry.src, alt: entry.alt, label: entry.label }];
+      if (sources.length === 0) fail(`Bildbeleg ohne Bild bei Entscheid "${decision.id}".`);
+      entry.items = sources.map((image) => {
+        const checked = safeImagePath(baseDir, image.src);
+        if (!checked.ok) fail(`Bildbeleg bei Entscheid "${decision.id}": ${checked.reason}`);
+        try {
+          statSync(checked.full);
+        } catch {
+          fail(`Bildbeleg bei Entscheid "${decision.id}": Datei nicht gefunden: ${checked.full}`);
+        }
+        return {
+          url: imageUrl(image.src),
+          label: image.label || '',
+          alt: altFor(image, entry)
+        };
+      });
+      delete entry.src;
+      delete entry.images;
+    }
+  }
+  return data;
+}
+
 const page = (data) => `<!doctype html>
 <html lang="de">
 <meta charset="utf-8">
@@ -523,7 +605,7 @@ figure.chart {
   background: var(--card);
   padding: 1.4rem 1.4rem 1.2rem;
 }
-figure.chart > figcaption {
+figure.chart > figcaption, figure.shot > figcaption {
   font: 500 0.8rem/1.4 ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -564,7 +646,36 @@ svg .viz-target { fill: none; stroke: var(--viz-target); stroke-width: 1.5; stro
   color: var(--muted);
   margin: 1.1rem 0 0;
 }
-figure.chart > details { margin: 1.1rem 0 0; }
+figure.chart > details, figure.shot > details { margin: 1.1rem 0 0; }
+figure.shot {
+  margin: 0 0 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 1.4rem;
+}
+/* One picture fills the card; two share it. The grid decides that by width, so
+   a narrow window stacks the pair instead of shrinking both past reading. */
+.shot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.1rem;
+}
+.shot-grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.shot-grid .shot-label {
+  display: block;
+  font: 500 0.8rem/1.4 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 0.55rem;
+}
 label.option {
   display: block;
   border: 1px solid var(--line);
@@ -649,6 +760,7 @@ const rich = (s) => esc(s).replace(/\`([^\`]+)\`/g, '<code>$1</code>');
 // A chart shows on arrival — that is the point of it. The numbers it was made
 // from stay one click away underneath, never replaced by the picture.
 function renderEvidence(e) {
+  if (e.type === 'image') return renderShot(e);
   if (e.type !== 'chart') {
     return \`<details><summary>\${rich(e.heading)}</summary><pre>\${esc(e.text)}</pre></details>\`;
   }
@@ -656,6 +768,22 @@ function renderEvidence(e) {
     <figcaption>\${rich(e.heading)}</figcaption>
     \${e.svg}
     \${e.legend}
+    \${e.caption ? \`<p class="chart-caption">\${rich(e.caption)}</p>\` : ''}
+    \${e.text ? \`<details><summary>\${rich(e.numbersLabel || 'Die Zahlen')}</summary><pre>\${esc(e.text)}</pre></details>\` : ''}
+  </figure>\`;
+}
+
+// A screenshot shows on arrival, like a chart: a card about something you can
+// look at is carried by the picture. Two of them sit side by side, which is the
+// "vorher / nachher" case this exists for.
+function renderShot(e) {
+  const shots = (e.items || []).map((s) => \`<div>
+      <img src="\${esc(s.url)}" alt="\${esc(s.alt)}" loading="eager">
+      \${s.label ? \`<span class="shot-label">\${rich(s.label)}</span>\` : ''}
+    </div>\`).join('');
+  return \`<figure class="shot">
+    <figcaption>\${rich(e.heading)}</figcaption>
+    <div class="shot-grid">\${shots}</div>
     \${e.caption ? \`<p class="chart-caption">\${rich(e.caption)}</p>\` : ''}
     \${e.text ? \`<details><summary>\${rich(e.numbersLabel || 'Die Zahlen')}</summary><pre>\${esc(e.text)}</pre></details>\` : ''}
   </figure>\`;
@@ -794,7 +922,8 @@ function readBody(request) {
 
 const { file, data } = loadQuestions(process.argv[2]);
 const target = answerPath(file);
-const html = page(renderCharts(data));
+const imageDir = dirname(file);
+const html = page(renderImages(renderCharts(data), imageDir));
 
 const server = createServer(async (request, response) => {
   if (request.method === 'POST' && request.url === '/answers') {
@@ -815,6 +944,33 @@ const server = createServer(async (request, response) => {
   if (request.method === 'GET' && (request.url === '/' || request.url.startsWith('/?'))) {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     response.end(html);
+    return;
+  }
+  if (request.method === 'GET' && request.url.startsWith(IMAGE_ROUTE)) {
+    // Decoded from the path only — a query string is not part of the name, and
+    // the check runs again here rather than trusting the URL we wrote ourselves.
+    let requested;
+    try {
+      requested = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname.slice(IMAGE_ROUTE.length));
+    } catch {
+      requested = '';
+    }
+    const checked = safeImagePath(imageDir, requested);
+    let bytes = null;
+    if (checked.ok) {
+      try {
+        if (statSync(checked.full).isFile()) bytes = readFileSync(checked.full);
+      } catch {
+        bytes = null;
+      }
+    }
+    if (!bytes) {
+      response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+      response.end('Bild nicht gefunden');
+      return;
+    }
+    response.writeHead(200, { 'content-type': checked.mime, 'cache-control': 'no-store' });
+    response.end(bytes);
     return;
   }
   if (request.url === '/favicon.ico') {

@@ -152,8 +152,23 @@ this evidence carry, and which shape makes that statement visible. A number
 block in a `<pre>` is the **fallback**, and it stays under the picture so the
 figures remain checkable.
 
+**Is it something you can look at? Then the screenshot is the evidence, not
+your description of it.** A surface, a layout, two states beside each other —
+run the product, grab the screen, put the file next to the question file and
+point an evidence entry of `"type": "image"` at it. Two pictures side by side
+are one entry, which is what makes "vorher / nachher" a look rather than a
+paragraph.
+
+Run 6 is the case. Two of five cards came back asking to be shown the thing —
+"ich bin mir nicht ganz sicher, was du für ein Bild vor dir hast" — and every
+number on both cards was right. Prose about a surface fails the same way Stage 3
+fails: it can be read and still not be decidable. The verdict was the same one,
+too: "einen langen Fliesstext, den ich auch gradsogut im Terminal hätte lesen
+können."
+
 Done when every card has at least one piece of evidence produced in this
-session, and every numeric one has been through the form question.
+session, every numeric one has been through the form question, and every card
+about something visible carries a picture of it.
 
 ## Stage 3 — the card has to survive the repo being closed
 

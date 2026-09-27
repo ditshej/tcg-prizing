@@ -57,7 +57,8 @@ Please don't "correct" this in a later session.
       "note": "…",                           // optional aside on the card
       "evidence": [                          // folded shut by default
         { "heading": "…", "text": "preformatted, shown as-is" },
-        { "type": "chart", "heading": "…", "chart": { … }, "caption": "…", "text": "…" }
+        { "type": "chart", "heading": "…", "chart": { … }, "caption": "…", "text": "…" },
+        { "type": "image", "heading": "…", "src": "…", "alt": "…", "caption": "…" }
       ],
       "options": [
         { "id": "participation-auf-null", "label": "…", "consequence": "…" }
@@ -206,6 +207,65 @@ Silhouettengrau mit eigener Kante. Sie sind gegen die Kartenfläche (`--card`,
 Diagramm eine vierte Serie, ist das ein Hinweis auf die Form, nicht auf die
 Palette.
 
+## Belege vom Typ `image` — was man ansehen kann, wird gezeigt
+
+Die Frage nach der Form hat einen zweiten Fall. Geht es um etwas, das man
+**ansehen** kann — eine Fläche, ein Layout, zwei Zustände nebeneinander —, dann
+ist das Bildschirmfoto der Beleg, und seine Beschreibung ist es nicht. Am
+25.—27.09. kamen zwei von fünf Karten mit genau dieser Rückmeldung zurück:
+„ich bin mir nicht ganz sicher, was du für ein Bild vor dir hast." Die Zahlen
+auf beiden Karten stimmten.
+
+Ein Beleg mit `"type": "image"` zeigt eine oder zwei Dateien, die **neben der
+Fragendatei** liegen. `src` ist relativ zu ihr — `review/` ist gitignored, die
+Bilder liegen also im selben gitignorierten Verzeichnis. Der Server liefert sie
+selbst aus (siehe unten).
+
+Ein Bild:
+
+```jsonc
+{
+  "type": "image",
+  "heading": "Die Preistabelle heute",
+  "src": "51-tabelle.png",
+  "alt": "Letzte Spalte leer, darunter 40 nicht vergebene Booster.",
+  "caption": "Aufgenommen auf `main`, 32 Leute, 96 Booster.",
+  "text": "die Zahlen dazu, zugeklappt"          // optional, wie beim Diagramm
+}
+```
+
+Zwei Bilder nebeneinander — der Hauptfall, „vorher / nachher":
+
+```jsonc
+{
+  "type": "image",
+  "heading": "Zwei Zustände nebeneinander",
+  "images": [
+    { "src": "51-vorher.png",  "label": "heute" },
+    { "src": "51-nachher.png", "label": "mit Option B" }
+  ],
+  "caption": "Gleiches Turnier, gleicher Pool — nur die Verteilung ändert sich."
+}
+```
+
+`label` steht unter seinem Bild und darf `` `backticks` `` tragen. Nebeneinander
+liegen die beiden nur, solange das Fenster breit genug ist; darunter stapeln sie
+sich, statt beide unter die Lesbarkeit zu schrumpfen.
+
+**`alt` ist Pflicht im Geist.** Fehlt es, nimmt der Server die `caption`, sonst
+die `heading` — und stellt bei einem Paar das `label` davor, damit die zwei
+Seiten nicht gleich vorgelesen werden. Das ist ein Rückfall, kein Ersatz: ein
+`alt` sagt, was auf dem Bild zu sehen ist, eine Überschrift sagt das nie.
+
+Wie beim Diagramm: **das Bild ist aufgeklappt**, der Zahlenblock darunter bleibt
+zu. Und wie beim Diagramm ersetzt das eine das andere nicht.
+
+**Die Auslieferung ist absichtlich eng.** Nur Dateien aus dem Verzeichnis der
+Fragendatei, nur `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, kein `..` im Pfad,
+kein absoluter Pfad. Geprüft wird zweimal — beim Start, damit ein falscher Pfad
+im Terminal auffällt statt als leerer Kasten im Browser, und noch einmal in
+jeder Anfrage, denn nur die zweite Prüfung hält.
+
 ## Rendering gotchas
 
 Properties of this tool, not of any one card. Each cost a round when it was
@@ -221,6 +281,15 @@ first met:
   rather than iteratively.
 - **Light and dark need no separate look.** The palette is a property of this
   file and was validated here (see `### Farben`).
+- **A screenshot is stretched to the card's width**, never capped at its own.
+  A 320 px grab of a retina window arrives blurry; take it at 2x, or at least
+  1400 px wide for a single picture and 700 px per side of a pair.
+- **A missing image stops the server before it starts**, with the absolute path
+  in the message. That is deliberate — a broken `src` as a silent empty box is
+  the one defect the single look in Stage 5 would not catch.
+- **`src` is relative to the question file, not to the repo root.** Pass the
+  question file as `review/x-fragen.json` and the image beside it is `"bild.png"`,
+  not `"review/bild.png"`.
 
 ## Answer file format
 
