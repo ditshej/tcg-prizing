@@ -2,11 +2,36 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { derivePool, distribute } from '../public/core/distribute.mjs';
+import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
- * A neutral Settings object, built by hand — the DefaultSet sheets do not
- * exist yet (#54). Everything that would come from a sheet is spelled out at
- * the call site, so a test reads as its own scenario.
+ * The Weekend sheet (#21/#25's resolution comments, transcribed into
+ * `public/sets/onepiece.mjs` by #54), with the four trailing sliders left at
+ * `null` so the core computes them, and `overrides` for what a ticket's
+ * scenario pins by hand (`players`, `displays`, …). #55's acceptance criteria
+ * are measured against this sheet, not a hand-assembled Settings object
+ * (AGENTS.md, "a decided number is looked up, never back-computed").
+ */
+function weekendSettings(overrides = {}) {
+  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  return {
+    ...GAME,
+    ...weekend,
+    tournamentPacks: null,
+    depth: null,
+    ranked: null,
+    winnerPacks: null,
+    manualWinner: {},
+    displays: [],
+    ...overrides,
+  };
+}
+
+/**
+ * A neutral Settings object, built by hand rather than from a DefaultSet
+ * sheet (#54 is closed, but a scenario that is not itself about a named
+ * sheet — a raw settlement or sum-rule case — reads better spelled out at the
+ * call site than pulled from `Weekend` or `Release`).
  */
 function settings(overrides = {}) {
   return {
@@ -316,8 +341,14 @@ test('the RankCycle reaches beyond the RankPoolDepth', () => {
  */
 function assertPlanSum(plan, where) {
   const rowSum = (key) => plan.rows.reduce((a, row) => a + row[key], 0);
+  // Where a DisplayReservation reaches the whole depth, the rows fall short
+  // of the RankPool by exactly the ShapedRemainder — reported as
+  // `unclaimedRemainder`, not redistributed (#55, folded into `unfit` by
+  // #56). It is still part of the PrizePool, so both sum-rule terms below
+  // must name it, on top of the row sum, not instead of it.
+  const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
   assert.equal(
-    plan.participation.booster + plan.judge.booster + rowSum('booster'),
+    plan.participation.booster + plan.judge.booster + rowSum('booster') + unclaimed,
     plan.pool.booster,
     `Booster sum at ${where}`,
   );
@@ -331,7 +362,11 @@ function assertPlanSum(plan, where) {
   );
   // The other half of the same rule: the rank rows spend the RankPool down to
   // the last piece, so the Pool level and the row level tell one story.
-  assert.equal(rowSum('booster'), plan.rank.booster, `rank rows against the RankPool at ${where}`);
+  assert.equal(
+    rowSum('booster') + unclaimed,
+    plan.rank.booster,
+    `rank rows against the RankPool at ${where}`,
+  );
   assert.equal(rowSum('packs'), plan.rank.packs, `rank rows against the RankPool packs at ${where}`);
 }
 
@@ -394,24 +429,41 @@ test('the sum rule holds at the plan itself, in both handout branches', () => {
         for (const judgeBooster of [0, 3, 40]) {
           for (const tournamentPacks of [null, 0, 7, 40]) {
             for (const participationPack of [0, 1, 4]) {
-              const base = {
-                players,
-                boosterRate,
-                participationBooster,
-                judgeBooster,
-                tournamentPacks,
-                participationPack,
-              };
-              const apart = distribute(settings({ ...base, combinedHandout: false }));
-              // Where the RankPool does not even carry the floor of a single
-              // Rank, the pouring from the top decides what really goes out,
-              // and that is #56. Read off the apart branch, whose RankPool is
-              // the one the shaping sees.
-              if (apart.rank.booster < apart.floorReserved) continue;
+              // Both axes of the DisplayReservation (#55): how many Displays
+              // are pinned, and how deep the RankPoolDepth reaches. Neither
+              // varied before, which is exactly how a DisplayReservation
+              // reaching the whole depth — and the ShapedRemainder it leaves
+              // with nobody to receive it — went unnoticed (#56 resolution
+              // comment on #56, 2026-09-27).
+              for (const displays of [[], [1], [2, 1]]) {
+                for (const depth of [null, 1, 2]) {
+                  const base = {
+                    players,
+                    boosterRate,
+                    participationBooster,
+                    judgeBooster,
+                    tournamentPacks,
+                    participationPack,
+                    displays,
+                    depth,
+                  };
+                  const apart = distribute(settings({ ...base, combinedHandout: false }));
+                  // Where the RankPool does not even carry the DisplayReservation
+                  // plus the floor of a single Rank, the pouring from the top
+                  // decides what really goes out, and that is #56 — the
+                  // conflict branch (ShapedRemainder < 0) is not built yet.
+                  // Read off the apart branch, whose RankPool is the one the
+                  // shaping sees.
+                  if (apart.rank.booster < apart.displayReserved + apart.floorReserved) continue;
 
-              const where = JSON.stringify(base);
-              assertPlanSum(apart, `${where} apart`);
-              assertPlanSum(distribute(settings({ ...base, combinedHandout: true })), `${where} combined`);
+                  const where = JSON.stringify(base);
+                  assertPlanSum(apart, `${where} apart`);
+                  assertPlanSum(
+                    distribute(settings({ ...base, combinedHandout: true })),
+                    `${where} combined`,
+                  );
+                }
+              }
             }
           }
         }
@@ -437,4 +489,104 @@ test('the core touches no DOM', () => {
   assert.equal(typeof globalThis.document, 'undefined');
   assert.equal(typeof globalThis.window, 'undefined');
   assert.ok(distribute(settings()).rows.length > 0);
+});
+
+// #55: DisplayReservation, settlement and overtaking.
+
+test('Weekend with 32 Players and d = (1) gives 24·16·9·5·3·3·2·2 (#55)', () => {
+  const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
+  assert.equal(plan.rank.booster, 64);
+  assert.deepEqual(served(plan), [24, 16, 9, 5, 3, 3, 2, 2]);
+});
+
+test('the same stand gives a depthCap of 21, not 31 — the reservation pays in (#43, #55)', () => {
+  const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
+  assert.equal(plan.depthCap, 21);
+});
+
+test('Weekend with 48 Players and d = (1) gives 24·34·16·9·5·3·3·2 and reports the overtake', () => {
+  const plan = distribute(weekendSettings({ players: 48, displays: [1] }));
+  assert.equal(plan.rank.booster, 96);
+  assert.deepEqual(served(plan), [24, 34, 16, 9, 5, 3, 3, 2]);
+  assert.deepEqual(plan.overtake, { under: 1, over: 2, has: 24, gets: 34 });
+  assert.deepEqual(plan.flagged, [1, 2]);
+});
+
+test('a tie in the vector settles nobody, and only the topmost tie settles Rank 1', () => {
+  const base = { players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3 };
+
+  const tied = distribute(settings({ ...base, displays: [1, 1, 0] }));
+  assert.equal(tied.settledCount, 0);
+  assert.deepEqual(tied.rows.slice(0, 3).map((r) => r.settled), [false, false, false]);
+
+  const broken = distribute(settings({ ...base, displays: [2, 1, 1, 0] }));
+  assert.equal(broken.settledCount, 1);
+  assert.deepEqual(broken.rows.slice(0, 3).map((r) => r.settled), [true, false, false]);
+});
+
+test('a settled Rank has floor 0 and gets exactly its Displays', () => {
+  const plan = distribute(
+    settings({ players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3, displays: [2, 1, 1, 0] }),
+  );
+  assert.equal(plan.rows[0].settled, true);
+  assert.equal(plan.rows[0].floor, 0);
+  assert.equal(plan.rows[0].displays, 2);
+  assert.equal(plan.rows[0].reserved, 2); // displaySize 1 in this fixture
+  assert.equal(plan.rows[0].booster, 2); // exactly its Displays, no floor, no lead, no curve
+});
+
+test('CombinedHandout neither creates nor hides an overtake — the RankPool share decides, not the row total', () => {
+  const overtaking = weekendSettings({ players: 48, displays: [1] });
+  const withOvertake = distribute({ ...overtaking, combinedHandout: false });
+  const withOvertakeCombined = distribute({ ...overtaking, combinedHandout: true });
+  assert.deepEqual(withOvertakeCombined.overtake, withOvertake.overtake);
+  assert.ok(withOvertakeCombined.overtake); // still reported, not hidden by the shift
+
+  const clean = weekendSettings({ players: 32, displays: [1] });
+  const withoutOvertake = distribute({ ...clean, combinedHandout: false });
+  const withoutOvertakeCombined = distribute({ ...clean, combinedHandout: true });
+  assert.equal(withoutOvertake.overtake, null);
+  assert.equal(withoutOvertakeCombined.overtake, null); // not conjured by the shift either
+});
+
+test('a DisplayReservation reaching the whole depth reports an unclaimedRemainder instead of losing the ShapedRemainder silently (#56 resolution on #56, 2026-09-27)', () => {
+  // Weekend, 32 Players, rank.booster 64 throughout — settledCount == depth
+  // in all three stands, so curveCount is 0 and the curve has no Rank left
+  // to receive the ShapedRemainder. Row sum 24 of 64 in every case.
+  const oneDeep = distribute(weekendSettings({ players: 32, depth: 1, displays: [1] }));
+  assert.equal(oneDeep.rank.booster, 64);
+  assert.equal(oneDeep.settledCount, 1);
+  assert.equal(oneDeep.curveCount, 0);
+  assert.deepEqual(oneDeep.unclaimedRemainder, { depth: 1 });
+  assert.deepEqual(served(oneDeep), [24]);
+
+  const twoDeep = distribute(
+    weekendSettings({ players: 32, depth: 2, displays: [2, 1], displaySize: 8 }),
+  );
+  assert.equal(twoDeep.rank.booster, 64);
+  assert.equal(twoDeep.settledCount, 2);
+  assert.equal(twoDeep.curveCount, 0);
+  assert.deepEqual(twoDeep.unclaimedRemainder, { depth: 2 });
+  assert.deepEqual(served(twoDeep), [16, 8]);
+
+  const threeDeep = distribute(
+    weekendSettings({ players: 32, depth: 3, displays: [3, 2, 1], displaySize: 4 }),
+  );
+  assert.equal(threeDeep.rank.booster, 64);
+  assert.equal(threeDeep.settledCount, 3);
+  assert.equal(threeDeep.curveCount, 0);
+  assert.deepEqual(threeDeep.unclaimedRemainder, { depth: 3 });
+  assert.deepEqual(served(threeDeep), [12, 8, 4]);
+});
+
+test('a DisplayReservation that does not reach the whole depth is not reported — the curve still has a Rank left', () => {
+  // Same sheet, same rank.booster 64, but d = (1) at depth 2: settledCount 1
+  // stays below depth 2, so Rank 2 is still in the curve and the ShapedRemainder
+  // lands there instead of going unclaimed. 24 and 40, together the full 64.
+  const plan = distribute(weekendSettings({ players: 32, depth: 2, displays: [1] }));
+  assert.equal(plan.rank.booster, 64);
+  assert.equal(plan.settledCount, 1);
+  assert.equal(plan.curveCount, 1);
+  assert.equal(plan.unclaimedRemainder, null);
+  assert.deepEqual(served(plan), [24, 40]);
 });
