@@ -143,13 +143,13 @@ const CONTROLS = [
     kind: 'range',
     min: 1,
     max: 48,
-    note: 'Reaches the plan only through depthCap today.',
+    note: 'Feeds depthCap and, since #55, row.reserved for every settled or tied Rank.',
   },
   {
     key: 'displays',
     label: 'DisplayReservation vector',
     kind: 'list',
-    note: 'Comma-separated Displays per Rank. Today this only moves depthCap — the rank rows ignore it until #55.',
+    note: 'Comma-separated Displays per Rank. Since #55 the strict prefix above the topmost tie is settled: it gets exactly its Displays, no RankFloor, no lead. A reservation that reaches the whole depth leaves the ShapedRemainder unclaimed — the bars and the invariant line below name that as `unclaimedRemainder`, not as a defect.',
   },
   {
     key: 'ranked',
@@ -252,23 +252,46 @@ const PRESETS = [
  */
 const INVARIANTS = [
   {
+    // A DisplayReservation that settles the whole depth (`unclaimedRemainder`
+    // set) leaves the ShapedRemainder without a Rank to receive it — the rows
+    // then fall short of the RankPool by exactly that amount, on purpose
+    // (#55, folded into `unfit` by #56). That is a reported state, not a
+    // broken invariant; a shortfall the plan does *not* name stays a failure.
+    // Same distinction `assertPlanSum` makes in test/distribute.test.mjs.
     name: 'sum rule: Σ row.booster = RankPool',
     check: (plan) => {
       const sum = plan.rows.reduce((a, row) => a + row.booster, 0);
-      return { held: sum === plan.rank.booster, detail: `${sum} vs ${plan.rank.booster}` };
+      if (sum === plan.rank.booster) return { state: 'ok', detail: `${sum} vs ${plan.rank.booster}` };
+      const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
+      if (unclaimed > 0 && sum + unclaimed === plan.rank.booster) {
+        return {
+          state: 'reported',
+          detail: `${sum} vs ${plan.rank.booster} — unclaimedRemainder at depth ${plan.unclaimedRemainder.depth}, ${unclaimed} Booster unclaimed`,
+        };
+      }
+      return { state: 'fail', detail: `${sum} vs ${plan.rank.booster}` };
     },
   },
   // The rule at the plan's own level, on both divisible-by-Rank axes. Its
   // absence is what let the double count through: while CombinedHandout copied
   // the participation shares into the rows and left them in the pool as well,
   // `Σ row = RankPool` still held on its own — the RankPool had grown by the
-  // same amount. Only the sum against the PrizePool catches that.
+  // same amount. Only the sum against the PrizePool catches that. Carries the
+  // same unclaimedRemainder distinction as the rule above, for the same reason.
   {
     name: 'sum rule: participation + judge + Σ rows = PrizePool · Booster',
     check: (plan) => {
-      const sum =
-        plan.participation.booster + plan.judge.booster + plan.rows.reduce((a, row) => a + row.booster, 0);
-      return { held: sum === plan.pool.booster, detail: `${sum} vs ${plan.pool.booster}` };
+      const rowSum = plan.rows.reduce((a, row) => a + row.booster, 0);
+      const sum = plan.participation.booster + plan.judge.booster + rowSum;
+      if (sum === plan.pool.booster) return { state: 'ok', detail: `${sum} vs ${plan.pool.booster}` };
+      const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
+      if (unclaimed > 0 && sum + unclaimed === plan.pool.booster) {
+        return {
+          state: 'reported',
+          detail: `${sum} vs ${plan.pool.booster} — unclaimedRemainder at depth ${plan.unclaimedRemainder.depth}, ${unclaimed} Booster unclaimed`,
+        };
+      }
+      return { state: 'fail', detail: `${sum} vs ${plan.pool.booster}` };
     },
   },
   {
@@ -284,7 +307,20 @@ const INVARIANTS = [
     name: 'the rows fall monotonically',
     check: (plan) => {
       const at = plan.rows.findIndex((row, i) => i > 0 && row.booster > plan.rows[i - 1].booster);
-      return { held: at === -1, detail: at === -1 ? 'yes' : `rises at Rank ${at + 1}` };
+      if (at === -1) return { state: 'ok', detail: 'yes' };
+      // Rank 1's lead is a guarantee only *inside* the curve, and lapses the
+      // moment a DisplayReservation settles it out — the core reports that as
+      // `overtake`/`flagged` instead of preventing it (ADR 0001, ADR 0002;
+      // test/distribute.test.mjs:507 tests this as an expected, non-broken
+      // state). A rise the plan itself names is that state, not a defect; a
+      // rise it does not name is a real breach.
+      if (plan.overtake) {
+        return {
+          state: 'reported',
+          detail: `rises at Rank ${at + 1} — reported as overtake (Rank ${plan.overtake.under} overtaken by Rank ${plan.overtake.over})`,
+        };
+      }
+      return { state: 'fail', detail: `rises at Rank ${at + 1}` };
     },
   },
   {
@@ -349,6 +385,18 @@ const DERIVED = [
   ['ShapedRemainder', (p) => p.shapedRemainder],
   ['curveSilent', (p) => String(p.curveSilent)],
   ['curveCount', (p) => p.curveCount],
+  ['DisplayReservation · read vector', (p) => p.displayVector.join('·')],
+  ['DisplayReservation · reserved Booster', (p) => p.displayReserved],
+  ['DisplayReservation · settledCount', (p) => p.settledCount],
+  ['unclaimedRemainder', (p) => (p.unclaimedRemainder ? `depth ${p.unclaimedRemainder.depth}` : 'null')],
+  [
+    'overtake',
+    (p) =>
+      p.overtake
+        ? `Rank ${p.overtake.under} (${p.overtake.has}) overtaken by Rank ${p.overtake.over} (${p.overtake.gets})`
+        : 'null',
+  ],
+  ['flagged', (p) => (p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(', ') : 'none')],
 ];
 
 const settings = neutralSettings();
@@ -569,14 +617,34 @@ function renderBars(plan) {
   const peak = Math.max(1, ...plan.rows.map((row) => row.booster));
   el.bars.replaceChildren(
     ...plan.rows.map((row) => {
+      const classes = ['row'];
+      if (!row.served) classes.push('unserved');
+      if (row.settled) classes.push('settled');
+      if (plan.flagged.includes(row.rank)) classes.push('flagged');
       const line = document.createElement('div');
-      line.className = row.served ? 'row' : 'row unserved';
+      line.className = classes.join(' ');
+
       const rank = document.createElement('span');
       rank.className = 'rank';
-      rank.textContent = `Rank ${row.rank}`;
+      rank.textContent = row.settled ? `Rank ${row.rank} · settled` : `Rank ${row.rank}`;
+
+      // The bar splits into the reserved Booster (the DisplayReservation, #55)
+      // and the rest (RankFloor plus the DistributionCurve's share) — a
+      // settled Rank is reserved end to end, a Rank inside the curve mixes
+      // both, and an unclaimedRemainder shows up as the gap between the last
+      // bar's end and the RankPool line, not as a colour.
       const bar = document.createElement('div');
       bar.className = 'bar';
-      bar.style.width = `${(row.booster / peak) * 100}%`;
+      const reservedShare = Math.min(row.reserved, row.booster);
+      const rest = row.booster - reservedShare;
+      const reservedSeg = document.createElement('span');
+      reservedSeg.className = 'seg reserved';
+      reservedSeg.style.width = `${(reservedShare / peak) * 100}%`;
+      const restSeg = document.createElement('span');
+      restSeg.className = 'seg rest';
+      restSeg.style.width = `${(rest / peak) * 100}%`;
+      bar.append(reservedSeg, restSeg);
+
       line.append(rank, count(row.booster, 'booster'), count(row.packs, 'packs'), count(row.winners, 'winners'), bar);
       return line;
     }),
@@ -606,21 +674,35 @@ function renderDerived(plan) {
   );
 }
 
+/**
+ * `check` returns either `{ held, detail }` (the plain invariants) or
+ * `{ state: 'ok' | 'reported' | 'fail', detail }` (the two sum rules, which
+ * distinguish a named unclaimedRemainder from an actual breach). Normalise to
+ * one three-state form here rather than in every check.
+ */
 function renderInvariants(plan) {
-  const results = INVARIANTS.map((inv) => ({ ...inv, ...inv.check(plan) }));
-  const broken = results.filter((result) => !result.held);
-  el.banner.className = broken.length > 0 ? 'broken' : 'held';
+  const results = INVARIANTS.map((inv) => {
+    const result = inv.check(plan);
+    const state = result.state ?? (result.held ? 'ok' : 'fail');
+    return { name: inv.name, state, detail: result.detail };
+  });
+  const broken = results.filter((result) => result.state === 'fail');
+  const reported = results.filter((result) => result.state === 'reported');
+  el.banner.className = broken.length > 0 ? 'broken' : reported.length > 0 ? 'reported' : 'held';
   el.banner.textContent =
     broken.length > 0
       ? `${broken.length} invariant(s) BROKEN: ${broken.map((b) => b.name).join(' / ')}`
-      : 'all invariants hold';
+      : reported.length > 0
+        ? `all invariants hold — ${reported.length} reported state(s), not a defect: ${reported.map((r) => r.name).join(' / ')}`
+        : 'all invariants hold';
 
   const list = document.createElement('ul');
   list.append(
     ...results.map((result) => {
       const li = document.createElement('li');
-      li.className = result.held ? 'ok' : 'fail';
-      li.textContent = `${result.held ? '✓' : '✗'} ${result.name} — ${result.detail}`;
+      li.className = result.state;
+      const icon = result.state === 'ok' ? '✓' : result.state === 'reported' ? '●' : '✗';
+      li.textContent = `${icon} ${result.name} — ${result.detail}`;
       return li;
     }),
   );

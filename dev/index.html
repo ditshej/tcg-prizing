@@ -29,8 +29,10 @@
         --line: #d5d5dd;
         --served: #2f6f4f;
         --unserved: #b6b6c0;
+        --reserved: #6a4fa0;
         --bad: #b3261e;
         --good: #2f6f4f;
+        --reported: #9a6600;
         --bench: #f4efe4;
       }
       * {
@@ -152,6 +154,10 @@
         color: var(--bad);
         font-weight: 700;
       }
+      .reported {
+        color: var(--reported);
+        font-weight: 700;
+      }
       #invariants li {
         list-style: none;
         font-size: 12px;
@@ -174,6 +180,11 @@
         background: #e8f3ec;
         border-color: var(--good);
         color: var(--good);
+      }
+      #invariantBanner.reported {
+        background: #fbf1dc;
+        border-color: var(--reported);
+        color: var(--reported);
       }
       #series {
         font-size: 13px;
@@ -227,15 +238,35 @@
       }
       .bar {
         height: 10px;
-        background: var(--served);
+        display: flex;
         min-width: 1px;
       }
-      .row.unserved .bar {
+      .bar .seg {
+        height: 100%;
+      }
+      .bar .seg.reserved {
+        background: var(--reserved);
+      }
+      .bar .seg.rest {
+        background: var(--served);
+      }
+      .row.unserved .bar .seg.reserved,
+      .row.unserved .bar .seg.rest {
         background: var(--unserved);
       }
       .row.unserved .rank,
       .row.unserved .value {
         color: var(--unserved);
+      }
+      .row.settled .rank {
+        font-weight: 700;
+      }
+      .row.flagged {
+        outline: 1px solid var(--bad);
+        outline-offset: 1px;
+      }
+      .row.flagged .rank {
+        color: var(--bad);
       }
       pre {
         margin: 0;
@@ -323,7 +354,16 @@
             <span class="swatch" style="background: var(--served)"></span> served &mdash;
             <span class="swatch" style="background: var(--unserved)"></span> unserved (beyond the
             <code>RankPoolDepth</code>) &mdash; the <code>RankCycle</code> and
-            <code>manual</code> reach past the depth on purpose.
+            <code>manual</code> reach past the depth on purpose.<br />
+            <span class="swatch" style="background: var(--reserved)"></span> the reserved share
+            (<code>row.reserved</code>, the <code>DisplayReservation</code> at <code>displaySize</code>
+            per <code>Display</code>) inside each bar, the rest of the bar is <code>RankFloor</code>
+            plus the curve's share &mdash; a <strong>settled</strong> Rank (bold label, the strict
+            prefix above the topmost tie, #55) is reserved end to end and gets neither. A Rank whose
+            label is red is <strong>flagged</strong>: it took part in the reported <code>overtake</code>
+            below. When <code>unclaimedRemainder</code> is set, the bars stop short of the
+            <code>RankPool</code> on purpose &mdash; the invariant line names the gap instead of
+            hiding it in a row.
           </p>
           <div class="row head">
             <span class="rank">Rank</span>
