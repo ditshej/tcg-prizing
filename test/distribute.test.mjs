@@ -370,6 +370,23 @@ function assertPlanSum(plan, where) {
   assert.equal(rowSum('packs'), plan.rank.packs, `rank rows against the RankPool packs at ${where}`);
 }
 
+/**
+ * The row breakdown reports what goes out, not what was promised: `reserved`
+ * and `floor` together never exceed the Booster the Rank actually gets. In
+ * the valid branch the nominal entitlement and the payout are the same
+ * number, so only a conflict stand — where the RankPool runs dry partway
+ * through the passes — tells the two apart (#56 resolution comment on #56,
+ * 2026-09-27, finding G2).
+ */
+function assertRowsWithinPayout(plan, where) {
+  for (const row of plan.rows) {
+    assert.ok(
+      row.reserved + row.floor <= row.booster,
+      `Rank ${row.rank} shows ${row.reserved} reserved + ${row.floor} floor but gets ${row.booster} Booster at ${where}`,
+    );
+  }
+}
+
 test('CombinedHandout shifts the participation shares into the rows and does not add them', () => {
   // 8 Players at 4 Boosters each make 32; a participation rate of 1 takes 8,
   // the Judge 2, so the RankPool carries 22. 16 TournamentPacks at a rate of
@@ -454,11 +471,14 @@ test('the sum rule holds at the plan itself, in both handout branches', () => {
                   // single Rank, so the stand this used to skip is covered
                   // like any other — nothing left to jump over.
                   const where = JSON.stringify(base);
+                  const combined = distribute(settings({ ...base, combinedHandout: true }));
                   assertPlanSum(apart, `${where} apart`);
-                  assertPlanSum(
-                    distribute(settings({ ...base, combinedHandout: true })),
-                    `${where} combined`,
-                  );
+                  assertPlanSum(combined, `${where} combined`);
+                  // No Rank row promises more than it is handed — the half of
+                  // #56 that changed what `reserved`/`floor` mean and stood
+                  // unguarded until now.
+                  assertRowsWithinPayout(apart, `${where} apart`);
+                  assertRowsWithinPayout(combined, `${where} combined`);
                 }
               }
             }
@@ -657,8 +677,9 @@ test('a DisplayReservation alone bigger than the RankPool still never hands out 
   // The open point from #56's third comment: a depth-covering reservation
   // (unclaimedRemainder) and a real shortfall (conflict) can hold of the same
   // plan at once — here, because the reservation alone already exceeds the
-  // pool while also settling the whole depth. Decision (this session, see the
-  // ADR 0002 Nachtrag): the two stand side by side rather than excluding one
+  // pool while also settling the whole depth. Decision 3 in the comment "Drei
+  // Entscheide aus der Fragebogenrunde" on #56, 2026-09-27, and in the ADR
+  // 0002 Nachtrag: the two stand side by side rather than excluding one
   // another — both are true facts about this plan, and hiding either would be
   // exactly the silent loss ADR 0002 is written against. Reconciling this into
   // one or two displayed notices is left to Spec 2's NoticeStack.
