@@ -89,9 +89,11 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   wurden, hielt die erste Zeile weiter, weil der `RankPool` um denselben Betrag
   mitgewachsen war. Erst die Summe gegen den `PrizePool` fängt das.
 
-  Auf den `WinnerPack`s steht **mit Absicht keine** Summenregel: die Regel bindet
-  die `Pool`-Ebene, nicht die Empfänger-Ebene, und ein `WinnerPack` ohne
-  Empfänger (`open`) verletzt nichts (#46).
+  Auf den `WinnerPack`s stand bis zum Nachzug nach Lauf 7 **mit Absicht keine**
+  Summenregel. Die Begründung — die Regel bindet die `Pool`-Ebene, und ein
+  `WinnerPack` ohne Empfänger (`open`) verletzt nichts (#46) — hielt nur
+  halb: `open` ist deshalb ein **Glied** der Regel und kein Loch in ihr. Seit
+  dem Nachzug stehen dort drei Zeilen, siehe unten „Nachgezogen nach Lauf 7".
 
   Seit #55 unterscheidet die Zeile **drei** Zustände statt zweier: gehalten
   (grün), gemeldet (gelb, ein Kreis statt eines Häkchens) und gebrochen (rot).
@@ -108,9 +110,14 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   Seit #56 steht als letzte Zeile **kein** Invariant, sondern das Urteil des
   Kerns selbst: `unfit`. Der Grund steht unten unter „Nachgezogen nach #56".
 
+- **Die DefaultSets (#49)** als Knöpfe, über `resolveSettings()` aus dem Kern
+  über die Blätter in `public/sets/` aufgelöst — dieselbe Kette, mit der die
+  App startet. Und **die Wege heraus (#59)** neben der Invariantenzeile,
+  sobald der Kern den Plan `unfit` nennt, jeder als Knopf zum Nehmen. Beides
+  kam mit dem Nachzug nach Lauf 7, siehe unten.
 - **Die vier gemessenen Stände aus #53** als Knöpfe, jeder mit seiner erwarteten
-  Zahl daneben, und dazu die beiden Konfliktstände, die #56 gehören und
-  **nicht** zu den vieren zählen. Jede erwartete Zahl ist dort nachgeschlagen,
+  Zahl daneben, und dazu die beiden Konfliktstände, die #56 gehören, sowie der
+  `WinnerPack`-Überhang aus #70 — die drei zählen **nicht** zu den vieren. Jede erwartete Zahl ist dort nachgeschlagen,
   wo sie entschieden wurde — der Ticketkommentar oder der Test, der den Stand
   festhält —, nie aus dem zurückgerechnet, was der Kern heute liest.
 
@@ -238,3 +245,122 @@ Kein `✗`, und keine rote Invariante. Die beiden #56-Stände melden gelb
 `conflict` und `unclaimedRemainder` zugleich (`{need: 0, have: −16}`) meldet
 gelb auf der Zahlenzeile *und* im Urteil, und der `overtake`-Stand aus #55
 meldet unverändert gelb auf der Monotonie.
+
+## Nachgezogen nach Lauf 7 — #49 · #59 · #58 (Stand `main` `8a949e7`, 2026-09-27)
+
+Die Bank gehört keinem Ticket und wird nach den Merges einer Runde in einem Zug
+nachgezogen. Drei Posten, der dritte aus der Gegenprobe.
+
+### 1. `resolveSettings()` aus #49 — die Bank löst die DefaultSets jetzt selbst auf
+
+`neutralSettings()` war ein handgeschriebenes Literal, das nebenbei
+**mitschrieb, welche vier Felder `null` starten und welche zwei leer** — eine
+zweite Kopie eines Entscheids, der in `public/core/defaults.mjs` steht, und
+genau die Art Kopie, die die erste stehende Regel der Bank verbietet. Die Bank
+hält jetzt nur noch ihr eigenes neutrales Blatt (`BENCH_SHEET`, die
+vorbelegbaren Felder) und lässt `resolveSettings()` den Rest legen. Das
+aufgelöste Objekt ist Feld für Feld dasselbe wie das Literal — nachgerechnet,
+gleiche Schlüssel, gleiche Werte —, also bewegt sich keiner der gemessenen
+Stände aus #53.
+
+Dazu kommt ein zweiter Abschnitt **DefaultSets (#49)**: die echten Blätter aus
+`public/sets/` über dieselbe Kette, die `public/ui/plan.mjs` beim Start
+benutzt — Game, Weekly, Weekend, Release. Damit lässt sich zum ersten Mal ein
+Stand von Hand fahren, den ein `CommunityLead` wirklich aufmacht, statt nur
+einer, den die Bank sich selbst gebaut hat. Ein Knopf ersetzt die ganzen
+`Settings`, nie die Hälfte.
+
+**Was hier nicht nachzuziehen war:** der Registerumzug nach `public/link/keys.mjs`
+und der Wegfall von `public/link/encode.mjs` (#49/#50) lassen die Bank kalt —
+sie hat **nie** auf `link/` importiert und tut es weiter nicht. Sie erfindet
+kein URL-Format, und ein Stand geht als `Settings`-JSON durch das Textfeld.
+Der Posten war als der dringendste angesetzt; er war gar keiner.
+
+### 2. `suggestions()` aus #59 — die Wege heraus stehen neben der Invariantenzeile
+
+Wenn die Zeile aufhört grün zu sein, ist das, was der Kern anböte, genau das
+Nächste, was man sehen will. Der Abschnitt **Ways out (#59)** rechnet sie live,
+sobald der Kern den Plan `unfit` nennt, und **jeder Eintrag ist ein Knopf**:
+ein Weg heraus ist ein Reglerwert (#59), also ist ihn nehmen eine Zuweisung.
+Von Hand gefahren am `overtake`-Stand aus #55 (`depth` 2, `d`=(1),
+`displaySize` 24): fünf Wege — `Serve 4 ranks`, `Rank 1 up to 2 displays`,
+`Drop rank 1's display`, `Rank 2 up to 1 display`, `Participation boosters up
+to 2`; die beiden `Rank 1`-Einträge sind der Gleichstand, den #59 gegen den
+Prototypen korrigiert hat. Am `orphaned`-Knopf steht ein einziger Weg
+(`Drop rank 3's displays`), und ein Klick darauf stellt den Plan wirklich
+gerade — die Zeile geht zurück auf grün.
+
+Der `conflict`-Knopf (#56, `boosterRate` 0) liefert **keinen** Weg. Das ist
+kein Fehler, sondern der Fall aus Entscheid K1 (#68/#70): kein einzelner Regler
+räumt ihn. Die Fläche sagt das und verweist auf K1, statt leer zu bleiben; den
+mehrgliedrigen Weg baut #68, nicht die Bank.
+
+**Die Signatur ist `suggestions(settings)`**, und die Bank nimmt #86 nicht
+vorweg. Der Aufruf steht an **einer** Stelle — `waysOut(settings, plan)` —, die
+beide Argumente schon in der Hand hält; dreht #86 die Signatur auf
+`suggestions(plan)` (ADR 0009, Entscheid K2 an #68), ist das diese eine Zeile
+und sonst nichts.
+
+### 3. Die `WinnerPack`-Invariante — Befund G5 der Gegenprobe
+
+Die Zeile deckte die `WinnerPack`-Achse nicht ab und sagte deshalb „all
+invariants hold" zu einem Stand, den #58s Suite benennt. Drei Zeilen decken sie
+jetzt:
+
+- `Σ row.winners + open = RankPool · WinnerPacks`
+- `judge + Σ row.winners + open = PrizePool · WinnerPacks`
+- `no WinnerPack over-assignment: ranked + manual ≤ RankPool · WinnerPacks`
+
+Die Formel ist die aus #70, wörtlich: `allocation.ranked +
+allocation.manualCount − rank.winners`, positiv heisst überzugeteilt. Nicht
+umformuliert zu „Zeilen > `rank.winners`" — die Gegenprobe (Befund B2, abgelegt
+an #70) fand die beiden Stand für Stand deckungsgleich, 318 von 318, und hier
+noch einmal über 1 800 Stände der `WinnerPack`-Achse ohne eine Abweichung.
+
+Dieselbe Messung trägt die Fassung der beiden Summenregeln: **0** Abweichungen
+ohne Überhang, **1 183 von 1 183** mit einem, und nie um einen anderen Betrag
+als den Überhang. Darum sind sie gelb und nicht rot, wenn der Überhang steht —
+#46 reicht den Deckel ausdrücklich an Spec 2 am Bedienelement weiter und nennt
+das die dokumentierte Antwort des Kerns, keine Ausnahme von der Regel.
+
+**Die dritte Zeile ist rot, und das ist ein Urteil der Bank.** Gelb heisst auf
+dieser Bank bisher: der Kern meldet den Zustand selbst, die Zeile holt ihn sich
+nur (`overtake`, `unclaimedRemainder`, `conflict.have`). Hier gibt es nichts zu
+holen — #70 nennt den Überhang „den einzigen Zustand dieser Spec, den der
+Rechenkern nicht selbst meldet", und `unfit` bleibt `false`. Ein Stand, der
+`WinnerPack`s verspricht, die es nicht gibt, darf nicht sauber aussehen. Wer
+#70 baut, darf das umdrehen; dann ist es ein Entscheid und steht an #70.
+
+Dazu ein **siebter Knopf** für den Überhang und eine Zeile
+`WinnerPackAllocation · overhang (#70)` in den abgeleiteten Grössen. `ranked`
+klemmt der Kern selbst (`allocateWinners`), der Überhang kommt also nur über
+den `manual`-Anteil — was genau dem entspricht, was #70 beschreibt: er
+entsteht nicht beim Setzen, sondern wenn ein zweiter Wert nachträglich sinkt.
+Die erwartete Zahl des Knopfs ist #70s Formel auf diese `Settings` angewandt
+(2 + 2 − 2 = 2), nicht aus einem Plan zurückgelesen.
+
+### Gefahren und gesehen
+
+Über `python3 -m http.server` aus der Repo-Wurzel, Playwright gegen
+`http://localhost:.../dev/`. Alle sieben Knöpfe grün:
+
+```
+✓ series 29·14·7·4·3·3·2·2
+✓ depthCap 31
+✓ series 9·3·2
+✓ curveSilent true
+✓ series 0·0·0                        (conflict, repariert)
+✓ overhang 2                          (neu, #70)
+✓ orphanedReservation 3·2 · orphaned Rank 3
+```
+
+Die neue Zeile **rot** gesehen am `overhang`-Knopf: jede andere Invariante
+grün, `unfit` grün auf `false`, die beiden `WinnerPack`-Summenregeln gelb
+(`4 vs 2`) — und der Banner rot mit `1 invariant(s) BROKEN`. Genau der Stand,
+den G5 beschreibt. **Gehalten** gesehen am neutralen Start und an allen vier
+DefaultSets. Die Bank kennt nur ein Farbschema (kein Dunkelmodus), also gibt es
+zu jedem Bild nur eines.
+
+Die Bank liegt weiter ausserhalb von `public/`, importiert den Kern live und
+kopiert nichts. `node --test` steht unverändert auf 117/117 — an geprüftem Code
+wurde nichts angefasst.

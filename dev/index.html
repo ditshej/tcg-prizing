@@ -137,6 +137,16 @@
         flex-direction: column;
         gap: 0.4rem;
       }
+      #sheets,
+      .ways {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .ways button {
+        border-color: var(--reported);
+        color: var(--reported);
+      }
       .preset {
         display: grid;
         grid-template-columns: 1fr auto;
@@ -307,8 +317,9 @@
     <header>
       <h1>Core workbench &mdash; distribute(settings)</h1>
       <p class="note" style="color: var(--dim); font-size: 12px; margin: 0">
-        Imported live from <code>../public/core/distribute.mjs</code> and
-        <code>../public/core/rules.mjs</code>. No copy, no build step, no dependencies.
+        Imported live from <code>../public/core/</code> &mdash; <code>distribute.mjs</code>,
+        <code>rules.mjs</code>, <code>defaults.mjs</code> (#49) and <code>suggest.mjs</code> (#59) &mdash;
+        plus the sheets in <code>../public/sets/</code>. No copy, no build step, no dependencies.
       </p>
     </header>
 
@@ -317,6 +328,17 @@
         <section>
           <h2>Measured stands (#53) and the conflict stands (#56)</h2>
           <div id="presets"></div>
+        </section>
+
+        <section>
+          <h2>DefaultSets (#49)</h2>
+          <p class="note">
+            Resolved through <code>resolveSettings()</code> in
+            <code>../public/core/defaults.mjs</code> over the sheets in
+            <code>../public/sets/</code> &mdash; the same chain
+            <code>public/ui/plan.mjs</code> starts from. Replaces the whole Settings.
+          </p>
+          <div id="sheets"></div>
         </section>
 
         <section>
@@ -343,6 +365,17 @@
           <h2>Invariants</h2>
           <div id="invariantBanner"></div>
           <ul id="invariants"></ul>
+        </section>
+
+        <section>
+          <h2>Ways out (#59)</h2>
+          <p class="note">
+            <code>suggestions()</code> from <code>../public/core/suggest.mjs</code>, computed live
+            whenever the core calls the plan <code>unfit</code>. One slider per entry (#59); click one
+            to take it. The <code>WinnerPack</code> overhang is not one of the four facts and has no
+            entries here &mdash; its ways out are computed, not searched (#70).
+          </p>
+          <div id="waysOut"></div>
         </section>
 
         <section>
