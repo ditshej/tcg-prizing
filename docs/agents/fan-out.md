@@ -87,6 +87,28 @@ branch's doing. The batch of 2026-09-24 ran while four commits landed on
 question. The wrong form only ever over-reports, so it is not a breach that
 slips through; it is a check that gets waved away on the second run.
 
+## Mutation hygiene
+
+Mutation testing turns the implementation wrong on purpose, so it is the one
+move in this family that can do damage. Both `/counter-check` and
+`/ask-hard-questions` run it, and both run it against a tree they are not
+allowed to change. The procedure is the same in either:
+
+1. **Copy the file aside**, mutate the copy, run, copy back. `git checkout -- <file>`
+   is on this machine's deny list, and `git stash` leaves an entry behind when
+   the pass is interrupted.
+2. **Run `git status` in every worktree you touched** and say in the report that
+   it is clean. Stop any server you started.
+3. **Mutate where an acceptance criterion hangs**, not across the board. A
+   criterion no test can carry — two rewritten table rows, an ADR addendum —
+   gets a written **nil return** instead. Inventing a mutation for a
+   documentation criterion produces a result that means nothing.
+
+The move earns its cost because a test that stays green under a deliberate
+break checks nothing. Run 1 produced three of those; run 5's repair to
+`assertPlanSum` was mutation-tested before it was believed, and the three
+mutations are in the log below.
+
 ## The findings file
 
 `/fan-out` writes it, `/counter-check` reads it. `review/` is gitignored:

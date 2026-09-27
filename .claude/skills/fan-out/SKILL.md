@@ -141,8 +141,9 @@ each. It reads and writes nothing else, so it needs no worktree.
   the source in Phase 3.
 - **Read the substance of the diff**, not its stat line.
 - **Look at the tests' form, not only their colour.** A green test that
-  restates its own claim proves nothing; `/counter-check` carries the two
-  worked examples and the mutation move that exposes them.
+  restates its own claim proves nothing. The two worked examples are in
+  `/counter-check`, Lens 2; the mutation that exposes them, and the hygiene it
+  needs, are **Mutation hygiene** in `docs/agents/fan-out.md`.
 
 And the move that no checklist contains: **chase whatever a report mentions in
 passing.** In run 5 the blocking finding was a case the building agent had

@@ -38,17 +38,15 @@ a third section two screens down. Every number in that finding was right. Ask
 of each finding: which section of the source would settle this, and is it in
 the list?
 
-## Nothing here is repaired, and nothing is left turned
+## You check, and you leave every tree as you found it
 
-You check; you do not fix. The branches under review stay untouched, and so
-does `main`.
+The branches under review stay untouched, and so does `main`. A defect you find
+is reported, never repaired.
 
-Mutation testing turns the implementation wrong on purpose, so it is the one
-move in this skill that can do damage. Copy the file aside, mutate, run, copy
-back — `git checkout -- <file>` is on this machine's deny list and `git stash`
-leaves an entry behind when the pass is interrupted. Before you report, run
-`git status` in every worktree you touched and say that it is clean. Stop any
-server you started.
+Lens 2 mutates, which is the one move here that can do damage. The procedure —
+copy aside, `git status` clean before you report, nil returns for criteria no
+test carries — is **Mutation hygiene** in `docs/agents/fan-out.md`, shared with
+`/ask-hard-questions`. Read it before Lens 2.
 
 ## Lens 1 — reproduce each finding, or refute it
 
@@ -77,20 +75,16 @@ examples, both from that batch:
   one side. It wrote the wanted invariant down instead of checking it against
   the plan, and went green while the plan double-counted: 40 instead of 32.
 
-The move against this is hand-made mutation testing: **turn the implementation
-wrong and see whether the test goes red.** A test that stays green checks
-nothing. Do this where an acceptance criterion hangs, not across the board.
+The move against this is hand-made mutation testing: turn the implementation
+wrong and see whether the suite goes **red**. Red is the whole verdict here —
+it replaces "does this test look thorough" with something you can watch happen.
+Procedure and nil returns: **Mutation hygiene**, `docs/agents/fan-out.md`.
 
-Budget for this: the first run had eighteen criteria across three tickets, and
+Budget for it: the first run had eighteen criteria across three tickets, and
 this was the longest part of the pass, not an appendix to lens 1.
 
-A criterion no test can carry — two rewritten table rows, an ADR addendum —
-gets **a written nil return, not a mutation**, the same way the visual pass
-does. Inventing a mutation for a documentation criterion produces a result that
-means nothing.
-
-Done when every acceptance criterion has either one mutation with the test's
-colour written down, or a nil return saying why none applies.
+Done when every acceptance criterion has either one mutation with its colour
+written down, or a nil return saying why none applies.
 
 ## Lens 3 — what the first pass never looked at
 
@@ -106,6 +100,10 @@ where the defects sit. In the first run the parent crossed the key register
 against the data sheet and found them sound — crossing the *sheet* against the
 *core*, a pair nobody had named, produced the batch's one undiscovered defect
 in a single command. One Node process, absolute imports from two worktrees.
+
+Done when every ticket pair that reads the same place in the source has been
+enumerated, and each one either crossed with a command and an output, or
+written off in a sentence.
 
 ## The visual pass — conditional, not obligatory
 
@@ -143,6 +141,9 @@ nothing renderable, look at nothing, and write the nil return down.** A
 screenshot of an unchanged page as "evidence" is worse than no check, because
 it looks like one. In the hand run it applied to two of three PRs — a key
 register and two data sheets have no surface.
+
+Done when every PR has either a fixture loaded into the bench and the invariant
+line read, or the written nil return that says it has no surface.
 
 ## Output
 

@@ -1,6 +1,6 @@
 ---
 name: map-closure
-description: Decide whether a Wayfinder map is actually finished. Use when a map's frontier has run empty, when the user asks to close or finish a map, or before handing a map off to a spec.
+description: Decide whether a Wayfinder map is actually finished — fresh lenses, a skeptic, and a stopping criterion instead of a feeling.
 disable-model-invocation: true
 ---
 
@@ -39,8 +39,9 @@ expensive step in the whole Wayfinder workflow; it has twice hit the session
 limit (1.95M and 1.24M tokens) when started in a session that already carried
 context.
 
-Decide the number of lenses **with the maintainer**, in German. Roughly 0.15M
-tokens per lens including its skeptic. Do not default to eight.
+Decide the number of lenses **with the maintainer**, in German, and let this
+map's own risk set it. Roughly 0.15M tokens per lens including its skeptic, so
+the number is a budget decision he is owed.
 
 ## Stage 0 — the mechanical gate
 

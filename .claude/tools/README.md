@@ -206,6 +206,22 @@ Silhouettengrau mit eigener Kante. Sie sind gegen die Kartenfläche (`--card`,
 Diagramm eine vierte Serie, ist das ein Hinweis auf die Form, nicht auf die
 Palette.
 
+## Rendering gotchas
+
+Properties of this tool, not of any one card. Each cost a round when it was
+first met:
+
+- **Backticks are the only markup**, in every field. `**bold**` renders
+  literally.
+- **A measuring bracket hangs under the last bar.** Only the last one has space
+  reserved beneath it; anywhere else the bracket collides with its neighbour. So
+  order the bars to put the one the brackets belong to at the end.
+- **The SVG is rendered once, at server start.** A change to the question file
+  needs a restart to show, which is why the card is looked at in a single pass
+  rather than iteratively.
+- **Light and dark need no separate look.** The palette is a property of this
+  file and was validated here (see `### Farben`).
+
 ## Answer file format
 
 ```jsonc

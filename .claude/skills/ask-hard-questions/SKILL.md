@@ -24,10 +24,8 @@ serves, and stops.
   `/counter-check` report where one exists.
 - **Output:** `review/<batch>-fragen.json`, then a running server and a URL.
 - **Not yours:** `review/<batch>-antworten.json`. The maintainer writes it by
-  answering; acting on it is the next session's work — and that session's first
-  move is to **file each answer** in the ticket comment, the ADR or
-  `CONTEXT.md`, because `review/` is gitignored and a decision left there is
-  gone at the next merge (`AGENTS.md`, "Building several tickets at once").
+  answering; filing it is the next session's work (`AGENTS.md`, "Building
+  several tickets at once").
 
 The file format, the two chart kinds, and the rule that a numeric piece of
 evidence is asked about its **form** before its formatting, live in
@@ -144,12 +142,10 @@ Where nothing is runnable — a reading question, a documentation decision — t
 card says so. A **nil return is evidence**; a borrowed number dressed as a
 fresh one is not.
 
-**The sharpest evidence is usually a mutation**, and a mutation writes: turn the
-implementation wrong on purpose and show the suite staying green. The worktree
-under review is read-only, so copy the files aside and mutate the copy —
-`git checkout -- <file>` is on this machine's deny list and `git stash` leaves
-an entry behind when the pass is interrupted (`/counter-check`, same move). Say
-in `git status` terms that the tree you touched is clean before you report.
+**The sharpest evidence is usually a mutation** — turn the implementation wrong
+on purpose and show the suite refusing to go **red**. It writes, so it follows
+**Mutation hygiene** in `docs/agents/fan-out.md`, the same procedure
+`/counter-check` runs.
 
 Then ask the form question from `.claude/tools/README.md`: which statement does
 this evidence carry, and which shape makes that statement visible. A number
@@ -159,20 +155,23 @@ figures remain checkable.
 Done when every card has at least one piece of evidence produced in this
 session, and every numeric one has been through the form question.
 
-## Stage 3 — write the card as something that happened, not as a defect
+## Stage 3 — the card has to survive the repo being closed
 
-The run of 2026-09-27 produced two cards that passed both gates, carried
-evidence run in session, and survived the skeptic — and the maintainer sent
-them back unanswered. They were written in the vocabulary of the code:
-`curveCount = 0`, `ShapedRemainder`, `unfit`, `_Label_`-Zeile. Every sentence
-was true. To decide anything he first had to translate each one back into what
-the product actually does, and that translation is the work the card exists to
-save him. His verdict: "da könnte es auch gleich direkt hier im Terminal
+One test governs this whole stage, and it is binary:
+
+> Read the card out loud with the repo closed. Any sentence that needs the code
+> open to make sense is not finished.
+
+Run 5 failed it. Two cards passed both gates, carried evidence run in session
+and survived the skeptic — and came back unanswered, because they were written
+in the vocabulary of the code: `curveCount = 0`, `ShapedRemainder`, `unfit`.
+Every sentence was true, and each one had to be translated back into what the
+product does before anything could be decided — which is the labour the card
+exists to spare. The verdict: "da könnte es auch gleich direkt hier im Terminal
 stehen."
 
-**Start from a run of the product, with numbers he would recognise.** Not the
-defect and the conditions that trigger it — a tournament, its people, its
-boxes:
+**Start from a run of the product, with numbers he would recognise** — a
+tournament, its people, its boxes:
 
 > **before** — Reicht der abgegoltene Bereich bis genau `depth`, bleibt
 > `curveCount` 0 und der `ShapedRemainder` hat kein Ziel.
@@ -204,16 +203,12 @@ so the choice was visible before it was read.
 
 **No agent in this loop will catch this.** The gates test who may decide, not
 how it reads; the skeptic reads code as fluently as you do and will cheerfully
-sharpen the options of a card nobody can parse. In the run that produced this
-section the skeptic came back with a correct and useful critique — a dead card,
-two dominated options, two errors in the stake — and did not mention the
-language once. So this stage is a self-check, and it has one test:
+sharpen the options of a card nobody can parse. In run 5 it came back with a
+correct and useful critique — a dead card, two dominated options, two errors in
+the stake — and did not mention the language once. The reading is yours alone.
 
-> Read the card out loud with the repo closed. Any sentence that needs the code
-> open to make sense is not finished.
-
-Done when title, stake, every option label and every chart label survive that
-reading, and every option carries the number it produces.
+Done when title, stake, every option label and every chart label survive the
+closed-repo reading, and every option carries the number it produces.
 
 ## Stage 4 — the options, then a skeptic
 
@@ -240,15 +235,11 @@ reasoning. It reads and writes nothing, so it needs no worktree of its own —
 the rule in `docs/agents/fan-out.md` binds writers, and an agent that writes
 anything in this skill's run does get one, parent included.
 
-Expect it to kill a card, not just widen one. In the trial run it struck out a
-whole card whose decision had already been made in code, and took apart both
-options of the card that survived. In the run of 2026-09-27 it killed a third
-card — the decision stood in the parent spec, at two places — and struck one
-dominated option from each survivor. A skeptic that only adds a third option
-has probably been given the reasoning along with the cards.
-
-What it will **not** tell you is that the card is unreadable. It reads code too.
-That check is yours, and it is Stage 3.
+Expect it to kill a card, not just widen one. Both runs so far struck out a
+whole card whose decision was already written down — once in code, once in the
+parent spec at two places — and took dominated options off the survivors. A
+skeptic that only adds a third option has probably been given the reasoning
+along with the cards.
 
 Done when every skeptic answer has been taken up or written off in a sentence,
 in the handover report — the question file has no field for it.
@@ -269,22 +260,15 @@ Then:
 node .claude/tools/fragebogen.mjs review/<batch>-fragen.json
 ```
 
-**Look at it once, in one pass.** The server renders the SVG at start, so a
-change to the question file needs a restart to show. So: parse the JSON, start
-the server, take **one** screenshot of the chart *element* — not the full page,
-which costs several times as much — and collect every defect from that single
-look before touching the file. Run 5 spent five screenshots on three rounds,
-two of them chasing typos the writer had put there himself.
+**Look at it once, in one pass.** Parse the JSON, start the server, take
+**one** screenshot of the chart *element* — not the full page, which costs
+several times as much — and collect every defect from that single look before
+touching the file. Run 5 spent five screenshots on three rounds, two of them
+chasing typos the writer had put there himself.
 
-Two defects are worth knowing in advance, because both cost a round that day:
-`**bold**` renders literally — backticks are the only markup, in every field —
-and a measuring bracket collides with the neighbouring bar unless it hangs
-under the **last** one, which is the only bar with space reserved beneath it.
-Order the bars so the one the brackets belong to comes last.
-
-Light and dark need no separate look. The palette is a property of
-`.claude/tools/README.md` and was validated there; it is not a property of your
-card.
+Read **Rendering gotchas** in `.claude/tools/README.md` before that look, not
+after it. The four it lists have each cost a round already, and every one of
+them is visible in the question file before the server starts.
 
 Hand over the URL it prints, and the handover report below. Then stop. The
 server writes `review/<batch>-antworten.json` and shuts itself down when the

@@ -11,28 +11,28 @@ already existed; what this skill adds is **who holds it**. Nobody. The session
 that runs `/round` is a conductor: it holds ticket numbers, file paths and your
 answers, and it never reads a findings file.
 
-Run 5 (2026-09-27) drove the same round from a single session and cost **340k
-tokens** against a working limit of about 200k. Nothing in it was wasted work —
-the phases were right and both blockers were real. What was wrong is that one
-context carried all four phases, when the round has carried its own handover
-medium from the start: `…-befunde.md` → `…-gegenprobe.md` → `…-fragen.json` →
-`…-antworten.json`. Those files exist **so that the context does not have to
-be** the handover. Run 5 wrote them and then also remembered everything in
-them.
+Run 5 drove the same round from one session and cost **340k tokens** against a
+working limit of about 200k (log in `docs/agents/fan-out.md`). Nothing in it was
+wasted work. What was wrong is that one context carried all four phases, when
+the round has carried its own handover medium from the start: `…-befunde.md` →
+`…-gegenprobe.md` → `…-fragen.json` → `…-antworten.json`. Those files exist **so
+that the context does not have to be** the handover.
 
 ## The conductor's one rule
 
 > Hold paths, not content.
 
-Concretely, the session running this skill does **not**: read
-`review/<batch>-befunde.md`, read the counter-check report, recompute an
-acceptance number, read a diff, or summarise a finding it has not read. Each
-phase agent reports the few lines the next phase needs, and those lines are all
-the conductor keeps.
+Everything the conductor knows about a phase it knows from the few lines that
+phase reported. A findings file, a counter-check report, a diff, a recomputed
+acceptance number — each stays in the agent that produced it.
 
-It has exactly three jobs: start each phase with the right paths, put the
-candidate decisions in front of the maintainer, and say at the end what
-happened.
+Three jobs, and nothing else: start each phase with the right paths, put the
+candidate decisions in front of the maintainer, say at the end what happened.
+
+**A phase is done when its artefact is on disk** — the table below names which.
+That is the only completion signal the conductor uses; an agent reporting
+success without its artefact has not finished, and the phase is restarted rather
+than believed.
 
 ## The phases
 
@@ -222,10 +222,8 @@ interaction instead of two.
 One agent, given both answer files — `review/<batch>-sofort.json` from the
 terminal and `review/<batch>-antworten.json` from the cards, whichever exist —
 and the instruction to file each answer **where the next session will look it
-up**: the ticket comment, an ADR, `CONTEXT.md`. `review/` is
-gitignored; a decision left there is gone at the next merge, and the session
-after it derives the value again instead of reading it (`AGENTS.md`, "A decided
-number is looked up, never back-computed").
+up** — the ticket comment, an ADR, `CONTEXT.md` (`AGENTS.md`, "Building several
+tickets at once").
 
 Filing comes **before** building, in that order, and the filing goes to the
 ticket that will *do* the work, not the ticket where the finding appeared. Run
