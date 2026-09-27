@@ -249,6 +249,10 @@ body {
 }
 
 .plan-ranktotal {
+  margin: 0; /* a bare <p> carries a ~1em UA margin the measuring rind never
+                sees (getBoundingClientRect excludes margin) — #63 found this
+                via the fullscreen state, which removes the opaque controls
+                bar that had been painting over the resulting overflow */
   font-size: 0.8rem;
   opacity: 0.8;
 }
