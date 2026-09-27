@@ -4,6 +4,13 @@
  * tickets) read this table instead of each carrying their own idea of the key
  * list — a second copy is exactly the kind of drift the versioning in ADR 0007
  * is written against (docs/agents/setup-link.md).
+ *
+ * It has a file of its own because it is not a direction: reading, writing and
+ * migrating use it alike, and a register that lives in the file named after
+ * *writing* is looked for at the wrong end (#47, `## File layout`; decided at
+ * #49, "Entscheid K3"). The directions stay one file each — `decode.mjs` and
+ * `encode.mjs` — and their pair character is nailed down by #50's
+ * `decode(encode(x))`, which is a statement about the test, not the file.
  */
 
 export const CURRENT_VERSION = 1;

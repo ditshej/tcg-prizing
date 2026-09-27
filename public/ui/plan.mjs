@@ -4,52 +4,22 @@
  * Settings it was built from. It never reaches past the seam into the
  * calculation itself (ADR 0004) and never tracks where a value came from.
  *
- * `startingSettings()` is a stand-in for `resolveSettings()` — see the
- * warning on that function below. Everything else here is read-only display
- * logic over `plan`, kept inside the shell's unproven half on purpose: #61's
+ * The starting Settings come from `resolveSettings()` in `core/` (#49), which
+ * replaced the local stand-in this file carried in the meantime. Everything
+ * else here is read-only display logic over `plan`, kept inside the shell's
+ * unproven half on purpose: #61's
  * Testing Decisions carve out only the tile-window geometry and the
  * diagram's cap (`geometry.mjs`) as pure derivations for this ticket: the
  * rest of what a Rank's tile or bar shows is judged at the picture, same as
  * the rest of Spec 2's surface.
  */
 
+import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
 import { CURVES } from '../core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
-
-/**
- * The starting Settings: the Game's complete sheet, overridden by the first
- * TournamentType's deviations (ADR 0003 — the first entry carries only its
- * title, so this degenerates to the Game's own values), plus the neutral
- * start every DefaultSet owes the Rank-naming fields.
- *
- * **Not `resolveSettings()`.** #62's own ticket body says that function
- * "entsteht in #49 und liegt bei core/" — but #49 is not among #62's
- * blockers and had not landed on `main` when this was built (checked via
- * `git log`, 2026-09-26). Writing it here would duplicate a function this
- * ticket does not own the home of; reaching into `public/core/` to add it
- * was out of bounds for this ticket regardless. So this stays a small, local,
- * clearly-labelled merge, scoped to bootstrapping this one screen, and not a
- * second copy of a two-level DefaultSet merge meant to live in the core —
- * this repo's own rule against exactly that kind of drift is the reason it
- * is called out this plainly. See the PR description for the finding.
- */
-function startingSettings() {
-  const [firstType] = TOURNAMENT_TYPES;
-  const { id, title, ...overrides } = firstType ?? {};
-  return {
-    ...GAME,
-    ...overrides,
-    tournamentPacks: null,
-    depth: null,
-    ranked: null,
-    winnerPacks: null,
-    manualWinner: {},
-    displays: [],
-  };
-}
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
 function restMessage(lastServedRank, players) {
@@ -60,7 +30,14 @@ function restMessage(lastServedRank, players) {
 
 export function planApp() {
   return {
-    settings: startingSettings(),
+    /**
+     * The starting Settings: the Game's complete sheet, the first
+     * TournamentType's deviations on top, no pins — the starting choice
+     * carries only its title, so this resolves to the Game's own values
+     * (ADR 0003). `resolveSettings()` arrived with #49 and replaced the local
+     * stand-in #62 had to leave here.
+     */
+    settings: resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins: {} }),
     curveSteps: CURVES,
 
     /**
