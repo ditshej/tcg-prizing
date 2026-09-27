@@ -27,6 +27,44 @@ import { distribute } from '../public/core/distribute.mjs';
  * `RankPool` from the top the row sum is exhaustive there as well, so the
  * branch is swept like any other stand and carries one extra assertion of its
  * own — the rows never exceed the `RankPool`.
+ *
+ * ## How the grid was cut down (decision K5 at #58)
+ *
+ * The two sweeps ran over 116 064 stands once, and that cost `node --test`
+ * about 1 230 ms of its 1 520 ms — in every run, in every session. They now
+ * run over **1 024 stands**, 512 each, and the acceptance criterion ("at least
+ * a few hundred combinations") still holds. The cut was made in two steps, and
+ * it is written down here because this is the spot the next session would
+ * otherwise have to guess at:
+ *
+ *  1. **Every axis keeps two values: the one that switches its feature off and
+ *     the one that pushes it past a boundary.** The interior values went —
+ *     `players` 5 and 32, `boosterRate` 1 and 12, `rankFloor` 8, `depth` 1 and
+ *     3, `curve` 'steep', the short reservation vectors `[1]`, `[2,1]`,
+ *     `[1,1]`, and so on. Measured against the full grid, none of them
+ *     produced a state the two surviving ends do not. The one vector kept,
+ *     `[3,2,1,0,…,0,2]`, is the one that carries a Display at Rank 10 past
+ *     every depth in the sweep — it is where the orphaned reservations come
+ *     from, and dropping it would empty four of the five states at once.
+ *  2. **One axis per sweep is then held at a single value**, so the product
+ *     lands near a thousand instead of near two: `rankFloor` at 2 in the
+ *     divisible sweep, `participationPack` at 4 in the indivisible one. Both
+ *     were picked by measurement, not by taste: they are the axes whose two
+ *     values left every count of the tally below identical, so holding one of
+ *     them costs the least coverage that can be shown. The value kept is the
+ *     one that leaves the feature switched *on* — a term at 0 proves less
+ *     about a sum rule than a term that carries something. For
+ *     `participationPack` the dropped value, 0, is what the divisible sweep
+ *     runs at throughout; for `rankFloor` the dropped value, 0, is genuinely
+ *     gone from the sweep, and that is the one piece of coverage this cut
+ *     paid with.
+ *
+ * The cut was then checked against the coverage, not assumed: all five states
+ * (`conflict`, `overtake`, `orphanedReservation`, `unclaimedRemainder`,
+ * `negativeHave`) still occur in the small grid, both `CombinedHandout`
+ * branches run in both sweeps, and the over-assigned `WinnerPack` branch
+ * survives in the indivisible one. The tally test below is what holds that in
+ * place: it would go red the moment a further cut emptied one of them.
  */
 
 /** A neutral Settings object; every sweep axis is an override on top of it. */
@@ -249,16 +287,25 @@ function assertSumRule(plan, where, tally) {
  * varied directly — including a pinned value far over the cap, which no step
  * can produce. Sweeping it would double the run for one extra value of one
  * derived number. `rangeSize` itself has its own tests (test/rules.test.mjs).
+ *
+ * `rankFloor` is the one axis held at a single value here (step 2 of the cut
+ * above). 2 is the neutral Settings value, and it keeps the `RankFloor`
+ * reservation switched *on* for all 512 stands. `rankFloor` 0 is thereby out of
+ * the sweep altogether — the price named in step 2 of the cut. What still
+ * covers it: `test/distribute.test.mjs` pins stands at `rankFloor` 0 and 5
+ * outright, and every stand here in which the `RankPool` is too small for the
+ * floor anyway (`boosterRate` 0) reaches the same starved branch from the
+ * other side.
  */
 const DIVISIBLE_AXES = {
-  players: [2, 5, 8, 32],
-  boosterRate: [0, 1, 3, 12],
-  participationBooster: [0, 1, 12],
+  players: [2, 8],
+  boosterRate: [0, 3],
+  participationBooster: [0, 12],
   judgeBooster: [0, 40],
-  rankFloor: [0, 2, 8],
-  depth: [null, 1, 3, 40],
+  rankFloor: [2],
+  depth: [null, 40],
   curve: ['gentle', 'extreme'],
-  displays: [[], [1], [2, 1], [1, 1], [3, 2, 1, 0, 0, 0, 0, 0, 0, 2]],
+  displays: [[], [3, 2, 1, 0, 0, 0, 0, 0, 0, 2]],
   displaySize: [1, 24],
   combinedHandout: [false, true],
 };
@@ -268,17 +315,27 @@ const DIVISIBLE_AXES = {
  * WinnerPacks. Held at one player count per row of the product is not enough
  * here — the RankCycle wraps on the player count and the `ranked` prefix is
  * clamped by it — so `players` is an axis of this sweep too.
+ *
+ * `participationPack` is the axis held at a single value here (step 2 of the
+ * cut above), at 4 rather than 0, so the participation term of the
+ * `TournamentPack` equation carries something in every one of the 512 stands.
+ * The dropped value is covered where it costs nothing: the divisible sweep
+ * runs `participationPack` 0 throughout.
+ *
+ * `null` is kept on every axis that has it, and it is not a third value
+ * smuggled past step 1: `tournamentPacks`, `winnerPacks` and `ranked` read
+ * `null` as "derive it", which is a different code path, not a smaller number.
  */
 const INDIVISIBLE_AXES = {
-  players: [2, 8, 32],
-  tournamentPacks: [null, 0, 7, 40],
-  participationPack: [0, 1, 4],
-  envelopeSize: [1, 24, 32],
-  envelopeYield: [1, 2, 8],
-  winnerPacks: [null, 0, 5, 30],
-  judgeWinner: [0, 2, 100],
-  ranked: [null, 0, 3],
-  manualWinner: [{}, { 1: 1 }, { 3: 2, 7: 1 }],
+  players: [2, 32],
+  tournamentPacks: [null, 40],
+  participationPack: [4],
+  envelopeSize: [1, 24],
+  envelopeYield: [1, 8],
+  winnerPacks: [null, 30],
+  judgeWinner: [0, 100],
+  ranked: [null, 3],
+  manualWinner: [{}, { 3: 2, 7: 1 }],
   combinedHandout: [false, true],
 };
 
@@ -300,12 +357,12 @@ function sweep(axes) {
 
 test('the sum rule holds per PrizeItem axis over the divisible axis and everything that shapes it', () => {
   const tally = sweep(DIVISIBLE_AXES);
-  assert.equal(tally.total, 46080);
+  assert.equal(tally.total, 512);
 });
 
 test('the sum rule holds per PrizeItem axis over the two indivisible axes and the envelope numbers', () => {
   const tally = sweep(INDIVISIBLE_AXES);
-  assert.equal(tally.total, 69984);
+  assert.equal(tally.total, 512);
 });
 
 test('the sweep reaches conflict, overtaking, an orphaned reservation and a reservation covering the depth', () => {
@@ -314,8 +371,29 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
   // passes a careless reading of that line. The numbers are exact on purpose
   // — they are a property of the sweep above plus the core's classification
   // of the four unfit states, and a change in either should be looked at
-  // rather than absorbed. Recompute them only against a deliberate change to
-  // one of the two.
+  // rather than absorbed.
+  //
+  // ## Where these five numbers come from, and what to do when they fail
+  //
+  // They were read off the core at **f33439f** (the merge of #82 on `main`),
+  // over the 1 024-stand grid this file sweeps since decision K5 at #58. That
+  // was the *last* time they were won from the core: the cut of the grid moved
+  // them once, and with that they are decided. They are filed in a comment on
+  // #58 alongside the core stand and the grid size, because `review/` is
+  // gitignored and this file alone is not a place anyone looks things up.
+  //
+  // **They are carried forward, never adjusted.** When this test goes red
+  // because the core changed, the question is *not* "which number makes it
+  // green" — it is **"was that shift intended?"**. Answer that first, out of
+  // the ticket that changed the core; only a yes earns a new number, and the
+  // new number goes back onto #58 with its own core stand. Whoever recomputes
+  // from the new core instead has switched the tripwire off and made it look
+  // green — the pattern that has already cost this repo two sessions (#20,
+  // #54). Their whole value is that they have not moved since a named stand.
+  //
+  // This is deliberately a tripwire, not a bound: a core change that keeps the
+  // sum rule perfectly intact and only shifts one boundary moves `conflict`
+  // off 464, and the test falls. That is the test working.
   const divisible = sweep(DIVISIBLE_AXES);
   assert.deepEqual(
     {
@@ -326,11 +404,11 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
       negativeHave: divisible.negativeHave,
     },
     {
-      conflict: 37000,
-      overtake: 2704,
-      orphanedReservation: 16900,
-      unclaimedRemainder: 20916,
-      negativeHave: 29328,
+      conflict: 464,
+      overtake: 8,
+      orphanedReservation: 256,
+      unclaimedRemainder: 188,
+      negativeHave: 240,
     },
   );
 
@@ -340,8 +418,8 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
   // a recipient, and states where `manual` promises more than the RankPool
   // holds and `open` is clamped at 0.
   assert.ok(indivisible.overAssignedWinners > 0, 'no over-assigned WinnerPack stand in the sweep');
-  assert.equal(indivisible.overAssignedWinners, 25572);
-  assert.equal(indivisible.total - indivisible.overAssignedWinners, 44412);
+  assert.equal(indivisible.overAssignedWinners, 64);
+  assert.equal(indivisible.total - indivisible.overAssignedWinners, 448);
 });
 
 test('a negative conflict.have is the one exemption, and the sweep really produces it', () => {
