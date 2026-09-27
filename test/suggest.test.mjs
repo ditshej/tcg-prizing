@@ -109,12 +109,30 @@ test('at a floor conflict the curve stays out of the list on its own', () => {
   ]);
 });
 
+/**
+ * The overtake of #59 `## G1`: `d` = (3,1) over a Display of 8 at an `extreme`
+ * curve with the floor down. Rank 3 reserving 2 Displays clears the state — and
+ * makes the vector `(3,1,2)` rise, so `displayWaysOut()` must not offer it. It
+ * is the one state in this file where the monotonicity grip has anything to
+ * hold: over the five states above, removing `neverRising()` from
+ * `suggest.mjs` changes nothing. The same state also reaches `displays[i]` = 3,
+ * so it pins the search range of #46 `## Slider ranges` at the same time.
+ */
+const RISING_STEP = settingsFor('weekend', {
+  players: 32,
+  rankFloor: 0,
+  curve: 'extreme',
+  displays: [3, 1],
+  displaySize: 8,
+});
+
 /** The states that have something to say — one per way a plan can be unfit. */
 const UNFIT_STATES = [
   ['overtake', OVERTAKE],
   ['floor conflict', FLOOR_CONFLICT],
   ['orphaned reservation', settingsFor('weekend', { players: 48, depth: 2, displays: [1, 1, 1] })],
   ['unclaimed remainder', settingsFor('weekend', { depth: 1, displays: [1] })],
+  ['rising step one Rank down', RISING_STEP],
   ['reservation over the whole RankPool', settingsFor('weekend', { displays: [4, 2] })],
 ];
 
@@ -138,8 +156,8 @@ test('a state with no individually walkable way out yields an empty list, not a 
   assert.deepEqual(suggestions(settings), []);
 });
 
-test('the four other unfit states each have at least one way out', () => {
-  for (const [name, settings] of UNFIT_STATES.slice(0, 4)) {
+test('every unfit state but the last one has at least one way out', () => {
+  for (const [name, settings] of UNFIT_STATES.slice(0, -1)) {
     assert.ok(suggestions(settings).length > 0, `${name} must have at least one way out`);
   }
 });
@@ -182,6 +200,41 @@ test('no way out lets the DisplayReservation vector rise', () => {
       }
     }
   }
+});
+
+/**
+ * The grip above only bites where a rising candidate would otherwise be
+ * proposed, and that is this state: `(3,1,2)` clears — it is a fit plan that
+ * keeps the overtaking Rank, so `clears()` says yes — and it is still withheld,
+ * because `d₁ ≥ d₂ ≥ …` is the one rule no suggestion may break. Without this
+ * assertion the test above passes on a `suggest.mjs` that has no filter at all.
+ */
+test('a rising candidate is withheld even though it clears the state', () => {
+  const rising = accepted(RISING_STEP, { key: 'displays', rank: 3, value: 2 });
+  assert.deepEqual(rising.displays, [3, 1, 2]);
+  const after = distribute(rising);
+  assert.equal(unfit(after), false, '(3,1,2) really clears — the filter is what withholds it');
+  assert.ok(after.depth >= distribute(RISING_STEP).overtake.over, 'and it keeps the overtaking Rank');
+  assert.deepEqual(
+    suggestions(RISING_STEP).filter((s) => s.key === 'displays' && s.rank === 3),
+    [],
+  );
+});
+
+/**
+ * The search range of #46 `## Slider ranges`: `displays[i]` runs 0…4, not
+ * 0…2. Rank 2 rising from 1 to 3 is the nearest clearing value there, and a
+ * range cut to 0…2 loses it silently — every other test in this file stays
+ * green.
+ */
+test('the DisplayReservation is searched up to 4, not to the current value', () => {
+  assert.deepEqual(labels(suggestions(RISING_STEP)), [
+    'Curve to gentle',
+    'Floor up to 5',
+    'Rank 1 down to 1 display',
+    'Rank 2 up to 3 displays',
+    'Participation boosters up to 2',
+  ]);
 });
 
 test('every way out really clears the state it was offered for', () => {
