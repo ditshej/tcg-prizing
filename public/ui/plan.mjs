@@ -63,6 +63,40 @@ export function planApp() {
     settings: startingSettings(),
     curveSteps: CURVES,
 
+    /**
+     * Session state (#63): which of the three pages is in front, and whether
+     * `Plan`'s tile grid is fullscreen. Neither is a Settings field and
+     * neither belongs in the `SetupLink` (#61, "Session state" — "die
+     * Schale hält … die aktive Seite, das Vollbild … und nichts davon steht
+     * im SetupLink"). A reload always lands back on `Plan` with fullscreen
+     * off, for free, because this is a plain object literal re-created on
+     * every page load, never read from or written to the link.
+     */
+    activePage: 'plan',
+    fullscreen: false,
+
+    /**
+     * Switches the active page. A second tap on the already-active page is a
+     * no-op — there is no open/close left to trigger (#63 AC 2) — and any
+     * real switch drops fullscreen, because fullscreen is a state of `Plan`
+     * and no other page has one (#63 AC 6).
+     */
+    setPage(page) {
+      if (page === this.activePage) return;
+      this.activePage = page;
+      this.fullscreen = false;
+    },
+
+    /** Grabbed at the tile grid, never from the (hidden, in fullscreen) foot. */
+    openFullscreen() {
+      this.fullscreen = true;
+    },
+
+    /** The one exit, at the same corner the grip that opened it sits in. */
+    closeFullscreen() {
+      this.fullscreen = false;
+    },
+
     get plan() {
       return distribute(this.settings);
     },

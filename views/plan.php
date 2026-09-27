@@ -6,12 +6,18 @@
  * composes once; the values behind it come from `distribute()` in the
  * browser and never touch PHP (ADR 0004).
  *
- * Griffe an der Kachel, weitere Seiten, Meldungen und die Faltung folgen in
+ * `Plan` is now one of three pages (#63): shown only while `activePage` is
+ * `'plan'`, folded to a single column with `Prepare` and `Details` until #71
+ * builds the width/height fold. The four hot sliders are `controls-hot.php`,
+ * the same partial `details.php` shows in its own Grundform — not a second
+ * copy (#61, "die Schiene ist Details und war nie ein eigener Inhalt").
+ *
+ * Griffe an der Kachel, Meldungen und die Faltung folgen in
  * späteren Tickets (#62's own body) — this is the skeleton every one of them
  * builds into.
  */
 ?>
-<div class="app" x-data="planApp()" x-init="init()">
+<div class="page-plan" x-show="activePage === 'plan'">
   <section class="plan-stage" x-ref="stage">
     <header class="plan-head" x-ref="head">
       <h1>Plan</h1>
@@ -42,17 +48,32 @@
       <span class="legend-item"><span class="mark mark-winner dot" style="position:static"></span> one of either</span>
     </div>
 
-    <div class="plan-grid" x-ref="grid">
-      <template x-for="row in tiles" :key="row.rank">
-        <div class="tile" :class="{ 'tile-unserved': !row.served }">
-          <span class="tile-rank" x-text="row.rank"></span>
-          <span class="tile-booster" x-text="row.booster > 0 ? row.booster : '—'"></span>
-          <template x-if="row.winners === 1"><span class="mark mark-winner dot"></span></template>
-          <template x-if="row.winners > 1"><span class="mark mark-winner circle" x-text="row.winners"></span></template>
-          <template x-if="row.packs === 1"><span class="mark mark-pack dot"></span></template>
-          <template x-if="row.packs > 1"><span class="mark mark-pack circle" x-text="row.packs"></span></template>
-        </div>
-      </template>
+    <div class="plan-grid-wrap">
+      <div class="plan-grid" x-ref="grid">
+        <template x-for="row in tiles" :key="row.rank">
+          <div class="tile" :class="{ 'tile-unserved': !row.served }">
+            <span class="tile-rank" x-text="row.rank"></span>
+            <span class="tile-booster" x-text="row.booster > 0 ? row.booster : '—'"></span>
+            <template x-if="row.winners === 1"><span class="mark mark-winner dot"></span></template>
+            <template x-if="row.winners > 1"><span class="mark mark-winner circle" x-text="row.winners"></span></template>
+            <template x-if="row.packs === 1"><span class="mark mark-pack dot"></span></template>
+            <template x-if="row.packs > 1"><span class="mark mark-pack circle" x-text="row.packs"></span></template>
+          </div>
+        </template>
+      </div>
+
+      <!--
+        The tiles are the grip: #63 AC 4 grabs fullscreen at the tile grid and
+        leaves it at the same corner it was opened from — the same button,
+        same spot, only the icon and label swap. It sits over the grid's own
+        wrap (not the scrolling grid itself) so it never scrolls away with the
+        tiles.
+      -->
+      <button type="button" class="grid-fullscreen-toggle"
+              @click="fullscreen ? closeFullscreen() : openFullscreen()"
+              :aria-label="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+        <span aria-hidden="true" x-text="fullscreen ? '⤡' : '⤢'"></span>
+      </button>
     </div>
 
     <p class="plan-ranktotal" x-ref="ranktotal"
@@ -60,41 +81,7 @@
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
   </section>
 
-  <section class="plan-controls">
-    <label class="plan-control">
-      <span>Players (<span x-text="settings.players"></span>)</span>
-      <input type="range" min="2" max="128" :value="settings.players"
-             @input="setPlayers($event.target.value)">
-    </label>
-
-    <label class="plan-control">
-      <span>RankPoolDepth (<span x-text="plan.depth"></span> of <span x-text="plan.depthCap"></span>)</span>
-      <input type="range" min="1" :max="plan.players" :value="plan.depth"
-             @input="setDepth($event.target.value)">
-    </label>
-
-    <label class="plan-control">
-      <span>DistributionCurve (<span x-text="settings.curve"></span>)</span>
-      <!--
-        Not x-model/:value: the seven options come from an x-for on a child
-        <template>, and Alpine walks a parent's own bindings before its
-        children exist — a select's value binding races the options it
-        depends on and silently falls back to the first one. x-init runs
-        after that first render settles ($nextTick), so it can select the
-        right option once there is one to select.
-      -->
-      <select x-init="$nextTick(() => { $el.value = settings.curve })"
-              @change="settings.curve = $event.target.value">
-        <template x-for="step in curveSteps" :key="step.id">
-          <option :value="step.id" x-text="step.id"></option>
-        </template>
-      </select>
-    </label>
-
-    <label class="plan-control">
-      <span>RankFloor (<span x-text="settings.rankFloor"></span>)</span>
-      <input type="number" min="0" :value="settings.rankFloor"
-             @input="setRankFloor($event.target.value)">
-    </label>
+  <section class="plan-controls" x-show="!fullscreen">
+    <?php require __DIR__ . '/controls-hot.php'; ?>
   </section>
 </div>
