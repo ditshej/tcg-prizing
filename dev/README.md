@@ -105,26 +105,33 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   Reservation Rang 1 aus der Kurve trägt) ist ebenfalls ein gemeldeter, kein
   gebrochener Zustand — `test/distribute.test.mjs:507` prüft das als
   erwarteten Fall, nicht als Fehler.
+  Seit #56 steht als letzte Zeile **kein** Invariant, sondern das Urteil des
+  Kerns selbst: `unfit`. Der Grund steht unten unter „Nachgezogen nach #56".
+
 - **Die vier gemessenen Stände aus #53** als Knöpfe, jeder mit seiner erwarteten
-  Zahl daneben, und dazu ein fünfter, der **nicht** zu den vieren gehört.
+  Zahl daneben, und dazu die beiden Konfliktstände, die #56 gehören und
+  **nicht** zu den vieren zählen. Jede erwartete Zahl ist dort nachgeschlagen,
+  wo sie entschieden wurde — der Ticketkommentar oder der Test, der den Stand
+  festhält —, nie aus dem zurückgerechnet, was der Kern heute liest.
 
 ## Die Invariantenzeile glättet nichts
 
-Es gibt heute einen echten Stand, in dem die Summenregel verletzt ist: bei
-`boosterRate` 0 ist der `RankPool` leer, und trotzdem gehen `3·2·2` hinaus.
-Das ist der Konfliktzweig, der #56 gehört — der Kern giesst dort von oben, und
-bis dahin ist die Verletzung sichtbar statt behoben. Der fünfte Knopf stellt
-genau diesen Stand ein. Die Bank **zeigt und benennt** ihn; sie unterdrückt
-nichts und rundet nichts weg. Dafür ist sie da.
+Bis #56 gab es einen echten Stand, in dem die Summenregel verletzt war: bei
+`boosterRate` 0 war der `RankPool` leer, und trotzdem gingen `3·2·2` hinaus.
+Die Bank **zeigte und benannte** ihn; sie unterdrückte nichts und rundete
+nichts weg. Dafür ist sie da.
 
-**Nachgeprüft nach #54/#57/#48 (Stand `main`, 2026-09-25): der Stand verletzt
-weiter, und jetzt auf zwei Zeilen.** `Σ row.booster = RankPool` meldet `7 vs 0`,
-und die neue Planzeile `participation + judge + Σ Zeilen = PrizePool · Booster`
-meldet dasselbe `7 vs 0` — dieselben sieben ungedeckten `Booster`, einmal gegen
-den `RankPool` und einmal gegen den `PrizePool` gemessen. Die
-`TournamentPack`-Zeile hält dabei (`8 vs 8`): die Unterdeckung liegt allein auf
-der `Booster`-Achse, weil `RankFloor` und Vorsprung nur dort giessen. An #56
-hat sich damit nichts erledigt.
+**Nachgeprüft nach #54/#57/#48 (Stand `main`, 2026-09-25): der Stand verletzte
+weiter, und damals auf zwei Zeilen.** `Σ row.booster = RankPool` meldete
+`7 vs 0`, und die Planzeile `participation + judge + Σ Zeilen = PrizePool ·
+Booster` dasselbe `7 vs 0` — dieselben sieben ungedeckten `Booster`, einmal
+gegen den `RankPool` und einmal gegen den `PrizePool` gemessen. Die
+`TournamentPack`-Zeile hielt dabei (`8 vs 8`): die Unterdeckung lag allein auf
+der `Booster`-Achse, weil `RankFloor` und Vorsprung nur dort giessen.
+
+**Seit #56 ist dieser Bruch behoben** — der Kern giesst den `RankPool` von
+oben, ein leerer Pool giesst nichts, und der Stand steht auf `0·0·0`. Was er
+nicht mehr tut: eine Invariante brechen. Genau daran hängt die Änderung unten.
 
 Die vier gemessenen Stände aus #53 halten unverändert — `29·14·7·4·3·3·2·2`,
 `depthCap` 31, `9·3·2`, `curveSilent` — und auf allen vieren halten auch beide
@@ -171,3 +178,63 @@ verwischt ihn.
 
 Geprüft über `python3 -m http.server` aus der Repo-Wurzel und Playwright
 gegen `http://localhost:.../dev/`.
+
+## Nachgezogen nach #56 und #63 (Stand `main`, 2026-09-27)
+
+Die Bank gehört keinem Ticket und wird nach einer Runde nachgezogen. #63 ist
+reine Oberfläche und berührt sie nicht; #56 berührt sie an vier Stellen. Die
+ersten beiden kamen aus der Gegenprobe (G4, G5), die letzten beiden fielen beim
+Nachziehen an.
+
+1. **Der `conflict`-Stand erwartet `0·0·0` statt `3·2·2`**, und seine
+   Beschriftung nennt den Zweig repariert. Die Zahl ist nicht nachgerechnet:
+   der erste Kommentar an #56 hält fest, dass ein leerer `PrizePool` von Haus
+   aus ein Konfliktstand ist, und `CONTEXT.md` verlangt für ihn die leere
+   Kachel samt `ConflictNotice`.
+2. **Ein sechster Knopf für die verwaiste Reservation**, den zweiten
+   Konfliktfall aus #56. Stand und Zahlen sind die aus
+   `test/distribute.test.mjs:691`: 5 `Player`, Tiefe 2, `Displays` auf Rang 3 →
+   `3·2` und `orphanedReservation {ranks:[3]}`.
+3. **Die tote Klemme im Balken ist weg.** `Math.min(row.reserved, row.booster)`
+   stammte aus der Zeit, als `reserved` die Zusage war; seit #56 ist es das
+   wirklich Ausgeteilte und kann `row.booster` nicht überschreiten — gemessen
+   über 45 360 Stände, kein einziger Griff. Eine Klemme, die nie greift, liest
+   sich später als Beweis, `reserved` sei nominal.
+4. **Die Invariantenzeile wusste an zwei Stellen weniger als der Kern.**
+
+   `conflict.have` darf negativ sein — es ist die gemeldete Bedingung, keine
+   Auszahlung (`{need: 0, have: −16}`, `test/distribute.test.mjs:686`). „Keine
+   negative Zahl im Plan" schlug darauf **rot** an. Sie zählt jetzt als
+   gemeldeter Zustand, benannt mit Pfad und Wert; jede negative Zahl irgendwo
+   sonst bleibt rot. Gemessen über dieselben 45 360 Stände ist
+   `plan.conflict.have` das einzige negative Blatt des Plans.
+
+   Und umgekehrt: weil #56 den Bruch behoben hat, halten am
+   Konfliktstand **alle** Invarianten — die Bank meldete „all invariants hold"
+   über einen Plan, den der Kern `unfit` nennt. Als letzte Zeile steht deshalb
+   kein Invariant, sondern das Urteil des Kerns selbst, zurückgelesen statt
+   nachgebaut, mit den Fakten, die es tragen. Dieselbe Bauart wie bei `overtake`
+   nach #55: wo der Kern mehr weiss als die Zeile, holt die Zeile es sich, statt
+   eine zweite Definition zu erfinden.
+
+Dazu stehen `conflict`, `orphanedReservation` und `unfit` jetzt in der Tabelle
+der abgeleiteten Grössen, wie `unclaimedRemainder` und `overtake` nach #55.
+
+An allen sechs Knöpfen gefahren, über `python3 -m http.server` aus der
+Repo-Wurzel:
+
+```
+✓ series 29·14·7·4·3·3·2·2
+✓ depthCap 31
+✓ series 9·3·2
+✓ curveSilent true
+✓ series 0·0·0                        (conflict, repariert)
+✓ orphanedReservation 3·2 · orphaned Rank 3
+```
+
+Kein `✗`, und keine rote Invariante. Die beiden #56-Stände melden gelb
+`● the core's own verdict: unfit — true — conflict (need 7, have 0)` bzw.
+`… orphanedReservation (Rank 3)`. Von Hand nachgefahren: der Stand mit
+`conflict` und `unclaimedRemainder` zugleich (`{need: 0, have: −16}`) meldet
+gelb auf der Zahlenzeile *und* im Urteil, und der `overtake`-Stand aus #55
+meldet unverändert gelb auf der Monotonie.
