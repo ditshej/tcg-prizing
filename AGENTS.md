@@ -112,6 +112,27 @@ value. Where a decision is only implicit in a measured plan, the guard is a test
 that runs the real code against that plan; `test/onepiece.test.mjs` is the
 pattern.
 
+### A decided form is looked up too, and it lives in the prototype
+
+The same rule, one axis over: what a surface **is** — what a mode shows, what a
+sheet contains, where a handle sits — is a decision, and for this repo it is
+recorded in `prototypes/`, not in prose. A ticket under a UI spec is built
+against that file, and a question about a surface is answered out of it before
+it is asked of anyone.
+
+Run 6 cost two sessions to learn it. The fullscreen mode of #63 was built
+keeping the diagram and letting it grow; the prototype's `fsContent()` is four
+lines long and contains legend, tile grid and tile foot — **no diagram** — and
+#61 calls it „Kachel-Vollbild" throughout. The review then raised it as a
+*decision*, with three layouts to choose from, and the maintainer had to answer
+what the repo already said. A question whose answer is on disk is the most
+expensive kind: it costs the asking, the evidence, and the answering.
+
+So the prototype belongs in every lookup list a surface question touches — Gate 1
+of `/ask-hard-questions` names it, and a builder of a UI ticket opens it before
+the first line. Where prototype and prose disagree, say so rather than picking:
+that disagreement is a finding, and a good one.
+
 ### Triage labels
 
 The five canonical triage roles, each label string equal to its role name. See `docs/agents/triage-labels.md`.

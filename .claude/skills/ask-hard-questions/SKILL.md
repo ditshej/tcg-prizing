@@ -59,10 +59,16 @@ Run both, per finding, in this order.
 ### Gate 1 — find the source that already decides it
 
 Go looking for the place where this was settled: a ticket comment, an ADR, a
-section of the spec, a term in `CONTEXT.md` — **and the working tree you are
-standing in.** A finding whose answer is written down somewhere is **not** a
-question; it is a lookup, and the answer goes into the handover report with its
-location.
+section of the spec, a term in `CONTEXT.md`, **the prototype in `prototypes/`**
+— and the working tree you are standing in. A finding whose answer is written
+down somewhere is **not** a question; it is a lookup, and the answer goes into
+the handover report with its location.
+
+**Is the finding about a surface? Then the prototype is the first stop, not the
+last.** What a mode shows and what a sheet contains is decided there, in code,
+and prose about the same surface is downstream of it. Run 6 put three layouts of
+the fullscreen mode on a card; the prototype's `fsContent()` had answered it in
+four lines since round 21 (`AGENTS.md`, "A decided form is looked up too").
 
 The working tree is the source that gets forgotten, because a findings file
 points backwards: its `**Beleg:**` commands name the worktrees of the day it was

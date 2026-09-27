@@ -140,6 +140,7 @@ Welche gefahren wurden, mit Kommando und Ergebnis.
 - **Schwere:** blockierend | zu entscheiden | Notiz
 - **Behauptung:** ein Satz
 - **Beleg:** das Kommando, wörtlich und wiederholbar, samt seiner Ausgabe
+- **Erreichbar über:** der Weg, auf dem ein Lead diesen Stand herstellt — oder „nicht erreichbar"
 - **Gegenrechnung:** was die Elternsitzung selbst gerechnet hat — nicht, was der Test sagt
 - **Offen:** was entschieden werden muss, falls etwas
 
@@ -156,6 +157,29 @@ Two sections carry more than they look like:
 - **Beleg** is a command someone else runs unchanged, from a path they can
   reach. A finding without one is a claim, and the counter-check has to rebuild
   it before it can test it.
+- **Erreichbar über** is the newest line and the one that kills findings. The
+  core is a **total function** by ADR 0002: it accepts any slider state, including
+  nonsense. A review that sweeps a cartesian product therefore manufactures
+  states no lead can produce — and every one of them computes, so every one of
+  them looks like a finding. Name the path instead: which slider the lead moves,
+  which `SetupLink` carries it in, which set change lowers a second value
+  afterwards (#70's case). **No path, no finding** — at most a `Notiz` that says
+  so in its first line.
+
+  Run 6 paid for this rule. „Weekend, 8 Leute, dem Sieger ein ganzes Display
+  zugesagt" carried a blocking finding, a chart and a card through three phases,
+  and the maintainer answered: „bei 8 Personen mit je 3 Boostern ist es schlicht
+  unmöglich, ein Display zu verteilen. Darum ist diese Frage nicht real." He was
+  right — 240 states in the grid showed the pair of messages, and **not one** of
+  them without an oversized reservation the control will refuse.
+
+  Two traps, both seen:
+  - A state the **core** accepts is not thereby reachable. ADR 0002 makes the
+    core say yes to everything; reachability is a question about the controls.
+  - A state that is reachable only **via a later drop** — fewer players, another
+    `SetupLink`, a smaller `PromoEnvelope` — is reachable, and that path is the
+    answer. It is also the one worth writing, because it is the one the guard at
+    the control does not catch.
 - **Nicht geprüft** is the map of the gaps, and `/counter-check` reads it
   first. Left empty to look tidy, it hides precisely the region nobody has
   looked at.
