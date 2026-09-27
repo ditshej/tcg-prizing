@@ -41,7 +41,7 @@ happened.
 | **A** | agent · `/fan-out` entire, Phases 0–6 | `review/<batch>-befunde.md` |
 | **B** | agent · `/counter-check` | `review/<batch>-gegenprobe.md` |
 | **C** | agent · Gate 1 and Gate 2 only | `review/<batch>-kandidaten.md` |
-| **D** | **conductor + maintainer** | answers, or a list deferred to cards |
+| **D** | **conductor + maintainer** | `review/<batch>-sofort.json` — answers given in the terminal |
 | **E** | maintainer · `/ask-hard-questions` | `…-fragen.json`, `…-antworten.json` |
 | **F** | agent · file the answers, build the corrections | ticket comments, commits |
 | **G** | maintainer | review, merge |
@@ -49,6 +49,73 @@ happened.
 Phase 4's judging half stays intact because it lives **inside** agent A — the
 same head that read the source in Phase 3. That is not delegated; it is
 enclosed.
+
+## Say where we are, every single time you need him
+
+The maintainer steps in at D and at G, and possibly at E. **He must never have
+to ask what is going on.** He has walked away, made coffee, come back a day
+later — and the round is four phases long with artefacts scattered through
+`review/`. So every message that wants something from him opens with the board,
+and no message that wants something from him omits it:
+
+```
+/round · Stapel #56 · #63 · Phase D von G
+─────────────────────────────────────────────────────────
+A ✓ fan-out         PR #80, #81 · 9 Befunde · 2 blockierend
+B ✓ counter-check   7 bestätigt, 1 widerlegt, 4 neue Funde
+C ✓ Gates           3 Kandidaten, 6 verworfen
+D → DU BIST DRAN    3 Kandidaten entscheiden
+E   Karten          nur für das, was du zurückstellst
+F   ablegen + bauen
+G   Review und Merge
+─────────────────────────────────────────────────────────
+```
+
+Under it, three lines and never more:
+
+- **Was gerade passiert ist** — one sentence per completed phase since he was
+  last here.
+- **Was ich von dir brauche** — the thing itself, now.
+- **Was danach ohne dich läuft** — so he knows whether he can walk away again,
+  and for roughly how long.
+
+The same board goes out when a long unattended stretch **starts** ("A und B
+laufen jetzt ohne dich"), so he can leave deliberately rather than sit and
+watch. It is cheap: a dozen lines the conductor already knows, against the
+alternative of him reconstructing four phases from scratch.
+
+A phase that failed says so in its row — `A ✗ fan-out   Agent an #56
+abgebrochen: …` — and the board is then the whole message, because the next
+thing needed is a decision about the failure.
+
+## Resuming after a break
+
+The board must be reconstructible **from disk**, not from what the conductor
+remembers, because the session that started the round may be gone. The
+artefacts are named so that their presence is the phase marker:
+
+```
+review/<batch>-befunde.md      A ist fertig
+review/<batch>-gegenprobe.md   B ist fertig
+review/<batch>-kandidaten.md   C ist fertig
+review/<batch>-sofort.json     D ist fertig
+review/<batch>-fragen.json     E läuft
+review/<batch>-antworten.json  E ist fertig
+```
+
+So `/round` invoked on a batch that already has artefacts **does not start
+over.** It lists `review/`, reads only the headers it needs to fill the board
+— not the contents — prints the board, and continues at the first phase whose
+artefact is missing.
+
+**Phase D's answers hit disk before anything else happens.** They are given in
+conversation, and conversation is the one medium that does not survive a break.
+`review/<batch>-sofort.json` takes the shape of the answer file in
+`.claude/tools/README.md`, with `optionId` naming the way chosen, `"karte"`
+where it was deferred, and `"verworfen"` where he said it was not a decision.
+Writing it is the first thing after the last candidate is answered, before the
+conductor says a word about what comes next — an answer that exists only in a
+sentence is an answer that a closed laptop deletes.
 
 ## Phase A and B — start them, do not follow them
 
@@ -137,6 +204,9 @@ and not needed.
 question and not an inference is that "is this too hard to answer off the cuff"
 is knowledge the maintainer has and the conductor does not.
 
+Then write `review/<batch>-sofort.json` immediately — see "Resuming after a
+break". Nothing else happens first, not even saying what comes next.
+
 ## Phase E — the cards, if any are wanted
 
 `/ask-hard-questions` carries `disable-model-invocation: true` and **cannot be
@@ -149,9 +219,10 @@ interaction instead of two.
 
 ## Phase F — the answers are filed, then the corrections are built
 
-One agent, given: every answer from Phase D and every answer from the Phase E
-answer file, and the instruction to file each one **where the next session will
-look it up** — the ticket comment, an ADR, `CONTEXT.md`. `review/` is
+One agent, given both answer files — `review/<batch>-sofort.json` from the
+terminal and `review/<batch>-antworten.json` from the cards, whichever exist —
+and the instruction to file each answer **where the next session will look it
+up**: the ticket comment, an ADR, `CONTEXT.md`. `review/` is
 gitignored; a decision left there is gone at the next merge, and the session
 after it derives the value again instead of reading it (`AGENTS.md`, "A decided
 number is looked up, never back-computed").
