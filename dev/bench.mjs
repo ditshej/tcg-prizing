@@ -21,39 +21,66 @@
  * ============================================================================
  */
 
+import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
+import { suggestions } from '../public/core/suggest.mjs';
+import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
- * A neutral Settings object. Every field the app will eventually carry is
- * listed, so a dumped JSON stays loadable once more of them are read; the
- * bench only exposes controls for the ones `distribute` reads today. Since
- * #57 that is all of them — the last stand that had to be pasted in as JSON
- * because no control existed was a `combinedHandout` one.
+ * The bench's own neutral sheet: the presettable Settings fields only, with
+ * every announced quantity turned off, so a stand shows what the sliders under
+ * it do and nothing else. It is **not** a DefaultSet and names no Game — the
+ * real sheets are loaded through the buttons below, from `public/sets/`.
+ *
+ * The measured stands of #53 are spread on top of this, so its values are part
+ * of what those expected numbers were measured against and do not move.
+ */
+const BENCH_SHEET = {
+  players: 32,
+  boosterRate: 3,
+  envelopeSize: 24,
+  envelopeYield: 1,
+  displaySize: 24,
+  participationBooster: 0,
+  participationPack: 0,
+  judgeBooster: 0,
+  judgeWinner: 0,
+  rankFloor: 2,
+  depthStep: 'all',
+  curve: 'steep',
+  combinedHandout: false,
+};
+
+/**
+ * A neutral Settings object, resolved through the core's own chain (#49).
+ *
+ * It used to be a hand-written literal that also spelled out which four fields
+ * start `null` and which two start empty — a second copy of a decision that
+ * lives in `core/defaults.mjs`, and exactly the kind of copy the bench's first
+ * standing rule forbids. `resolveSettings()` arrived with #49 and supplies
+ * that half now; the bench only keeps the sheet. The resolved object is
+ * field-for-field the one the literal produced.
  */
 function neutralSettings() {
-  return {
-    players: 32,
-    boosterRate: 3,
-    tournamentPacks: null,
-    envelopeSize: 24,
-    envelopeYield: 1,
-    displaySize: 24,
-    participationBooster: 0,
-    participationPack: 0,
-    judgeBooster: 0,
-    judgeWinner: 0,
-    rankFloor: 2,
-    depthStep: 'all',
-    depth: null,
-    curve: 'steep',
-    ranked: null,
-    winnerPacks: null,
-    manualWinner: {},
-    displays: [],
-    combinedHandout: false,
-  };
+  return resolveSettings({ game: BENCH_SHEET, type: undefined, pins: {} });
 }
+
+/**
+ * The real DefaultSet chain, one entry per starting stand the app can open on
+ * (#49, ADR 0003): the Game's own sheet, then each TournamentType's deviations
+ * on top. The bench resolves them the same way `public/ui/plan.mjs` does, so a
+ * stand a CommunityLead actually starts from can be driven by hand — and so a
+ * sheet that grows a field shows up here without the bench being touched.
+ */
+const SHEETS = [
+  { id: 'game', label: 'Game sheet (One Piece)', resolve: () => resolveSettings({ game: GAME, pins: {} }) },
+  ...TOURNAMENT_TYPES.map((type) => ({
+    id: type.id,
+    label: `DefaultSet · ${type.title}`,
+    resolve: () => resolveSettings({ game: GAME, type, pins: {} }),
+  })),
+];
 
 /**
  * The controls, one per Settings field the core reads today. Everything else
@@ -254,6 +281,30 @@ const PRESETS = [
     expect: { what: 'series', value: '0·0·0' },
   },
   {
+    // The WinnerPack overhang (#70), the stand the bench had no line for
+    // until now — finding G5. `ranked` is clamped by the core
+    // (`allocateWinners`, at `min(rank.winners, players)`), so the overhang
+    // can only come from the `manual` share, which is deliberately not
+    // clamped: "der Überhang entsteht nicht beim Setzen … sondern wenn ein
+    // zweiter Wert nachträglich sinkt" (#70). Two WinnerPacks in the RankPool,
+    // both handed to the top two by `ranked`, and two more promised to Rank 3
+    // by hand.
+    //
+    // The expected number is #70's formula applied to these Settings —
+    // 2 + 2 − 2 = 2 — not a number read back out of a plan.
+    id: 'overhang',
+    label: '8 Players, winnerPacks 2, ranked 2, 2 by hand on Rank 3 — the WinnerPack overhang (#70)',
+    settings: {
+      players: 8,
+      boosterRate: 3,
+      rankFloor: 2,
+      winnerPacks: 2,
+      ranked: 2,
+      manualWinner: { 3: 2 },
+    },
+    expect: { what: 'overhang', value: '2', read: (plan) => String(overhang(plan)) },
+  },
+  {
     // The second conflict case #56 introduced, and the one the bench had no
     // stand for: a DisplayReservation on a Rank the depth does not serve. The
     // stand and its numbers are the ones test/distribute.test.mjs:691 fixes —
@@ -287,9 +338,13 @@ const PRESETS = [
  * conflict state no longer breaks an invariant, and without that line the
  * bench would report it as clean.
  *
- * There is deliberately no sum rule on the WinnerPacks: the rule binds the Pool
- * level, not the recipient level, and a WinnerPack left `open` violates
- * nothing (#46).
+ * The WinnerPack axis had no line at all until this catch-up, on the reading
+ * that the sum rule binds the Pool level and that a WinnerPack left `open`
+ * violates nothing (#46). The first half of that is right and the second is
+ * the reason `open` is a **term** of the rule rather than a hole in it — the
+ * axis does close, and #58's suite closes it. Its absence here is finding G5
+ * of the #49·#59·#58 counter-check: the bench said "all invariants hold" to a
+ * stand that suite names. Three lines below cover it.
  */
 const INVARIANTS = [
   {
@@ -342,6 +397,53 @@ const INVARIANTS = [
       // construction and the plan carries no field for it.
       const sum = plan.participation.packs + (plan.judge.packs ?? 0) + plan.rows.reduce((a, row) => a + row.packs, 0);
       return { held: sum === plan.pool.packs, detail: `${sum} vs ${plan.pool.packs}` };
+    },
+  },
+  // ---- The WinnerPack axis (G5). ------------------------------------------
+  // The two sum rules are the ones test/sum-rule.test.mjs asserts, `open` as a
+  // term on the recipient side: a WinnerPack nobody receives is still one the
+  // Pool holds. Both hold exactly as long as the Settings do not promise more
+  // WinnerPacks than the RankPool holds; where they do, both miss by exactly
+  // the overhang, and that is a reported state here rather than a breach —
+  // #46 hands the cap to Spec 2 at the control and calls this the core's
+  // documented answer, not an exception to the rule. Measured over a 1 800
+  // stand grid of the WinnerPack axis: 0 misses without an overhang, 1 183 of
+  // 1 183 with one, and never by any other amount.
+  {
+    name: 'sum rule: Σ row.winners + open = RankPool · WinnerPacks',
+    check: (plan) => winnerSumRule(plan, sumOf(plan, 'winners') + plan.allocation.open, plan.rank.winners),
+  },
+  {
+    name: 'sum rule: judge + Σ row.winners + open = PrizePool · WinnerPacks',
+    check: (plan) =>
+      winnerSumRule(plan, plan.judge.winners + sumOf(plan, 'winners') + plan.allocation.open, plan.pool.winners),
+  },
+  {
+    // The overhang itself, and the one line here that is not a statement about
+    // the core. #70 gives the formula outright — `ranked + manualCount −
+    // rank.winners`, positive means over-assigned — and calls it the second
+    // source of the ConflictNotice and "der einzige Zustand dieser Spec, den
+    // der Rechenkern nicht selbst meldet". That last part is why this reads
+    // red and not amber: amber on this bench means the core reports the state
+    // itself and the line only fetches it (`overtake`, `unclaimedRemainder`,
+    // `conflict.have`). Here there is no report to fetch — `unfit` is false —
+    // and a stand that promises WinnerPacks that do not exist may not leave
+    // looking clean. That reading is the bench's, not a decision of #70's, and
+    // #70 may overturn it when it builds the notice.
+    //
+    // The formula is used as #70 writes it and not as "rows > rank.winners";
+    // the counter-check found the two agree stand for stand (318 of 318,
+    // finding B2, filed at #70), and the same grid as above reproduces it over
+    // 1 800 more — so there is nothing to gain by restating it.
+    name: 'no WinnerPack over-assignment: ranked + manual ≤ RankPool · WinnerPacks',
+    check: (plan) => {
+      const over = overhang(plan);
+      const terms = `${plan.allocation.ranked} + ${plan.allocation.manualCount} vs ${plan.rank.winners}`;
+      if (over <= 0) return { state: 'ok', detail: terms };
+      return {
+        state: 'fail',
+        detail: `${terms} — ${over} WinnerPack(s) over-assigned; the core does not report this (unfit stays ${unfit(plan)}), #70 turns it into a ConflictNotice`,
+      };
     },
   },
   {
@@ -419,6 +521,28 @@ const INVARIANTS = [
   },
 ];
 
+const sumOf = (plan, key) => plan.rows.reduce((a, row) => a + row[key], 0);
+
+/**
+ * The WinnerPack overhang, the formula of #70 verbatim: the WinnerPacks the
+ * Settings hand out, minus the ones the RankPool holds. Positive is the
+ * over-assignment; zero or less is none.
+ */
+const overhang = (plan) => plan.allocation.ranked + plan.allocation.manualCount - plan.rank.winners;
+
+/** One side of the WinnerPack sum rule, with the overhang as its reported case. */
+function winnerSumRule(plan, sum, expected) {
+  if (sum === expected) return { state: 'ok', detail: `${sum} vs ${expected}` };
+  const over = overhang(plan);
+  if (over > 0 && sum - over === expected) {
+    return {
+      state: 'reported',
+      detail: `${sum} vs ${expected} — over by exactly the overhang of ${over}; the cap belongs to Spec 2 at the control (#46, #70)`,
+    };
+  }
+  return { state: 'fail', detail: `${sum} vs ${expected}` };
+}
+
 /** Every numeric leaf of the plan below zero, named by its path. */
 function negativesIn(value, path = 'plan', out = []) {
   if (typeof value === 'number') {
@@ -453,6 +577,10 @@ const DERIVED = [
   ['WinnerPackAllocation · rankedAuto', (p) => p.allocation.rankedAuto],
   ['WinnerPackAllocation · manualCount', (p) => p.allocation.manualCount],
   ['WinnerPackAllocation · open', (p) => p.allocation.open],
+  // Not a field of the plan: the derivation #70 defines over three that are.
+  // It sits here because a value read without hunting for it is what this
+  // table is for, and because the raw dump below cannot show it.
+  ['WinnerPackAllocation · overhang (#70)', (p) => overhang(p)],
   ['RankPoolDepth', (p) => p.depth],
   ['depthCap', (p) => p.depthCap],
   ['depthStepValue', (p) => p.depthStepValue],
@@ -488,10 +616,28 @@ const DERIVED = [
   ['unfit', (p) => String(unfit(p))],
 ];
 
+/**
+ * The ways out of an unfit plan (#59, `public/core/suggest.mjs`) — the bench's
+ * single seam onto that function, and the only place it is called.
+ *
+ * The signature is `suggestions(settings)` today and turns into
+ * `suggestions(plan)` once #86 hangs the slider stands on the plan (ADR 0009,
+ * decision K2 at #68). Both arguments are on hand here, so that turn is this
+ * one call and nothing else in the bench moves — and the bench does not take
+ * it early: #86 builds the core half, and a bench that anticipated it would be
+ * calling a function that does not exist yet.
+ */
+function waysOut(settings, plan) {
+  void plan; // the argument #86 will switch to.
+  return suggestions(settings);
+}
+
 const settings = neutralSettings();
 const el = {
   controls: document.getElementById('controls'),
   presets: document.getElementById('presets'),
+  sheets: document.getElementById('sheets'),
+  waysOut: document.getElementById('waysOut'),
   bars: document.getElementById('bars'),
   series: document.getElementById('series'),
   derived: document.getElementById('derived'),
@@ -502,6 +648,7 @@ const el = {
 
 buildControls();
 buildPresets();
+buildSheets();
 render();
 
 function buildControls() {
@@ -638,6 +785,24 @@ function buildPresets() {
   }
 }
 
+/**
+ * The DefaultSet buttons. They replace the whole Settings rather than merging
+ * into it: a sheet is a starting stand, and half a sheet over half a hand-made
+ * stand is neither.
+ */
+function buildSheets() {
+  for (const sheet of SHEETS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = sheet.label;
+    button.addEventListener('click', () => {
+      Object.assign(settings, sheet.resolve());
+      render();
+    });
+    el.sheets.append(button);
+  }
+}
+
 function render() {
   syncControls();
   const plan = distribute(settings);
@@ -646,7 +811,68 @@ function render() {
   renderDerived(plan);
   el.raw.textContent = JSON.stringify(plan, null, 2);
   renderInvariants(plan);
+  renderWaysOut(plan);
   renderPresetVerdicts();
+}
+
+/**
+ * The ways out, beside the invariant line: when the line stops being green,
+ * what the core would offer is exactly what one wants to see next — and being
+ * able to take one by hand is what a bench is for. `suggestions()` searches
+ * one slider at a time (#59), so an entry is one slider's value and applying
+ * it is one assignment.
+ *
+ * It computes only where `unfit` holds, the same gate `suggestions()` itself
+ * carries; the WinnerPack overhang of #70 is not one of the four facts and
+ * therefore has no entries here — #70's ways out are computed, not searched,
+ * and are not in this function.
+ */
+function renderWaysOut(plan) {
+  el.waysOut.replaceChildren();
+  if (!unfit(plan)) {
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent = 'the plan is fit — suggestions() returns nothing to show';
+    el.waysOut.append(note);
+    return;
+  }
+  const entries = waysOut(settings, plan);
+  if (entries.length === 0) {
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent =
+      'unfit, and no single slider clears it — the multi-slider way out is decision K1 at #68/#70 and is not built yet';
+    el.waysOut.append(note);
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'ways';
+  list.append(
+    ...entries.map((entry) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = entry.label;
+      button.title = `${entry.key}${entry.rank ? ` · Rank ${entry.rank}` : ''} = ${entry.value}`;
+      button.addEventListener('click', () => {
+        applyWayOut(entry);
+        render();
+      });
+      return button;
+    }),
+  );
+  el.waysOut.append(list);
+}
+
+/** One way out, taken. A `displays` entry names the Rank it changes. */
+function applyWayOut(entry) {
+  if (entry.key !== 'displays') {
+    settings[entry.key] = entry.value;
+    return;
+  }
+  const d = (settings.displays ?? []).slice();
+  while (d.length < entry.rank) d.push(0);
+  d[entry.rank - 1] = entry.value;
+  settings.displays = d;
 }
 
 /** The number row the tickets quote, e.g. `29·14·7·4·3·3·2·2`. */
