@@ -151,7 +151,63 @@ figures remain checkable.
 Done when every card has at least one piece of evidence produced in this
 session, and every numeric one has been through the form question.
 
-## Stage 3 — the options, then a skeptic
+## Stage 3 — write the card as something that happened, not as a defect
+
+The run of 2026-09-27 produced two cards that passed both gates, carried
+evidence run in session, and survived the skeptic — and the maintainer sent
+them back unanswered. They were written in the vocabulary of the code:
+`curveCount = 0`, `ShapedRemainder`, `unfit`, `_Label_`-Zeile. Every sentence
+was true. To decide anything he first had to translate each one back into what
+the product actually does, and that translation is the work the card exists to
+save him. His verdict: "da könnte es auch gleich direkt hier im Terminal
+stehen."
+
+**Start from a run of the product, with numbers he would recognise.** Not the
+defect and the conditions that trigger it — a tournament, its people, its
+boxes:
+
+> **before** — Reicht der abgegoltene Bereich bis genau `depth`, bleibt
+> `curveCount` 0 und der `ShapedRemainder` hat kein Ziel.
+>
+> **after** — Ein Weekend-Turnier mit 32 Leuten. Der Laden stellt 96 Booster.
+> Jede Person bekommt einen fürs Mitmachen — 32 sind weg, 64 bleiben für die
+> Platzierungen. Du stellst ein: nur der Sieger bekommt etwas, und zwar ein
+> ganzes Display, also 24 Booster. Er bekommt sie. Und dann bleiben 40 Booster
+> übrig, die niemand bekommt.
+
+Same finding, same numbers, and only one of them can be answered.
+
+**The options say what happens, not what changes.** "Der Sieger bekommt alle 64
+— sein Display und den ganzen Rest" is an outcome; "`curveCount` wird auf
+mindestens 1 gezwungen" is a patch note. The patch note belongs in
+`consequence`, after the outcome, where its price is stated — never in `label`.
+
+**Compute each option's outcome before you offer it.** Two of the three ways on
+that card produced a number nobody had computed yet; one of them handed Rank 1
+all 64 Booster, 2⅔ Displays instead of one. An option offered without its
+number asks the maintainer to run the code in his head, which is precisely the
+labour this skill exists to spare him.
+
+**The chart carries domain units too.** The first version's reference line read
+`RankPool 64`, the second `Der Laden stellt 96`. And where an option's outcome
+can be drawn, draw it **beside** the defect in the same units: the second
+version put "zwei Ränge bedienen" and "der Sieger bekommt alles" above "heute",
+so the choice was visible before it was read.
+
+**No agent in this loop will catch this.** The gates test who may decide, not
+how it reads; the skeptic reads code as fluently as you do and will cheerfully
+sharpen the options of a card nobody can parse. In the run that produced this
+section the skeptic came back with a correct and useful critique — a dead card,
+two dominated options, two errors in the stake — and did not mention the
+language once. So this stage is a self-check, and it has one test:
+
+> Read the card out loud with the repo closed. Any sentence that needs the code
+> open to make sense is not finished.
+
+Done when title, stake, every option label and every chart label survive that
+reading, and every option carries the number it produces.
+
+## Stage 4 — the options, then a skeptic
 
 The options are the actual thinking. For `CombinedHandout` there were two
 sensible ways and **neither was written anywhere** — they had to be formulated.
@@ -178,13 +234,18 @@ anything in this skill's run does get one, parent included.
 
 Expect it to kill a card, not just widen one. In the trial run it struck out a
 whole card whose decision had already been made in code, and took apart both
-options of the card that survived. A skeptic that only adds a third option has
-probably been given the reasoning along with the cards.
+options of the card that survived. In the run of 2026-09-27 it killed a third
+card — the decision stood in the parent spec, at two places — and struck one
+dominated option from each survivor. A skeptic that only adds a third option
+has probably been given the reasoning along with the cards.
+
+What it will **not** tell you is that the card is unreadable. It reads code too.
+That check is yours, and it is Stage 3.
 
 Done when every skeptic answer has been taken up or written off in a sentence,
 in the handover report — the question file has no field for it.
 
-## Stage 4 — write it, serve it, stop
+## Stage 5 — write it, serve it, stop
 
 Write `review/<batch>-fragen.json` — one file per pass, German content, stable
 `id`s, `origin` pointing back at the PR and the finding (`"neu"` where Gate 1
