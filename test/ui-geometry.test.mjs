@@ -36,7 +36,13 @@ test('diagramCap gives the leftover, after the two guaranteed tile rows, to the 
   assert.equal(diagramCap(313), 200);
 });
 
-test('diagramCap never cuts into the second tile row: it floors at 60px', () => {
+// Below a leftover of 173px, the floor gives the diagram its 60px anyway and
+// the grid gets less than the two rows' 113px — #61's own master-floor
+// assurance is then broken, and it stays broken until #71 builds the fold:
+// the Plan's first height (245 fixed part + 2 tile rows + 5px gap + 48px
+// strip = 406px) is the threshold below which #71 stops opening this stage
+// at all, so `diagramCap` never sees a leftover this small in the folded UI.
+test('diagramCap floors at 60px, even when that leaves less than the two tile rows', () => {
   assert.equal(diagramCap(173), 60); // 173 - 113 = 60, the exact boundary
   assert.equal(diagramCap(100), 60); // would go negative without the floor
   assert.equal(diagramCap(0), 60);
