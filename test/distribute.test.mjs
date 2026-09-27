@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { derivePool, distribute } from '../public/core/distribute.mjs';
+import { derivePool, distribute, unfit } from '../public/core/distribute.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
@@ -448,14 +448,11 @@ test('the sum rule holds at the plan itself, in both handout branches', () => {
                     depth,
                   };
                   const apart = distribute(settings({ ...base, combinedHandout: false }));
-                  // Where the RankPool does not even carry the DisplayReservation
-                  // plus the floor of a single Rank, the pouring from the top
-                  // decides what really goes out, and that is #56 — the
-                  // conflict branch (ShapedRemainder < 0) is not built yet.
-                  // Read off the apart branch, whose RankPool is the one the
-                  // shaping sees.
-                  if (apart.rank.booster < apart.displayReserved + apart.floorReserved) continue;
-
+                  // The conflict branch (#56) now pours from the top and
+                  // keeps the row sum exhaustive even where the RankPool does
+                  // not carry the DisplayReservation plus the floor of a
+                  // single Rank, so the stand this used to skip is covered
+                  // like any other — nothing left to jump over.
                   const where = JSON.stringify(base);
                   assertPlanSum(apart, `${where} apart`);
                   assertPlanSum(
@@ -589,4 +586,155 @@ test('a DisplayReservation that does not reach the whole depth is not reported �
   assert.equal(plan.curveCount, 1);
   assert.equal(plan.unclaimedRemainder, null);
   assert.deepEqual(served(plan), [24, 40]);
+});
+
+// #56: the conflict branch and the orphaned reservation.
+
+test('a pinned depth over the cap reports a conflict, pours from the top and never exceeds the RankPool', () => {
+  // players 32, boosterRate 3, participationBooster 1, rankFloor 2: rank.booster
+  // 64, depthCap 31 (2·31 + 1 = 63 fits, 2·32 + 1 = 65 does not — the same
+  // stand as "the same stand without a set depth gives a depthCap of 31").
+  // Pinning depth to 32 needs 65 out of a RankPool of 64: need > have by 1.
+  const plan = distribute(
+    settings({
+      players: 32,
+      boosterRate: 3,
+      participationBooster: 1,
+      rankFloor: 2,
+      depth: 32,
+      curve: 'steep',
+    }),
+  );
+  assert.equal(plan.depth, 32); // the pinned value stands, uncut by the cap
+  assert.equal(plan.depthCap, 31);
+  assert.deepEqual(plan.conflict, { need: 65, have: 64 });
+  assert.equal(plan.shapedRemainder, 0);
+  assert.equal(plan.unclaimedRemainder, null); // curveCount is 32, not 0 — a different fact
+  assert.equal(unfit(plan), true);
+
+  // Poured from the top: Rank 1 gets its lead plus floor (3), Ranks 2-31 get
+  // their floor in full (2 each), and Rank 32 — last in line — gets only what
+  // is left (1 of 2). Nobody after Rank 32 exists to show the shortfall further.
+  const rows = served(plan);
+  assert.equal(rows.length, 32);
+  assert.equal(rows[0], 3);
+  assert.ok(rows.slice(1, 31).every((b) => b === 2));
+  assert.equal(rows[31], 1);
+  assert.deepEqual(plan.flagged, [32]); // exactly the one Rank short of its quota
+
+  // The row sum never exceeds the RankPool, and here it exhausts it exactly.
+  assert.equal(
+    plan.rows.reduce((a, row) => a + row.booster, 0),
+    plan.rank.booster,
+  );
+});
+
+test('a DisplayReservation alone bigger than the RankPool still never hands out more than the pool holds', () => {
+  // 8 Players, boosterRate 1: rank.booster 8. displaySize 24 reserves 24 for
+  // the one settled Rank alone — the reservation by itself already outweighs
+  // the whole RankPool, and depth 1 also settles the whole depth.
+  const plan = distribute(
+    settings({
+      players: 8,
+      boosterRate: 1,
+      rankFloor: 2,
+      displaySize: 24,
+      displays: [1],
+      depth: 1,
+    }),
+  );
+  assert.equal(plan.rank.booster, 8);
+  assert.equal(plan.settledCount, 1);
+  assert.equal(plan.curveCount, 0);
+  assert.deepEqual(served(plan), [8]); // the pool's 8, not the pinned 24
+  assert.equal(
+    plan.rows.reduce((a, row) => a + row.booster, 0),
+    plan.rank.booster,
+  );
+  assert.equal(plan.shapedRemainder, 0);
+  assert.deepEqual(plan.flagged, [1]);
+
+  // The open point from #56's third comment: a depth-covering reservation
+  // (unclaimedRemainder) and a real shortfall (conflict) can hold of the same
+  // plan at once — here, because the reservation alone already exceeds the
+  // pool while also settling the whole depth. Decision (this session, see the
+  // ADR 0002 Nachtrag): the two stand side by side rather than excluding one
+  // another — both are true facts about this plan, and hiding either would be
+  // exactly the silent loss ADR 0002 is written against. Reconciling this into
+  // one or two displayed notices is left to Spec 2's NoticeStack.
+  assert.deepEqual(plan.conflict, { need: 0, have: -16 });
+  assert.deepEqual(plan.unclaimedRemainder, { depth: 1 });
+  assert.equal(unfit(plan), true);
+});
+
+test('a reservation below the depth is orphaned, reported and makes the plan unfit — the curve arithmetic stays untouched', () => {
+  // 5 Players, boosterRate 1: rank.booster 5. displays[2] = 3 sits on Rank 3,
+  // which depth 2 does not serve — a promise the plan cannot keep. The
+  // reservation condition at depth 2 itself holds exactly (available 5,
+  // floorNeed 5), so this is the orphaned reservation alone, nothing else.
+  const plan = distribute(
+    settings({
+      players: 5,
+      boosterRate: 1,
+      rankFloor: 2,
+      displaySize: 1,
+      depth: 2,
+      displays: [0, 0, 3],
+    }),
+  );
+  assert.equal(plan.rank.booster, 5);
+  assert.deepEqual(plan.orphanedReservation, { ranks: [3] });
+  assert.equal(plan.conflict, null);
+  assert.equal(plan.overtake, null);
+  assert.equal(plan.unclaimedRemainder, null);
+  assert.equal(unfit(plan), true);
+  assert.deepEqual(served(plan), [3, 2]); // depth 2's own arithmetic is unaffected
+});
+
+test('unfit is true for exactly conflict, overtake, orphanedReservation and the depth-covering reservation, and false otherwise', () => {
+  // Conflict alone: the pinned-depth-over-the-cap stand above.
+  const conflictOnly = distribute(
+    settings({ players: 32, boosterRate: 3, participationBooster: 1, rankFloor: 2, depth: 32, curve: 'steep' }),
+  );
+  assert.ok(conflictOnly.conflict);
+  assert.equal(conflictOnly.overtake, null);
+  assert.equal(conflictOnly.orphanedReservation, null);
+  assert.equal(conflictOnly.unclaimedRemainder, null);
+  assert.equal(unfit(conflictOnly), true);
+
+  // Overtake alone: Weekend 48 with d = (1) (#55).
+  const overtakeOnly = distribute(weekendSettings({ players: 48, displays: [1] }));
+  assert.equal(overtakeOnly.conflict, null);
+  assert.ok(overtakeOnly.overtake);
+  assert.equal(overtakeOnly.orphanedReservation, null);
+  assert.equal(overtakeOnly.unclaimedRemainder, null);
+  assert.equal(unfit(overtakeOnly), true);
+
+  // Orphaned reservation alone: the stand above.
+  const orphanedOnly = distribute(
+    settings({ players: 5, boosterRate: 1, rankFloor: 2, displaySize: 1, depth: 2, displays: [0, 0, 3] }),
+  );
+  assert.equal(orphanedOnly.conflict, null);
+  assert.equal(orphanedOnly.overtake, null);
+  assert.ok(orphanedOnly.orphanedReservation);
+  assert.equal(orphanedOnly.unclaimedRemainder, null);
+  assert.equal(unfit(orphanedOnly), true);
+
+  // The depth-covering reservation alone: Weekend 32 with d = (1) at depth 1 (#55).
+  const unclaimedOnly = distribute(weekendSettings({ players: 32, depth: 1, displays: [1] }));
+  assert.equal(unclaimedOnly.conflict, null);
+  assert.equal(unclaimedOnly.overtake, null);
+  assert.equal(unclaimedOnly.orphanedReservation, null);
+  assert.ok(unclaimedOnly.unclaimedRemainder);
+  assert.equal(unfit(unclaimedOnly), true);
+
+  // A clean plan: none of the four, and unfit is false.
+  const clean = distribute(
+    settings({ players: 32, boosterRate: 3, participationBooster: 1, rankFloor: 2, depth: 8, curve: 'steep' }),
+  );
+  assert.equal(clean.conflict, null);
+  assert.equal(clean.overtake, null);
+  assert.equal(clean.orphanedReservation, null);
+  assert.equal(clean.unclaimedRemainder, null);
+  assert.equal(unfit(clean), false);
 });
