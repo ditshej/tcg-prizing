@@ -41,6 +41,14 @@ read by the maintainer, so it is German — titles, stake, options, captions.
 Identifiers, JSON keys and commit messages stay English. The reasoning is in
 `.claude/tools/README.md`; it is a standing decision, not an oversight.
 
+**Called from `/round`?** Then Stage 1 has already run, in that round's Phase C,
+and its result is `review/<batch>-kandidaten.md`. Read it, check its dropped
+list once against the two source files — a gate applied by someone else is
+still a gate you are answering for — and start at Stage 2. You are also working
+a **reduced** set: only the candidates the maintainer deferred to a card. The
+ones he answered in the terminal are decided, and re-opening them here is the
+same waste this skill exists to prevent, pointed the other way.
+
 ## Stage 1 — the two gates
 
 The severity line in the findings file does **not** select. In the first batch
