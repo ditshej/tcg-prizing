@@ -231,6 +231,19 @@ Er kann null sein: dann ist der
 Fehler, sondern die Folge eines hohen `RankFloor` — wer jedem bedienten `Rank`
 dasselbe zusichert, hat eine flache Verteilung verlangt. Er wird ausgewiesen,
 damit sichtbar ist, warum die Stufe verstummt; gekoppelt werden die beiden nie.
+
+Er kann aber auch **positiv sein und trotzdem niemanden haben, der ihn
+beansprucht** (#56): Reicht der `DisplayReservation`-Vektor bis genau zur
+Tiefe (`abgegoltene Ränge = Tiefe`, also `curveCount` 0), bleibt kein von der
+Kurve geformter `Rank` mehr übrig, an den der Überschuss gehen könnte. Der
+`DistributionPlan` trägt das als `unclaimedRemainder: null | { depth }`,
+gesetzt genau bei `curveCount === 0`. Der `ShapedRemainder` selbst bleibt
+unverändert stehen — es kommt eine Meldung dazu, keine Umverteilung, und die
+Rangzeilen bleiben exakt, was sie ohne die Meldung auch wären. Das ist der
+dritte Zustand neben „gedeckter Überschuss" und „gedeckte Unterdeckung": ein
+gedeckter Überschuss ohne Empfänger. Namensgebung und Form stehen im
+Kommentar an #46 nach — der Name benennt den Zustand (niemand beansprucht ihn),
+nicht seine Ursache (die randabdeckende Reservation).
 _Avoid_: Rest (allein), CurveBudget, ShapedPool (kein `Pool`, er verteilt nichts)
 
 **RankCycle**:
@@ -364,6 +377,22 @@ tiefer, eine bei der Tiefe abgeschnittene Darstellung würde Zuteilungen
 verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
 Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
+Neben den Rangzeilen trägt er vier Konfliktfelder, jedes `null` oder ein Objekt
+mit den Angaben, die eine Meldung ohne Rückgriff auf andere Plan-Felder
+braucht — dieselbe Bauart wie `overtake.has`/`.gets`: `conflict` (Tiefe über
+dem Deckel oder eine Reservation, die den `RankPool` allein schon übersteigt —
+`{ need, have }`), `overtake` (Überholung ohne Verlierer — `{ under, over,
+has, gets }`), `orphanedReservation` (Reservation auf einem `Rank`, den die
+`RankPoolDepth` nicht bedient — `{ ranks: [...] }`) und `unclaimedRemainder`
+(die randabdeckende Reservation, siehe `ShapedRemainder` — `{ depth }`, #56).
+`unfit(plan)` ist die reine Disjunktion aller vier — keines schliesst ein
+anderes aus, auch nicht `conflict` und `unclaimedRemainder`: eine Reservation,
+die zugleich die ganze Tiefe abdeckt und für sich allein grösser ist als der
+`RankPool`, erfüllt beide Bedingungen gleichzeitig, und beide Meldungen stehen
+dann nebeneinander statt einander zu verdrängen (Entscheid auf #56,
+2026-09-27). `flagged` sammelt dazu die betroffenen Rang-Nummern — das
+Überholungspaar, und im Konfliktzweig jeden bedienten `Rank`, der nicht sein
+volles Soll bekommen hat.
 Am Schirm ist das **Hochformat der Boden** (#40): das Kachelfenster zeigt in jeder
 Fassung mindestens so viel wie das Hochformat — **sechs Kachelspalten und zwei
 Kachelreihen**. Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge

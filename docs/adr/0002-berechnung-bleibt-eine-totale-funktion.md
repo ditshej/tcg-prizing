@@ -89,3 +89,23 @@ gangbaren Wege, geordnet nach der Vorrangkette aus ADR 0001, und jeder ist mit
 einem Klick übernehmbar — was den betroffenen Regler `pinned` setzt (ADR 0006).
 Der Sonderfall ist der Vorschlag „Regler X zurück auf automatisch": er *ist* der
 Reset-Knopf und entfernt den Pin, statt einen zu setzen.
+
+Nachtrag (#56): Ein vierter Fall reiht sich ohne neue Mechanik ein — eine
+`DisplayReservation`, die genau bis zur Tiefe reicht, lässt der
+`DistributionCurve` keinen `Rank` mehr, an den der `ShapedRemainder` gehen
+könnte. Auch das wird durchgerechnet und als `unclaimedRemainder` daneben
+gemeldet, statt den Überschuss stillschweigend zu verschlucken oder ihn
+irgendeinem `Rank` aufzudrängen, der ihn nie verlangt hat. Derselbe Satz wie
+oben trägt weiterhin: der Plan bleibt gültig oder wird als ungültig gemeldet,
+nie verweigert.
+
+Offen und bewusst so entschieden: `conflict` (eine Tiefe über dem Deckel oder
+eine Reservation, die den `RankPool` allein übersteigt) und
+`unclaimedRemainder` schliessen einander **nicht** aus — eine randabdeckende
+Reservation, die zugleich grösser ist als der `RankPool`, erfüllt beide
+Bedingungen zugleich, und beide Meldungen stehen dann nebeneinander. Ein Plan,
+der zwei widersprüchliche Tatsachen trägt, verliert keine davon nur, weil eine
+zweite auch noch gilt — das wäre genau das stille Verschlucken, gegen das diese
+ADR geschrieben ist. Ob der `NoticeStack` daraus eine gemeinsame oder zwei
+getrennte Flächen macht, ist eine Frage für Spec 2, keine Frage an die
+Rechnung.
