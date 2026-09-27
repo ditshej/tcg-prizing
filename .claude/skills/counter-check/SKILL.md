@@ -1,7 +1,6 @@
 ---
 name: counter-check
-description: Take a fan-out findings file apart again with a fresh head — reproduce or refute each finding, and look where the first pass did not.
-disable-model-invocation: true
+description: Take a fan-out findings file apart again with a fresh head — reproduce or refute each finding, and look where the first pass did not. Invoked by the user, or by `/round` as its Phase B.
 ---
 
 # Counter-check

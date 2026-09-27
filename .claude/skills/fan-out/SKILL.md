@@ -1,7 +1,6 @@
 ---
 name: fan-out
-description: Build several implementation tickets in parallel subagents, then check their result independently from the parent session.
-disable-model-invocation: true
+description: Build several implementation tickets in parallel subagents, then check their result independently from the parent session. Invoked by the user, or by `/round` as its Phase A.
 ---
 
 # Fan-out
