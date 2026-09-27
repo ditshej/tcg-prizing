@@ -332,3 +332,54 @@ skip. Three mutations on a copy: losing one `Booster` in the curve → 10 red;
 reporting the state unconditionally → 3 red; both at once → 10 red. The escape
 hatch does not mask a real loss. After run 1's three green tests that checked
 nothing, a repair to a test is worth a mutation before it is worth trust.
+
+### Run 6 · 2026-09-27 · #56 and #63 · the first `/round`, one Opus conductor
+
+**The number the skill was built for: 150k against run 5's 340k.** The conductor
+held paths, never a findings file, and spent its context on three things only —
+starting phases, putting candidates to the maintainer, filing what he answered.
+The eleven agents under it spent 1.0M between them, which is the point: that
+million never entered the window that had to survive to the end.
+
+The phases ran A → B → C → E → E′ → F, with D skipped because the maintainer
+took every candidate to a card.
+
+**Three things went wrong, and none of them was the pipeline.**
+
+*`/fan-out` could not be invoked by an agent.* `disable-model-invocation: true`
+predated `/round`, so Phase A aborted before building anything. The flag came
+off `/fan-out` and `/counter-check` (commit 7afba63) and stays on
+`/ask-hard-questions`, where the skill text names it as deliberate. A session
+limit then killed A and its child mid-Phase-4; both resumed from their own
+transcripts with the worktrees and PRs already on disk, and nothing was rebuilt.
+
+*The cards were prose about surfaces.* Five went out, one came back answered.
+Two came back with „ich bin mir nicht ganz sicher, was du für ein Bild vor dir
+hast" — every number on them correct. `fragebogen.mjs` gained an `image`
+evidence type, one or two pictures per entry (commit d0bb66d), and the second
+round with pictures was answered in full.
+
+*The prototype was never opened.* #63 built a fullscreen mode that keeps the
+diagram and grows it; `fsContent()` in the prototype is four lines and contains
+no diagram. The review then put three layouts on a card and asked the maintainer
+to choose — and he answered by quoting his own prototype. Gate 1 now names
+`prototypes/` first for anything about a surface, and `AGENTS.md` carries the
+rule beside the decided-number one (commit 800540a).
+
+**The rule that cost the most to learn: a state the core accepts is not thereby
+reachable.** A blocking finding, a chart and a card rode on „Weekend, 8 Leute,
+dem Sieger ein ganzes Display zugesagt". The maintainer: „bei 8 Personen mit je
+3 Boostern ist es schlicht unmöglich, ein Display zu verteilen." Measured
+afterwards: of 240 states where both conflict reasons hold at once, **zero**
+without an oversized reservation the control will refuse. The findings format
+now carries `Erreichbar über`.
+
+**What the skeptic was worth, again:** one whole card struck out, two dominated
+options removed, three missing ways added, and one number on a card that did not
+reproduce. It has now killed a card in three runs out of three.
+
+**Counts.** 8 findings from A, 5 more from B, 0 refuted. Gates: 6 candidates, 7
+dropped, and a second agent checked all seven — none wrongly. Five decisions
+reached the maintainer, five came back, four of them as free text that no option
+had offered. That ratio is the finding about the cards: when the maintainer
+answers outside the options, the options were the wrong ones, not his answer.
