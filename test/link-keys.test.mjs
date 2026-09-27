@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/encode.mjs';
+import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
 
 /**
  * The register, transcribed by hand from Spec 3 (#47) — the eighteen Settings

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { NEUTRAL_SLIDERS, resolveSettings, TRAILING_SLIDERS } from '../public/core/defaults.mjs';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { decode } from '../public/link/decode.mjs';
-import { KEYS } from '../public/link/encode.mjs';
+import { KEYS } from '../public/link/keys.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 const typeOf = (id) => TOURNAMENT_TYPES.find((entry) => entry.id === id);
@@ -53,6 +53,72 @@ test('a value that does not fit its key is named, never passed off as the sheet 
   const read = decode('?v=1&game=onepiece&type=weekend&rankFloor=banana&curve=flat&combinedHandout=2');
   assert.deepEqual(read.pins, {});
   assert.deepEqual(read.unreadable, ['rankFloor', 'curve', 'combinedHandout']);
+});
+
+/**
+ * The second half of the loss (#49, "Entscheid K4"). A key the register does
+ * not know loses exactly the slider an unreadable value loses, and until this
+ * was decided only one of the two was named: `rankfloor=5`, one letter small,
+ * dropped its slider without a word. What hangs off it, measured on #49:
+ * Weekend, 32 people, floor at 5 — sent `19·11·8·6·5·5·5·5`, arrived
+ * `29·14·7·4·3·3·2·2`, and nothing held on to the fact that something was lost.
+ */
+test('a key the register does not know is named, exactly as an unreadable value is', () => {
+  const good = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=5');
+  const keyTypo = decode('?v=1&game=onepiece&type=weekend&players=32&rankfloor=5');
+  const valueTypo = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=fuenf');
+
+  assert.deepEqual(good.pins, { players: 32, rankFloor: 5 });
+  assert.deepEqual(good.unreadable, []);
+
+  // The same slider is lost in both — so both say so, in the same list.
+  assert.deepEqual(keyTypo.pins, { players: 32 });
+  assert.deepEqual(keyTypo.unreadable, ['rankfloor']);
+  assert.deepEqual(valueTypo.pins, { players: 32 });
+  assert.deepEqual(valueTypo.unreadable, ['rankFloor']);
+});
+
+test('the base keys are known keys — a link that names its base reports nothing', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend');
+  assert.deepEqual(read.unreadable, []);
+  for (const key of ['v', 'game', 'type']) {
+    assert.ok(!read.unreadable.includes(key), `${key} is the base, not an unknown key`);
+  }
+});
+
+test('both halves of the loss land in one list, and a key named twice is named once', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&rankFloor=fuenf&rankfloor=5&rankfloor=6');
+  assert.deepEqual(read.pins, {});
+  assert.deepEqual(read.unreadable, ['rankFloor', 'rankfloor']);
+});
+
+/**
+ * A DisplayReservation is one slider's one value, so one bent limb discards
+ * the whole vector — it does not shrink to the limbs that read. A truncated
+ * vector would be a reservation nobody made, and it would arrive looking
+ * perfectly well-formed. Decided at #49, "Entscheid K4".
+ */
+test('a negative limb throws the whole reservation vector away, it does not shrink to the good limbs', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&displays=2.-1');
+  assert.equal(read.pins.displays, undefined, 'not [2], and not [2, -1]');
+  assert.deepEqual(read.unreadable, ['displays']);
+
+  // And the resolved Settings fall back to the neutral empty value, not to half a vector.
+  assert.deepEqual(settingsFrom('?v=1&game=onepiece&type=weekend&displays=2.-1').displays, []);
+});
+
+/**
+ * A rank named twice is two claims on one entry, and picking either one would
+ * be an allocation nobody decided — so the whole winner card goes. Decided at
+ * #49, "Entscheid K4".
+ */
+test('a rank named twice throws the whole winner card away, neither claim wins', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&manualWinner=3:1,7:2,3:5');
+  assert.equal(read.pins.manualWinner, undefined, 'neither {3:1,7:2} nor {3:5,7:2}');
+  assert.deepEqual(read.unreadable, ['manualWinner']);
+
+  const settings = settingsFrom('?v=1&game=onepiece&type=weekend&manualWinner=3:1,7:2,3:5');
+  assert.deepEqual(settings.manualWinner, {});
 });
 
 test('a named step reads as its id, and a pinned no reads as `false`', () => {
