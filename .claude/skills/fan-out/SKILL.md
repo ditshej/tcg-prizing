@@ -117,20 +117,41 @@ the session.
 
 ## Phase 4 — per PR, the reports are not evidence
 
-For each PR, yourself:
+Six checks per PR. They split into a **mechanical** half, whose output is noise
+in the parent's window, and a **judging** half, which is the reason this phase
+exists. Delegate the first, never the second.
+
+**Mechanical — one verification subagent for the whole batch, reporting one
+line per check per PR:**
 
 - `node --test` in that worktree.
-- `git diff --stat main...HEAD`, then read the substance of the diff. Three
-  dots here too, for the reason in `docs/agents/fan-out.md`.
-- **Recompute every acceptance number at a freshly built state**, with the
-  import command in `docs/agents/fan-out.md`. Not read off the tests.
+- `git diff --stat main...HEAD`. Three dots here too, for the reason in
+  `docs/agents/fan-out.md`.
 - **Forbidden paths**, with the `grep` from the same file. Empty output.
-- **The `Closes` link**, via GraphQL yourself — not from the agent's report.
+- **The `Closes` link**, via GraphQL — not from the agent's report.
+
+Hand it the paths and the patterns, and require the command and its output for
+each. It reads and writes nothing else, so it needs no worktree.
+
+**Judging — the parent, and only the parent:**
+
+- **Recompute every acceptance number at a freshly built state**, with the
+  import command in `docs/agents/fan-out.md`. Not read off the tests, and not
+  off a subagent either: the numbers have to pass through the head that read
+  the source in Phase 3.
+- **Read the substance of the diff**, not its stat line.
 - **Look at the tests' form, not only their colour.** A green test that
   restates its own claim proves nothing; `/counter-check` carries the two
   worked examples and the mutation move that exposes them.
 
-Done when each of these six has a written result per PR.
+And the move that no checklist contains: **chase whatever a report mentions in
+passing.** In run 5 the blocking finding was a case the building agent had
+reported itself, in the subjunctive, labelled "no blocker" — recomputing it
+showed it was reachable with the sheet's own values and a regression against
+`main`. A verifier handed six numbers would have ticked six boxes and moved on.
+
+Done when each of the six has a written result per PR, and every hedged
+sentence in every report has been either run down or dismissed in writing.
 
 ## Phase 5 — cross-checks across agent boundaries
 

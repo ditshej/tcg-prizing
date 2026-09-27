@@ -41,6 +41,12 @@ Commit messages are written in English.
 
 ## Agent skills
 
+**Invoke a skill, don't read it first.** Invoking loads its text; reading it
+beforehand buys the same tokens twice, and a long skill plus its companion doc
+is a measurable share of a session's context. Read a skill file only when the
+task is to *change* it. (Cost of ignoring this, measured on 2026-09-27:
+`/fan-out`'s text, bought twice, for nothing.)
+
 Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out`, `/counter-check` and `/ask-hard-questions` are ours.
 
 ### Building several tickets at once

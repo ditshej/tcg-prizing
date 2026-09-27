@@ -261,6 +261,23 @@ Then:
 node .claude/tools/fragebogen.mjs review/<batch>-fragen.json
 ```
 
+**Look at it once, in one pass.** The server renders the SVG at start, so a
+change to the question file needs a restart to show. So: parse the JSON, start
+the server, take **one** screenshot of the chart *element* — not the full page,
+which costs several times as much — and collect every defect from that single
+look before touching the file. Run 5 spent five screenshots on three rounds,
+two of them chasing typos the writer had put there himself.
+
+Two defects are worth knowing in advance, because both cost a round that day:
+`**bold**` renders literally — backticks are the only markup, in every field —
+and a measuring bracket collides with the neighbouring bar unless it hangs
+under the **last** one, which is the only bar with space reserved beneath it.
+Order the bars so the one the brackets belong to comes last.
+
+Light and dark need no separate look. The palette is a property of
+`.claude/tools/README.md` and was validated there; it is not a property of your
+card.
+
 Hand over the URL it prints, and the handover report below. Then stop. The
 server writes `review/<batch>-antworten.json` and shuts itself down when the
 maintainer sends.

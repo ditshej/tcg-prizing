@@ -157,6 +157,12 @@ that every claim in them is traceable to a run that went wrong in a particular
 way. The log is also how a *recurring* failure becomes visible — one green test
 that proves nothing is an accident, three across two runs is a class.
 
+**Write down what the driving session's context cost**, as a number, next to
+what the run produced. Otherwise the question "is this getting cheaper?" is
+answered by feel, and the answer by feel is always no. The maintainer's working
+limit is about **200k tokens** in the driving session; run 5 came to 340k and
+that is the reason the phases moved around afterwards.
+
 ### Run 1 · 2026-09-24 · #54, #57, #48 · three Sonnet agents
 
 Detailed above. What it produced: **three green tests that checked nothing** —
@@ -255,6 +261,8 @@ it found PHP available, started the server, and re-measured every pixel figure
 the building agent had reported. All of them held, and the vendored Alpine
 turned out byte-identical to npm's `alpinejs@3.14.9`. The parent had filed both
 as "not checked" — honestly, but a gap named is still a gap.
+
+**Driving session: 340k tokens**, against a working limit of about 200k. Roughly a third reading spec and tickets, a third writing artefacts (findings file, question file twice, six ticket comments, this log), a third tool output and screenshots.
 
 **Two corrections to the skills came out of it.** `/fan-out` gained nothing;
 the procedure held. `/ask-hard-questions` gained a whole stage: the first
