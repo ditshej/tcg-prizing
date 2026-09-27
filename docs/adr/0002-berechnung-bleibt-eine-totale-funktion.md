@@ -1,5 +1,7 @@
 # Die Berechnung bleibt eine totale Funktion
 
+Ergänzt durch ADR-0009.
+
 Für widersprüchliche Reglerstände — etwa eine `RankPoolDepth`, die unter die
 bereits gesetzten `DisplayReservation`s gesenkt wurde — war ursprünglich
 festgelegt, dass gar kein `DistributionPlan` entsteht und an der Stelle der
@@ -98,6 +100,28 @@ gemeldet, statt den Überschuss stillschweigend zu verschlucken oder ihn
 irgendeinem `Rank` aufzudrängen, der ihn nie verlangt hat. Derselbe Satz wie
 oben trägt weiterhin: der Plan bleibt gültig oder wird als ungültig gemeldet,
 nie verweigert.
+
+Nachtrag (Lauf #49·#59·#58, 2026-09-27): **Wenn kein einzelner Regler räumt.**
+Der Satz oben — „Variiert wird dabei immer nur ein Regler" — beschreibt, wie
+gesucht wird, und er bleibt die Regel. Er sagt nichts darüber, was geschieht,
+wenn die Suche **nichts findet**, und das ist nicht der Rand: über echte
+`SetupLink`s gemessen haben **775 von 1 441** gewarnten Ständen keinen einzeln
+gangbaren Weg. Für diese Stände bleibt die Fläche unter der Meldung nicht leer
+und bekommt auch keinen erklärenden Satz („kein einzelner Regler räumt das"),
+sondern einen **gerechneten Weg über mehrere Regler zugleich**, mit einem Klick
+übernehmbar. Das ist keine neue Mechanik: #70 schreibt diese Bauart für den
+`WinnerPack`-Überhang bereits vor, und ein solcher Weg ist ebenso ein `WayOut`
+wie der einzelne. Die Rangfolge bleibt: gibt es einen einzeln gangbaren Weg,
+steht er allein da — der mehrgliedrige ist der Fall, in dem es sonst gar nichts
+gäbe, und genau darum wiegt seine Unlesbarkeit dort weniger als die leere
+Fläche. Gebaut wird er in **#68** (die Warnfläche) und **#70** (die Formel).
+
+Offen mitgeschleppt und hier festgehalten, damit es die nächste Sitzung nicht
+wieder herleitet: `conflictBox()` im Prototyp (`cockpit.prototype.html`) kennt
+nur `conflict` und `overtake` und hat für die **verwaiste Reservation** und den
+**unbeanspruchten Rest** gar keinen Satz — 135 der gemessenen Stände sind genau
+das. Wer #68 baut, findet dort also keine Vorlage und muss zwei Sätze neu
+formulieren; das ist eine Lücke im Prototyp, kein Entscheid dagegen.
 
 Bewusst so entschieden (Entscheid 3 im Kommentar „Drei Entscheide aus der
 Fragebogenrunde" an #56, 2026-09-27): `conflict` (eine Tiefe über dem Deckel oder
