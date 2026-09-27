@@ -16,7 +16,7 @@
 import { distribute } from '../core/distribute.mjs';
 import { CURVES } from '../core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { attachMeasuring } from './measure.mjs';
+import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
 
 /**
@@ -177,6 +177,13 @@ export function planApp() {
         this.$refs.rest,
       ].filter(Boolean);
       this._detachMeasuring = attachMeasuring(this.$refs.stage, fixed);
+      /* Entering fullscreen changes which fixed parts render, not always the
+         stage's own box, and `ResizeObserver` only sees the box. Measure again
+         after Alpine has applied the `x-show`s, or the grid would keep the
+         column count and diagram height of the layout it just left. */
+      this.$watch('fullscreen', () => {
+        requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed));
+      });
     },
 
     destroy() {

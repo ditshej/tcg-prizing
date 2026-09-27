@@ -36,6 +36,17 @@ body {
  * stage all the room the foot and (when `Plan` is active) the controls
  * rail don't need.
  */
+/*
+ * Until Alpine runs, every page is plain markup and all three paint at once.
+ * `Plan` is the page the shell boots into (#61, "Seite `Plan`, Vollbild aus"),
+ * so it is the two others that are covered until `x-show` takes over — which
+ * makes the state before the first paint the same state as after it, rather
+ * than a flash of all three.
+ */
+[x-cloak] {
+  display: none !important;
+}
+
 .page-plan {
   flex: 1 1 auto;
   min-height: 0;

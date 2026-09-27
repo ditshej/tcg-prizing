@@ -38,7 +38,13 @@ export function applyGeometry(stageEl, fixedEls = []) {
   const style = getComputedStyle(stageEl);
   const gap = parseFloat(style.rowGap || style.gap) || 0;
   const padding = parseFloat(style.paddingTop || 0) + parseFloat(style.paddingBottom || 0);
-  const gapCount = Math.max(0, stageEl.children.length - 1);
+  /* Only the children that actually render pay for a gap. Fullscreen hides
+     several of them (`x-show` → `display: none`), and counting those would
+     charge the leftover for gaps the browser never draws — pixels the tile
+     grid would then not get. */
+  const visibleChildren = Array.from(stageEl.children)
+    .filter((el) => el.getClientRects().length > 0).length;
+  const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
   stageEl.style.setProperty('--plan-columns', String(columnsFor(width)));

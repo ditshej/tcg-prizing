@@ -11,7 +11,7 @@
  * from `distribute()` in the browser (ADR 0004).
  */
 ?>
-<div class="page-prepare" x-show="activePage === 'prepare'">
+<div class="page-prepare" x-cloak x-show="activePage === 'prepare'">
   <header class="page-head">
     <h1>Prepare</h1>
     <p class="page-lede">everything the pool holds</p>

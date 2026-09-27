@@ -19,20 +19,35 @@
 ?>
 <div class="page-plan" x-show="activePage === 'plan'">
   <section class="plan-stage" x-ref="stage">
+    <!--
+      The fullscreen head is the prototype's `shead` (`fsContent()`): where you
+      are, and how to get out — the tournament type and the player count, and
+      nothing else. The page title, the pool line and the participation line
+      are the *page's* head and stay behind, because fullscreen is "alles weg
+      ausser dem Plan" (#61) and they are not the tiles.
+    -->
     <header class="plan-head" x-ref="head">
-      <h1>Plan</h1>
+      <h1 x-show="!fullscreen">Plan</h1>
       <p class="plan-type" x-text="`${typeTitle} · ${plan.players} players`"></p>
-      <p class="plan-output"
+      <p class="plan-output" x-show="!fullscreen"
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} tournament packs · ${plan.pool.winners} winner packs`"></p>
     </header>
 
-    <div class="plan-participation" x-ref="participation" x-show="!plan.combinedHandout">
+    <div class="plan-participation" x-ref="participation" x-show="!fullscreen && !plan.combinedHandout">
       <span>Participation</span>
       <span
         x-text="`${plan.participation.rate.booster}/player boosters · ${plan.participation.booster} total`"></span>
     </div>
 
-    <div class="plan-diagram" aria-hidden="true">
+    <!--
+      The diagram is not in fullscreen. The prototype's `fsContent()` carries a
+      legend, the tile grid and the grid's foot line — no diagram — and the
+      decision on #63 (2026-09-27) says it in words: "Das Vollbild zeigt nur die
+      Kacheln, nicht das Diagramm." Keeping it here is what made fullscreen show
+      *fewer* ranks than the page it opened from, because the diagram takes
+      every pixel the controls rail and the foot give up.
+    -->
+    <div class="plan-diagram" aria-hidden="true" x-show="!fullscreen">
       <template x-for="row in plan.rows" :key="row.rank">
         <div class="bar" :class="{ 'bar-unserved': !row.served }">
           <div class="seg-reservation" :style="`height:${segments(row).reservation}%`"></div>
@@ -76,7 +91,13 @@
       </button>
     </div>
 
-    <p class="plan-ranktotal" x-ref="ranktotal"
+    <!--
+      The rank total belongs to the diagram — the prototype prints it above the
+      bars, not under the tiles — so it leaves with the diagram. The rank
+      message below it is the grid's own foot (`slotFoot()`) and stays: it is
+      the only statement about the ranks that have no tile at all.
+    -->
+    <p class="plan-ranktotal" x-ref="ranktotal" x-show="!fullscreen"
        x-text="`${rankTotalBooster} boosters ${rankTotalLabel}`"></p>
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
   </section>

@@ -7,7 +7,7 @@
  * sliders and the Game/TournamentType block are #64's ticket, not this one.
  */
 ?>
-<div class="page-details" x-show="activePage === 'details'">
+<div class="page-details" x-cloak x-show="activePage === 'details'">
   <header class="page-head">
     <h1>Details</h1>
     <p class="page-lede">everything you can turn</p>
