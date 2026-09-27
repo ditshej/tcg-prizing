@@ -383,3 +383,66 @@ dropped, and a second agent checked all seven — none wrongly. Five decisions
 reached the maintainer, five came back, four of them as free text that no option
 had offered. That ratio is the finding about the cards: when the maintainer
 answers outside the options, the options were the wrong ones, not his answer.
+
+### Run 7 · 2026-09-27 · #49, #59, #58 · `/round` with Phase D in place
+
+**The conductor's context: roughly 40k, against run 6's 150k and run 5's 340k.**
+The estimate is honest about being one — it is read off the transcript's shape,
+not off a counter, because no counter in the harness reports the conductor's own
+window separately from the session total. Run 6's 150k was arrived at the same
+way, so the comparison holds even if both numbers are soft. What is hard: the
+conductor never opened a findings file, a counter-check report or a question
+file in seven phases. The six agents under it spent **~770k** between them.
+
+The drop from 150k to 40k is not a better conductor. Run 6 ran two rounds of
+cards after the first came back unanswered; this round had no second lap, and
+it skipped nothing. **Phase D is where the difference sits** — it was invented
+after run 6 and used for the first time here.
+
+**Phase D paid for itself on its first run.** Six candidates went to the
+terminal; two were answered in a sentence (the name `WayOut`, and what stands
+under a warning when no single slider clears it) and four went to cards. The
+two answered in the terminal would each have cost evidence, a chart and a share
+of the skeptic — that is the waste run 5 paid twice for and run 6 paid five
+times for. Run 6's ratio, five decisions all going to cards, is exactly what
+Phase D exists to break, and the break is measurable: **four cards instead of
+six**, and no round of cards came back unanswered.
+
+**The disjointness analysis moved in front of the batch choice, and it changed
+it.** Asked what could run in parallel, the first pass named a three-ticket
+batch built on ticket boundaries. Reading the specs killed it: #46 puts
+`suggestions` and `offerFor` in the **same file**, so #59 and #60 can never be
+batched; and a comment on #49 requires it to edit `public/ui/plan.mjs`, which
+collides with every Spec-2 ticket. The frontier had seven unblocked tickets and
+admitted a maximum batch of **three**. Both constraints are in the specs, and
+neither is visible from the ticket list. A batch chosen from titles would have
+collided twice.
+
+**Gate 1 removed two whole cards by finding the source:** #70 decides the
+`WinnerPack` overhang with a formula (318/318 coverage, recomputed), and ADR
+0003 already carries the rule about sheets. Phase E's own Gate-1 pass then found
+three things the two reports had **wrong** — among them B3's claim that
+`suggestions(plan)` stands in `CONTEXT.md` and in #59's body. It stands in #46,
+#61 and #68, and nowhere else. The filing pulled only the places that really
+say it. A report is not a source, and the gate is where that gets tested.
+
+**The skeptic killed no card this time** — the first run in four where it did
+not. It struck three dominated options, forced two new ones, and got a number
+wrong (19:5 against a measured 19:4, because `plan.displayVector` is trimmed to
+the depth). Five of its thirteen points were written off with a reason. A
+skeptic that misses on a number it did not run is the argument for Stage 2's
+rule that evidence is produced in session, applied to the skeptic itself.
+
+**Counts.** 9 findings from A, 7 more from B, **0 of 9 refuted** — the
+counter-check confirmed every one and sharpened two over a second independent
+path. 21 mutations in B, of which #58's suite went red on all five fresh grips
+and #59 carried two blind tests. Gates: 6 candidates, 9 dropped. Six decisions,
+six answered. One new ticket (#86) for the core change one card chose, rather
+than a patch inside the batch.
+
+**The round made the suite faster while adding to it.** #58's sweep went from
+116 064 states to 1 024 and `node --test` from 1 709 ms to 315 ms, with all five
+characterisation equalities kept and won one last time from the unmerged core.
+Eleven tests were added on top. The card that did it asked whether a ratchet of
+five never-decided numbers was worth a second per run; the answer was to keep
+the ratchet and shrink the grid — an option the skeptic supplied.

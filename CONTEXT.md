@@ -82,6 +82,11 @@ Der `Pool`, der gleichmässig an alle `Player` geht, unabhängig vom `Ranking`.
 Hängt nicht vom Turnierverlauf ab und kann vor dem Turnier ausgeteilt werden.
 Ein `Player` erhält diesen Anteil zusätzlich zu allem, was ihm über den
 `RankPool` zusteht.
+Abgreifbar sind **`Booster` und `TournamentPack`**, `WinnerPack`s **nicht**: die
+gehören an einen `Rank` oder an die `WinnerRaffle`, und ein `WinnerPack` an jeden
+wäre keine Teilnahme mehr. Es gibt darum kein `participation.winners` — zusammen
+mit den `TournamentPack`s, die der `JudgePool` nicht abgreift, sind das die zwei
+leeren Zellen im Raster `Pool` × Achse.
 
 **JudgePool**:
 Der `Pool`, der die `Judge`s abfindet. Anonymer Block ohne Bezug zur Anzahl
@@ -516,6 +521,23 @@ bekommt ein `Display`" angesagte Dinge sind. Die Kette bleibt davon unberührt:
 sie ordnet die Zusagen untereinander, und die `DistributionCurve` war nie eine.
 _Avoid_: Error, Warning (die Rechnung ist nie fehlgeschlagen), Validation
 
+**WayOut**:
+Ein **einzelner** der Wege, die eine `ConflictNotice` zeigt: ein Reglerwert, der
+den unpassenden Stand räumt, mit einem Klick übernehmbar. Die `ConflictNotice`
+ist die Meldung, der `WayOut` ihr einzelner Eintrag darin — die Menge zählt der
+Chip (`⚠ 3 ways out`). Etikett und Term decken sich, darum steht hier keine
+`_Label_`-Zeile.
+Ein `WayOut` ist in der Regel **ein** Regler auf einem anderen Wert. Räumt kein
+einzelner Regler den Stand, bleibt die Fläche nicht leer: dann wird ein Weg über
+**mehrere Regler zugleich** gerechnet und ebenso als `WayOut` angeboten — die
+Ausnahme, die der Nachtrag „Wenn kein einzelner Regler räumt" zu ADR 0002
+festhält.
+_Avoid_: Fix, Solution (beide behaupten, die Rechnung sei fehlgeschlagen; sie war
+es nie — siehe die `_Avoid_`-Zeile der `ConflictNotice`), Hint, Suggestion, Tip
+(die `_Avoid_`-Zeile unter `Offer` hält diese drei bereits vom Schirm fern, damit
+die Wege heraus nicht als `Offer` gelesen werden; sie gilt unverändert weiter und
+wird durch diesen Eintrag nicht ersetzt).
+
 **Offer**:
 Der Eintrag im `NoticeStack`, der auf einem vollständig **gültigen**
 Plan eine rundere Fassung vorschlägt — heute allein die `DisplayReservation`,
@@ -600,6 +622,15 @@ Startwert im `DefaultSet`, weil eine Konstante keinen `Rank` benennt. Es ist der
 einzige Ort, an dem ein Zeitpunkt im Modell überhaupt vorkommt — als ein Bit,
 nicht als Achse: die App kennt kein `Ranking` als Eingabe, also wird kein Teil
 des `DistributionPlan` später wahr als ein anderer.
+**Der `Pool`-Schnitt wandert mit**, und das ist die Stelle, an der sich leicht
+verrechnet, wer nur die Zeilen im Blick hat: bei eingeschaltetem
+`combinedHandout` wird `participation.booster` **0**, und `rank.booster` trägt
+den Teilnahmeanteil mit. Die Formung rechnet unverändert auf dem Anteil **ohne**
+Teilnahme — `ShapedRemainder` und Tiefendeckel ändern sich nicht, die Zeilen
+unterscheiden sich um genau die Teilnahmerate je `Rank`. Wer `rank.booster` als
+„was der `RankPool` zum Formen hat" liest, zieht den Anteil ein zweites Mal ab
+und meldet Gleichheitsbrüche, die es nicht gibt (gemessen im Lauf #49·#59·#58,
+Befund B5).
 _Avoid_: Zeitpunkt, PlanStage (es ist keine Achse, sondern ein Bit), MergedView
 
 **PreparationList**:
@@ -789,7 +820,8 @@ migrierte Stand gilt sofort; die Adresszeile schreibt sich als heutige Version m
 berichtet, was umgeschrieben und was weggefallen ist, samt der Aufforderung, das
 Lesezeichen zu erneuern. Es liegt über allem statt in der Reihe unter dem Plan,
 weil es nicht den Plan kommentiert, sondern die Herkunft der Eingabe — wegklickbar,
-nie im `SetupLink`, und nur da, wenn die Kette tatsächlich gelaufen ist.
+nie im `SetupLink`, und da, sobald etwas nicht so übernommen wurde, wie es
+dastand: umgeschrieben, weggefallen oder unlesbar (Nachtrag #48 zu ADR 0007).
 _Avoid_: Upgrade, Konvertierung, Kompatibilitätsmodus (es gibt keinen zweiten Lesemodus, nur einen Weg nach vorn)
 
 **Ranking**:
