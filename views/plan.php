@@ -1,6 +1,6 @@
 <?php
 /**
- * The Plan screen's static skeleton (#62): the head, handout line, diagram,
+ * The Plan screen's static skeleton (#62): the head, participation line, diagram,
  * legend, tile grid and rank notice, then the four hot sliders as a
  * fixed bar underneath. Every `x-…` attribute below is static markup PHP
  * composes once; the values behind it come from `distribute()` in the
@@ -20,8 +20,8 @@
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} tournament packs · ${plan.pool.winners} winner packs`"></p>
     </header>
 
-    <div class="plan-handout" x-ref="handout" x-show="!plan.combinedHandout">
-      <span>Handout</span>
+    <div class="plan-participation" x-ref="participation" x-show="!plan.combinedHandout">
+      <span>Participation</span>
       <span
         x-text="`${plan.participation.rate.booster}/player boosters · ${plan.participation.booster} total`"></span>
     </div>

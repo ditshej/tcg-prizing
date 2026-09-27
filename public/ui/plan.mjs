@@ -137,7 +137,7 @@ export function planApp() {
     init() {
       const fixed = [
         this.$refs.head,
-        this.$refs.handout,
+        this.$refs.participation,
         this.$refs.legend,
         this.$refs.ranktotal,
         this.$refs.rest,

@@ -39,7 +39,7 @@ body {
 }
 
 .plan-head,
-.plan-handout,
+.plan-participation,
 .plan-diagram,
 .plan-legend,
 .plan-rest,
@@ -63,7 +63,7 @@ body {
   font-weight: 600;
 }
 
-.plan-handout {
+.plan-participation {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;

@@ -14,7 +14,7 @@ import { columnsFor, diagramCap } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
- * of that column other than the diagram and the tile grid — header, handout
+ * of that column other than the diagram and the tile grid — header, participation
  * line, legend, rank total and rank message), then writes `--plan-columns`
  * and `--diagram-height` as CSS custom properties on `stageEl`.
  *
