@@ -8,11 +8,14 @@
  * indivisible axes that run past it — the RankCycle for TournamentPacks and
  * the WinnerPackAllocation for WinnerPacks (#57). A DisplayReservation that
  * settles the whole depth reports `unclaimedRemainder` instead of quietly
- * dropping the ShapedRemainder (#55, folded into `unfit` by #56). The
- * conflict branch and the orphaned reservation itself (#56) are not here
- * yet: the valid branch clamps a negative ShapedRemainder to 0 rather than
- * pouring from the top, and a reservation past the depth is read as though
- * it were not there.
+ * dropping the ShapedRemainder (#55, folded into `unfit` by #56).
+ *
+ * The conflict branch (#56) pours the RankPool from the top — reservation,
+ * then the Rank 1 lead, then the RankFloor — instead of clamping a negative
+ * ShapedRemainder to 0 and pretending the rows still add up. A reservation
+ * past the depth is reported as `orphanedReservation` rather than read as
+ * though it were not there. `unfit()` is the shared predicate over all four
+ * ways a plan can be reported instead of refused.
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -216,7 +219,13 @@ export function distribute(settings) {
   // ConflictNotice names. The shaped remainder itself never goes negative —
   // in the conflict branch nothing is shaped at all (#56).
   const available = rank.booster - displayReserved;
-  const shapedRemainder = Math.max(0, available - floorReserved);
+  const shapedRaw = available - floorReserved;
+  const shapedRemainder = Math.max(0, shapedRaw);
+  // The reservation condition read as a fact, not a bound: `need`/`have` are
+  // the same two quantities the ShapedRemainder is built from, carried
+  // outright so a ConflictNotice never has to re-read other plan fields
+  // (same reasoning as `overtake.has`/`.gets`, CONTEXT.md "ShapedRemainder").
+  const conflict = shapedRaw < 0 ? { need: floorReserved, have: available } : null;
 
   // A DisplayReservation that settles every Rank up to the depth
   // (`settledCount === depth`, so `curveCount === 0`) leaves no Rank inside
@@ -226,12 +235,63 @@ export function distribute(settings) {
   // and #56 folds this into `unfit` instead of re-deriving the condition
   // from `settledCount` and `depth` itself (maintainer decision on #56,
   // 2026-09-27).
+  //
+  // This can be true at the same time as `conflict` — a reservation that
+  // settles the whole depth and by itself outweighs the RankPool is both at
+  // once (`displaySize` large enough that `displayReserved > rank.booster`
+  // while `settledCount === depth`). The two are left standing side by side
+  // rather than made to exclude one another: each names a fact that is true
+  // of this plan on its own terms, and ADR 0002 asks that a widerspruchlicher
+  // Stand be shown, not tidied into a single story. Reconciling this into one
+  // displayed notice — or two — is a NoticeStack question for Spec 2, not a
+  // reason to suppress one of two true facts here (open point, #56).
   const unclaimedRemainder = curveCount === 0 ? { depth } : null;
 
+  // A DisplayReservation on a Rank the RankPoolDepth does not serve is a
+  // promise the plan cannot keep — reported as `orphanedReservation` rather
+  // than read as though it stopped at `depth` (ADR 0002, CONTEXT.md
+  // "DisplayReservation").
+  const orphanedRanks = [];
+  for (let i = depth; i < displays.length; i++) {
+    if (Math.max(0, int(displays[i])) > 0) orphanedRanks.push(i + 1);
+  }
+  const orphanedReservation = orphanedRanks.length > 0 ? { ranks: orphanedRanks } : null;
+
+  // The RankPool poured from the top: DisplayReservation, then the Rank 1
+  // lead, then RankFloor — three passes over all served Ranks, not one pass
+  // per Rank, because the reservation is the loudest promise and is served
+  // in full over every Rank before any floor is paid (CONTEXT.md
+  // "ShapedRemainder", the conflict branch). In the valid branch every pass
+  // completes and `left` lands on the ShapedRemainder exactly; in the
+  // conflict branch the pool runs dry partway through and whatever comes
+  // after — later Ranks in the same pass, or a later pass entirely — gets
+  // nothing. One algorithm, not two: nothing here reads `conflict` itself.
+  //
+  // `fromReservation`/`fromFloor` are kept apart from `booster` because the
+  // row breakdown (`reserved`, `floor`) reports what actually went out, not
+  // the nominal entitlement — the same "pinned value stored, real payout
+  // shown" split ADR 0006 already makes for the pinned value itself.
   const booster = new Array(players).fill(0);
-  for (let i = 0; i < depth; i++) booster[i] += d[i] * displaySize;
-  for (let i = curveFrom; i < depth; i++) booster[i] += rankFloor;
-  if (lead) booster[0] += 1;
+  const fromReservation = new Array(players).fill(0);
+  const fromFloor = new Array(players).fill(0); // carries the Rank 1 lead too
+  let left = rank.booster;
+  for (let i = 0; i < depth && left > 0; i++) {
+    const give = Math.min(d[i] * displaySize, left);
+    fromReservation[i] = give;
+    booster[i] += give;
+    left -= give;
+  }
+  if (lead && left > 0) {
+    fromFloor[0] += 1;
+    booster[0] += 1;
+    left -= 1;
+  }
+  for (let i = curveFrom; i < depth && left > 0; i++) {
+    const give = Math.min(rankFloor, left);
+    fromFloor[i] += give;
+    booster[i] += give;
+    left -= give;
+  }
 
   const weights = shapeWeights(curveRatio(settings.curve), curveCount);
   const shaped = largestRemainder(weights, shapedRemainder);
@@ -252,7 +312,21 @@ export function distribute(settings) {
       }
     }
   }
-  const flagged = overtake ? [overtake.under, overtake.over] : [];
+  // flagged: the overtake pair, unioned in the conflict branch with every
+  // served Rank that did not get its full quota — reservation, lead and
+  // floor together (CONTEXT.md "ShapedRemainder"). Measured on `booster`
+  // before the CombinedHandout shift, the same rule as overtake: the shift
+  // adds the same amount to every row and must not create or hide a flag.
+  const conflictFlags = [];
+  if (conflict) {
+    for (let i = 0; i < depth; i++) {
+      const quota = d[i] * displaySize + (i === 0 && lead ? 1 : 0) + (i >= curveFrom ? rankFloor : 0);
+      if (booster[i] < quota) conflictFlags.push(i + 1);
+    }
+  }
+  const flagged = [...new Set([...(overtake ? [overtake.under, overtake.over] : []), ...conflictFlags])].sort(
+    (a, b) => a - b,
+  );
 
   // The two indivisible axes run past the DistributionCurve (#57): the
   // RankCycle hands out the RankPool's TournamentPacks, and the
@@ -290,8 +364,8 @@ export function distribute(settings) {
     packs: packsCycle[i] + ppRate,
     winners: (i < allocation.ranked ? 1 : 0) + (allocation.manual[i + 1] ?? 0),
     displays: i < depth ? d[i] : 0,
-    reserved: i < depth ? d[i] * displaySize : 0,
-    floor: i < curveFrom || i >= depth ? 0 : rankFloor + (i === 0 ? lead : 0),
+    reserved: i < depth ? fromReservation[i] : 0,
+    floor: i < depth ? fromFloor[i] : 0,
     served: i < depth,
     settled: i < curveFrom,
   }));
@@ -317,9 +391,24 @@ export function distribute(settings) {
     unclaimedRemainder,
     allocation,
     rows,
+    conflict,
     overtake,
+    orphanedReservation,
     flagged,
   };
+}
+
+/**
+ * The shared predicate over a DistributionPlan (#56): true wherever the
+ * NoticeStack has something to show and `suggestions()` (#59) has a way out
+ * to search for. Four independent facts feed it — a depth over the cap, an
+ * overtake, a reservation past the depth, and a reservation that swallows
+ * the whole depth — and it is their plain OR: none of the four is treated as
+ * excluding another (see the `unclaimedRemainder` note above for the one
+ * case where two can hold of the same plan at once).
+ */
+export function unfit(plan) {
+  return !!plan.conflict || !!plan.overtake || !!plan.orphanedReservation || !!plan.unclaimedRemainder;
 }
 
 /** The geometric weights of the curve: `ratio⁰, ratio¹, …` over the shaped ranks. */

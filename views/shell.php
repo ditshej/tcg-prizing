@@ -3,7 +3,8 @@
  * The static outer shell (#62): what PHP renders and what never changes
  * while a slider is being dragged (ADR 0004 — "PHP rendert, was sich beim
  * Reglerziehen nie ändert"). Everything plan-dependent lives inside
- * `plan.php` behind `x-data="planApp()"` and is Alpine's job, not PHP's.
+ * `app.php` behind `x-data="planApp()"` and is Alpine's job, not PHP's —
+ * `app.php` in turn composes the three pages and the footer (#63).
  *
  * Alpine is the vendored, pinned file under `public/vendor/` — no CDN, no
  * build step. `app.mjs` is a module script and registers the `planApp`
@@ -20,7 +21,7 @@
   <link rel="stylesheet" href="/ui/plan.css">
 </head>
 <body>
-<?php require __DIR__ . '/plan.php'; ?>
+<?php require __DIR__ . '/app.php'; ?>
 <script type="module" src="/ui/app.mjs"></script>
 <script defer src="/vendor/alpine-3.14.9.min.js"></script>
 </body>
