@@ -66,6 +66,14 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   an der Kurve vorbei (#57). Ein Balken von einem Pixel neben einem von neunzig
   sagte nichts — zwei Zahlenspalten sagen es genau, und die Null steht blass da,
   damit sichtbar bleibt, wie weit eine Achse reicht.
+
+  Seit #55 teilt sich der Balken selbst: ein reservierter Anteil
+  (`row.reserved`, die `DisplayReservation` zu `displaySize` je `Display`) in
+  Lila, der Rest (`RankFloor` plus Kurvenanteil) in Grün — ein abgegoltener
+  Rang (`row.settled`, der strikte Vorlauf über der obersten Bindung) ist lila
+  von Anfang bis Ende und trägt sein Label fett. Ein Rang, der an der
+  gemeldeten `overtake` beteiligt ist, bekommt ein rotes Label und einen roten
+  Rahmen um die Zeile — `flagged` sagt genau, welche zwei.
 - **Die abgeleiteten Grössen** beschriftet, plus einen Rohabzug des ganzen
   `DistributionPlan` als JSON — damit Felder, die #55 und #56 hinzufügen, von
   selbst auftauchen, ohne dass jemand die Bank anfasst. Genau so sind die Felder
@@ -84,6 +92,19 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   Auf den `WinnerPack`s steht **mit Absicht keine** Summenregel: die Regel bindet
   die `Pool`-Ebene, nicht die Empfänger-Ebene, und ein `WinnerPack` ohne
   Empfänger (`open`) verletzt nichts (#46).
+
+  Seit #55 unterscheidet die Zeile **drei** Zustände statt zweier: gehalten
+  (grün), gemeldet (gelb, ein Kreis statt eines Häkchens) und gebrochen (rot).
+  Eine `DisplayReservation`, die die ganze Tiefe abgilt, lässt beide
+  Summenregeln auf der `Booster`-Achse um genau den `ShapedRemainder`
+  zurückfallen — steht dafür `unclaimedRemainder`, ist das der gemeldete
+  Zustand, nicht der Bruch; fehlt die Meldung, bleibt es rot. Bauart aus
+  `test/distribute.test.mjs`, `assertPlanSum` — dieselbe Unterscheidung, nicht
+  neu erfunden. Dieselbe Fassung trägt jetzt auch „die Zeilen fallen
+  monoton": eine gemeldete `overtake` (die Bindung bricht, sobald eine
+  Reservation Rang 1 aus der Kurve trägt) ist ebenfalls ein gemeldeter, kein
+  gebrochener Zustand — `test/distribute.test.mjs:507` prüft das als
+  erwarteten Fall, nicht als Fehler.
 - **Die vier gemessenen Stände aus #53** als Knöpfe, jeder mit seiner erwarteten
   Zahl daneben, und dazu ein fünfter, der **nicht** zu den vieren gehört.
 
@@ -114,3 +135,39 @@ selbst: das Verschieben addiert `pbRate` zu jeder Zeile und lässt den `RankPool
 um `pbRate · Spielerzahl` wachsen, also um genau denselben Betrag. Nachgerechnet
 an den vier Ständen und an einem Stand mit Teilnahmeanteil auf beiden Achsen,
 je einmal mit und ohne Schalter.
+
+## Nachgeprüft nach #55 (Stand `main`, 2026-09-27): `unclaimedRemainder` und `overtake` von Hand gefahren
+
+Am `Weekend`-Blatt (32 `Player`, `boosterRate` 3, `participationBooster` 1,
+`rankFloor` 2, `curve` steep → `RankPool` 64) über den `weekend`-Knopf, dann
+Tiefe, `displays` und `displaySize` von Hand gesetzt:
+
+- `depth` 1, `d`=(1), `displaySize` 24 → Serie `24`, `unclaimedRemainder`
+  `depth 1`, beide Summenregeln gelb („gemeldet, kein Defekt"), Rang 1 lila
+  von Anfang bis Ende und fett beschriftet (abgegolten).
+- `depth` 2, `d`=(2,1), `displaySize` 8 → Serie `16·8`, `unclaimedRemainder`
+  `depth 2`, dieselbe gelbe Meldung, beide Ränge lila und fett.
+- `depth` 3, `d`=(3,2,1), `displaySize` 4 → Serie `12·8·4`,
+  `unclaimedRemainder` `depth 3`, dieselbe gelbe Meldung, alle drei Ränge lila
+  und fett.
+
+Alle drei teilen 24 von 64 `Booster` aus, wie im Entscheid an #56 vorgerechnet.
+
+Der Gegenfall — `depth` 2, `d`=(1), `displaySize` 24 — geht auf `24·40` und
+`unclaimedRemainder` bleibt `null`, wie erwartet. Er deckte dabei aber einen
+zweiten, ungeplanten Fall auf: Rang 2 überholt Rang 1 (`overtake`:
+`{under:1, over:2, has:24, gets:40}`), und die Invariante „die Zeilen fallen
+monoton" schlug das zunächst als **rot** an, obwohl der Kern die Überholung
+selbst meldet statt sie zu verhindern (ADR 0001, ADR 0002;
+`test/distribute.test.mjs:507`). Die Zeile kannte `overtake` noch nicht — sie
+ist jetzt um dieselbe Unterscheidung ergänzt wie die Summenregeln: eine
+gemeldete `overtake` zählt als gemeldeter Zustand (gelb), keine Meldung bei
+einem Anstieg bleibt rot. Beide Ränge stehen dabei rot umrandet und rot
+beschriftet (`flagged`).
+
+Der bestehende `conflict`-Knopf (#56, `boosterRate` 0) bleibt unverändert rot —
+er ist der echte, noch offene Bruch, und keine der beiden neuen Unterscheidungen
+verwischt ihn.
+
+Geprüft über `python3 -m http.server` aus der Repo-Wurzel und Playwright
+gegen `http://localhost:.../dev/`.
