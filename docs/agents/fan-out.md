@@ -222,3 +222,59 @@ the seam where a looked-up finding is a repair rather than a card was
 undefined. The one surviving card (`B3`, the tautological completeness test)
 was verified independently in the parent session: removing a field from all
 three hand-kept lists leaves `test/onepiece.test.mjs` at 13/13 green.
+
+### Run 5 · 2026-09-26/27 · #55 and #62 · two Sonnet agents, across two specs
+
+The first batch whose tickets came from **different specs** — #55 in the core
+(Spec 1), #62 on the surface (Spec 2) — driven that way on the maintainer's
+request, to find out whether the parent session stays small when everything
+runs through subagents. It does, and the two things it cannot delegate are the
+two that carried the run.
+
+**Disjointness held easily**, and the spec boundary helped rather than hurt:
+core and surface share no file. But the boundary is exactly where the defects
+sat. Both blockers were invisible to both agents and to both test suites:
+
+- **Recomputing at a built state** found that `curveCount = 0` drops the whole
+  `ShapedRemainder` — 40 of 64 `Booster`, at `depth` 1 with `d`=(1), the plain
+  case "only Rank 1 is served and gets a Display". The building agent had
+  reported it in the subjunctive and called it "no blocker"; the parent's own
+  run showed it was reachable with the sheet's own values and a **regression
+  against `main`**.
+- **The cross-check across worktrees** found that the core writes
+  `rows[].reserved` while the shell read `row.reservation`. The stack summed
+  correctly, so nothing failed — the diagram simply drew the reserved `Booster`
+  as shaped remainder, silently, and `?? 0` hid it.
+
+**The united tree was 61/61 green and carried both.** Across a spec boundary a
+green suite is not a signal; it is two suites that have never met. Write that
+in the next briefing rather than rediscovering it.
+
+**The counter-check closed the run's biggest gap by doing the obvious thing:**
+it found PHP available, started the server, and re-measured every pixel figure
+the building agent had reported. All of them held, and the vendored Alpine
+turned out byte-identical to npm's `alpinejs@3.14.9`. The parent had filed both
+as "not checked" — honestly, but a gap named is still a gap.
+
+**Two corrections to the skills came out of it.** `/fan-out` gained nothing;
+the procedure held. `/ask-hard-questions` gained a whole stage: the first
+version of its cards was rejected by the maintainer for being written in the
+vocabulary of the code — `curveCount`, `ShapedRemainder`, `unfit` — and had to
+be rewritten as a tournament with 32 people and 96 boosters. **No agent in the
+loop can catch that**, the skeptic least of all, because it reads code as
+fluently as the writer. It returned a sharp critique that killed a card and two
+dominated options, and never mentioned the language.
+
+**One rule was missing and is now written down** (`spec-flow.md`): a blocking
+edge protects the ticket that has **not** been built. For one already standing,
+the edge does nothing, and the correction belongs in the body of the ticket
+still to be built — #49 got the acceptance criterion that retires #62's
+substitute, and no edge was added to #62.
+
+**The corrected invariant was mutation-tested before it was believed.** The
+repair to `assertPlanSum` nets a reported `unclaimedRemainder` against
+`shapedRemainder`, which is exactly the shape that can turn into a blanket
+skip. Three mutations on a copy: losing one `Booster` in the curve → 10 red;
+reporting the state unconditionally → 3 red; both at once → 10 red. The escape
+hatch does not mask a real loss. After run 1's three green tests that checked
+nothing, a repair to a test is worth a mutation before it is worth trust.

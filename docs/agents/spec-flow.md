@@ -82,10 +82,21 @@ a single session:
   criterion — a `depth` above today's cap **stands** and carries a
   `ConflictNotice` — needs the conflict branch, not just a plan; #53 and #55
   come along transitively.
-- **Spec 2 consumes two things from Spec 3**: the report structure from #51 and
-  the always-complete copy form from #50. The dependency runs one way only —
-  Spec 3 never needs the surface — so the edge is Spec 2's to add when it gets
-  ticketed, not Spec 3's to anticipate.
+- **Spec 2 consumes three things from Spec 3**: the report structure from #51,
+  the always-complete copy form from #50, and `resolveSettings()` from #49. The
+  dependency runs one way only — Spec 3 never needs the surface — so the edge is
+  Spec 2's to add when it gets ticketed, not Spec 3's to anticipate.
+- **The third one was found by being walked into, and that is the lesson.** #62
+  needed `resolveSettings()`, #49 was open, and the edge was in neither #62's
+  blockers nor the list above — only in #61's prose ("es entsteht in #49 und
+  liegt bei `core/`"). The agent building #62 did the right thing: it built no
+  copy in `core/` and left a labelled local substitute, `startingSettings()`.
+  What it could not do is add the edge, because a ticket already built is past
+  the point where a blocker helps. So the correction went to **#49's body as an
+  acceptance criterion** — "`startingSettings()` is gone after this ticket" —
+  and not to #62. An edge protects the ticket that has not been built yet; for
+  the one already standing, the only place a future session reliably reads is
+  the ticket it is itself building.
 
 Keep the table current as the specs land. It is three lines, and it is the only
 place where the shape of the whole thing is written down.
