@@ -6,10 +6,13 @@
  * computed cap, the DisplayReservation with its settlement and overtaking
  * (#55), the divisible axis shaped by the DistributionCurve, and the two
  * indivisible axes that run past it — the RankCycle for TournamentPacks and
- * the WinnerPackAllocation for WinnerPacks (#57). The conflict branch and the
- * orphaned reservation (#56) are not here yet: the valid branch clamps a
- * negative ShapedRemainder to 0 rather than pouring from the top, and a
- * reservation past the depth is read as though it were not there.
+ * the WinnerPackAllocation for WinnerPacks (#57). A DisplayReservation that
+ * settles the whole depth reports `unclaimedRemainder` instead of quietly
+ * dropping the ShapedRemainder (#55, folded into `unfit` by #56). The
+ * conflict branch and the orphaned reservation itself (#56) are not here
+ * yet: the valid branch clamps a negative ShapedRemainder to 0 rather than
+ * pouring from the top, and a reservation past the depth is read as though
+ * it were not there.
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -215,6 +218,16 @@ export function distribute(settings) {
   const available = rank.booster - displayReserved;
   const shapedRemainder = Math.max(0, available - floorReserved);
 
+  // A DisplayReservation that settles every Rank up to the depth
+  // (`settledCount === depth`, so `curveCount === 0`) leaves no Rank inside
+  // the curve to receive the ShapedRemainder — it is computed above like any
+  // other, but nothing in the loop below ever adds it to a row. Reported
+  // here as a datum, not redistributed: the rows stay exactly as computed,
+  // and #56 folds this into `unfit` instead of re-deriving the condition
+  // from `settledCount` and `depth` itself (maintainer decision on #56,
+  // 2026-09-27).
+  const unclaimedRemainder = curveCount === 0 ? { depth } : null;
+
   const booster = new Array(players).fill(0);
   for (let i = 0; i < depth; i++) booster[i] += d[i] * displaySize;
   for (let i = curveFrom; i < depth; i++) booster[i] += rankFloor;
@@ -301,6 +314,7 @@ export function distribute(settings) {
     shapedRemainder,
     curveSilent: shapedRemainder === 0,
     curveCount,
+    unclaimedRemainder,
     allocation,
     rows,
     overtake,
