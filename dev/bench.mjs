@@ -21,7 +21,7 @@
  * ============================================================================
  */
 
-import { distribute } from '../public/core/distribute.mjs';
+import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
 
 /**
@@ -174,7 +174,14 @@ const CONTROLS = [
   },
 ];
 
-/** The four measured stands of #53, plus the known-broken one #56 owns. */
+/**
+ * The four measured stands of #53, plus the two conflict stands #56 owns.
+ *
+ * Every expected value below is looked up where it was decided — never
+ * re-derived from what the core happens to read today, which would only
+ * measure the bench against itself (AGENTS.md, "A decided number is looked up,
+ * never back-computed"). The source is named on each of the two #56 stands.
+ */
 const PRESETS = [
   {
     id: 'weekend',
@@ -228,8 +235,15 @@ const PRESETS = [
     expect: { what: 'curveSilent', value: 'true' },
   },
   {
+    // Before #56 this stand handed out 3·2·2 from a RankPool of 0, and the
+    // bench's job was to keep that visible. #56 repaired it: the pool is
+    // poured from the top, so an empty pool pours nothing and every served
+    // Rank stands at 0 while `conflict {need: 7, have: 0}` says why. Decided
+    // on #56, first comment (from #53) — "ein leerer PrizePool ist von Haus
+    // aus ein Konfliktstand" — and CONTEXT.md, "the conflict branch": a Rank 1
+    // that gets nothing stands there as an empty tile, with the notice.
     id: 'conflict',
-    label: 'not one of the four: rate 0, floor 2, depth 3 — the conflict branch (#56)',
+    label: 'not one of the four: rate 0, floor 2, depth 3 — the conflict branch, repaired by #56',
     settings: {
       players: 8,
       boosterRate: 0,
@@ -237,14 +251,41 @@ const PRESETS = [
       depth: 3,
       curve: 'steep',
     },
-    expect: { what: 'series', value: '3·2·2' },
+    expect: { what: 'series', value: '0·0·0' },
+  },
+  {
+    // The second conflict case #56 introduced, and the one the bench had no
+    // stand for: a DisplayReservation on a Rank the depth does not serve. The
+    // stand and its numbers are the ones test/distribute.test.mjs:691 fixes —
+    // 5 Players at rate 1 give a RankPool of 5, depth 2's own arithmetic is
+    // untouched (3·2), and the Displays parked on Rank 3 are reported rather
+    // than quietly read as though they stopped at the depth (ADR 0002).
+    id: 'orphaned',
+    label: '5 Players, depth 2, Displays on Rank 3 — the orphaned reservation (#56)',
+    settings: {
+      players: 5,
+      boosterRate: 1,
+      rankFloor: 2,
+      displaySize: 1,
+      depth: 2,
+      displays: [0, 0, 3],
+    },
+    expect: {
+      what: 'orphanedReservation',
+      value: '3·2 · orphaned Rank 3',
+      read: (plan) =>
+        `${seriesOf(plan)} · orphaned ${plan.orphanedReservation ? plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ') : 'none'}`,
+    },
   },
 ];
 
 /**
  * The invariants, checked on every change. A broken one is shown and named,
- * never smoothed over: the `boosterRate` 0 stand really does hand out 3·2·2
- * from a RankPool of 0, and seeing that is the point of the bench (#56).
+ * never smoothed over. Until #56 the `boosterRate` 0 stand handed out 3·2·2
+ * from a RankPool of 0 and this line went red over it; the branch is repaired,
+ * so the last entry reads the core's own `unfit` verdict back instead — a
+ * conflict state no longer breaks an invariant, and without that line the
+ * bench would report it as clean.
  *
  * There is deliberately no sum rule on the WinnerPacks: the rule binds the Pool
  * level, not the recipient level, and a WinnerPack left `open` violates
@@ -335,10 +376,45 @@ const INVARIANTS = [
     }),
   },
   {
+    // `conflict.have` is the one numeric leaf of the plan allowed below zero,
+    // and it was below zero before this line learned about it: #56 carries the
+    // reservation condition outright as `need`/`have`, and a reservation that
+    // by itself outweighs the RankPool makes `have` negative — the stand
+    // test/distribute.test.mjs:686 fixes as `{ need: 0, have: -16 }`. It is a
+    // reported fact, not a payout; no Rank ever receives it. So it reads as a
+    // reported state — named, never hidden — while a negative anywhere the
+    // plan actually pays out of stays a breach.
     name: 'no negative number anywhere in the plan',
     check: (plan) => {
       const bad = negativesIn(plan);
-      return { held: bad.length === 0, detail: bad.length === 0 ? 'none' : bad.join(', ') };
+      if (bad.length === 0) return { state: 'ok', detail: 'none' };
+      const outsideConflict = bad.filter((entry) => !entry.startsWith('plan.conflict.'));
+      if (outsideConflict.length === 0 && plan.conflict) {
+        return { state: 'reported', detail: `${bad.join(', ')} — the reported conflict condition, not a payout` };
+      }
+      return { state: 'fail', detail: outsideConflict.join(', ') };
+    },
+  },
+  {
+    // Not an invariant — the core's own verdict, read back. Before #56 the
+    // conflict branch announced itself by breaking the sum rule, and the
+    // banner went red. #56 repaired the branch, so every line above now holds
+    // on a plan the core itself calls unfit, and the bench would say "all
+    // invariants hold" over a state nobody should hand to a player. The
+    // verdict is asked for rather than re-derived: `unfit` is the core's
+    // definition of the four facts (#56, AK 6 as amended 2026-09-27), and a
+    // second definition here would drift away from it.
+    name: "the core's own verdict: unfit",
+    check: (plan) => {
+      const named = [
+        plan.conflict && `conflict (need ${plan.conflict.need}, have ${plan.conflict.have})`,
+        plan.overtake && `overtake (Rank ${plan.overtake.under} by Rank ${plan.overtake.over})`,
+        plan.orphanedReservation &&
+          `orphanedReservation (${plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ')})`,
+        plan.unclaimedRemainder && `unclaimedRemainder (depth ${plan.unclaimedRemainder.depth})`,
+      ].filter(Boolean);
+      if (!unfit(plan)) return { state: 'ok', detail: 'false — none of the four' };
+      return { state: 'reported', detail: `true — ${named.join(' / ')}` };
     },
   },
 ];
@@ -396,7 +472,20 @@ const DERIVED = [
         ? `Rank ${p.overtake.under} (${p.overtake.has}) overtaken by Rank ${p.overtake.over} (${p.overtake.gets})`
         : 'null',
   ],
+  // The three fields #56 added, in the row the plan itself lists them in.
+  // They arrive in the raw dump by themselves, but the derived table is where
+  // a value is read without hunting for it — the same nachziehen #55's
+  // unclaimedRemainder and overtake got.
+  [
+    'conflict',
+    (p) => (p.conflict ? `need ${p.conflict.need}, have ${p.conflict.have}` : 'null'),
+  ],
+  [
+    'orphanedReservation',
+    (p) => (p.orphanedReservation ? p.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ') : 'null'),
+  ],
   ['flagged', (p) => (p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(', ') : 'none')],
+  ['unfit', (p) => String(unfit(p))],
 ];
 
 const settings = neutralSettings();
@@ -635,11 +724,16 @@ function renderBars(plan) {
       // bar's end and the RankPool line, not as a colour.
       const bar = document.createElement('div');
       bar.className = 'bar';
-      const reservedShare = Math.min(row.reserved, row.booster);
-      const rest = row.booster - reservedShare;
+      // `row.reserved` is what the reservation pass actually paid out, not
+      // what it promised (#56) — it cannot exceed `row.booster`, so the bar
+      // takes it as it stands. It used to be clamped here, from the time
+      // `reserved` was the nominal entitlement; the clamp was measured dead
+      // (0 of 87 480 rows) and is gone, because a clamp that never bites
+      // reads as evidence that `reserved` is still nominal.
+      const rest = row.booster - row.reserved;
       const reservedSeg = document.createElement('span');
       reservedSeg.className = 'seg reserved';
-      reservedSeg.style.width = `${(reservedShare / peak) * 100}%`;
+      reservedSeg.style.width = `${(row.reserved / peak) * 100}%`;
       const restSeg = document.createElement('span');
       restSeg.className = 'seg rest';
       restSeg.style.width = `${(rest / peak) * 100}%`;
@@ -713,8 +807,13 @@ function renderInvariants(plan) {
 function renderPresetVerdicts() {
   for (const preset of PRESETS) {
     const plan = distribute({ ...neutralSettings(), ...preset.settings });
-    const actual =
-      preset.expect.what === 'series' ? seriesOf(plan) : String(plan[preset.expect.what]);
+    // A stand whose point is a reported object rather than a number carries
+    // its own reader; `series` and the plain scalar fields need none.
+    const actual = preset.expect.read
+      ? preset.expect.read(plan)
+      : preset.expect.what === 'series'
+        ? seriesOf(plan)
+        : String(plan[preset.expect.what]);
     const held = actual === preset.expect.value;
     preset.verdict.className = `verdict ${held ? 'ok' : 'fail'}`;
     preset.verdict.textContent = held
