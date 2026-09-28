@@ -85,7 +85,7 @@ export const STEPS = [];
  * 0007, Nachtrag #44).
  */
 export function migrate(read, steps = STEPS) {
-  const { version, game, type, pins, unknown, report } = read;
+  const { version, game, type, pins = {}, unknown = {}, report = null } = read;
 
   if (isFutureRead(report)) return { game, type, pins, report };
 
