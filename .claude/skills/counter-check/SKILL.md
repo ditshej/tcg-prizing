@@ -106,11 +106,15 @@ written off in a sentence.
 
 ## The visual pass — conditional, not obligatory
 
-Renderable in this repo today is **exactly one file**: `dev/index.html`. Start
-the server from the root of the working tree, `python3 -m http.server <port>`,
-then `http://localhost:<port>/dev/`. Pick a free port rather than the 8000 from
-`dev/README.md`; a second pass beside a running server collides silently.
-`public/` holds only `core/*.mjs` and no HTML. Playwright MCP is available.
+Two surfaces render, and they answer different questions. The **app** needs PHP,
+because the shell is composed from `views/` outside the docroot (ADR 0004):
+`php -S localhost:<port> -t public`, from the root of the working tree. The
+**workbench** is static: `python3 -m http.server <port>`, then
+`http://localhost:<port>/dev/`. Pick a free port in either case rather than the
+8000 from `dev/README.md`; a second pass beside a running server collides
+silently. Playwright MCP is available. See `docs/agents/fan-out.md`, „The app
+renders" — the older claim that only `dev/index.html` can be shown predates
+`public/index.php`.
 
 **A finding is not looked at here, it is reproduced here.** The bench has a
 slider only for what the core already read when it was built, so a field a

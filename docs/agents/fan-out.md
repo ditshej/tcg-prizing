@@ -109,6 +109,31 @@ break checks nothing. Run 1 produced three of those; run 5's repair to
 `assertPlanSum` was mutation-tested before it was believed, and the three
 mutations are in the log below.
 
+## The app renders — the skill text still says it does not
+
+`/counter-check`'s visual pass carries the sentence „Renderable in this repo
+today is **exactly one file**: `dev/index.html`", with `python3 -m http.server`
+and the note that `public/` holds no HTML. **That is out of date.** Since
+`public/index.php` exists, the app itself renders: PHP composes the shell from
+`views/` outside the docroot (ADR 0004), so a static file server shows nothing
+and a docroot of `public/` shows the real surface.
+
+```sh
+php -S localhost:<port> -t public    # from the root of the working tree
+```
+
+Pick a free port, as before — a second pass beside a running server collides
+silently. Run 9 took its screenshots exactly this way, and the one finding it
+could only have made at the picture (the plan rail's curve `select`) came from
+there.
+
+What does **not** change: the workbench under `dev/` stays the evidence when the
+**core** changed — it imports `public/core/` live, dumps the whole
+`DistributionPlan`, and has the invariant line. It is a tool, not the app's
+surface (`AGENTS.md`, „Core workbench"), and nothing seen in it is a statement
+about the app. The two are complementary: `dev/` proves the numbers, `php -S`
+proves the screen.
+
 ## The findings file
 
 `/fan-out` writes it, `/counter-check` reads it. `review/` is gitignored:
