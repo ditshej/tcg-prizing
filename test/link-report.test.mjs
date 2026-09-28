@@ -3,18 +3,29 @@ import assert from 'node:assert/strict';
 
 import { decode } from '../public/link/decode.mjs';
 import { CURRENT_VERSION } from '../public/link/keys.mjs';
-import { TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
  * The catalogue the fallback net judges a base against: the Games in list
  * order, each with its TournamentTypes in list order. It is a **parameter**,
  * the same shape of decision as #47's step list — the register knows what a
- * key means, it cannot know which Games exist. There is no Game index module
- * on disk today (`public/sets/onepiece.mjs` exports a sheet, not an id), so
- * this literal is where the wire name `onepiece` of #47's example URL meets
- * the sheet.
+ * key means, it cannot know which Games exist.
+ *
+ * Since Lauf 8, "Entscheid K3" a Game sheet carries its own `id` and the
+ * catalogue falls out of the sheets. These are **fixture sheets**: the real one
+ * grows its id in #64 and lands separately, and a read path that only ever met
+ * the one sheet on disk would prove nothing about a second Game anyway.
  */
-const GAMES = [{ id: 'onepiece', types: TOURNAMENT_TYPES }];
+const SHEETS = [
+  { id: 'onepiece', players: 32, boosterRate: 3, rankFloor: 2 },
+  { id: 'gundam', players: 16, boosterRate: 2, rankFloor: 1 },
+];
+
+const TYPES = {
+  onepiece: [{ id: 'weekly' }, { id: 'weekend', participationBooster: 1 }, { id: 'release' }],
+  gundam: [{ id: 'casual' }],
+};
+
+const GAMES = SHEETS.map((sheet) => ({ ...sheet, types: TYPES[sheet.id] }));
 
 test('a clean link reports nothing at all', () => {
   const { report } = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=5');
@@ -109,6 +120,51 @@ test('a base the link never names is a bent link, and falls to the first of both
  * #49 unchanged — and the reason this parameter can be added without touching
  * a single caller.
  */
+/**
+ * The catalogue falls out of the sheets because a sheet carries its own `id`
+ * (Lauf 8, "Entscheid K3"): whether the caller hands over the whole sheet with
+ * a type list beside it or just the two fields the net reads, the same link
+ * reads the same way. The read path looks at `id` and `types` and at nothing
+ * else — it must not grow a second idea of which Games exist.
+ */
+test('the catalogue falls out of the sheets, however the caller composes it', () => {
+  const whole = decode('?v=1&game=magic&type=freitagsrunde&players=48', GAMES);
+  const lean = decode(
+    '?v=1&game=magic&type=freitagsrunde&players=48',
+    GAMES.map(({ id, types }) => ({ id, types })),
+  );
+  assert.deepEqual(lean, whole);
+  assert.equal(whole.game, 'onepiece');
+});
+
+/** A Game's type list is its own, so the second Game judges by its own list. */
+test('a type is judged against the Game that caught it, not against the first list', () => {
+  const read = decode('?v=1&game=gundam&type=weekend&players=48', GAMES);
+  assert.equal(read.game, 'gundam');
+  assert.equal(read.type, 'casual');
+  assert.deepEqual(read.report.entries, [
+    { kind: 'typeReplaced', was: 'weekend', now: 'casual', by: 'fallback' },
+  ]);
+});
+
+/**
+ * The wiring mistake this shape invites: hand over the bare sheet, which has
+ * no type list. Left lenient, every valid type would be "replaced" by nothing
+ * — `now: null`, a wrong report and a typeless state ADR 0003 does not have.
+ * It is a programmer's mistake and not a reader's link, so it is loud.
+ */
+test('a catalogue entry without its type list throws instead of replacing a valid type', () => {
+  const bare = SHEETS.map((sheet) => ({ ...sheet }));
+  assert.throws(() => decode('?v=1&game=onepiece&type=weekend', bare), {
+    name: 'TypeError',
+    message: /onepiece/,
+  });
+  assert.throws(() => decode('?v=1&game=onepiece&type=weekend', [{ types: TYPES.onepiece }]), {
+    name: 'TypeError',
+    message: /string `id`/,
+  });
+});
+
 test('without a catalogue the net does not run and the base passes through as read', () => {
   const read = decode('?v=1&game=magic&type=freitagsrunde&players=32');
   assert.equal(read.game, 'magic');

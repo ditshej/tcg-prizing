@@ -157,9 +157,27 @@ export function decode(query, games = null) {
  * must not grow a second idea of that. Without a catalogue the net does not
  * run: a name can only be judged against a list, so the base passes through as
  * it stood and nothing is reported.
+ *
+ * **The catalogue falls out of the sheets, because a Game sheet carries its own
+ * id** (Lauf 8, "Entscheid K3"). A caller composes it from what it already
+ * holds — `{ ...GAME, types: TOURNAMENT_TYPES }` or `{ id: GAME.id, types }`,
+ * either way — and this function reads nothing but `id` and `types`. It is
+ * built here against fixture sheets on purpose: the sheet that grows the id is
+ * #64's file and lands separately, so nothing here leans on it.
+ *
+ * **A catalogue that is not a catalogue throws.** An entry without an `id`, or
+ * without a non-empty `types` list, is the wiring mistake this shape invites:
+ * hand over the bare sheet, which has no type list, and every valid type would
+ * be "replaced" by nothing — `{ kind: 'typeReplaced', now: null }`, a report
+ * that is wrong and a state ADR 0003 does not have. It computes, it stays
+ * silent, and the value is wrong: the error class of run 5. It is a
+ * programmer's mistake and not a reader's link, so it is the one thing in this
+ * module that is loud. Leaving the catalogue out remains a legal choice — it
+ * says "do not judge the base" — but naming a half one does not.
  */
 function catchBase({ game, type }, games) {
   if (!Array.isArray(games) || games.length === 0) return { game, type, entries: [] };
+  for (const entry of games) assertCatalogueEntry(entry);
 
   const entries = [];
   let sheet = games.find((entry) => entry.id === game);
@@ -168,14 +186,32 @@ function catchBase({ game, type }, games) {
     entries.push({ kind: 'gameReplaced', was: game, now: sheet.id, by: 'fallback' });
   }
 
-  const types = sheet.types ?? [];
-  let chosen = types.find((entry) => entry.id === type);
+  let chosen = sheet.types.find((entry) => entry.id === type);
   if (chosen === undefined) {
-    chosen = types[0];
-    entries.push({ kind: 'typeReplaced', was: type, now: chosen?.id ?? null, by: 'fallback' });
+    chosen = sheet.types[0];
+    entries.push({ kind: 'typeReplaced', was: type, now: chosen.id, by: 'fallback' });
   }
 
-  return { game: sheet.id, type: chosen?.id ?? null, entries };
+  return { game: sheet.id, type: chosen.id, entries };
+}
+
+/**
+ * The catalogue's shape, checked where it arrives rather than where it hurts.
+ * Every entry names a Game and lists at least one TournamentType — a Game with
+ * no type at all would be a Game nobody can open (ADR 0003), so there is no
+ * such thing to be lenient about.
+ */
+function assertCatalogueEntry(entry) {
+  const named = (value) => typeof value === 'string' && value.length > 0;
+  if (entry === null || typeof entry !== 'object' || !named(entry.id)) {
+    throw new TypeError('decode: every catalogue entry names its Game with a string `id`');
+  }
+  if (!Array.isArray(entry.types) || entry.types.length === 0 || !entry.types.every((t) => named(t?.id))) {
+    throw new TypeError(
+      `decode: the catalogue entry "${entry.id}" carries no TournamentType list — pass ` +
+        '`{ ...sheet, types }`, not the bare sheet',
+    );
+  }
 }
 
 /**
