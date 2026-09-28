@@ -29,6 +29,16 @@
  * - The prototype names the `Rank` above as a reason but leaves a plus refused
  *   by the **reservation condition** unexplained. Every lock here carries a
  *   sentence.
+ *
+ * **Four of those sentences have no wording in the prototype, and they are
+ * decided, not provisional** — `nothing placed by hand here`, `the rank pool
+ * cannot carry another display`, `nothing reserved here` and `rank N holds M —
+ * lower it first`. `slotPop()` leaves those four locks silent, so this file
+ * wrote them and said so; the maintainer settled them as they stand on
+ * 2026-09-28 (`gh issue view 66 --comments`, "Entschieden: die vier Sätze am
+ * gesperrten `±` gelten, so wie sie gebaut sind"). They are not an invention
+ * to be flagged again and not a gap in the prototype to be filled in from it.
+ * The two ways that were weighed and rejected are in that comment too.
  */
 
 import { canPlaceWinner, canReserveDisplays } from './controls.mjs';
@@ -150,6 +160,8 @@ function winnerCounter(rank, row, stand) {
 
   const canAdd = canPlaceWinner(rank, manual + 1, stand);
   const canRemove = canPlaceWinner(rank, manual - 1, stand);
+  // `nothing placed by hand here` is decided wording, not a stand-in — see the
+  // file head and the resolution comment on #66 (2026-09-28).
   const addReason = canAdd
     ? null
     : manual > 0
@@ -185,6 +197,9 @@ function displayCounter(rank, row, settings, stand) {
 
   const canAdd = canReserveDisplays(rank, value + 1, stand);
   const canRemove = canReserveDisplays(rank, value - 1, stand);
+  // The three below — `the rank pool cannot carry another display`, `nothing
+  // reserved here`, `rank N holds M — lower it first` — are decided wording,
+  // not stand-ins; see the file head and #66's resolution comment (2026-09-28).
   const addReason = canAdd
     ? null
     : above != null && value >= above
