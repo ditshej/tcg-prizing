@@ -26,7 +26,16 @@ import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
-import { DEPTH_STEP_LABELS, clampToBounds, effectiveValue, reachFor } from './controls.mjs';
+import {
+  DEPTH_STEP_LABELS,
+  clampToBounds,
+  effectiveValue,
+  manualWinnerAfter,
+  reachFor,
+  reservedDisplaysAfter,
+} from './controls.mjs';
+import { anchorVisible, bubblePosition } from './bubble.mjs';
+import { tileGrip, tileView } from './tile.mjs';
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
 function restMessage(lastServedRank, players) {
@@ -94,6 +103,18 @@ export function planApp() {
     fullscreen: false,
 
     /**
+     * Which tile's bubble is open, as the `Rank` it hangs off — session state
+     * like the page and the fullscreen, and in the `SetupLink` as little as
+     * they are (#61, "Session state").
+     *
+     * One number, not a set: there is exactly **one** bubble in this app, with
+     * four inhabitants, and whoever moves in puts the last one out (#61, "The
+     * tiles and their grip"). The app's one *overlay* is something else again
+     * — the `LinkMigration` report — and this is not it.
+     */
+    openTile: null,
+
+    /**
      * Switches the active page. A second tap on the already-active page is a
      * no-op — there is no open/close left to trigger (#63 AC 2) — and any
      * real switch drops fullscreen, because fullscreen is a state of `Plan`
@@ -103,20 +124,33 @@ export function planApp() {
       if (page === this.activePage) return;
       this.activePage = page;
       this.fullscreen = false;
+      this.openTile = null;
     },
 
     /** Grabbed at the tile grid, never from the (hidden, in fullscreen) foot. */
     openFullscreen() {
       this.fullscreen = true;
+      this.openTile = null;
     },
 
     /** The one exit, at the same corner the grip that opened it sits in. */
     closeFullscreen() {
       this.fullscreen = false;
+      this.openTile = null;
     },
 
+    /**
+     * The plan, built from the resolved stand **and** the pins beside it. The
+     * second argument changes no number (`distribute()` reads it only to carry
+     * it on), and it is the whole point: the addendum (#86) to ADR 0009 puts
+     * the hand-set sliders on the plan separately, so that whoever builds a
+     * `SetupLink` from it takes the deviations and never the resolved stand.
+     * Handed one argument, `plan.pinned` is `{}` at the surface however many
+     * sliders the CommunityLead has moved — true of the object, false of the
+     * app (maintainer decision on #66, 2026-09-28).
+     */
     get plan() {
-      return distribute(this.settings);
+      return distribute(this.settings, this.pins);
     },
 
     /** The last Rank that gets anything at all — booster, packs or winners. */
@@ -305,6 +339,100 @@ export function planApp() {
       this.setSlider('depth', value);
     },
 
+    /* ── The tile as a grip (#66) ─────────────────────────────────────── */
+
+    /** What a tile shows beyond its numbers: 2×2 from the first `Display` on,
+     *  the settled tone, the `flagged` mark. */
+    tile(row) {
+      return tileView(row, this.plan);
+    },
+
+    /** The open bubble's whole content, or `null` while none is open. A `Rank`
+     *  that has fallen past the player count comes back `null` too, so the
+     *  bubble closes with the tile it hung off instead of standing on nothing. */
+    get grip() {
+      return this.openTile == null ? null : tileGrip(this.openTile, this.stand);
+    },
+
+    /** A grip at the tile opens the bubble, the same grip closes it. The
+     *  placing is not called here: it runs after every drawing (see `init()`). */
+    toggleTile(rank) {
+      this.openTile = this.openTile === rank ? null : rank;
+    },
+
+    closeTile() {
+      this.openTile = null;
+    },
+
+    /**
+     * The `DisplayReservation`, written where the sliders' values are written:
+     * into `settings` and into `pins` in the same handling, because the pin is
+     * set by the handling and not by the value (ADR 0006). It counts as **one**
+     * pinned item however many `Rank`s carry a reservation (#61, "The
+     * controls").
+     *
+     * The whole vector is replaced rather than edited in place: `plan.settings`
+     * is a snapshot of what was computed, and a vector edited underneath it
+     * would leave the plan carrying an input it was not computed from.
+     */
+    setDisplays(rank, count) {
+      const next = reservedDisplaysAfter(rank, count, this.stand);
+      if (next === null) return;
+      this.pins.displays = next;
+      this.settings.displays = next;
+    },
+
+    /** The `manual` share of the `WinnerPackAllocation` — the same counters a
+     *  `WinnerRaffle` throw writes into (#10, CONTEXT.md). */
+    setManualWinner(rank, count) {
+      const next = manualWinnerAfter(rank, count, this.stand);
+      if (next === null) return;
+      this.pins.manualWinner = next;
+      this.settings.manualWinner = next;
+    },
+
+    /** The two ± of the open bubble, each moving by one inside its own cap. */
+    stepDisplays(delta) {
+      const grip = this.grip;
+      if (!grip?.displays) return;
+      this.setDisplays(grip.rank, grip.displays.value + delta);
+    },
+
+    stepWinners(delta) {
+      const grip = this.grip;
+      if (!grip) return;
+      this.setManualWinner(grip.rank, grip.winners.manual + delta);
+    },
+
+    /**
+     * The measuring rind of the bubble (#61): it reads three boxes and writes
+     * two CSS lengths, and every sum it does on them is `bubble.mjs`, on the
+     * proven side.
+     *
+     * The frame the anchor is judged against is the **grid**, not the stage:
+     * the grid is what scrolls, so that is where a tile goes out of sight
+     * while the stage stays exactly where it was.
+     */
+    placeBubble() {
+      const stageEl = this.$refs.stage;
+      const popEl = this.$refs.bubble;
+      const gridEl = this.$refs.grid;
+      if (this.openTile == null || !stageEl || !popEl || !gridEl) return;
+      const tileEl = gridEl.querySelector(`.tile[data-rank="${this.openTile}"]`);
+      const anchor = tileEl ? tileEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, gridEl.getBoundingClientRect())) {
+        this.openTile = null;
+        return;
+      }
+      const at = bubblePosition({
+        anchor,
+        bubble: { width: popEl.offsetWidth, height: popEl.offsetHeight },
+        stage: stageEl.getBoundingClientRect(),
+      });
+      popEl.style.left = `${at.left}px`;
+      popEl.style.top = `${at.top}px`;
+    },
+
     init() {
       const fixed = [
         this.$refs.head,
@@ -321,10 +449,43 @@ export function planApp() {
       this.$watch('fullscreen', () => {
         requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed));
       });
+      /*
+         The bubble is placed — and closed — after **every drawing**, not at
+         the handlers that open it. That is the prototype's form, and it is a
+         decision rather than a taste: `placePop()` is the last line of its
+         `render()`, with the reason written beside it — "Zugemacht wird jetzt
+         dort, wo es sich messen lässt: `placePop()` schliesst sie, wenn ihr
+         Anker nicht mehr sichtbar ist. Eine Regel für alle vier."
+         (`git show prototype/rank-distribution:prototypes/cockpit.prototype.html`).
+
+         Tied to the three writing handlers instead, the rule misses every way
+         a tile can leave the grid without the bubble being touched — the
+         `Players` slider pulled down under an open bubble is the measured one
+         (#66 AC 9), and `bubble.mjs` names "a shrinking player count" outright.
+
+         Alpine has no single render pass, so its equivalent of that last line
+         is an effect over the state the grid is drawn from. `$nextTick` waits
+         for the `x-for` to have caught up, so the measuring reads the tiles
+         that are there now and not the ones that just left. Closing writes
+         `openTile`, which this effect reads — the second pass then finds
+         nothing open and returns at the first line, so it settles rather than
+         loops.
+      */
+      this._placing = window.Alpine.effect(() => {
+        void [this.activePage, this.fullscreen, this.openTile, this.tiles.length];
+        this.$nextTick(() => this.placeBubble());
+      });
+      /* A resized window moves neither of those, so it stays a listener: it
+         moves the anchor and the frame it is judged against without any state
+         changing, and the same one rule is what it calls. */
+      this._onResize = () => this.placeBubble();
+      window.addEventListener('resize', this._onResize);
     },
 
     destroy() {
       if (this._detachMeasuring) this._detachMeasuring();
+      if (this._placing) window.Alpine.release(this._placing);
+      if (this._onResize) window.removeEventListener('resize', this._onResize);
     },
   };
 }
