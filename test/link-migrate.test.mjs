@@ -122,6 +122,23 @@ test('the same name is lost after the chain when no step in it claims it', () =>
 });
 
 /**
+ * `decode()` already builds the report before `migrate()` ever runs (Lauf 8,
+ * "Entscheid K1"); a caller holds one object at every stage, so what
+ * `migrate()` decides has to land in the *same* report, after what `decode()`
+ * already found — never a second report next to it.
+ */
+test('entries decode() already found come before the entries migrate() adds', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&rankFloor=fuenf&legacyBoosterRate=9', GAMES);
+  assert.deepEqual(read.report.entries, [{ kind: 'unreadableValue', key: 'rankFloor' }]);
+
+  const result = migrate(read, [renameLegacyBoosterRate]);
+  assert.deepEqual(result.report.entries, [
+    { kind: 'unreadableValue', key: 'rankFloor' },
+    { kind: 'renamed', key: 'boosterRate', was: 'legacyBoosterRate' },
+  ]);
+});
+
+/**
  * Chaining, order, and the report entry each step produces (#52 AC 3), plus
  * "an ersatzlos entfernt slider never reappears anywhere" (#52 AC 5): the
  * rename puts `boosterRate` into `pins`, the very next step removes it
