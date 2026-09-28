@@ -58,15 +58,19 @@ function curveIndex(id) {
  * promise, then the promises in the precedence chain of ADR 0001, and last the
  * participation rate.
  *
- * Takes the Settings rather than the plan, and computes the plan itself. The
- * spec writes `suggestions(plan)`, but a DistributionPlan does not carry the
- * Settings it was computed from — `curve`, the very first slider searched, is
- * nowhere in it — so a plan alone cannot be varied. One argument also means
- * there is no way to hand in a plan and a Settings that disagree.
+ * Takes the **plan**, the signature #46, #61 and #68 have written all along.
+ * It became buildable with ADR 0009: the plan carries its slider stands, so
+ * the search has the `DistributionCurve` — the very first slider it goes
+ * through — and the untrimmed `displays`, which `plan.displayVector` no longer
+ * holds past the depth.
+ *
+ * One argument, and it is the plan rather than the Settings, so there is no
+ * way to hand in a plan and a Settings that disagree, and any place holding a
+ * plan can work out the ways out without carrying anything alongside.
  */
-export function suggestions(settings) {
-  const plan = distribute(settings);
+export function suggestions(plan) {
   if (!unfit(plan)) return [];
+  const settings = plan.settings;
 
   const out = [];
   // 1 · what takes back no promise.
