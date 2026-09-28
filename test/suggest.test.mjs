@@ -408,6 +408,61 @@ test('an unfit plan always answers null — offerFor and ConflictNotice never me
 });
 
 /**
+ * The same criterion over a raster rather than six hand-picked states, in the
+ * spirit of the sweep at the end of this file — because the six do **not**
+ * bind it. Measured while building this test: delete `if (unfit(plan)) return
+ * null;` from `offerFor()` and all 196 tests stay green, the test above
+ * included. At each of those six states the loop happens to fall through for
+ * some other reason — no `k` in the window, the vector would rise, the probe
+ * comes back unfit — so the guard was asserted by six coincidences.
+ *
+ * The raster adds the one axis that makes a stand unfit, `displays`, to the
+ * axes the closing sweep already walks: 4512 stands over `players` 2…48,
+ * `displaySize` ∈ {1, 4, 8, 24}, `rankFloor` ∈ {0, 2}, six reservation vectors
+ * and `combinedHandout` both ways. 3108 of them are unfit and must answer
+ * `null`; the other 1404 are fit, and 532 of those carry an Offer — that
+ * second count is what keeps this from being green by emptiness. A raster in
+ * which `offerFor` answered `null` everywhere would prove nothing about the
+ * unfit half.
+ *
+ * The three counts were read off the core at #60 and follow this file's rule:
+ * carried forward, never adjusted. When one moves, the question is whether the
+ * core changed on purpose.
+ *
+ * What it bites: with the guard removed, 70 of the 3108 unfit stands come back
+ * carrying an Offer.
+ */
+test('over a raster of unfit stands, offerFor answers null every time', () => {
+  let unfitStands = 0;
+  let fitStands = 0;
+  let fitOffers = 0;
+  for (let players = 2; players <= 48; players++) {
+    for (const displaySize of [1, 4, 8, 24]) {
+      for (const rankFloor of [0, 2]) {
+        for (const displays of [[1], [2], [4], [1, 1], [3, 1], [4, 2]]) {
+          for (const combinedHandout of [false, true]) {
+            const settings = settingsFor('weekend', { players, displaySize, rankFloor, displays, combinedHandout });
+            const plan = distribute(settings);
+            const where = JSON.stringify({ players, displaySize, rankFloor, displays, combinedHandout });
+            const off = offerFor(plan);
+            if (unfit(plan)) {
+              unfitStands++;
+              assert.equal(off, null, `unfit stand ${where} carries an Offer: ${JSON.stringify(off)}`);
+            } else {
+              fitStands++;
+              if (off) fitOffers++;
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.equal(unfitStands, 3108);
+  assert.equal(fitStands, 1404);
+  assert.equal(fitOffers, 532, 'the fit half carries Offers — the raster is not null everywhere');
+});
+
+/**
  * The prototype's own example (`CASES.offer()`, `cockpit.prototype.html`):
  * Weekend at 27 players lands Rank 1 on exactly 24 Boosters — precisely on a
  * multiple of the Display size, distance 0. The Offer still does something:
