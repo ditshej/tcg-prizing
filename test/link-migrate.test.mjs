@@ -201,11 +201,37 @@ test('the fixture chain runs in order, and a value the chain later drops does no
  * A chain that starts partway: a link already naming a later version skips
  * the steps before it — `steps.slice(version - 1)`, exercised here rather
  * than only asserted in the docblock.
+ *
+ * The read below is built so that starting at the wrong end is *visible*
+ * (Befund G5): it carries `legacyBoosterRate`, the one name `FIXTURE_CHAIN`'s
+ * **first** step claims. Starting at v1 would rename it into `boosterRate`
+ * and only then drop it — two entries and a different bookkeeping. Starting
+ * at v2, as the read says, nobody ever claims the name and it is loss. An
+ * assertion on `pins` alone would not tell the two apart, because the second
+ * step removes `boosterRate` again either way; the entries and `from` do.
  */
 test('a link already read at a later version skips the steps before it', () => {
-  const read = { version: 2, game: 'onepiece', type: 'weekend', pins: { players: 32 }, unknown: {}, report: null };
+  const read = {
+    version: 2,
+    game: 'onepiece',
+    type: 'weekend',
+    pins: { players: 32, judgeWinner: 1 },
+    unknown: { legacyBoosterRate: '9' },
+    report: null,
+  };
   const result = migrate(read, FIXTURE_CHAIN);
-  assert.equal(result.report, null, 'dropBoosterRate and reinterpretJudgeWinner find nothing to touch');
+
+  assert.equal(result.report.from, 2, 'the chain starts at the version the link names');
+  assert.equal(result.report.to, 4, 'two of the three steps ran, not all three');
+  assert.deepEqual(
+    result.report.entries,
+    [
+      { kind: 'setByMigration', key: 'judgeWinner', value: 2 },
+      { kind: 'unknownKey', key: 'legacyBoosterRate' },
+    ],
+    'no `renamed` entry: the step that claims that name sits before the start',
+  );
+  assert.deepEqual(result.pins, { players: 32, judgeWinner: 2 });
 });
 
 /**
