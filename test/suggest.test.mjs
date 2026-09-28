@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES } from '../public/core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
-import { curveStepDistance, suggestions } from '../public/core/suggest.mjs';
+import { curveStepDistance, suggestions, offerFor } from '../public/core/suggest.mjs';
 
 /**
  * A DefaultSet sheet read as Settings, the same way `test/onepiece.test.mjs`
@@ -393,4 +393,236 @@ test('the ways out do not depend on which sliders were set by hand', () => {
     assert.ok(unfit(plan));
     assert.deepEqual(suggestions(plan), waysOut(OVERTAKE), `pins: ${Object.keys(pins).join(',') || 'none'}`);
   }
+});
+
+/**
+ * `offerFor(plan)` — #60: on a **fully valid** plan, a rounder
+ * DisplayReservation. ConflictNotice and Offer can never meet (ADR 0002,
+ * CONTEXT.md "Offer"), so every state this file already knows is unfit must
+ * answer `null` here.
+ */
+test('an unfit plan always answers null — offerFor and ConflictNotice never meet', () => {
+  for (const [name, settings] of UNFIT_STATES) {
+    assert.equal(offerFor(distribute(settings)), null, `${name} must not carry an Offer`);
+  }
+});
+
+/**
+ * The same criterion over a raster rather than six hand-picked states, in the
+ * spirit of the sweep at the end of this file — because the six do **not**
+ * bind it. Measured while building this test: delete `if (unfit(plan)) return
+ * null;` from `offerFor()` and all 196 tests stay green, the test above
+ * included. At each of those six states the loop happens to fall through for
+ * some other reason — no `k` in the window, the vector would rise, the probe
+ * comes back unfit — so the guard was asserted by six coincidences.
+ *
+ * The raster adds the one axis that makes a stand unfit, `displays`, to the
+ * axes the closing sweep already walks: 4512 stands over `players` 2…48,
+ * `displaySize` ∈ {1, 4, 8, 24}, `rankFloor` ∈ {0, 2}, six reservation vectors
+ * and `combinedHandout` both ways. 3108 of them are unfit and must answer
+ * `null`; the other 1404 are fit, and 532 of those carry an Offer — that
+ * second count is what keeps this from being green by emptiness. A raster in
+ * which `offerFor` answered `null` everywhere would prove nothing about the
+ * unfit half.
+ *
+ * The three counts were read off the core at #60 and follow this file's rule:
+ * carried forward, never adjusted. When one moves, the question is whether the
+ * core changed on purpose.
+ *
+ * What it bites: with the guard removed, 70 of the 3108 unfit stands come back
+ * carrying an Offer.
+ */
+test('over a raster of unfit stands, offerFor answers null every time', () => {
+  let unfitStands = 0;
+  let fitStands = 0;
+  let fitOffers = 0;
+  for (let players = 2; players <= 48; players++) {
+    for (const displaySize of [1, 4, 8, 24]) {
+      for (const rankFloor of [0, 2]) {
+        for (const displays of [[1], [2], [4], [1, 1], [3, 1], [4, 2]]) {
+          for (const combinedHandout of [false, true]) {
+            const settings = settingsFor('weekend', { players, displaySize, rankFloor, displays, combinedHandout });
+            const plan = distribute(settings);
+            const where = JSON.stringify({ players, displaySize, rankFloor, displays, combinedHandout });
+            const off = offerFor(plan);
+            if (unfit(plan)) {
+              unfitStands++;
+              assert.equal(off, null, `unfit stand ${where} carries an Offer: ${JSON.stringify(off)}`);
+            } else {
+              fitStands++;
+              if (off) fitOffers++;
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.equal(unfitStands, 3108);
+  assert.equal(fitStands, 1404);
+  assert.equal(fitOffers, 532, 'the fit half carries Offers — the raster is not null everywhere');
+});
+
+/**
+ * The prototype's own example (`CASES.offer()`, `cockpit.prototype.html`):
+ * Weekend at 27 players lands Rank 1 on exactly 24 Boosters — precisely on a
+ * multiple of the Display size, distance 0. The Offer still does something:
+ * loose Boosters become one sealed Display, and nothing else moves (`also`
+ * is empty, since Rank 1 already had every one of those Boosters).
+ */
+test('Rank 1 landing exactly on a Display multiple still offers the trade, moving nothing else', () => {
+  const settings = settingsFor('weekend', { players: 27 });
+  const plan = distribute(settings);
+  assert.equal(unfit(plan), false);
+  assert.equal(plan.rows[0].booster, 24);
+  assert.deepEqual(offerFor(plan), { rank: 1, value: 1, from: 24, to: 24, also: [], key: '1:1:24' });
+});
+
+/**
+ * The measured `Weekend` 32 plan of #46 `## Tests` (`29·14·7·4·3·3·2·2`, this
+ * file's `settingsFor('weekend')`): Rank 1's 29 Boosters sit within one
+ * Display's window (`win = max(1, round(24/4)) = 6`, distance 5) of the
+ * multiple 24. Accepting the trade settles Rank 1 out of the curve — it stops
+ * carrying the Rank 1 lead and its RankFloor — so the 5 freed Boosters
+ * reshape among Ranks 2–4, which is exactly what `also` reports.
+ */
+test('the measured Weekend 32 plan offers Rank 1 a Display, and names the Ranks it moves', () => {
+  const settings = settingsFor('weekend');
+  const plan = distribute(settings);
+  assert.deepEqual(servedBoosters(plan), [29, 14, 7, 4, 3, 3, 2, 2]);
+  assert.deepEqual(offerFor(plan), {
+    rank: 1,
+    value: 1,
+    from: 29,
+    to: 24,
+    also: [
+      { rank: 2, before: 14, after: 16 },
+      { rank: 3, before: 7, after: 9 },
+      { rank: 4, before: 4, after: 5 },
+    ],
+    key: '1:1:29',
+  });
+});
+
+/**
+ * The window is symmetric and silent in between: at 20 players Rank 1 sits on
+ * 16 Boosters, 8 away from the nearest multiple (24) — past the window of
+ * 6 — and every Rank below it falls under `k < 1`. No Rank qualifies, so the
+ * field stays silent rather than forcing a distant round number onto the
+ * plan.
+ */
+test('the window is silent when a Rank sits mid-way between two Displays', () => {
+  const settings = settingsFor('weekend', { players: 20 });
+  const plan = distribute(settings);
+  assert.equal(unfit(plan), false);
+  assert.equal(plan.rows[0].booster, 16);
+  assert.equal(offerFor(plan), null);
+});
+
+/**
+ * A candidate that would itself clear the window is still withheld where its
+ * probe run comes back unfit. At 4 players with `displaySize` 1 and
+ * `rankFloor` 4, the RankPool's whole 8 Boosters already sit at `depth` 1 —
+ * offering Rank 1 "1 Display of size 1" reserves exactly those 8 outright and
+ * settles the only served Rank, leaving nobody in the curve to claim what
+ * would otherwise be the ShapedRemainder: `unclaimedRemainder`, one of the
+ * four ways `unfit()` can hold (#56).
+ */
+test('a candidate whose probe run would itself be unfit is not offered', () => {
+  const settings = settingsFor('weekend', { players: 4, displaySize: 1, rankFloor: 4 });
+  const plan = distribute(settings);
+  assert.equal(unfit(plan), false);
+  assert.equal(plan.depth, 1);
+  const probe = distribute({ ...settings, displays: [plan.rows[0].booster] });
+  assert.deepEqual(probe.unclaimedRemainder, { depth: 1 }, 'the candidate really is unfit — that is what withholds it');
+  assert.equal(offerFor(plan), null);
+});
+
+/**
+ * `d₁ ≥ d₂ ≥ …` is the one rule no proposal may break — the same grip
+ * `suggestions()` already carries. At 9 players with `displaySize` 4 and
+ * `rankFloor` 0, Rank 2's 4 Boosters sit exactly on a multiple, and setting
+ * its DisplayReservation to 1 clears on its own (checked directly below) —
+ * but Rank 1 carries no reservation, so that candidate would make the vector
+ * rise from 0 to 1. The Offer is withheld even though the candidate clears.
+ */
+test('a candidate is withheld where it would make the DisplayReservation vector rise', () => {
+  const settings = settingsFor('weekend', { players: 9, displaySize: 4, rankFloor: 0 });
+  const plan = distribute(settings);
+  assert.equal(unfit(plan), false);
+  assert.deepEqual(
+    plan.rows.slice(0, 2).map((r) => r.booster),
+    [10, 4],
+  );
+  assert.equal(plan.rows[0].displays, 0, 'Rank 1 carries no reservation for Rank 2 to rise above');
+  const wouldClear = distribute({ ...settings, displays: [0, 1] });
+  assert.equal(unfit(wouldClear), false, 'the candidate really clears — the grip is what withholds it');
+  assert.equal(offerFor(plan), null);
+});
+
+/**
+ * CombinedHandout shifts the participation rate into every row uniformly and
+ * must move no proposal (#60's acceptance criterion) — the measured Weekend
+ * 32 scenario above, both ways.
+ */
+test('CombinedHandout changes no proposal', () => {
+  const off = offerFor(distribute(settingsFor('weekend', { combinedHandout: false })));
+  const on = offerFor(distribute(settingsFor('weekend', { combinedHandout: true })));
+  assert.ok(off, 'the comparison is only meaningful where there is an Offer to compare');
+  assert.deepEqual(on, off);
+});
+
+/**
+ * A sweep, the same spirit as the equivalence sweep above: 752 stands over
+ * `players` 2…48, `displaySize` ∈ {1, 4, 8, 24}, `rankFloor` ∈ {0, 2} and
+ * `combinedHandout` both ways. Every one of these 752 stands happens to be
+ * fit — the tests above and `UNFIT_STATES` are where the unfit states are
+ * exercised, not this sweep — so what it checks is the shape of every Offer
+ * that comes back: the key names its content, accepting it never lets the
+ * vector rise, accepting it always clears, and toggling `combinedHandout` on
+ * the same stand never changes it.
+ *
+ * The two counts were read off the core at #60 and follow the rule the
+ * equivalence sweep above and `test/sum-rule.test.mjs` both set out: carried
+ * forward, never adjusted. When one moves, the question is whether the core
+ * changed on purpose, not which number makes the line green.
+ */
+test('over a sweep, every Offer clears, never rises the vector, and ignores CombinedHandout', () => {
+  const accept = (settings, off) => {
+    const d = (settings.displays ?? []).slice();
+    while (d.length < off.rank) d.push(0);
+    d[off.rank - 1] = off.value;
+    return { ...settings, displays: d };
+  };
+  let stands = 0;
+  let offers = 0;
+  for (let players = 2; players <= 48; players++) {
+    for (const displaySize of [1, 4, 8, 24]) {
+      for (const rankFloor of [0, 2]) {
+        for (const combinedHandout of [false, true]) {
+          const settings = settingsFor('weekend', { players, displaySize, rankFloor, combinedHandout });
+          const plan = distribute(settings);
+          const where = JSON.stringify({ players, displaySize, rankFloor, combinedHandout });
+          stands++;
+          assert.equal(unfit(plan), false, `stand ${where} is unfit — the sweep no longer covers only fit stands`);
+
+          const off = offerFor(plan);
+          if (!off) continue;
+          offers++;
+          assert.equal(off.key, `${off.rank}:${off.value}:${off.from}`, `key does not carry the content at ${where}`);
+
+          const accepted = accept(settings, off);
+          const d = accepted.displays.map((v) => Math.max(0, Math.trunc(v)));
+          for (let i = 1; i < d.length; i++) {
+            assert.ok(d[i] <= d[i - 1], `Offer ${JSON.stringify(off)} makes the vector rise at ${where}`);
+          }
+          assert.equal(unfit(distribute(accepted)), false, `Offer ${JSON.stringify(off)} does not clear at ${where}`);
+
+          const other = offerFor(distribute({ ...settings, combinedHandout: !combinedHandout }));
+          assert.deepEqual(other, off, `CombinedHandout changed the Offer at ${where}`);
+        }
+      }
+    }
+  }
+  assert.equal(stands, 752);
+  assert.equal(offers, 516);
 });

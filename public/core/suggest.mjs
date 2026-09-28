@@ -250,3 +250,86 @@ function clears(plan, candidate) {
   if (unfit(probe)) return false;
   return !plan.overtake || probe.depth >= plan.overtake.over;
 }
+
+/**
+ * The RankPool share behind a row's payout — never `row.booster` itself and
+ * never a row sum. CombinedHandout shifts the participation rate into every
+ * served row uniformly (`row.booster += pbRate` in `distribute()`), but a
+ * DisplayReservation reserves only out of the RankPool; measuring on
+ * `row.booster` would read the participation share as though the RankPool
+ * had reserved it and over-propose (#46's correction to the prototype, which
+ * measures `offerFor` on `row.booster`).
+ *
+ * Subtracting the same rate back out makes this identical whether or not
+ * CombinedHandout is on: the shift adds `plan.participation.rate.booster` to
+ * every row of both the plan and any candidate probe alike, so it cancels
+ * both in the offered value and in the `also` differences — which is what
+ * makes "no proposal changes under CombinedHandout" (#60) hold by
+ * construction rather than by coincidence.
+ */
+function rankShare(plan, row) {
+  const pbRate = plan.combinedHandout ? plan.participation.rate.booster : 0;
+  return row.booster - pbRate;
+}
+
+/**
+ * offerFor(plan) — the Offer of #46: on a **fully valid** plan, a rounder
+ * DisplayReservation, today the only kind there is. ConflictNotice and Offer
+ * can never meet: one presumes an invalid plan, the other a valid one — so an
+ * `unfit` plan always answers `null` here, never a proposal.
+ *
+ * The window is symmetric, `win = max(1, round(displaySize / 4))`, in both
+ * directions: rounding only upward would take `displaySize − 1` Boosters from
+ * the top Rank in the extreme case. For each served Rank from the top,
+ * `k = round(share / displaySize)` — skipped where `k < 1`, `k ≤
+ * row.displays`, the distance from `k · displaySize` exceeds the window, the
+ * DisplayReservation vector would no longer fall (`d₁ ≥ d₂ ≥ …`, the one rule
+ * no proposal may break either — same grip as `suggestions()`), or the probe
+ * run would itself be unfit.
+ *
+ * Its promise is local, its effect is not: a DisplayReservation settles Ranks
+ * downward, so an accepted Offer can take more from another Rank than the
+ * window would ever have allowed on its own. It is not narrowed for that —
+ * it names the moved Ranks with their before and after numbers instead, so a
+ * proposal nobody has to accept is allowed to be expensive as long as it
+ * states its price.
+ *
+ * There is **one** Offer, not a list of ways out: the first Rank (from the
+ * top) that clears every condition above is returned, or `null` if none does.
+ * The key carries the offer's content, not its kind, so a changed proposal is
+ * recognisable as a different one.
+ */
+export function offerFor(plan) {
+  if (unfit(plan)) return null;
+
+  const settings = plan.settings;
+  const displaySize = Math.max(1, int(settings.displaySize, 1));
+  const win = Math.max(1, Math.round(displaySize / 4));
+  const current = reservationVector(settings);
+
+  for (let i = 0; i < plan.depth; i++) {
+    const row = plan.rows[i];
+    const share = rankShare(plan, row);
+    const k = Math.round(share / displaySize);
+    if (k < 1) continue;
+    if (k <= row.displays) continue;
+    if (Math.abs(share - k * displaySize) > win) continue;
+
+    const d = withReservation(current, i, k);
+    if (!neverRising(d)) continue;
+
+    const probe = distribute({ ...settings, displays: d });
+    if (unfit(probe)) continue;
+
+    const also = [];
+    for (let j = 0; j < plan.depth; j++) {
+      if (j === i) continue;
+      const before = rankShare(plan, plan.rows[j]);
+      const after = rankShare(probe, probe.rows[j]);
+      if (before !== after) also.push({ rank: j + 1, before, after });
+    }
+
+    return { rank: i + 1, value: k, from: share, to: k * displaySize, also, key: `${i + 1}:${k}:${share}` };
+  }
+  return null;
+}
