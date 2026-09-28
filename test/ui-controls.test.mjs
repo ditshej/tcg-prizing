@@ -191,15 +191,15 @@ const UNFIT_STANDS = [
 ];
 
 /**
- * `suggestions()` is called through here because its signature is in the
- * middle of changing: #86 (ADR 0009) turns it into `suggestions(plan)`, with
- * the plan carrying the Settings it was computed from, while this branch's
- * core still takes the Settings and computes the plan itself. Handing the
- * wrong one in does not throw — `unfit()` on a Settings object is falsy, and
- * the call returns `[]` — so both checks below would pass while measuring
- * nothing. The plan's own `settings` field is what tells the two cores apart.
+ * The ways out at a stand. Since #86 (ADR 0009) `suggestions()` takes the
+ * **plan**, which carries the Settings it was computed from.
+ *
+ * Handing it the wrong object does not throw — `unfit()` on a Settings object
+ * is falsy, so the call returns `[]` and both checks below would pass while
+ * measuring nothing. The first of the two is the guard against that: it
+ * asserts the offer is non-empty before the second reads it.
  */
-const waysOut = (s) => suggestions(s.plan.settings ? s.plan : s.settings);
+const waysOut = (s) => suggestions(s.plan);
 
 test('the stands the reachability check runs on really are unfit, and between them they touch every search range', () => {
   const offered = new Set();
