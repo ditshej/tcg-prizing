@@ -295,11 +295,11 @@ kein Fehler, sondern der Fall aus Entscheid K1 (#68/#70): kein einzelner Regler
 räumt ihn. Die Fläche sagt das und verweist auf K1, statt leer zu bleiben; den
 mehrgliedrigen Weg baut #68, nicht die Bank.
 
-**Die Signatur ist `suggestions(settings)`**, und die Bank nimmt #86 nicht
-vorweg. Der Aufruf steht an **einer** Stelle — `waysOut(settings, plan)` —, die
-beide Argumente schon in der Hand hält; dreht #86 die Signatur auf
-`suggestions(plan)` (ADR 0009, Entscheid K2 an #68), ist das diese eine Zeile
-und sonst nichts.
+**Die Signatur war `suggestions(settings)`**, und die Bank nahm #86 nicht
+vorweg. Der Aufruf stand an **einer** Stelle — `waysOut(settings, plan)` —, die
+beide Argumente schon in der Hand hielt; #86 hat die Signatur auf
+`suggestions(plan)` gedreht (ADR 0009, Entscheid K2 an #68), und es war diese
+eine Zeile und sonst nichts. Siehe unten „Nachgezogen nach Lauf 8".
 
 ### 3. Die `WinnerPack`-Invariante — Befund G5 der Gegenprobe
 
@@ -364,3 +364,54 @@ zu jedem Bild nur eines.
 Die Bank liegt weiter ausserhalb von `public/`, importiert den Kern live und
 kopiert nichts. `node --test` steht unverändert auf 117/117 — an geprüftem Code
 wurde nichts angefasst.
+
+## Nachgezogen nach Lauf 8 — #86 (Stand `main` `aacdc03`, 2026-09-28)
+
+#86 dreht beide Kernfunktionen, die die Bank benutzt, und sie war ab dem Merge
+gebrochen: `suggestions()` nimmt jetzt den **Plan** statt der `Settings`, und
+`distribute()` nimmt ein zweites Argument. Zwei Posten.
+
+### 1. `suggestions(plan)` — die eine Zeile, die angekündigt war
+
+`waysOut()` ist jetzt `waysOut(plan)` und reicht den Plan durch. Der Plan trägt
+seinen Stand selbst (`plan.settings`, ADR 0009), also kommen Reglerwerte und
+verletzte Fakten zusammen an und können nicht auseinanderlaufen. Dass der Aufruf
+eine eigene Funktion blieb, hat genau das gekostet, was es sollte: eine Zeile.
+
+### 2. `distribute(settings, pinned)` — die Bank füttert das zweite Argument
+
+Sie könnte es weglassen; `pinned` ist vorbelegt und ändert keine Zahl im Plan.
+Dann stünde `plan.pinned` aber auf jedem Stand leer, und ein Feld, das nichts
+füttert, ist ein Feld, das die Bank nicht falsch werden sehen kann — und
+`plan.pinned` ist das, woraus der `SetupLink` geschrieben wird (#50).
+
+Die Bank hat hinter ihrem laufenden Stand keine DefaultSet-Kette, kann einen Pin
+also nicht durch Vergleich herleiten. Sie hält stattdessen die **Geste** fest:
+einen Regler anfassen pinnt ihn, einen Weg heraus nehmen pinnt den Regler, den
+er bewegt, und ein nachziehender Schalter, der ausgeht, pinnt ab — bei einem
+nullbaren Regler *ist* `null` „nicht von Hand gesetzt" (ADR 0006), die beiden
+sagen dasselbe. Einen Stand laden — Blatt, Knopf, JSON-Feld — setzt die Pins auf
+genau die Schlüssel dieses Standes: ein DefaultSet ist ein Startstand und pinnt
+nichts, ein gemessener Stand ist ein handgemachter und pinnt, was er nennt.
+
+In der Tabelle der abgeleiteten Grössen steht `plan.pinned` als letzte Zeile,
+**nur die Schlüssel** — der Wert steht eine Zeile weiter oben schon da, und die
+ganze Information eines Pins ist, dass der Schlüssel überhaupt dasteht.
+
+### Gefahren und gesehen
+
+Über `python3 -m http.server` aus der Repo-Wurzel, Playwright gegen
+`http://localhost:.../dev/`. Alle sieben Knöpfe grün, kein Fehler auf der
+Konsole (ausser dem fehlenden Favicon), am Start `pinned (#86) = none`.
+
+- Zwei Regler von Hand → `2 · players, rankFloor`, und der Rohabzug zeigt
+  `"pinned": {"rankFloor": 4, "players": 20}` — die Werte, nicht nur die Namen.
+- `DefaultSet · Weekend` darauf → `none`.
+- Der erste gemessene Stand aus #53 darauf → seine sechs eigenen Schlüssel.
+- Der `depth`-Schalter aus → fünf, wieder an → sechs.
+- Am `orphaned`-Knopf steht weiter genau ein Weg heraus
+  (`Drop rank 3's displays`), ein Klick darauf stellt den Plan gerade **und**
+  pinnt `displays`. Am `conflict`-Knopf steht weiter keiner, mit demselben
+  Verweis auf Entscheid K1.
+
+`node --test` ist davon unberührt — die Bank ist von keinem Test erreicht.

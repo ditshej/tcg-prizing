@@ -284,11 +284,11 @@ body {
 
 /*
  * The four hot sliders themselves (#63): pulled out of `plan.php` into
- * `controls-hot.php` so the fixed rail under `Plan` and `Details`'s
- * Grundform body share one partial instead of two copies that could drift.
- * `.plan-controls` (the rail's own section, `Plan`-only) supplies the border
- * and background above; `Details` gives the same grid room to breathe with
- * its own page padding instead.
+ * `controls-hot.php`, which was then shared by the fixed rail under `Plan` and
+ * `Details`'s Grundform body. Since #64 filled that page from
+ * `controls-sheet.php`, this grid is the rail's alone — `.plan-controls` (the
+ * rail's own section) supplies the border and background above. The sheet's
+ * controls are `.sheet-control` below and do not use this grid.
  */
 .controls-hot {
   display: grid;

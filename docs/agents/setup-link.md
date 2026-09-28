@@ -94,6 +94,15 @@ current-version link with an unreadable value loses something too, and stays
 silent otherwise (ADR 0007, addendum). A clean link — every key known, every
 value readable, no version to lift — shows nothing.
 
+## Eighteen keys, and that is not the only count
+
+The wire carries **18** slider keys, `Settings` has **19** fields, and the
+`Details` sheet draws **17**. All three are right, and they are allowed to
+differ: the wire drops `depthStep`, the sheet drops `displays` and
+`manualWinner`. Do not reconcile them, and do not read a count off one of them
+to check another — `CONTEXT.md`, `SetupLink`, says which is which and why, and
+names the trap that makes a fourth number.
+
 ## Caps are not a migration concern
 
 A value from a link is a `pinned` value like any other. ADR 0006 never truncates a

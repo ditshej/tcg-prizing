@@ -614,25 +614,64 @@ const DERIVED = [
   ],
   ['flagged', (p) => (p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(', ') : 'none')],
   ['unfit', (p) => String(unfit(p))],
+  // The provenance half of the input (#86): which sliders were set by hand.
+  // Only the keys — a value here is the one the row above it already shows,
+  // and the whole information of a pin is that the key is present at all.
+  [
+    'pinned (#86)',
+    (p) => {
+      const keys = Object.keys(p.pinned).sort();
+      return keys.length ? `${keys.length} · ${keys.join(', ')}` : 'none';
+    },
+  ],
 ];
 
 /**
  * The ways out of an unfit plan (#59, `public/core/suggest.mjs`) — the bench's
  * single seam onto that function, and the only place it is called.
  *
- * The signature is `suggestions(settings)` today and turns into
- * `suggestions(plan)` once #86 hangs the slider stands on the plan (ADR 0009,
- * decision K2 at #68). Both arguments are on hand here, so that turn is this
- * one call and nothing else in the bench moves — and the bench does not take
- * it early: #86 builds the core half, and a bench that anticipated it would be
- * calling a function that does not exist yet.
+ * Since #86 the argument is the **plan**: it carries the stand it was computed
+ * from (`plan.settings`, ADR 0009), so the slider values and the violated facts
+ * arrive together and cannot disagree. The seam stayed a function of its own
+ * exactly so that turn would be this one call and nothing else in the bench.
  */
-function waysOut(settings, plan) {
-  void plan; // the argument #86 will switch to.
-  return suggestions(settings);
+function waysOut(plan) {
+  return suggestions(plan);
 }
 
 const settings = neutralSettings();
+
+/**
+ * The sliders this stand was set by **hand**, key → value — the second argument
+ * of `distribute()` since the addendum (#86) to ADR 0009, and what the plan
+ * carries back as `plan.pinned`.
+ *
+ * The bench has no DefaultSet chain behind its live stand, so it cannot derive
+ * a pin by comparing against one; it records the gesture instead. Touching a
+ * slider pins it, taking a way out pins the slider it moves, and a trailing
+ * toggle switched off unpins — for a nullable slider `null` *is* "not set by
+ * hand" (ADR 0006), so the two agree. Loading a stand — a sheet, a preset, the
+ * JSON box — sets the pins to exactly that stand's own keys: a DefaultSet is a
+ * starting stand and pins nothing, a preset is a hand-made one and pins what it
+ * names.
+ *
+ * It changes no number in the plan. It is here because `plan.pinned` is what
+ * the SetupLink is written from (#50), and a field nothing on the bench feeds is
+ * a field the bench cannot show being wrong.
+ */
+const pins = {};
+
+/** One slider set by hand. */
+function pin(key, value) {
+  if (value == null) delete pins[key];
+  else pins[key] = value;
+}
+
+/** The pins of a freshly loaded stand: its own keys, and no others. */
+function resetPins(stand = {}) {
+  for (const key of Object.keys(pins)) delete pins[key];
+  for (const [key, value] of Object.entries(stand)) pin(key, value);
+}
 const el = {
   controls: document.getElementById('controls'),
   presets: document.getElementById('presets'),
@@ -705,6 +744,7 @@ function buildControls() {
       field.append(wrap);
       toggle.addEventListener('change', () => {
         settings[control.key] = toggle.checked ? Number(input.value) : null;
+        pin(control.key, settings[control.key]);
         render();
       });
     }
@@ -729,6 +769,7 @@ function buildControls() {
         settings[control.key] = Number(input.value);
         if (toggle) toggle.checked = true;
       }
+      pin(control.key, settings[control.key]);
       render();
     });
 
@@ -778,6 +819,7 @@ function buildPresets() {
     preset.verdict = verdict;
     button.addEventListener('click', () => {
       Object.assign(settings, neutralSettings(), preset.settings);
+      resetPins(preset.settings);
       render();
     });
     row.append(button, verdict);
@@ -797,6 +839,7 @@ function buildSheets() {
     button.textContent = sheet.label;
     button.addEventListener('click', () => {
       Object.assign(settings, sheet.resolve());
+      resetPins();
       render();
     });
     el.sheets.append(button);
@@ -805,7 +848,7 @@ function buildSheets() {
 
 function render() {
   syncControls();
-  const plan = distribute(settings);
+  const plan = distribute(settings, pins);
   renderBars(plan);
   el.series.textContent = seriesOf(plan);
   renderDerived(plan);
@@ -836,7 +879,7 @@ function renderWaysOut(plan) {
     el.waysOut.append(note);
     return;
   }
-  const entries = waysOut(settings, plan);
+  const entries = waysOut(plan);
   if (entries.length === 0) {
     const note = document.createElement('p');
     note.className = 'note';
@@ -863,16 +906,24 @@ function renderWaysOut(plan) {
   el.waysOut.append(list);
 }
 
-/** One way out, taken. A `displays` entry names the Rank it changes. */
+/**
+ * One way out, taken. A `displays` entry names the Rank it changes.
+ *
+ * Taking one is a hand gesture like dragging the slider would be, so it pins
+ * the same key — the stand that comes out of a way out is one a CommunityLead
+ * could have reached by hand, and a SetupLink written from it must say so.
+ */
 function applyWayOut(entry) {
   if (entry.key !== 'displays') {
     settings[entry.key] = entry.value;
+    pin(entry.key, entry.value);
     return;
   }
   const d = (settings.displays ?? []).slice();
   while (d.length < entry.rank) d.push(0);
   d[entry.rank - 1] = entry.value;
   settings.displays = d;
+  pin('displays', d);
 }
 
 /** The number row the tickets quote, e.g. `29·14·7·4·3·3·2·2`. */
@@ -1064,6 +1115,7 @@ document.getElementById('loadSettings').addEventListener('click', () => {
   try {
     const parsed = JSON.parse(document.getElementById('settingsIn').value);
     Object.assign(settings, neutralSettings(), parsed);
+    resetPins(parsed);
     state.textContent = 'loaded';
     render();
   } catch (error) {

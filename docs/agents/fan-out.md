@@ -447,7 +447,7 @@ Eleven tests were added on top. The card that did it asked whether a ratchet of
 five never-decided numbers was worth a second per run; the answer was to keep
 the ratchet and shrink the grid — an option the skeptic supplied.
 
-### Run 8 · 2026-09-28 · #86, #50, #51, #64 · `/round`, four agents, two quota deaths
+### Run 8 · 2026-09-28 · #86, #50, #51, #64 · `/round`, four agents, three quota deaths
 
 **The conductor's context: roughly 55k, against run 7's 40k and run 5's 340k.**
 Same soft estimate, same method as run 7, and the rise has a cause worth naming:
@@ -511,12 +511,19 @@ because it was empty** — `suggestions()` returned `[]`, so there was nothing t
 assert. The repair was required to prove it bites afterwards, and it does (narrow
 `rankFloor`'s cap: two tests fail).
 
-**Two quota deaths, and the fix is not to run less but to write more often.** The
-first counter-check died with ~40 minutes of work in its head and zero lines on
-disk. Every phase after it was told to write its artefact incrementally; the four
-build agents were told to commit per decision. The second death — all four build
-agents at once, on their first tool call — cost nothing at all, because nothing
-had been promised that was not yet written.
+**Three quota deaths, and the fix is not to run less but to write more often.**
+The first counter-check died with ~40 minutes of work in its head and zero lines
+on disk. Every phase after it was told to write its artefact incrementally; the
+four build agents were told to commit per decision. The second death — all four
+build agents at once, on their first tool call — cost nothing at all, because
+nothing had been promised that was not yet written. The third took the catch-up
+agent mid-sentence, four commits into five points, and **the rule paid out**: the
+branch was clean, the four commits stood, and the session picked up the remainder
+by reading `git log` rather than by starting over.
+
+The arithmetic is worth keeping. The instruction costs a few tokens per agent.
+One death without it cost a whole phase; three deaths with it cost one partial
+phase between them.
 
 **Counts.** 15 findings from A, 7 more from B, 0 of 15 refuted. 188/188 on the
 four-way merge probe. Two new tickets: #89 (the wiring #50 was forbidden to do)
