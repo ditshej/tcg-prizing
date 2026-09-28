@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { decode } from '../public/link/decode.mjs';
 import { addressFor, encode } from '../public/link/encode.mjs';
-import { CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
+import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
 
 const WEEKEND = { game: 'onepiece', type: 'weekend' };
 
@@ -81,6 +81,32 @@ test('an empty allocation card encodes as absent', () => {
 test('the allocation card is written ascending by rank, whatever order it was filled in', () => {
   const filled = { 7: 2, 3: 1 };
   assert.match(encode({ ...WEEKEND, pins: { manualWinner: filled } }), /&manualWinner=3:1,7:2$/);
+});
+
+/**
+ * Only the pinned sliders and the Game/Type base reach the address; the
+ * receiver rebuilds the stand from the DefaultSet plus those deviations
+ * (#86/#89/#72, "Entscheid K5"). The register is what says which key is a
+ * slider, so anything else in the pin set is not written — `depthStep` above
+ * all, which is a DefaultSet entry and not a slider (`keys.mjs`), and which a
+ * settings object carries along.
+ *
+ * What this **cannot** hold: `encode()` takes a pin set, and a pin set with all
+ * eighteen keys is indistinguishable from a settings object with all eighteen
+ * sliders — the same shape means the same link, and rightly so. Handing it
+ * `plan.settings` therefore still turns one pin into eighteen, silently. That
+ * is a rule about the caller and only a caller can carry it (finding G3 of run
+ * 8; the wiring is #89). What is held here is the half that is a rule about the
+ * wire: a key the register does not name never reaches a link.
+ */
+test('a key the register does not name never reaches the link', () => {
+  const strays = { depthStep: 4, raffleRange: 12, nonsense: 'x' };
+  assert.equal(encode({ ...WEEKEND, pins: strays }), '?v=1&game=onepiece&type=weekend');
+  assert.equal(addressFor({ ...WEEKEND, pins: strays }), null);
+
+  const query = encode({ ...WEEKEND, pins: { ...EVERY_SLIDER, ...strays } });
+  const written = [...new URLSearchParams(query.slice(1)).keys()];
+  assert.deepEqual(written, [...BASE_KEYS, ...KEYS].map((entry) => entry.key));
 });
 
 test('the round-trip corpus covers every key the register names, and the register names eighteen', () => {

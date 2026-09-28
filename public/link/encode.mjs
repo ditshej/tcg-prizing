@@ -17,6 +17,15 @@ import { CURRENT_VERSION, KEYS } from './keys.mjs';
  * type would be *picked*, and "first of the list" is a silent decision
  * (ADR 0007, addendum #44).
  *
+ * **`pins` is the pinned sliders, not a settings object.** Only the pins and
+ * the base go on the wire; the receiver rebuilds the stand from the DefaultSet
+ * plus those deviations (K5, at #86/#89/#72). A key the register does not name
+ * is dropped here — `depthStep` above all, which a settings object carries and
+ * which is not a slider (`keys.mjs`). What this function *cannot* catch is a
+ * full settings object: eighteen settings and eighteen pins are the same shape,
+ * so handing it one turns a single pin into a whole link, silently. That is a
+ * rule for the caller to keep (#89), and no test down here can hold it.
+ *
  * **The order is the register's, never the one the pins arrived in.** The same
  * stand therefore always yields the same string: a link is compared by eye,
  * and `replaceState` must not re-sort the address on every drag (#47, "Die
