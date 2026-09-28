@@ -16,6 +16,11 @@
  * past the depth is reported as `orphanedReservation` rather than read as
  * though it were not there. `unfit()` is the shared predicate over all four
  * ways a plan can be reported instead of refused.
+ *
+ * Since #86 the plan also carries the Settings it was computed from, as one
+ * untrimmed field (ADR 0009) — that is what makes `suggestions(plan)` in
+ * `suggest.mjs` buildable at all. `distribute()` itself still keeps no state:
+ * the plan carries the input, the function does not (ADR 0002).
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -175,6 +180,32 @@ function rankCycle(rankPacks, ranked, players) {
   const start = ranked >= players ? 0 : ranked;
   for (let g = 0; g < rankPacks; g++) packs[(start + g) % players] += 1;
   return packs;
+}
+
+/**
+ * The Settings a plan carries with it (ADR 0009): **one** field holding the
+ * input as a whole, not fifteen single copies, and **untrimmed** — `displays`
+ * keeps every Rank, including the ones past the depth that `displayVector`
+ * drops and that a way out is meant to clear.
+ *
+ * Nothing here is read, clamped or defaulted. A way out sets one slider on
+ * this object and runs `distribute()` again, so a value normalised on the way
+ * in would make the probe answer a different question than the one that was
+ * asked — and `distribute(plan.settings)` would stop reproducing `plan`.
+ *
+ * It is a snapshot, not the caller's object: the two mutable containers are
+ * copied along, so an edit made after the plan was computed cannot leave the
+ * plan carrying an input it was not computed from. That is the whole reason
+ * ADR 0009 attaches the input rather than asking every call site to keep it
+ * alongside.
+ */
+function carriedSettings(settings) {
+  const carried = { ...settings };
+  if (Array.isArray(settings.displays)) carried.displays = settings.displays.slice();
+  if (settings.manualWinner && typeof settings.manualWinner === 'object') {
+    carried.manualWinner = { ...settings.manualWinner };
+  }
+  return carried;
 }
 
 /**
@@ -371,6 +402,7 @@ export function distribute(settings) {
   }));
 
   return {
+    settings: carriedSettings(settings),
     players,
     pool,
     participation: handedOut.participation,

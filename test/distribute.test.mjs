@@ -759,3 +759,27 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
   assert.equal(clean.unclaimedRemainder, null);
   assert.equal(unfit(clean), false);
 });
+
+/**
+ * ADR 0009: the plan carries its slider stands, as **one** field and
+ * **untrimmed**. `displayVector` is not that field — it is cut to the depth,
+ * and it is exactly the Rank the cut removes that a way out has to clear.
+ */
+test('the plan carries its slider stands untrimmed, where displayVector is cut to the depth', () => {
+  const input = settings({ players: 5, boosterRate: 1, rankFloor: 2, displaySize: 1, depth: 2, displays: [2, 1, 1] });
+  const plan = distribute(input);
+  assert.deepEqual(plan.displayVector, [2, 1], 'displayVector stops at the depth');
+  assert.deepEqual(plan.settings.displays, [2, 1, 1], 'plan.settings keeps the third Rank');
+  assert.deepEqual(plan.settings, input, 'every stand of the input is carried, none of them changed');
+});
+
+test('the carried stands recompute the plan they came from, and are a snapshot rather than the caller object', () => {
+  const input = settings({ players: 8, boosterRate: 3, displays: [1] });
+  const plan = distribute(input);
+  assert.deepEqual(distribute(plan.settings), plan, 'the plan is reproducible from what it carries');
+  assert.notEqual(plan.settings, input, 'the plan holds a copy, so a later edit of the input cannot contradict it');
+  input.displays.push(1);
+  input.players = 48;
+  assert.deepEqual(plan.settings.displays, [1]);
+  assert.equal(plan.settings.players, 8);
+});
