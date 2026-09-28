@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { decode } from '../public/link/decode.mjs';
 import { addressFor, encode } from '../public/link/encode.mjs';
@@ -170,3 +172,36 @@ test('past the first pin the address bar is exactly the copy form', () => {
   assert.equal(addressFor(setup), encode(setup));
 });
 
+/**
+ * The second seam of Spec 3, as a rule over the tree (#50 AC 6). `location`
+ * and `history.replaceState` are the two things in this project that are not
+ * pure, and they live in two functions that are **not** proven — so that
+ * everything under them can be. The moment a third place reaches for either,
+ * the encoding is unproven exactly where it is public, and this test is what
+ * notices.
+ *
+ * Scanned is what ships to a browser — `public/`, `views/`, `dev/` — minus
+ * the vendored Alpine bundle, which is nobody's code here, and minus every
+ * comment: naming the rule is not reaching for the API, and a file that may
+ * not *call* `writeLocation`'s insides must still be free to say why.
+ */
+const CODE_ONLY = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+test('location and replaceState occur in exactly one file, and that file carries no logic', () => {
+  const root = new URL('..', import.meta.url);
+  const shipped = ['public', 'views', 'dev']
+    .flatMap((dir) => readdirSync(new URL(dir, root), { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.(mjs|js|php|html)$/.test(entry.name))
+      .map((entry) => `${entry.parentPath.slice(fileURLToPath(root).length)}/${entry.name}`))
+    .filter((path) => !path.startsWith('public/vendor/'));
+
+  const touching = shipped.filter((path) => {
+    const source = CODE_ONLY(readFileSync(new URL(path, root), 'utf8'));
+    return /\blocation\b/.test(source) || /\breplaceState\b/.test(source);
+  });
+  assert.deepEqual(touching, ['public/link/location.mjs']);
+
+  // No logic: nothing imported, nothing branched, nothing looped.
+  const code = CODE_ONLY(readFileSync(new URL('public/link/location.mjs', root), 'utf8'));
+  assert.equal(/\b(import|if|for|while|switch|catch|\?\?|&&|\|\|)\b|\?\./.test(code), false);
+});
