@@ -80,6 +80,39 @@ test('migrate() is a no-op on a clean link at today\'s version: no report, nothi
   assert.equal(result.game, read.game);
   assert.equal(result.type, read.type);
   assert.equal(result.report, null);
+  assert.equal(result.migrated, false, 'the production chain is empty — nothing was lifted');
+});
+
+/**
+ * Befund G7 (#52, answered 2026-09-28): the fact that the chain ran stands
+ * **beside** the report, because the report is `null` as soon as nothing was
+ * lost (ADR 0007, untouched here). Without the field, a lossless migration is
+ * indistinguishable from no migration at all, and #52 AC 8 ("lief die Kette,
+ * schreibt sich die Adresszeile als heutige Version mit") is unmeetable from
+ * the outside. The step below lifts a version and loses nothing, which is the
+ * exact case the old shape could not tell apart.
+ */
+test('a lossless migration is visible from the outside even though the report stays null', () => {
+  function lossless({ game, type, pins, unknown }) {
+    return { game, type, pins, unknown, entries: [] };
+  }
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32', GAMES);
+  const result = migrate(read, [lossless]);
+
+  assert.equal(result.report, null, 'nothing was lost, so ADR 0007 keeps the report null');
+  assert.equal(result.migrated, true, 'and the fact of the migration is still readable');
+});
+
+/**
+ * The counterpart, and the reason the field cannot be `report != null`: a link
+ * at today's version that loses a name has a report and no migration.
+ */
+test('a report without a migration: the field is not the report\'s presence under another name', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&legacyBoosterRate=9', GAMES);
+  const result = migrate(read, STEPS);
+
+  assert.ok(result.report, 'something was lost');
+  assert.equal(result.migrated, false, 'but no step ran');
 });
 
 /**
@@ -269,6 +302,7 @@ test('a link from the future is passed through untouched, and the chain never ru
   assert.equal(result.type, 'weekend');
   assert.deepEqual(result.report.entries, [{ kind: 'futureVersion', from: 99 }]);
   assert.equal(result.report.resaveBookmark, false, 'the bookmark already is the better copy');
+  assert.equal(result.migrated, false, 'the chain never ran, so there is nothing to rewrite');
 });
 
 test('migrate() does not mutate its input, and the same read migrates the same way twice', () => {
@@ -286,8 +320,8 @@ test('migrate() does not mutate its input, and the same read migrates the same w
  * The second seam (`public/link/location.mjs`) is #50's rim, and this module
  * must stay as far from it as `decode.mjs` does: whether the address bar's
  * version number gets rewritten is a decision for the wiring layer (#89),
- * made by reading `report.migrated` — never something this module could
- * arrange for on its own.
+ * made by reading the `migrated` field beside the report — never something
+ * this module could arrange for on its own.
  */
 test('migrate() cannot write the address bar — it does not even name it', async () => {
   const { readFile } = await import('node:fs/promises');

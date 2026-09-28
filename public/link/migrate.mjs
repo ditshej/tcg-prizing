@@ -25,7 +25,8 @@ export const STEPS = [];
 
 /**
  * `{ game, type, pins, version, unknown, report }` (a `decode()` result) →
- * `{ game, type, pins, report }` — the same read, lifted to today's version.
+ * `{ game, type, pins, migrated, report }` — the same read, lifted to today's
+ * version.
  *
  * **A link from the future is passed through untouched.** `decode()` already
  * decided that case: no slider key read, the base taken as it stood, one
@@ -69,6 +70,16 @@ export const STEPS = [];
  * itself, because it never touches `location` or `history` at all (by test,
  * as `decode.mjs` does not either).
  *
+ * **It stands beside the report, not inside it, and that is a decision** (#52,
+ * Lauf 8 Befund G7, answered 2026-09-28): the report keeps the shape ADR 0007
+ * gave it — `null` when nothing was lost — so a clean, lossless migration is
+ * invisible from the outside if the fact lives only in the report. It is
+ * therefore returned as a field of its own, and a caller must never
+ * re-derive it from `pins`. The same word is used inside the report and
+ * beside it because it is the same fact, told to two readers; the duplication
+ * is deliberate, the report's own field being contract (ADR 0007) and
+ * untouched here.
+ *
  * Pure: every step is handed a fresh `{ game, type, pins, unknown }` and
  * returns a fresh one: `read` itself is never written to, so the same read
  * migrated twice yields two equal, independent results.
@@ -87,7 +98,9 @@ export const STEPS = [];
 export function migrate(read, steps = STEPS) {
   const { version, game, type, pins = {}, unknown = {}, report = null } = read;
 
-  if (isFutureRead(report)) return { game, type, pins, report };
+  // Nothing was lifted here, and nothing will be: the chain does not run for a
+  // future-version read at all, so `migrated` is false rather than absent.
+  if (isFutureRead(report)) return { game, type, pins, migrated: false, report };
 
   const applicable = steps.slice(version - 1);
 
@@ -108,15 +121,17 @@ export function migrate(read, steps = STEPS) {
   for (const key of Object.keys(remaining)) entries.push({ kind: 'unknownKey', key });
 
   const allEntries = [...(report?.entries ?? []), ...entries];
+  const migrated = applicable.length > 0;
 
   return {
     game: state.game,
     type: state.type,
     pins: state.pins,
+    migrated,
     report: buildReport({
       from: version,
       to: version + applicable.length,
-      migrated: applicable.length > 0,
+      migrated,
       entries: allEntries,
     }),
   };
