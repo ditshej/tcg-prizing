@@ -150,3 +150,36 @@ Stelle entsprechend korrigiert.
 Kein eigener ADR-Eintrag: die Absicht dieses Dokuments ändert sich nicht, nur ihre zu
 enge Formulierung wird geschärft (`docs/agents/domain.md`, „sharpening your own text
 while writing"). Die nächste freie Nummer wäre 0009 — sie wird hier nicht gezogen.
+
+## Nachtrag (#51): der Leseweg beurteilt Reglernamen nicht mehr
+
+Der Nachtrag (#48) oben lässt offen, **wo** ein unbekannter Reglerschlüssel
+verloren geht, und die naheliegende Lesart — schon beim Dekodieren, weil ein
+Link der heutigen Version die Kette gar nicht erst anwirft — wird hiermit
+**zurückgezogen**. Sie ergäbe zwei Regeln für dieselbe Sache: einen Namen, den
+ein alter Link trägt, dürfte die Kette umbenennen; denselben Namen in einem
+heutigen Link hätte der Leseweg schon verworfen, bevor irgendwer ihn ansieht.
+Welche der beiden greift, hinge dann an der Versionszahl des Links und nicht an
+dem, was wir über den Namen wissen.
+
+Entschieden ist die eine Regel: **ein unbekannter Reglername kommt immer mit
+seinem Rohwert durch den Leseweg**, gleich welche Version der Link nennt. Der
+Leseweg liest, er beurteilt nicht. Erst die Migrationskette entscheidet, was der
+Name bedeutet — sie ist die Stelle, an der niedergeschrieben steht, wie mit
+unbekannten Namen zu verfahren ist. Kommt er dort nicht vor, fällt er weg, und
+**der Verlusteintrag entsteht am Ende der Kette**, nicht an ihrem Anfang.
+
+Die Absicht des Nachtrags (#48) bleibt damit unangetastet: ein sauberer Link ist
+still, und der Bericht ist da, sobald irgendetwas nicht so übernommen wurde, wie
+es dastand. Nur der Ort, an dem der Eintrag entsteht, ist jetzt genannt. Für
+`game` und `type` ändert sich nichts — das Auffangnetz aus dem Nachtrag (#44)
+bleibt, wo es ist, weil es keinen typlosen Zustand gibt und die Kette dort einen
+Nachfolger **nennen** muss.
+
+Preis, bewusst genommen: ein von Hand verbogener Link trägt seinen Unsinn eine
+Stufe weiter, bis die Kette ihn abräumt. Dafür gibt es genau eine Stelle, an der
+über Reglernamen entschieden wird, und sie ist die, die die Antwort kennt.
+
+Kein eigener ADR-Eintrag und kein Stempel: es ist dieselbe Entscheidung, deren
+zu weit gefasste Lesart hier geschlossen wird — Präzedenz sind die Nachträge
+(#34), (#44) und (#48) in diesem Dokument.

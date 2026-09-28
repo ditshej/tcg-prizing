@@ -446,3 +446,80 @@ characterisation equalities kept and won one last time from the unmerged core.
 Eleven tests were added on top. The card that did it asked whether a ratchet of
 five never-decided numbers was worth a second per run; the answer was to keep
 the ratchet and shrink the grid — an option the skeptic supplied.
+
+### Run 8 · 2026-09-28 · #86, #50, #51, #64 · `/round`, four agents, two quota deaths
+
+**The conductor's context: roughly 55k, against run 7's 40k and run 5's 340k.**
+Same soft estimate, same method as run 7, and the rise has a cause worth naming:
+this round restarted six agents after two quota resets and re-ran a merge probe
+by hand. The nine agents under it spent **~993k** between them, plus two aborted
+starts that produced nothing.
+
+**Four is the ceiling of a batch here, and it is structural.** Seven unblocked
+tickets, but exactly one of {#86, #60} (both write `suggest.mjs`), exactly one of
+{#64, #65, #66} (all three write `plan.css` and the single Alpine component), and
+#50 and #51 disjoint. One core + write path + net + one surface. No fifth group
+exists, so no analysis can produce a fifth agent.
+
+**The batch choice turned on one collision a file matrix cannot see.** #50's
+acceptance criterion describes the *caller's* behaviour, and the caller is
+`plan.mjs:40` — the same `pins` field #64 rebuilds. Not the same file by accident:
+the same field. Splitting the wiring out as #89 is what made four agents possible,
+and it cost one small ticket.
+
+**The blocking finding was invisible to the file matrix too.** #50 and #51 share
+no file and still broke each other in *both* merge orders: #51 appends `report`
+to `decode`'s return, #50's round-trip test compares the whole returned object.
+Phase A called it 21 red assertions; the counter-check ran it on two built merge
+probes and found **one** — the corpus loops inside a single test. It then refused
+Phase A's one-line repair as a decision belonging to the maintainer, because
+`decode`'s shape is a versioned public interface described three different ways.
+
+**The counter-check refuted nothing and was still the best-paid phase.** 15
+findings in, 13 confirmed, 1 corrected, 2 sharpened, 1 weakened — and **7 new**,
+two of them decisions. Its mutation run (11 mutations, 10 red) closed Phase A's
+largest declared gap. The one finding it could not have reached by reading reports
+— G3, `encode(plan.settings)` silently turning one pin into twelve and losing
+`depthStep` — came from forming a ticket pair Phase A never formed.
+
+**Phase D's value was a question the maintainer asked back, not an answer he
+gave.** K2 was served as a guard question: should #58's sum rule stop searching
+`plan.settings`? He answered „wo bitteschön sollen negative Zahlen möglich sein?"
+— and the real finding fell out. Nowhere, except through a hand-bent link:
+`readInt` accepts `/^-?\d+$/`, while `readVector` two functions down already
+discards a negative limb (#49, K4). The single slider had never been given the
+rule. The decision moved from the guard to the reader, and #58 was left untouched.
+**A candidate the maintainer reframes is worth more than one he picks**, and Phase
+C cannot produce that — only the terminal round can.
+
+Six candidates, **six answered in the terminal, zero cards.** Phase E did not
+happen; the round cost one interaction instead of two. Gates: 22 findings in, 6
+out (11 dropped by Gate 1, 11 by Gate 2). One Gate-1 drop was the run-6 class
+exactly — the `Type` label, already settled at `CONTEXT.md:722–726`.
+
+**A pre-build collision analysis has an expiry date, and it is the build.** Both
+review phases checked whether #64 calls the core. It did not, and they were right.
+Then finding G2 required #64's cap test to measure against the source instead of
+transcribing its own numbers — and *that* made it call `suggestions()`, whose
+signature #86 had just turned to `suggestions(plan)`. Every branch green alone,
+one red together. It surfaced only because the conductor built a fresh four-way
+merge probe instead of adding up four green reports. **The corrections need their
+own disjointness check; the one done before the build does not cover them.**
+
+Worse than the red test was its neighbour: the reachability check was **green
+because it was empty** — `suggestions()` returned `[]`, so there was nothing to
+assert. The repair was required to prove it bites afterwards, and it does (narrow
+`rankFloor`'s cap: two tests fail).
+
+**Two quota deaths, and the fix is not to run less but to write more often.** The
+first counter-check died with ~40 minutes of work in its head and zero lines on
+disk. Every phase after it was told to write its artefact incrementally; the four
+build agents were told to commit per decision. The second death — all four build
+agents at once, on their first tool call — cost nothing at all, because nothing
+had been promised that was not yet written.
+
+**Counts.** 15 findings from A, 7 more from B, 0 of 15 refuted. 188/188 on the
+four-way merge probe. Two new tickets: #89 (the wiring #50 was forbidden to do)
+and #95 (post-merge catch-up). PR #94 carries two ADR addenda — and the filing
+agent corrected the conductor on the stamp rule: a stamp line is for a *later*
+ADR touching an earlier one, not for an ADR extending its own body.
