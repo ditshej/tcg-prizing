@@ -98,7 +98,17 @@ test('the round-trip corpus covers every key the register names, and the registe
  * vector, no empty card. Those are not round-trip stands but the normalisation
  * of their own test above: `[2, 1, 0]` goes out as `2.1` and comes back as
  * `[2, 1]`, on purpose.
+ *
+ * **Compared is the stand, not the whole return value of `decode()`.** The
+ * read path hands back a reading — the stand and the record of reading it stuck
+ * together — and that reading is free to grow a field: #51 adds `report`. A
+ * round trip is an assertion about the *stand*, so it names the five fields it
+ * means instead of demanding that `decode()` return those five and nothing
+ * else. The strict form fell over the moment a field was added that the wire
+ * format never lost anything to (#50, "Entscheid K1" from run 8).
  */
+const STAND_OF = ({ version, game, type, pins, unreadable }) => ({ version, game, type, pins, unreadable });
+
 test('decode(encode(x)) is x, over the whole corpus', () => {
   const corpus = [
     {},
@@ -110,7 +120,7 @@ test('decode(encode(x)) is x, over the whole corpus', () => {
   for (const pins of corpus) {
     const read = decode(encode({ ...WEEKEND, pins }));
     assert.deepEqual(
-      read,
+      STAND_OF(read),
       { version: CURRENT_VERSION, game: 'onepiece', type: 'weekend', pins, unreadable: [] },
       `round trip lost something at ${JSON.stringify(pins)}`,
     );
