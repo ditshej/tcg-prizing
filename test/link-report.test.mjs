@@ -43,6 +43,7 @@ test('a link from the future reads no slider key at all, and says so in one entr
   );
   assert.deepEqual(read.pins, {});
   assert.deepEqual(read.unreadable, []);
+  assert.deepEqual(read.unknown, {}, 'not one key is looked at, known or not');
   assert.deepEqual(read.report.entries, [{ kind: 'futureVersion', from: 2 }]);
   assert.equal(read.report.migrated, false);
   assert.equal(read.report.to, CURRENT_VERSION);
@@ -123,7 +124,7 @@ test('without a catalogue the net does not run and the base passes through as re
  */
 test('a report that cost the link something asks for the bookmark to be saved again', () => {
   assert.equal(decode('?v=1&game=onepiece&type=weekend&rankFloor=fuenf').report.resaveBookmark, true);
-  assert.equal(decode('?v=1&game=onepiece&type=weekend&rankfloor=5').report.resaveBookmark, true);
+  assert.equal(decode('?v=1&game=onepiece&type=weekend&displays=2.-1').report.resaveBookmark, true);
   assert.equal(
     decode('?v=1&game=magic&type=weekend', GAMES).report.resaveBookmark,
     true,
@@ -142,17 +143,32 @@ test('a link from the future does not ask for the bookmark to be saved again', (
 });
 
 /**
- * "Je genau ein Eintrag" holds for **both** kinds of loss, at the same grain:
- * one entry per key name, whatever the URL repeated. The two kinds are told
- * apart — the key typo and the value typo lose the same slider, but a reader
- * who is to fix the link needs to know which of the two it was.
+ * "Je genau ein Eintrag" holds at the grain of the key name, whatever the URL
+ * repeated. An unknown slider name is **not** one of the losses this layer
+ * reports since Lauf 8, "Entscheid K4": it travels on with its raw value and
+ * the chain has the last word over it.
  */
-test('each kind of loss is one entry per key name, and the two kinds stay apart', () => {
-  const read = decode('?v=1&game=onepiece&type=weekend&rankFloor=fuenf&rankfloor=5&rankfloor=6');
-  assert.deepEqual(read.report.entries, [
-    { kind: 'unreadableValue', key: 'rankFloor' },
-    { kind: 'unknownKey', key: 'rankfloor' },
-  ]);
+test('a loss is one entry per key name, however often the URL repeats it', () => {
+  const read = decode(
+    '?v=1&game=onepiece&type=weekend&rankFloor=fuenf&rankFloor=sechs&rankfloor=5&rankfloor=6',
+  );
+  assert.deepEqual(read.report.entries, [{ kind: 'unreadableValue', key: 'rankFloor' }]);
+  assert.deepEqual(read.unknown, { rankfloor: '5' }, 'the first mention is the one that travels');
+});
+
+/**
+ * A slider name the register does not know is not judged here at all: it comes
+ * through with its raw value, on every link alike, and only the chain decides
+ * between a rename and a loss — the entry arises at the **end** of the chain
+ * (Lauf 8, "Entscheid K4"; ADR 0007, Nachtrag #51). A link that only misspells
+ * a key therefore reports nothing *yet*, and nothing is silently gone either.
+ */
+test('an unknown slider name travels on with its raw value and is no loss of this layer', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&rankfloor=5');
+  assert.deepEqual(read.pins, { players: 32 }, 'unfinished values never enter pins');
+  assert.deepEqual(read.unknown, { rankfloor: '5' });
+  assert.deepEqual(read.unreadable, []);
+  assert.equal(read.report, null, 'nothing is lost until the chain says so');
 });
 
 /**
@@ -200,8 +216,11 @@ test('a negative number is unreadable on a single slider too, exactly as in a ve
 });
 
 /**
- * Every case of #47's table in one link: each contributes exactly one entry,
- * and the order is the frame first — the base, then what the sliders lost.
+ * Every case #47's table leaves with this layer, in one link: each contributes
+ * exactly one entry, and the order is the frame first — the base, then what
+ * the sliders lost. The unknown key of that table has moved to the end of the
+ * chain (Lauf 8, "Entscheid K4"), and rides along here to show that it adds
+ * nothing to the report and takes nothing from it.
  */
 test('the cases add up, one entry each, base before sliders', () => {
   const read = decode('?v=1&game=magic&type=freitagsrunde&rankFloor=fuenf&rankfloor=5', GAMES);
@@ -209,8 +228,8 @@ test('the cases add up, one entry each, base before sliders', () => {
     { kind: 'gameReplaced', was: 'magic', now: 'onepiece', by: 'fallback' },
     { kind: 'typeReplaced', was: 'freitagsrunde', now: 'weekly', by: 'fallback' },
     { kind: 'unreadableValue', key: 'rankFloor' },
-    { kind: 'unknownKey', key: 'rankfloor' },
   ]);
+  assert.deepEqual(read.unknown, { rankfloor: '5' });
 });
 
 /**

@@ -9,8 +9,17 @@ import { CURVES } from '../core/rules.mjs';
 import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
 
 /**
- * Reads a SetupLink to `{ version, game, type, pins, unreadable, report }` —
- * the base, the pinned sliders, and what the link cost on the way in.
+ * Reads a SetupLink to
+ * `{ version, game, type, pins, unknown, unreadable, report }` — the base, the
+ * pinned sliders, the slider names we do not know, and what the link cost on
+ * the way in.
+ *
+ * **The read result is one object: the state and the log of the read stick
+ * together** (Lauf 8, "Entscheid K1"). The tournament state is what the
+ * sliders show, the report is what went wrong while reading — both arise in
+ * the same pass, so both come back in the same pass. `migrate()` writes on
+ * into the very same report (#47, `## Reading a link`), and a caller holds one
+ * object at every stage instead of carrying state and log side by side.
  *
  * **Everything out of a URL is a string, and turning it into a number is this
  * function's job, not the core's.** The core reads its Settings fields with
@@ -21,25 +30,34 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * path is where text becomes numbers, so `pins` only ever carries finished
  * values.
  *
- * `unreadable` is the other half of that, and it carries **both** halves of
- * the loss (#49, "Entscheid K4"):
+ * `unreadable` is the other half of that: a value that cannot become what its
+ * key is — `rankFloor=fuenf` — named rather than quietly handed on as the
+ * sheet value. Each such key appears **once**, whatever the URL repeated.
  *
- * - a value that cannot become what its key is — `rankFloor=fuenf`;
- * - a key the register does not know — `rankfloor=5`, one letter small.
+ * **A slider name this register does not know is not judged here.** It passes
+ * through with its **raw value** in `unknown`, on every link alike, whichever
+ * version it names (Lauf 8, "Entscheid K4"; ADR 0007, Nachtrag #51). The read
+ * path reads, it does not judge: the migration chain is the place where it is
+ * written down what an unknown name means — a step renames it, or nothing
+ * does and it is gone — and **the loss entry arises at the end of the chain**,
+ * not at the start of the read. Judging it here would make the same name fare
+ * differently depending on the link's version number, which is not what we
+ * know about the name.
  *
- * Both lose exactly the same slider, so both are named. Until this was
- * decided, only the first was: the key typo dropped its slider without a
- * word, and a link whose keys are all misspelled read as an empty, entirely
- * well-formed link. The base keys are of course known and are never reported.
+ * The naming reading of the #48 addendum — the key is lost at decoding time —
+ * is withdrawn with that. Price taken knowingly: a hand-bent link carries its
+ * nonsense one stage further, until the chain clears it away. `unknown` is a
+ * plain object of raw name to raw string, first mention winning, and it is the
+ * raw material `migrate()` decides on; it is deliberately **not** `pins`,
+ * which only ever carries finished values. `game` and `type` are untouched by
+ * all this — the net below still catches them, because there is no typeless
+ * state (ADR 0003) and a step must *name* a successor (ADR 0007, Nachtrag
+ * #44).
  *
- * `unreadable` stays one flat list for the raw material's sake; the `report`
- * is where the two kinds are told apart. That is the **tolerance**, and it was
- * #51's to settle:
+ * The `report` is where the kinds of loss are told apart. That is the
+ * **tolerance**, and it was #51's to settle:
  *
- * - **One entry per key name, for both kinds alike.** A key repeated in the
- *   URL is named once; a key typo and a value typo lose the same slider and
- *   each get their own kind, because a reader who is to repair the link needs
- *   to know which of the two it was.
+ * - **One entry per key name.** A key repeated in the URL is named once.
  * - **A whole loss is reported whole.** A negative limb throws the entire
  *   DisplayReservation and a doubled Rank the entire winner card (#49,
  *   "Entscheid K4"); the entry names the **slider**, not the bent limb. The
@@ -65,7 +83,9 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * The migration chain and its entry kinds — `renamed`, `dropped`,
  * `setByMigration` — are #52's; `migrate.mjs` does not exist yet, and the
  * report is built here because #51 owes its acceptance criteria a report and
- * owns no other file. See the PR of #51 for what that costs #52.
+ * owns no other file. See the PR of #51 for what that costs #52. The
+ * `unknownKey` entry is #52's too since Lauf 8, "Entscheid K4": it is the last
+ * word of the chain over a name, and nothing here may say it first.
  */
 export function decode(query, games = null) {
   const params = new URLSearchParams(String(query ?? '').replace(/^[?#]/, ''));
@@ -79,6 +99,7 @@ export function decode(query, games = null) {
       game: base.game,
       type: base.type,
       pins: {},
+      unknown: {},
       unreadable: [],
       report: reportOf({
         from: version,
@@ -95,15 +116,14 @@ export function decode(query, games = null) {
     if (value === UNREADABLE) unreadableValues.push(key);
     else pins[key] = value;
   }
-  const unknownKeys = [];
+  const unknown = {};
   for (const key of new Set(params.keys())) {
-    if (!KNOWN_KEYS.has(key)) unknownKeys.push(key);
+    if (!KNOWN_KEYS.has(key)) unknown[key] = params.get(key);
   }
 
   const entries = [
     ...base.entries,
     ...unreadableValues.map((key) => ({ kind: 'unreadableValue', key })),
-    ...unknownKeys.map((key) => ({ kind: 'unknownKey', key })),
   ];
 
   return {
@@ -111,7 +131,8 @@ export function decode(query, games = null) {
     game: base.game,
     type: base.type,
     pins,
-    unreadable: [...unreadableValues, ...unknownKeys],
+    unknown,
+    unreadable: unreadableValues,
     report: reportOf({ from: version, entries }),
   };
 }
