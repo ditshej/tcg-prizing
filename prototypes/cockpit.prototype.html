@@ -1675,6 +1675,26 @@ function setDisplay(r, v) {
    die Machbarkeit aus #7 — B − S·N muss den Mindestbedarf noch tragen. Eine
    Überholung deckelt *nicht*: sie ist genau der Fall, der gemeldet werden soll,
    also muss er erreichbar bleiben. */
+/* ÜBERHOLT: Dieser Deckel sperrt einen Rückweg, den ADR 0006 offen haben will.
+   `displayReach()` verlangt einen konfliktfreien Plan
+   (`!distribute(…).conflict`) und wird in `slotPop()` für **beide** Richtungen
+   gefragt (`down = dc > 0 && displayReach(r, dc - 1)`). Steht der Plan schon im
+   Konflikt — verwaiste Reservation oder Überholung, also genau die Zustände,
+   die nach ADR 0002 gemeldet und nicht verhindert werden —, ist damit auch das
+   − aus: die Reservation lässt sich nicht mehr senken und nicht mehr fallen
+   lassen, obwohl `CONTEXT.md` beim `DisplayReservation` das Fallenlassen als
+   einen der beiden Wege heraus nennt, die die `ConflictNotice` anbietet. ADR
+   0006 verwirft das Kappen ausdrücklich: ein von Hand gesetzter Wert bleibt
+   stehen, und der Rückweg ist allein die Bedienhandlung — sperrt die den Weg,
+   gibt es keinen. Verbindlich ist die Deckel-Regel aus `#61` („Ein Anschlag
+   darf keinen Zustand verhindern, den ADR 0002 gemeldet haben will") und,
+   gebaut, `#66`; ein Anschlag deckelt den Weg **hinein**, nie den hinaus.
+
+   Nicht korrigiert, und das ist Absicht: der Prototyp wird nicht implementiert.
+   Er hat die Autorität für die **Form** einer Fläche (#61 nennt ihn
+   „Primärquelle"), nicht für die Anschläge an ihren Bedienelementen — die
+   stehen im Ticket. Wer eine Reichweite sucht, schlägt sie in #61 nach, nicht
+   hier. Gefunden in Lauf 9. */
 function displayReach(r, v) {
   const d = st.displays.slice();
   while (d.length < r) d.push(0);
