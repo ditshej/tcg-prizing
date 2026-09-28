@@ -27,6 +27,28 @@ const TYPES = {
 
 const GAMES = SHEETS.map((sheet) => ({ ...sheet, types: TYPES[sheet.id] }));
 
+/**
+ * "Der Leseweg gibt ein Leseergebnis zurück, Stand und Protokoll darin" (Lauf
+ * 8, "Entscheid K1"). The tournament state is what the sliders show, the
+ * report is what went wrong while reading, and both arise in the same pass —
+ * so both come back in the same object, at every stage, and no caller carries
+ * them side by side. `migrate()` writes on into the same report (#47).
+ */
+test('the read result is one object: the state and the log of the read together', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=fuenf', GAMES);
+  assert.deepEqual(Object.keys(read).sort(), [
+    'game',
+    'pins',
+    'report',
+    'type',
+    'unknown',
+    'unreadable',
+    'version',
+  ]);
+  assert.deepEqual(read.pins, { players: 32 }, 'the state is what could be read');
+  assert.ok(read.report, 'and the log of what could not sits in the same object');
+});
+
 test('a clean link reports nothing at all', () => {
   const { report } = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=5');
   assert.equal(report, null);
