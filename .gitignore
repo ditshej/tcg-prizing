@@ -25,3 +25,8 @@ review/
 # without packages, so this directory should never appear. If it does,
 # something pulled in a dependency and that is a decision, not a side effect.
 node_modules/
+
+# Playwright writes screenshots to the CWD when a bare filename is given,
+# not into .playwright-mcp/. One slipped into #96 that way.
+*.png
+!docs/**/*.png
