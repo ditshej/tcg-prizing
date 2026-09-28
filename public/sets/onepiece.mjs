@@ -30,6 +30,23 @@
  * its title, so its values are the Game's.
  */
 
+/**
+ * The Game's own two surface facts, beside the sheet rather than in it.
+ *
+ * A `TournamentType` carries its `id` and `title` inside its entry and
+ * `resolveSettings()` drops them again; the `Game` cannot do the same, because
+ * its sheet is spread whole into `Settings` and a `title` field would land
+ * among the nineteen fields #46 defines. So they stand next to it.
+ *
+ * Both are needed and neither existed before #64: the Set block's `Game` row
+ * shows the title (#41, CONTEXT.md `Game` — "Am Schirm steht die Ebene
+ * immer"), and a `SetupLink` names its Game by this stable id, never by a list
+ * position (`public/link/keys.mjs`, `BASE_KEYS`). That the sheets were built
+ * (#54) before either consumer existed is why they were missing.
+ */
+export const GAME_ID = 'onepiece';
+export const GAME_TITLE = 'One Piece';
+
 export const GAME = {
   players: 32,
   boosterRate: 3,
