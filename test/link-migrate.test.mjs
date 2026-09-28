@@ -331,6 +331,41 @@ test('a link from the future is passed through untouched, and the chain never ru
   assert.equal(result.migrated, false, 'the chain never ran, so there is nothing to rewrite');
 });
 
+/**
+ * Purity against a **badly behaved** step (Befund G6). Every fixture above
+ * returns fresh structures, so they prove only that the chain does not
+ * mutate on its own — not that it survives a step that does. A real
+ * migration step is handwritten by the maintainer at a version bump, and the
+ * in-place write (`pins.x = …; return { pins }`) is the obvious thing to
+ * write by accident.
+ *
+ * The chain's defence is that it hands the step a copy and never the
+ * caller's own objects, so the damage is contained to the run: the read
+ * passed in stays as it was, and a second run of the same read still lands
+ * on the same result rather than compounding the first.
+ */
+test('a step that writes pins in place does not reach the caller\'s read result', () => {
+  function mutatesInPlace(state) {
+    state.pins.judgeWinner = (state.pins.judgeWinner ?? 0) + 10;
+    delete state.unknown.legacyBoosterRate;
+    state.unknown.plantedByTheStep = '1';
+    return { ...state, entries: [{ kind: 'setByMigration', key: 'judgeWinner', value: state.pins.judgeWinner }] };
+  }
+
+  const read = decode('?v=1&game=onepiece&type=weekend&judgeWinner=1&legacyBoosterRate=9', GAMES);
+  const before = JSON.parse(JSON.stringify(read));
+
+  const first = migrate(read, [mutatesInPlace]);
+  assert.equal(first.pins.judgeWinner, 11, 'the step did take effect inside the run');
+
+  assert.deepEqual(read, before, 'but the read result handed in is untouched');
+  assert.deepEqual(read.pins, { judgeWinner: 1 }, 'its pins in particular');
+  assert.deepEqual(read.unknown, { legacyBoosterRate: '9' }, 'and its unknown names');
+
+  const second = migrate(read, [mutatesInPlace]);
+  assert.deepEqual(second, first, 'so a second run lands on the same result, not on 21');
+});
+
 test('migrate() does not mutate its input, and the same read migrates the same way twice', () => {
   const read = decode('?v=1&game=onepiece&type=weekend&players=32&legacyBoosterRate=9&judgeWinner=1', GAMES);
   const before = JSON.parse(JSON.stringify(read));
