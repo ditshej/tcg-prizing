@@ -26,7 +26,16 @@ import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
-import { DEPTH_STEP_LABELS, clampToBounds, effectiveValue, reachFor } from './controls.mjs';
+import {
+  DEPTH_STEP_LABELS,
+  clampToBounds,
+  effectiveValue,
+  manualWinnerAfter,
+  reachFor,
+  reservedDisplaysAfter,
+} from './controls.mjs';
+import { anchorVisible, bubblePosition } from './bubble.mjs';
+import { tileGrip, tileView } from './tile.mjs';
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
 function restMessage(lastServedRank, players) {
@@ -94,6 +103,18 @@ export function planApp() {
     fullscreen: false,
 
     /**
+     * Which tile's bubble is open, as the `Rank` it hangs off — session state
+     * like the page and the fullscreen, and in the `SetupLink` as little as
+     * they are (#61, "Session state").
+     *
+     * One number, not a set: there is exactly **one** bubble in this app, with
+     * four inhabitants, and whoever moves in puts the last one out (#61, "The
+     * tiles and their grip"). The app's one *overlay* is something else again
+     * — the `LinkMigration` report — and this is not it.
+     */
+    openTile: null,
+
+    /**
      * Switches the active page. A second tap on the already-active page is a
      * no-op — there is no open/close left to trigger (#63 AC 2) — and any
      * real switch drops fullscreen, because fullscreen is a state of `Plan`
@@ -103,16 +124,19 @@ export function planApp() {
       if (page === this.activePage) return;
       this.activePage = page;
       this.fullscreen = false;
+      this.openTile = null;
     },
 
     /** Grabbed at the tile grid, never from the (hidden, in fullscreen) foot. */
     openFullscreen() {
       this.fullscreen = true;
+      this.openTile = null;
     },
 
     /** The one exit, at the same corner the grip that opened it sits in. */
     closeFullscreen() {
       this.fullscreen = false;
+      this.openTile = null;
     },
 
     get plan() {
@@ -305,6 +329,102 @@ export function planApp() {
       this.setSlider('depth', value);
     },
 
+    /* ── The tile as a grip (#66) ─────────────────────────────────────── */
+
+    /** What a tile shows beyond its numbers: 2×2 from the first `Display` on,
+     *  the settled tone, the `flagged` mark. */
+    tile(row) {
+      return tileView(row, this.plan);
+    },
+
+    /** The open bubble's whole content, or `null` while none is open. A `Rank`
+     *  that has fallen past the player count comes back `null` too, so the
+     *  bubble closes with the tile it hung off instead of standing on nothing. */
+    get grip() {
+      return this.openTile == null ? null : tileGrip(this.openTile, this.stand);
+    },
+
+    /** A grip at the tile opens the bubble, the same grip closes it. */
+    toggleTile(rank) {
+      this.openTile = this.openTile === rank ? null : rank;
+      this.$nextTick(() => this.placeBubble());
+    },
+
+    closeTile() {
+      this.openTile = null;
+    },
+
+    /**
+     * The `DisplayReservation`, written where the sliders' values are written:
+     * into `settings` and into `pins` in the same handling, because the pin is
+     * set by the handling and not by the value (ADR 0006). It counts as **one**
+     * pinned item however many `Rank`s carry a reservation (#61, "The
+     * controls").
+     *
+     * The whole vector is replaced rather than edited in place: `plan.settings`
+     * is a snapshot of what was computed, and a vector edited underneath it
+     * would leave the plan carrying an input it was not computed from.
+     */
+    setDisplays(rank, count) {
+      const next = reservedDisplaysAfter(rank, count, this.stand);
+      if (next === null) return;
+      this.pins.displays = next;
+      this.settings.displays = next;
+      this.$nextTick(() => this.placeBubble());
+    },
+
+    /** The `manual` share of the `WinnerPackAllocation` — the same counters a
+     *  `WinnerRaffle` throw writes into (#10, CONTEXT.md). */
+    setManualWinner(rank, count) {
+      const next = manualWinnerAfter(rank, count, this.stand);
+      if (next === null) return;
+      this.pins.manualWinner = next;
+      this.settings.manualWinner = next;
+      this.$nextTick(() => this.placeBubble());
+    },
+
+    /** The two ± of the open bubble, each moving by one inside its own cap. */
+    stepDisplays(delta) {
+      const grip = this.grip;
+      if (!grip?.displays) return;
+      this.setDisplays(grip.rank, grip.displays.value + delta);
+    },
+
+    stepWinners(delta) {
+      const grip = this.grip;
+      if (!grip) return;
+      this.setManualWinner(grip.rank, grip.winners.manual + delta);
+    },
+
+    /**
+     * The measuring rind of the bubble (#61): it reads three boxes and writes
+     * two CSS lengths, and every sum it does on them is `bubble.mjs`, on the
+     * proven side.
+     *
+     * The frame the anchor is judged against is the **grid**, not the stage:
+     * the grid is what scrolls, so that is where a tile goes out of sight
+     * while the stage stays exactly where it was.
+     */
+    placeBubble() {
+      const stageEl = this.$refs.stage;
+      const popEl = this.$refs.bubble;
+      const gridEl = this.$refs.grid;
+      if (this.openTile == null || !stageEl || !popEl || !gridEl) return;
+      const tileEl = gridEl.querySelector(`.tile[data-rank="${this.openTile}"]`);
+      const anchor = tileEl ? tileEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, gridEl.getBoundingClientRect())) {
+        this.openTile = null;
+        return;
+      }
+      const at = bubblePosition({
+        anchor,
+        bubble: { width: popEl.offsetWidth, height: popEl.offsetHeight },
+        stage: stageEl.getBoundingClientRect(),
+      });
+      popEl.style.left = `${at.left}px`;
+      popEl.style.top = `${at.top}px`;
+    },
+
     init() {
       const fixed = [
         this.$refs.head,
@@ -321,10 +441,16 @@ export function planApp() {
       this.$watch('fullscreen', () => {
         requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed));
       });
+      /* A resized window moves both the anchor and the frame it is judged
+         against, so the bubble is placed again — and closed where the tile it
+         hangs off has left the grid's window in the meantime. */
+      this._onResize = () => this.placeBubble();
+      window.addEventListener('resize', this._onResize);
     },
 
     destroy() {
       if (this._detachMeasuring) this._detachMeasuring();
+      if (this._onResize) window.removeEventListener('resize', this._onResize);
     },
   };
 }

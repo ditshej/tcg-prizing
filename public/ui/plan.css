@@ -80,6 +80,9 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 8px 8px 0;
+  /* The bubble is placed in the stage's own coordinates (#66, `bubble.mjs`),
+     so the stage is what its `left`/`top` are measured from. */
+  position: relative;
 }
 
 .plan-head,
@@ -171,6 +174,10 @@ body {
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(var(--plan-columns, 6), 54px);
+  /* Rows are the same 54 px as the columns, written out because a reserved
+     tile spans two of them and an `auto` row would size itself off the taller
+     tile's own content instead (#66). */
+  grid-auto-rows: 54px;
   gap: 5px;
   justify-content: center;
   align-content: start;
@@ -195,6 +202,8 @@ body {
   cursor: pointer;
 }
 
+/* The tile is a button, because it is the grip (#66): the whole 54px square
+   opens the bubble, and the same square closes it. */
 .tile {
   position: relative;
   width: 54px;
@@ -202,14 +211,75 @@ body {
   border-radius: 6px;
   background: light-dark(#ffffff, #232019);
   border: 1px solid light-dark(#ddd6c8, #37322a);
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
+.tile[aria-expanded='true'] {
+  outline: 2px solid light-dark(#3f7a5e, #5fae87);
+  outline-offset: 1px;
+}
+
 .tile-unserved {
   opacity: 0.45;
+}
+
+/*
+ * A Display is not a corner mark but a share of the surface: the tile takes
+ * four places instead of one. Fixed size from the *first* Display on and
+ * independent of the number — so the count stands as a line inside it, because
+ * two tiles would otherwise be the same size while one carries twice as much
+ * (prototype, `.slot.big`; #61).
+ */
+.tile-reserved {
+  grid-column: span 2;
+  grid-row: span 2;
+  width: auto;
+  height: auto;
+  gap: 5px;
+}
+
+.tile-reserved .tile-booster {
+  font-size: 1.6rem;
+}
+
+.tile-displays {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: light-dark(#8a5cf6, #a98bff);
+}
+
+/* Settled: the Rank falls out of the curve and gets exactly its Displays. The
+   tone says it without needing a word for it. */
+.tile-settled {
+  background: light-dark(#f1ecff, #241f33);
+}
+
+.tile-settled .tile-displays {
+  color: light-dark(#5b3bb0, #c9b6ff);
+}
+
+/*
+ * The tile carries the conflict itself, and that is load-bearing: minimised,
+ * the ConflictNotice is a chip that says *that* — the marked tiles are the
+ * only thing left saying *where*, and without them a minimised conflict would
+ * claim a valid plan (#61, ADR 0002).
+ */
+.tile-flagged {
+  border-color: light-dark(#b3261e, #f2b8b5);
+  box-shadow: inset 0 0 0 2px light-dark(#b3261e, #f2b8b5);
+}
+
+.tile-flagged .tile-rank {
+  opacity: 1;
+  font-weight: 700;
+  color: light-dark(#b3261e, #f2b8b5);
 }
 
 .tile-rank {
@@ -257,6 +327,76 @@ body {
   bottom: 3px;
   right: 3px;
   background: #3f7a5e;
+}
+
+/*
+ * The one bubble (#66). It is **not** an overlay — no backdrop, nothing
+ * disabled behind it, and it covers only what it stands on: the app has
+ * exactly one overlay and that is the LinkMigration report. Its `left`/`top`
+ * come from `bubble.mjs` through `placeBubble()`; nothing here positions it.
+ *
+ * `max-width` is the prototype's, and it was measured: without a ceiling the
+ * bubble ran to the width of its longest sentence and past the column it hangs
+ * off. `min-width` keeps the two counters on one line each.
+ */
+.bubble {
+  position: absolute;
+  z-index: 38;
+  min-width: 190px;
+  max-width: 292px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  box-shadow: 0 6px 18px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.55));
+}
+
+.bubble-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  font-size: 0.75rem;
+}
+
+.bubble-by {
+  opacity: 0.6;
+}
+
+.bubble-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+/* Title left, counter right, both rows on the same edge — otherwise the two
+   tasks read as two bubbles under one another (prototype, `.popctl`). */
+.bubble-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bubble-label {
+  flex: 1;
+  font-size: 0.75rem;
+}
+
+/* The sentence that says what a ± hangs on, and — where one is closed — why.
+   A greyed button without a reason is the thing this line exists against. */
+.bubble-note {
+  margin: 3px 0 8px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  opacity: 0.7;
+}
+
+.bubble-note:last-child {
+  margin-bottom: 0;
 }
 
 .plan-ranktotal {

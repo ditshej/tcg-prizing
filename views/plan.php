@@ -63,17 +63,34 @@
       <span class="legend-item"><span class="mark mark-winner dot" style="position:static"></span> one of either</span>
     </div>
 
+    <!--
+      The tile is the grip (#66): it opens the bubble, and the same grip closes
+      it. So it is a `button` and not a `div` with a click handler — the whole
+      square is the target, a 54px one, and the keyboard reaches it for free.
+
+      `tile(row).classes` carries the four states the tile says as form rather
+      than as words: 2×2 from the first Display on, the settled tone, the
+      weakened unserved tile, and the `flagged` mark — the last of which is
+      load-bearing, because a minimised ConflictNotice would otherwise leave a
+      conflicting plan looking valid.
+    -->
     <div class="plan-grid-wrap">
-      <div class="plan-grid" x-ref="grid">
+      <div class="plan-grid" x-ref="grid" @scroll="placeBubble()">
         <template x-for="row in tiles" :key="row.rank">
-          <div class="tile" :class="{ 'tile-unserved': !row.served }">
+          <button type="button" class="tile" :class="tile(row).classes" :data-rank="row.rank"
+                  :aria-expanded="openTile === row.rank"
+                  :aria-label="`Rank ${row.rank}`"
+                  @click="toggleTile(row.rank)">
             <span class="tile-rank" x-text="row.rank"></span>
             <span class="tile-booster" x-text="row.booster > 0 ? row.booster : '—'"></span>
+            <template x-if="tile(row).displayLabel">
+              <span class="tile-displays" x-text="tile(row).displayLabel"></span>
+            </template>
             <template x-if="row.winners === 1"><span class="mark mark-winner dot"></span></template>
             <template x-if="row.winners > 1"><span class="mark mark-winner circle" x-text="row.winners"></span></template>
             <template x-if="row.packs === 1"><span class="mark mark-pack dot"></span></template>
             <template x-if="row.packs > 1"><span class="mark mark-pack circle" x-text="row.packs"></span></template>
-          </div>
+          </button>
         </template>
       </div>
 
@@ -100,6 +117,67 @@
     <p class="plan-ranktotal" x-ref="ranktotal" x-show="!fullscreen"
        x-text="`${rankTotalBooster} boosters ${rankTotalLabel}`"></p>
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
+
+    <!--
+      The one bubble of the app, in its first inhabitant (#66). It is **no
+      overlay** — the app has exactly one of those and it is the LinkMigration
+      report — so it hangs off the tile, flips upward where there is no room
+      below, stays inside the stage, and closes as soon as its anchor has left
+      the grid's window. `placeBubble()` in `plan.mjs` is the measuring, the
+      arithmetic is `bubble.mjs`.
+
+      Both counters write into the same fields the rest of the app writes: the
+      DisplayReservation and the `manual` share of the WinnerPackAllocation.
+      What `ranked` handed out is shown and not touched — its minus is closed,
+      and the sentence under the counter says why.
+    -->
+    <div class="bubble" x-ref="bubble" x-show="grip" x-cloak>
+      <template x-if="grip">
+        <div>
+          <div class="bubble-head">
+            <strong x-text="`Rank ${grip.rank}`"></strong>
+            <span class="bubble-by">by hand</span>
+            <button type="button" class="bubble-close" aria-label="Close" @click="closeTile()">✕</button>
+          </div>
+
+          <div class="bubble-row">
+            <span class="bubble-label">Winner packs</span>
+            <div class="counter">
+              <button type="button" :disabled="!grip.winners.canRemove"
+                      :title="grip.winners.removeReason" aria-label="One less"
+                      @click="stepWinners(-1)">−</button>
+              <span class="counter-value" x-text="grip.winners.value"></span>
+              <button type="button" :disabled="!grip.winners.canAdd"
+                      :title="grip.winners.addReason" aria-label="One more"
+                      @click="stepWinners(1)">+</button>
+            </div>
+          </div>
+          <p class="bubble-note" x-text="grip.winners.note"></p>
+
+          <template x-if="grip.displays">
+            <div>
+              <div class="bubble-row">
+                <span class="bubble-label">Displays</span>
+                <div class="counter">
+                  <button type="button" :disabled="!grip.displays.canRemove"
+                          :title="grip.displays.removeReason" aria-label="One less"
+                          @click="stepDisplays(-1)">−</button>
+                  <span class="counter-value" x-text="grip.displays.value"></span>
+                  <button type="button" :disabled="!grip.displays.canAdd"
+                          :title="grip.displays.addReason" aria-label="One more"
+                          @click="stepDisplays(1)">+</button>
+                </div>
+              </div>
+              <p class="bubble-note" x-text="grip.displays.note"></p>
+            </div>
+          </template>
+
+          <template x-if="!grip.displays">
+            <p class="bubble-note" x-text="grip.wayIn"></p>
+          </template>
+        </div>
+      </template>
+    </div>
   </section>
 
   <section class="plan-controls" x-show="!fullscreen">
