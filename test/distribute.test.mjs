@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { resolveSettings } from '../public/core/defaults.mjs';
 import { derivePool, distribute, unfit } from '../public/core/distribute.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
@@ -758,4 +759,100 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
   assert.equal(clean.orphanedReservation, null);
   assert.equal(clean.unclaimedRemainder, null);
   assert.equal(unfit(clean), false);
+});
+
+/**
+ * ADR 0009: the plan carries its slider stands, as **one** field and
+ * **untrimmed**. `displayVector` is not that field — it is cut to the depth,
+ * and it is exactly the Rank the cut removes that a way out has to clear.
+ */
+test('the plan carries its slider stands untrimmed, where displayVector is cut to the depth', () => {
+  const input = settings({ players: 5, boosterRate: 1, rankFloor: 2, displaySize: 1, depth: 2, displays: [2, 1, 1] });
+  const plan = distribute(input);
+  assert.deepEqual(plan.displayVector, [2, 1], 'displayVector stops at the depth');
+  assert.deepEqual(plan.settings.displays, [2, 1, 1], 'plan.settings keeps the third Rank');
+  assert.deepEqual(plan.settings, input, 'every stand of the input is carried, none of them changed');
+});
+
+test('the carried stands recompute the plan they came from, and are a snapshot rather than the caller object', () => {
+  const input = settings({ players: 8, boosterRate: 3, displays: [1] });
+  const plan = distribute(input);
+  assert.deepEqual(distribute(plan.settings), plan, 'the plan is reproducible from what it carries');
+  assert.notEqual(plan.settings, input, 'the plan holds a copy, so a later edit of the input cannot contradict it');
+  input.displays.push(1);
+  input.players = 48;
+  assert.deepEqual(plan.settings.displays, [1]);
+  assert.equal(plan.settings.players, 8);
+});
+
+/**
+ * The addendum (#86) to ADR 0009: beside the resolved stand the plan carries
+ * the sliders that were set **by hand**, so the copy button of #72 and the
+ * address line of #89 take what the plan states as set instead of knowing a
+ * rule. This block is the shape those two build against.
+ */
+test('plan.pinned holds the hand-set sliders alone, key by key, and nothing that was inherited', () => {
+  const pins = { players: 48, curve: 'flat', displays: [2, 1] };
+  const resolved = resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins });
+  const plan = distribute(resolved, pins);
+
+  assert.deepEqual(plan.pinned, pins, 'exactly the pins, key for key');
+  assert.equal(plan.pinned.rankFloor, undefined, 'an inherited slider is absent, and absent is the information');
+  // The agreement the caller gets for free: the resolved stand was built from
+  // these very pins, so the two can never state different values.
+  for (const [key, value] of Object.entries(plan.pinned)) assert.deepEqual(plan.settings[key], value, key);
+});
+
+/**
+ * Finding G3, as a measurement rather than a warning: `encode(plan.settings)`
+ * is the line that must never be written. The resolved stand names *every*
+ * slider, so it would turn these three pins into nineteen claims — and one of
+ * the nineteen, `depthStep`, has no key in the wire register at all and would
+ * go missing without a word.
+ */
+test('the resolved stand names every slider while plan.pinned names only the hand-set ones', () => {
+  const pins = { players: 48, curve: 'flat', displays: [2, 1] };
+  const plan = distribute(resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins }), pins);
+
+  assert.equal(Object.keys(plan.pinned).length, 3);
+  assert.ok(
+    Object.keys(plan.settings).length > Object.keys(plan.pinned).length,
+    'the stand is the wider of the two, which is why it is the wrong one to encode',
+  );
+  assert.ok('depthStep' in plan.settings, 'the stand carries depthStep');
+  assert.equal('depthStep' in plan.pinned, false, 'the pins do not, and the wire register has no key for it');
+});
+
+test('a plan computed without pins states that nothing was set by hand, rather than stating nothing', () => {
+  const plan = distribute(settings({ players: 8, boosterRate: 3 }));
+  assert.deepEqual(plan.pinned, {}, 'the freshly opened app: base plus no deviations');
+  assert.deepEqual(distribute(settings({ players: 8, boosterRate: 3 }), undefined).pinned, {});
+  assert.deepEqual(distribute(settings({ players: 8, boosterRate: 3 }), null).pinned, {});
+});
+
+test('the pins change no number in the plan — provenance is carried, not computed with', () => {
+  const input = settings({ players: 8, boosterRate: 3, rankFloor: 1, displays: [1] });
+  const bare = distribute(input);
+  const pinned = distribute(input, { players: 8, rankFloor: 1 });
+  assert.deepEqual({ ...pinned, pinned: undefined }, { ...bare, pinned: undefined });
+});
+
+test('a pin is kept even where it matches the value it would have inherited (ADR 0006)', () => {
+  const type = TOURNAMENT_TYPES[0];
+  const inherited = resolveSettings({ game: GAME, type, pins: {} });
+  const pins = { rankFloor: inherited.rankFloor };
+  const plan = distribute(resolveSettings({ game: GAME, type, pins }), pins);
+  assert.deepEqual(plan.pinned, pins, 'a pin is a stored state, not a comparison against the DefaultSet');
+});
+
+test('the pins are a snapshot too, and plan plus pins recompute the plan', () => {
+  const input = settings({ players: 8, boosterRate: 3, displays: [1] });
+  const pins = { players: 8, displays: [1] };
+  const plan = distribute(input, pins);
+
+  assert.deepEqual(distribute(plan.settings, plan.pinned), plan, 'a plan is reproducible from both its fields');
+  assert.notEqual(plan.pinned, pins);
+  pins.displays.push(1);
+  pins.curve = 'flat';
+  assert.deepEqual(plan.pinned, { players: 8, displays: [1] });
 });
