@@ -24,12 +24,28 @@ function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
   return { settings, plan: distribute(settings) };
 }
 
+/**
+ * What a resolved stand carries beyond the nineteen Settings fields of #46:
+ * the Game sheet's own `id`. `resolveSettings()` drops a TournamentType's `id`
+ * and `title` but spreads the Game sheet whole, so the name the sheet carries
+ * since #64's "Entscheid K3" rides along. It is the price that decision names
+ * outright, and it is inert — nothing in `core/` reads it — but a test that
+ * counts the fields has to say so, or the next added field hides behind it.
+ */
+const NOT_A_SETTINGS_FIELD = ['id'];
+
 test('the sheet carries seventeen controls, and they are exactly the Settings fields minus the two set at the tile', () => {
   assert.equal(SHEET_KEYS.length, 17);
   // The nineteen Settings fields of #46 (`## Input: Settings`), read off a
   // resolved stand rather than retyped, minus `displays` and `manualWinner`:
   // both name a Rank and are set at the tile, not on a slider (#66).
-  const settingsFields = Object.keys(stand().settings).sort();
+  const resolved = Object.keys(stand().settings).sort();
+  assert.deepEqual(
+    resolved.filter((k) => NOT_A_SETTINGS_FIELD.includes(k)),
+    NOT_A_SETTINGS_FIELD,
+    'the Game sheet name rides along, and nothing else does',
+  );
+  const settingsFields = resolved.filter((k) => !NOT_A_SETTINGS_FIELD.includes(k));
   assert.equal(settingsFields.length, 19);
   const expected = settingsFields.filter((k) => k !== 'displays' && k !== 'manualWinner');
   assert.deepEqual([...SHEET_KEYS].sort(), expected);

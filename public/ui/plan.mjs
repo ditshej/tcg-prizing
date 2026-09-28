@@ -23,7 +23,7 @@
 import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
-import { GAME, GAME_ID, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
+import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
 import { DEPTH_STEP_LABELS, clampToBounds, effectiveValue, reachFor } from './controls.mjs';
@@ -42,10 +42,22 @@ export function planApp() {
      * the Game and the TournamentType, never a list position — the same two
      * a SetupLink carries as its base (`link/keys.mjs`, `BASE_KEYS`).
      */
-    gameId: GAME_ID,
+    gameId: GAME.id,
     typeId: TOURNAMENT_TYPES[0].id,
-    games: [{ id: GAME_ID, title: GAME_TITLE }],
-    types: TOURNAMENT_TYPES.map(({ id, title }) => ({ id, title })),
+
+    /**
+     * The catalogue, and it **falls out of the sheets**: Games in list order,
+     * each `{ id, types: [{ id }] }`, types in list order — the form the read
+     * path judges a link's base against (`link/decode.mjs`, `catchBase`), with
+     * the screen titles riding along for the two chip rows here. The order is
+     * meaningful and is never a surface sort (ADR 0003).
+     *
+     * One list, not two: when #89 hands the catalogue to `decode()`, the list
+     * the buttons are drawn from and the list a link is judged against have to
+     * be the same object, or a Game the screen offers could be one the link
+     * layer replaces without a word.
+     */
+    games: [{ id: GAME.id, title: GAME_TITLE, types: TOURNAMENT_TYPES }],
 
     /**
      * What the CommunityLead set by hand — the third level over Game and
@@ -199,10 +211,27 @@ export function planApp() {
       this.resolve();
     },
 
-    get currentType() {
-      return TOURNAMENT_TYPES.find((type) => type.id === this.typeId) ?? TOURNAMENT_TYPES[0];
+    /** The chosen Game's catalogue entry, found by name and never by position. */
+    get currentGame() {
+      return this.games.find((entry) => entry.id === this.gameId) ?? this.games[0];
     },
 
+    /** The type chips: a Game's type list is its own, so it is read off the
+     *  chosen Game rather than off the module (#51, `catchBase`). */
+    get types() {
+      return this.currentGame.types;
+    },
+
+    /** Absent or unknown, the first of the list is the choice (ADR 0003). */
+    get currentType() {
+      return this.types.find((type) => type.id === this.typeId) ?? this.types[0];
+    },
+
+    /**
+     * The Game's Settings sheet. The catalogue carries names, not sheets — a
+     * second Game will bring its own `GAME` and this becomes a lookup; with
+     * one Game set up there is nothing yet to look up.
+     */
     resolve() {
       this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
     },
