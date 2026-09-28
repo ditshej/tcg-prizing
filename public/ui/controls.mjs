@@ -108,24 +108,39 @@ const FROM_PLAN = {
 };
 
 /**
- * The guards of #46 (`## Slider ranges`), looked up there and not recomputed
- * from what the core happens to read today (`AGENTS.md`). Two classes:
+ * The ends of #46 (`## Slider ranges`), looked up there and not recomputed
+ * from what the core happens to read today (`AGENTS.md`). The spec makes two
+ * classes and **only the first is domain**, which is the distinction this
+ * table used to blur:
  *
- * - Fixed guards, so a slider has two ends and nothing more is claimed by
- *   them: `players` 2…128, `boosterRate` 0…12, `participationPack` 0…4,
+ * - **Search ranges** — the sliders `suggestions()` sweeps. They enter a
+ *   statement about the result, so their ends are decided and may not drift:
+ *   `curve` the seven steps, `rankFloor` 0…8, `depth` 1…player count,
+ *   `displays[i]` 0…4, `participationBooster` 0…`boosterRate`. A way out the
+ *   core offers past one of these ends would be an offer the control cannot
+ *   take, which is why `test/ui-controls.test.mjs` holds the two against each
+ *   other by running the search rather than by copying its numbers.
+ * - **Stops** — everything else. Guards, so a slider has two ends, and #46
+ *   says outright they may rise at any time without a decision falling:
+ *   `players` 2…128, `boosterRate` 0…12, `participationPack` 0…4,
  *   `tournamentPacks` 0…512, `winnerPacks` 0…64, `displaySize` 1…60,
- *   `envelopeSize` 1…64, `envelopeYield` 1…8, `rankFloor` 0…8.
- * - Ends that are a quantity of the stand: `depth` and `ranked` stop at the
- *   player count (no slider addresses a Rank beyond it — CONTEXT.md), `ranked`
- *   additionally at the winner packs the ranks hold, and
- *   `participationBooster` at the rate it is taken off.
+ *   `envelopeSize` 1…64, `envelopeYield` 1…8. Eight, and `rankFloor` is not
+ *   among them: its 0…8 is a search range and carries the weight of one.
  *
- * `judgeBooster` and `judgeWinner` are the pair #46 leaves without a guard —
+ * `rankFloor` sits in this constant all the same, because 0…8 is a pair of
+ * numbers either way and a second lookup table would not make it a different
+ * one. `depth` and `participationBooster` cannot, their ends being quantities
+ * of the stand.
+ *
+ * `judgeBooster` and `judgeWinner` are the pair #46 leaves without either —
  * "ihre Obergrenze ist der jeweilige Rest, und das ist keine Zahl, sondern die
  * Summenregel." A range input still needs two ends, so the end drawn here is
  * that rest at its widest: the whole respective `Pool`. It prevents nothing
  * ADR 0002 wants reported — handing the judge everything leaves the ranks
  * empty, and an empty plan is a plan the app shows and explains.
+ *
+ * `ranked` is in neither class: #46 does not range it at all, and its end —
+ * the winner packs the ranks hold, capped at the player count — is #61's.
  */
 const FIXED_BOUNDS = {
   players: { min: 2, max: 128 },

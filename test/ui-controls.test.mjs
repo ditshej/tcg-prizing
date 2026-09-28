@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
+import { suggestions } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { KEYS } from '../public/link/keys.mjs';
 import {
@@ -95,28 +96,141 @@ test('every depth step the core knows has a screen word, and no word stands for 
   assert.deepEqual(Object.keys(DEPTH_STEP_LABELS).sort(), [...DEPTH_STEPS].sort());
 });
 
-test('the guards are the ones #46 decided, read off that list and not off the prototype', () => {
+/**
+ * #46 `## Slider ranges`, transcribed — and the passage is quoted here so a
+ * reader can hold the table against the ticket without leaving the file.
+ *
+ * That quote is the whole point of this block. The first version of these
+ * tests copied its numbers out of `controls.mjs` and then measured
+ * `controls.mjs` against them, so the table and its own justification arrived
+ * together and the pair was green by construction — the #54 error class
+ * (`AGENTS.md`), raised as finding G2 of run 8. The numbers below were read
+ * back off #46 afterwards; all nine agree, and that is now a statement a
+ * reader can check rather than one this file makes about itself.
+ *
+ * > **Suchbereiche** — die Regler, die `suggestions()` durchläuft. Nur sie
+ * > gehen in eine Aussage über das Ergebnis ein.
+ * > `curve` die sieben Stufen · `rankFloor` 0 … 8 · `depth` 1 … Spielerzahl ·
+ * > `displays[i]` 0 … 4 · `participationBooster` 0 … `boosterRate`
+ * >
+ * > **Anschläge** — alles andere. Sie sind Guards, damit ein Regler zwei Enden
+ * > hat, und dürfen jederzeit steigen, ohne dass ein Entscheid fällt:
+ * > `players` 2…128, `boosterRate` 0…12, `participationPack` 0…4,
+ * > `tournamentPacks` 0…512, `winnerPacks` 0…64, `displaySize` 1…60,
+ * > `envelopeSize` 1…64, `envelopeYield` 1…8.
+ * >
+ * > `judgeBooster` und `judgeWinner` bekommen **keinen** Anschlag: ihre
+ * > Obergrenze ist der jeweilige Rest, und das ist keine Zahl, sondern die
+ * > Summenregel.
+ */
+const SPEC_STOPS = {
+  players: { min: 2, max: 128 },
+  boosterRate: { min: 0, max: 12 },
+  participationPack: { min: 0, max: 4 },
+  tournamentPacks: { min: 0, max: 512 },
+  winnerPacks: { min: 0, max: 64 },
+  displaySize: { min: 1, max: 60 },
+  envelopeSize: { min: 1, max: 64 },
+  envelopeYield: { min: 1, max: 8 },
+};
+
+/**
+ * The search ranges the sheet draws, as the spec writes them: two of the three
+ * are a *quantity of the stand* and not a number, so they are functions here
+ * and a stand that changes has to move them. `curve` and `displays[i]` are
+ * ranges too but no numeric control on this sheet — `curve` is a step list,
+ * `displays` is set at the tile (#66).
+ */
+const SPEC_SEARCH_RANGES = {
+  rankFloor: () => ({ min: 0, max: 8 }),
+  depth: ({ plan }) => ({ min: 1, max: plan.players }),
+  participationBooster: ({ settings }) => ({ min: 0, max: Number(settings.boosterRate) }),
+};
+
+/** The pair #46 leaves without an end of its own. */
+const SPEC_NO_STOP = ['judgeBooster', 'judgeWinner'];
+
+test('the stops are the eight #46 lists, at the values it lists them at', () => {
   const s = stand();
-  assert.deepEqual(boundsFor('players', s), { min: 2, max: 128 });
-  assert.deepEqual(boundsFor('boosterRate', s), { min: 0, max: 12 });
-  assert.deepEqual(boundsFor('participationPack', s), { min: 0, max: 4 });
-  assert.deepEqual(boundsFor('tournamentPacks', s), { min: 0, max: 512 });
-  assert.deepEqual(boundsFor('winnerPacks', s), { min: 0, max: 64 });
-  assert.deepEqual(boundsFor('displaySize', s), { min: 1, max: 60 });
-  assert.deepEqual(boundsFor('envelopeSize', s), { min: 1, max: 64 });
-  assert.deepEqual(boundsFor('envelopeYield', s), { min: 1, max: 8 });
-  assert.deepEqual(boundsFor('rankFloor', s), { min: 0, max: 8 });
+  for (const [key, range] of Object.entries(SPEC_STOPS)) {
+    assert.deepEqual(boundsFor(key, s), range, key);
+  }
+});
+
+test('a stop does not move with the stand — that is what makes it a stop and not a search range', () => {
+  const wide = stand({ players: 128, boosterRate: 12 });
+  const narrow = stand({ players: 2, boosterRate: 0 });
+  for (const key of Object.keys(SPEC_STOPS)) {
+    assert.deepEqual(boundsFor(key, wide), boundsFor(key, narrow), key);
+  }
+});
+
+test('the search ranges are the spec\'s, at every stand and not only at the sheet\'s own', () => {
+  for (const pins of [{}, { players: 12 }, { players: 128, boosterRate: 12 }, { boosterRate: 0 }]) {
+    const s = stand(pins);
+    for (const [key, range] of Object.entries(SPEC_SEARCH_RANGES)) {
+      assert.deepEqual(boundsFor(key, s), range(s), `${key} at ${JSON.stringify(pins)}`);
+    }
+  }
+});
+
+/**
+ * The one check that measures instead of transcribing: **every way out the
+ * core offers has to be reachable at the control that carries it.** The values
+ * come out of `suggestions()` at a stand that really is unfit — the measured
+ * overtake of #46 `## Tests`, `Weekend` 48 with `d` = (1) — so nothing here is
+ * a number this file chose. A cap narrower than the search would turn an
+ * offered way out into one the slider refuses, and neither side of that could
+ * see it alone.
+ */
+const UNFIT_STANDS = [
+  stand({ players: 48, displays: [1] }, TOURNAMENT_TYPES[1]),
+  stand({ players: 64, rankFloor: 8, displays: [1] }, TOURNAMENT_TYPES[1]),
+  stand({ players: 96, displays: [1] }, TOURNAMENT_TYPES[1]),
+  stand({ players: 32, boosterRate: 1, rankFloor: 8 }, TOURNAMENT_TYPES[0]),
+];
+
+test('the stands the reachability check runs on really are unfit, and between them they touch every search range', () => {
+  const offered = new Set();
+  for (const s of UNFIT_STANDS) {
+    const out = suggestions(s.settings);
+    assert.ok(out.length > 0, 'a stand with no way out tests nothing');
+    for (const { key } of out) offered.add(key);
+  }
+  // Every slider #46 names as a search range, so no range is checked vacuously.
+  assert.deepEqual(
+    [...offered].sort(),
+    ['curve', 'depth', 'displays', 'participationBooster', 'rankFloor'],
+  );
+});
+
+test('every way out the core offers is a value its control can actually be set to', () => {
+  for (const s of UNFIT_STANDS) {
+    for (const { key, value } of suggestions(s.settings)) {
+      // `displays` is no slider on this sheet: it is set at the tile (#66).
+      if (key === 'displays') continue;
+      assert.ok(SHEET_KEYS.includes(key), `${key} is offered, so it must stand on the sheet`);
+      assert.equal(clampToBounds(key, value, s), value, `${key} → ${value} must be reachable`);
+    }
+  }
+});
+
+test('the two sliders #46 leaves without a stop take the whole pool, and it moves with the stand', () => {
+  const lean = stand({ boosterRate: 1 });
+  const rich = stand({ boosterRate: 12 });
+  for (const key of SPEC_NO_STOP) {
+    assert.ok(!(key in SPEC_STOPS), `${key} must carry no stop of its own`);
+  }
+  assert.ok(
+    boundsFor('judgeBooster', rich).max > boundsFor('judgeBooster', lean).max,
+    'the end is the rest, so a bigger pool is a bigger end',
+  );
 });
 
 test('the player count caps every slider that addresses a Rank (CONTEXT.md, RankPoolDepth)', () => {
   const s = stand({ players: 12 });
   assert.deepEqual(boundsFor('depth', s), { min: 1, max: 12 });
   assert.equal(boundsFor('ranked', s).max <= 12, true);
-});
-
-test('participationBooster stops at the rate it is taken from (#46, search ranges)', () => {
-  assert.equal(boundsFor('participationBooster', stand({ boosterRate: 3 })).max, 3);
-  assert.equal(boundsFor('participationBooster', stand({ boosterRate: 9 })).max, 9);
 });
 
 test('ranked never offers more winner packs than the ranks hold — the overhang is reached by a second slider sinking, not here (#61)', () => {
