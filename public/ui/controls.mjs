@@ -302,7 +302,12 @@ export function reservedDisplaysAfter(rank, count, { settings, plan }) {
   // Outward only: a reservation the RankPool cannot carry is not offered
   // (maintainer decision on #66, 2026-09-27). Coming back down is never
   // refused — see the asymmetry above.
-  if (next > current && distribute({ ...settings, displays: after }).conflict) return null;
+  // The probe is handed the pins the stand already carries, so that a probe
+  // plan is the same shape as the one on screen (addendum (#86) to ADR 0009).
+  // It changes nothing about `conflict` — `pinned` is carried, never computed
+  // from — but a call that drops it is the habit that produced the empty
+  // `plan.pinned` at the surface (maintainer decision on #66, 2026-09-28).
+  if (next > current && distribute({ ...settings, displays: after }, plan.pinned).conflict) return null;
   return after;
 }
 

@@ -139,8 +139,18 @@ export function planApp() {
       this.openTile = null;
     },
 
+    /**
+     * The plan, built from the resolved stand **and** the pins beside it. The
+     * second argument changes no number (`distribute()` reads it only to carry
+     * it on), and it is the whole point: the addendum (#86) to ADR 0009 puts
+     * the hand-set sliders on the plan separately, so that whoever builds a
+     * `SetupLink` from it takes the deviations and never the resolved stand.
+     * Handed one argument, `plan.pinned` is `{}` at the surface however many
+     * sliders the CommunityLead has moved — true of the object, false of the
+     * app (maintainer decision on #66, 2026-09-28).
+     */
     get plan() {
-      return distribute(this.settings);
+      return distribute(this.settings, this.pins);
     },
 
     /** The last Rank that gets anything at all — booster, packs or winners. */
