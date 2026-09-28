@@ -46,6 +46,12 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  *   slider is what is gone and what has to be set again — "limb 2 was
  *   negative" names something that is not a slider and leaves the loss unsaid.
  *
+ * A **negative** number is unreadable for the same reason, on every numeric
+ * key alike (Lauf 8, "Entscheid K2"): no control can produce one, so it can
+ * only come from a bent link — and `readVector` had thrown one out since #49
+ * while the single slider took it. One rule instead of two that differed
+ * without anyone deciding so.
+ *
  * No cap is applied: a value out of range is taken as it stands (#47,
  * "Unreadable input and the fallback net"), because a link value is a pinned
  * value like any other (ADR 0006). It lost nothing, so it is **not** an entry.
@@ -215,9 +221,27 @@ function readValue(type, raw) {
   }
 }
 
-/** A whole number, written out — no exponents, no fractions, no `NaN`. */
+/**
+ * A whole number, written out — no exponents, no fractions, no `NaN`, and
+ * **no minus sign**. A negative slider value cannot be produced by any
+ * control; it only ever comes out of a hand-bent link, which is precisely the
+ * case the fallback net exists for. `readVector` has rejected a negative limb
+ * since #49 ("Entscheid K4"); the single slider never got the same rule, so
+ * `rankFloor=-8` was pinned as it stood. One rule for both forms, decided at
+ * Lauf 8, "Entscheid K2": the slider is unreadable and falls into the report
+ * with the same entry kind as a bent vector.
+ *
+ * This is not a cap and does not become one: a value of the right type past
+ * every stop still stands (ADR 0006). The line is between a number we can read
+ * and a sign no slider can ever produce.
+ *
+ * **`assertSumRule` is expressly not pulled along** (#58): it scans every
+ * numeric sheet of the plan for negatives, and the reason it may stay sharp is
+ * that no negative number reaches the plan in the first place — not that the
+ * plan tolerates one. See Lauf 8, "Entscheid K2".
+ */
 function readInt(raw) {
-  return /^-?\d+$/.test(raw) ? Number(raw) : UNREADABLE;
+  return /^\d+$/.test(raw) ? Number(raw) : UNREADABLE;
 }
 
 /**
@@ -229,12 +253,16 @@ function readInt(raw) {
  * **One bent limb discards the whole vector**, it does not shrink to the good
  * limbs: `displays=2.-1` reads as no vector at all, not as `(2)`. A vector is
  * one slider's one value, and a truncated one would be a reservation nobody
- * made. Decided at #49, "Entscheid K4"; whether #51's report keeps the whole
- * loss or narrows it to the limb is #51's to say.
+ * made. Decided at #49, "Entscheid K4"; the report keeps that whole loss and
+ * names the slider, not the limb (#51).
+ *
+ * The negative limb is caught by `readInt` itself since Lauf 8, "Entscheid
+ * K2" — this function used to hold the only copy of that rule and now shares
+ * it with every other numeric key.
  */
 function readVector(raw) {
   const parts = raw.split('.').map(readInt);
-  if (parts.some((part) => part === UNREADABLE || part < 0)) return UNREADABLE;
+  if (parts.some((part) => part === UNREADABLE)) return UNREADABLE;
   return parts;
 }
 

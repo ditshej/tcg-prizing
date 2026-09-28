@@ -179,9 +179,24 @@ test('a whole-loss value is one entry naming the slider, not one per bent limb',
  * loss.
  */
 test('a value of the right type but past every stop is taken, and the report stays silent', () => {
-  const read = decode('?v=1&game=onepiece&type=weekend&depth=30&players=100000&rankFloor=-8', GAMES);
-  assert.deepEqual(read.pins, { players: 100000, rankFloor: -8, depth: 30 });
+  const read = decode('?v=1&game=onepiece&type=weekend&depth=30&players=100000', GAMES);
+  assert.deepEqual(read.pins, { players: 100000, depth: 30 });
   assert.equal(read.report, null);
+});
+
+/**
+ * A minus sign is not a value past a stop, it is a value no control can
+ * produce — so it is unreadable, and on every numeric key alike: `readVector`
+ * had thrown out a negative limb since #49 while the single slider kept it
+ * (Lauf 8, "Entscheid K2"). Same rule, same error class, same entry kind.
+ */
+test('a negative number is unreadable on a single slider too, exactly as in a vector', () => {
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=-8', GAMES);
+  assert.deepEqual(read.pins, { players: 32 }, 'the readable half of the link still opens');
+  assert.deepEqual(read.report.entries, [{ kind: 'unreadableValue', key: 'rankFloor' }]);
+
+  const limb = decode('?v=1&game=onepiece&type=weekend&displays=2.-1', GAMES);
+  assert.deepEqual(limb.report.entries, [{ kind: 'unreadableValue', key: 'displays' }]);
 });
 
 /**
