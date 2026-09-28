@@ -95,10 +95,42 @@ export function tileGrip(rank, stand) {
     flagged: plan.flagged.includes(r),
     winners: winnerCounter(r, row, stand),
     displays: row.served ? displayCounter(r, row, settings, stand) : null,
-    wayIn: row.served
-      ? null
-      : `Rank ${r} is not served — raise Served ranks before reserving a display here.`,
+    wayIn: row.served ? null : wayInSentence(r, plan),
   };
+}
+
+/**
+ * The way in from an unserved `Rank`, and it has two cases because the `Rank`
+ * has two states. An unserved `Rank` with nothing on it is one nobody has
+ * promised anything — "before reserving a display here" is true of it. An
+ * unserved `Rank` that **already holds a reservation** is the orphaned one the
+ * core reports as `orphanedReservation`, and there the same sentence says the
+ * opposite of the truth: it has reserved, and raising `Served ranks` is what
+ * would make the promise keepable rather than what would let it be made.
+ *
+ * Read off `plan.orphanedReservation` rather than re-derived from the vector:
+ * the core already decides which `Rank`s are orphaned, and a second copy of
+ * that rule here is a second thing to keep in step. `row.displays` is no help
+ * — it is 0 past the `RankPoolDepth` by construction, which is exactly the
+ * reading that made the sentence wrong.
+ *
+ * Making the orphaned reservation visible *elsewhere* is not this file's job:
+ * the grid's foot stays as it is and the way out is the `ConflictNotice`
+ * (#68, maintainer decision 2026-09-28).
+ */
+function wayInSentence(rank, plan) {
+  const held = orphanedDisplaysAt(rank, plan);
+  return held > 0
+    ? `Rank ${rank} is not served — raise Served ranks to reach the ${displayCount(held)} reserved here.`
+    : `Rank ${rank} is not served — raise Served ranks before reserving a display here.`;
+}
+
+/** How many `Display`s an unserved `Rank` holds, or 0 — the count the core's
+ *  `orphanedReservation` names the `Rank` for, read out of the stored vector. */
+function orphanedDisplaysAt(rank, plan) {
+  if (!plan.orphanedReservation?.ranks.includes(rank)) return 0;
+  const vector = Array.isArray(plan.settings?.displays) ? plan.settings.displays : [];
+  return Math.max(0, Math.trunc(Number(vector[rank - 1])) || 0);
 }
 
 /**

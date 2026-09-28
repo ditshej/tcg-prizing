@@ -142,6 +142,28 @@ test('on an unserved Rank the bubble offers no reservation but names the way the
   assert.equal(grip.winners.canAdd, true);
 });
 
+test('an unserved Rank that already reserved is not told it has not', () => {
+  // Served ranks pulled down under a reservation: rank 4 keeps its Display and
+  // falls out of the depth, which is the core's `orphanedReservation`.
+  const s = stand({ displays: [1, 1, 1, 1], depth: 2 });
+  const row = s.plan.rows[3];
+  assert.equal(row.served, false, 'rank 4 is past the depth');
+  assert.deepEqual(s.plan.orphanedReservation.ranks, [3, 4]);
+
+  const grip = tileGrip(4, s);
+  assert.equal(grip.displays, null);
+  assert.ok(grip.wayIn.includes('Served ranks'), 'the way in is still named');
+  assert.ok(
+    !grip.wayIn.includes('before reserving a display here'),
+    'it has reserved — saying otherwise is the opposite of the truth',
+  );
+  assert.ok(grip.wayIn.includes('1 display reserved here'));
+
+  // An unserved Rank with nothing on it keeps the original sentence.
+  const bare = tileGrip(s.plan.players, s);
+  assert.ok(bare.wayIn.includes('before reserving a display here'));
+});
+
 test('a reservation left standing over a sunk cap keeps its way back at the tile (ADR 0006)', () => {
   const s = stand({ players: 8, displays: [1] });
   const grip = tileGrip(1, s);
