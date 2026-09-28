@@ -66,3 +66,26 @@ moment either gets a commit.
 - **Rebase the prototype branch too, even though it never merges.** Otherwise
   its fork point freezes, it carries frozen copies of the feature commits, and
   a `grep` inside its worktree silently answers questions from a stale tree.
+
+### Once the planning is done, drop the worktree instead of rebasing
+
+The rebase rule above is for the **planning phase**, when a prototype is being
+drawn and a feature branch is being built at the same time and both are open in
+worktrees. Once a map's surfaces are decided, the prototype files stop being
+touched, and rebasing a branch nobody commits to buys nothing — it only rewrites
+SHAs that closed-ticket comments may point at.
+
+**So: remove the worktree, keep the branch.** The branch is the primary source
+and stays exactly as it is; what goes away is the checked-out copy of the *rest*
+of the tree — `public/`, `CONTEXT.md`, `docs/` — which is what actually goes
+stale and what a `grep` wanders into. Fetch the prototype when you need to look
+at it:
+
+```
+git worktree add --detach <tmp> prototype/rank-distribution   # look
+git worktree remove <tmp>                                     # done
+```
+
+Decided 2026-09-28, after run 8, with `prototype/rank-distribution` 114 commits
+behind `main` and its files untouched since the planning phase. The rebase rule
+stands for the next map while its prototype is still being drawn.
