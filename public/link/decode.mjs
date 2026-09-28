@@ -259,9 +259,17 @@ function reportOf({ from, entries }) {
 const KNOWN_KEYS = new Set([...BASE_KEYS, ...KEYS].map(({ key }) => key));
 
 /** What a value that does not fit its key's type reads as — never a default. */
-const UNREADABLE = Symbol('unreadable');
+export const UNREADABLE = Symbol('unreadable');
 
-function readValue(type, raw) {
+/**
+ * Exported for `migrate.mjs` (#52): a name a step renames still has to become
+ * a finished value before it can land in `pins`, by the same grammar every
+ * same-named key has always been read with — a renamed slider does not get a
+ * second, looser idea of what its type means. Reading a value is not a
+ * judgment about a *name* (the read path stopped making those, Lauf 8
+ * "Entscheid K4"), so sharing the function does not reopen that decision.
+ */
+export function readValue(type, raw) {
   switch (type) {
     case 'int':
       return readInt(raw);
