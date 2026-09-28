@@ -378,3 +378,19 @@ test('over a grid of stands the carried sliders recompute the plan and every way
   assert.equal(unfitStands, 292);
   assert.equal(entries, 164);
 });
+
+/**
+ * The addendum (#86) to ADR 0009 hangs a second field on the plan. The search
+ * must not notice: a way out is a search over **values**, and a pinned slider
+ * is searched like any other — a search that only touched untouched sliders
+ * would have nothing to offer at the one stand where everything was set by
+ * hand, which is exactly the stand a shared SetupLink arrives in.
+ */
+test('the ways out do not depend on which sliders were set by hand', () => {
+  const everythingPinned = Object.fromEntries(Object.entries(OVERTAKE).filter(([, v]) => v !== null));
+  for (const pins of [{}, { curve: 'steep' }, { players: 48, displays: [1] }, everythingPinned]) {
+    const plan = distribute(OVERTAKE, pins);
+    assert.ok(unfit(plan));
+    assert.deepEqual(suggestions(plan), waysOut(OVERTAKE), `pins: ${Object.keys(pins).join(',') || 'none'}`);
+  }
+});
