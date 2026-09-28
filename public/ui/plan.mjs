@@ -12,14 +12,21 @@
  * diagram's cap (`geometry.mjs`) as pure derivations for this ticket: the
  * rest of what a Rank's tile or bar shows is judged at the picture, same as
  * the rest of Spec 2's surface.
+ *
+ * #64 adds the Details sheet's half: the chosen Set as two names, the pins as
+ * a stored third level over it, and one handler for every control. The
+ * numbers a control is drawn from — its two ends, what it shows while it is
+ * `auto` — come from `controls.mjs`, which is on the proven side of the seam
+ * so that a cap has exactly one home and slider and counter cannot disagree.
  */
 
 import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
-import { CURVES } from '../core/rules.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
+import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
+import { GAME, GAME_ID, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
+import { DEPTH_STEP_LABELS, clampToBounds, effectiveValue, reachFor } from './controls.mjs';
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
 function restMessage(lastServedRank, players) {
@@ -31,14 +38,36 @@ function restMessage(lastServedRank, players) {
 export function planApp() {
   return {
     /**
-     * The starting Settings: the Game's complete sheet, the first
-     * TournamentType's deviations on top, no pins — the starting choice
-     * carries only its title, so this resolves to the Game's own values
-     * (ADR 0003). `resolveSettings()` arrived with #49 and replaced the local
-     * stand-in #62 had to leave here.
+     * The chosen Set, as the two names the chain is built from (ADR 0003):
+     * the Game and the TournamentType, never a list position — the same two
+     * a SetupLink carries as its base (`link/keys.mjs`, `BASE_KEYS`).
+     */
+    gameId: GAME_ID,
+    typeId: TOURNAMENT_TYPES[0].id,
+    games: [{ id: GAME_ID, title: GAME_TITLE }],
+    types: TOURNAMENT_TYPES.map(({ id, title }) => ({ id, title })),
+
+    /**
+     * What the CommunityLead set by hand — the third level over Game and
+     * TournamentType, and the record that makes a Set switch keep his work
+     * (#64 AC 7). It is a *stored* state, not a comparison against the sheet
+     * (ADR 0006): a slider moved back onto its default value stays in here.
+     */
+    pins: {},
+
+    /**
+     * The resolved sheet, kept as a plain object rather than a getter: the
+     * fixed rail under `Plan` (`views/controls-hot.php`) writes one field of
+     * it directly, and a getter would swallow that write. Every handling in
+     * this file goes through `setSlider()`, which writes both here and into
+     * `pins`; `resolve()` rebuilds it whenever the Set beneath it changes.
      */
     settings: resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins: {} }),
     curveSteps: CURVES,
+    depthSteps: DEPTH_STEPS.map((id) => ({ id, label: DEPTH_STEP_LABELS[id] })),
+
+    /** Which of the Set block's two ⓘ is open — one at a time, or none. */
+    openInfo: null,
 
     /**
      * Session state (#63): which of the three pages is in front, and whether
@@ -96,9 +125,26 @@ export function planApp() {
       return restMessage(this.lastServedRank, this.plan.players);
     },
 
-    /** The chosen TournamentType's title for the Plan head — #63 adds picking one. */
+    /** The chosen TournamentType's title for the Plan head. Picking one is #64's
+     *  Set block; until it existed this read the first entry outright. */
     get typeTitle() {
-      return TOURNAMENT_TYPES[0]?.title ?? '';
+      return this.currentType?.title ?? '';
+    },
+
+    /**
+     * A DistributionCurve step drawn as the shape it is: four bars falling by
+     * the step's own ratio. The steps are named, not numbered, so a word
+     * alone ("firm") says nothing about how steeply it drops — the shape does
+     * (ADR 0001: named types were dropped precisely because the *slope* is
+     * the thing being chosen).
+     */
+    curveBars(step) {
+      return [0, 1, 2, 3].map((j) => Math.round(13 * step.ratio ** j) + 2);
+    },
+
+    /** The chosen step's ratio, for the sentence under the shapes. */
+    get curveRatio() {
+      return CURVES.find((step) => step.id === this.settings.curve)?.ratio ?? 0;
     },
 
     get rankTotalLabel() {
@@ -127,22 +173,107 @@ export function planApp() {
       return { reservation: scale(raw.reservation), floor: scale(raw.floor), shaped: scale(raw.shaped) };
     },
 
+    /* ── The Set block (#64) ──────────────────────────────────────────── */
+
     /**
-     * The four hot sliders. Each writes straight into `settings`, which the
-     * `plan` getter reads on its next access — no explicit recompute step,
-     * no server round-trip (#62 AC 1). `players` and `rankFloor` are plain
-     * leaves; `curve` picks a named step; `depth` is the one of the four with
-     * an auto/pinned branch (ADR 0006) — touching the slider always pins it,
-     * because the pin is set by the handling, never by the value.
+     * The Game row stands even with a single entry, and its button is the
+     * invitation rather than a control: tapped, it does nothing, because it
+     * is already chosen (CONTEXT.md, `Game`). That is this early return and
+     * not a `disabled` attribute — a dead button would say the level is
+     * broken, where the level is merely settled.
+     */
+    setGame(id) {
+      if (id === this.gameId) return;
+      this.gameId = id;
+      this.resolve();
+    },
+
+    /**
+     * A type switch replaces the whole DefaultSet and overwrites nothing set
+     * by hand (#64 AC 7, ADR 0003): `pins` survives the call untouched and is
+     * laid back over the new sheet by `resolveSettings()`.
+     */
+    setType(id) {
+      if (id === this.typeId) return;
+      this.typeId = id;
+      this.resolve();
+    },
+
+    get currentType() {
+      return TOURNAMENT_TYPES.find((type) => type.id === this.typeId) ?? TOURNAMENT_TYPES[0];
+    },
+
+    resolve() {
+      this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
+    },
+
+    /** One ⓘ per level, each with its own sentence — the same handle closes it. */
+    toggleInfo(id) {
+      this.openInfo = this.openInfo === id ? null : id;
+    },
+
+    /* ── The seventeen controls (#64) ─────────────────────────────────── */
+
+    /** Settings and plan together: what every bound and every number is read against. */
+    get stand() {
+      return { settings: this.settings, plan: this.plan };
+    },
+
+    /** The number a control shows — pinned, or the one the core computed. */
+    value(key) {
+      return effectiveValue(key, this.stand);
+    },
+
+    /**
+     * The one cap. The slider element and the counter's ± both draw from
+     * here, so neither can push past the other (#61, "Caps at the controls").
+     * `reachFor()` is the cap widened to take in a pinned value that a sunk
+     * cap left standing — it stops a handling from reaching further out and
+     * never from coming back (ADR 0006).
+     */
+    bounds(key) {
+      return reachFor(key, this.stand) ?? { min: 0, max: 0 };
+    },
+
+    /**
+     * Every handling of a control, the four hot ones included. It writes the
+     * pin as well as the value, because the pin is set by the handling and
+     * not by the value (ADR 0006) — a slider dragged back onto its default
+     * stays pinned, and a Set switch therefore keeps it.
+     */
+    setSlider(key, value) {
+      const next = clampToBounds(key, value, this.stand);
+      if (next === null) return;
+      this.pins[key] = next;
+      this.settings[key] = next;
+    },
+
+    /** The counter's ±, moving by one inside the same bounds the slider has. */
+    step(key, delta) {
+      this.setSlider(key, Number(this.value(key)) + delta);
+    },
+
+    canStep(key, delta) {
+      const bounds = this.bounds(key);
+      const next = Number(this.value(key)) + delta;
+      return next >= bounds.min && next <= bounds.max;
+    },
+
+    /**
+     * The four hot sliders, kept under their own names because the fixed rail
+     * under `Plan` (`views/controls-hot.php`) calls them. They are plain
+     * `setSlider()` calls now: the rail and the sheet change the same stand
+     * in the same way, and only the explanation text under the title tells
+     * the two apart (#64 AC 9).
      */
     setPlayers(value) {
-      this.settings.players = Math.max(2, Math.min(128, Number(value)));
+      this.setSlider('players', value);
     },
     setRankFloor(value) {
-      this.settings.rankFloor = Math.max(0, Number(value));
+      this.setSlider('rankFloor', value);
     },
     setDepth(value) {
-      this.settings.depth = Math.max(1, Math.min(this.plan.players, Number(value)));
+      this.setSlider('depth', value);
     },
 
     init() {

@@ -313,6 +313,258 @@ body {
   width: 100%;
 }
 
+/*
+ * The Details sheet (#64): the Set block and the seventeen controls.
+ *
+ * Two levels, and the indent is the whole form of the nesting — no
+ * disclosure, no frame, no rule (#15, CONTEXT.md `TournamentType`). `.set-sub`
+ * therefore carries `padding-left` and nothing else; a `border-left` here
+ * would be a line that separates no data.
+ */
+.set-block {
+  margin: 12px 0 14px;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap; /* the row may wrap, the chip group may not — a lone third
+                      type on its own line makes the level look broken */
+  gap: 8px;
+  min-height: 28px;
+}
+
+/* Beside the buttons, never above them: two lines per level measured 148px,
+   40% of the height in phone landscape (#41). */
+.set-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.7;
+  min-width: 40px;
+}
+
+.set-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.set-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.set-chip[aria-pressed='true'] {
+  background: light-dark(#3f7a5e, #5fae87);
+  border-color: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+}
+
+.info {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.7rem;
+  font-style: italic;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.set-info {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: light-dark(#ffffff, #232019);
+  font-size: 0.78rem;
+}
+
+.set-info p {
+  margin: 0 0 6px;
+}
+
+.set-info p:last-child {
+  margin-bottom: 0;
+}
+
+.set-info-muted {
+  opacity: 0.75;
+}
+
+.set-info-foot {
+  opacity: 0.9;
+}
+
+.set-sub {
+  /* The indent, and nothing else — it subordinates, it does not separate. */
+  padding-left: 18px;
+  margin-top: 8px;
+}
+
+.sheet-group {
+  margin-top: 18px;
+}
+
+.sheet-group-head {
+  margin: 0 0 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.sheet-subhead {
+  margin: 0 0 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* The explanation text stands only here, never at the rail under the plan
+   (#64's last criterion). */
+.sheet-desc {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  opacity: 0.7;
+}
+
+.sheet-foot {
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.sheet-control {
+  margin: 0 0 14px;
+}
+
+.sheet-control-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+
+/* The number stands in the counter and nowhere else — twice the same number
+   reads as two values (#64). The title therefore carries no figure. */
+.sheet-control-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sheet-control-unit {
+  font-weight: 400;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.counter {
+  margin-left: auto;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 6px;
+  overflow: hidden;
+  background: light-dark(#ffffff, #232019);
+}
+
+.counter button {
+  width: 26px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* A ± that is out of reach says so, rather than moving nothing: slider and
+   counter share one cap (`boundsFor()` in controls.mjs). */
+.counter button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.counter-value {
+  min-width: 34px;
+  padding: 3px 2px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.sheet-control input[type='range'] {
+  width: 100%;
+  margin: 4px 0 0;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+
+.step-chip,
+.curve-step {
+  padding: 4px 2px;
+  border-radius: 6px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: inherit;
+  font-size: 0.65rem;
+  cursor: pointer;
+}
+
+.step-chip[aria-pressed='true'],
+.curve-step[aria-pressed='true'] {
+  background: light-dark(#3f7a5e, #5fae87);
+  border-color: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+}
+
+/* A DistributionCurve step is a slope, so it is shown as one (ADR 0001). */
+.curve-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.curve-step {
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  height: 26px;
+  padding: 4px 3px;
+}
+
+.curve-step i {
+  display: block;
+  width: 3px;
+  background: currentColor;
+}
+
+.sheet-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
 /* `Prepare`'s Grundform (#63): the three procurement items as plain numbers. */
 .prepare-list {
   list-style: none;
