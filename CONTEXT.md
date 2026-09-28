@@ -801,6 +801,19 @@ stille Entscheidung (Nachtrag zu ADR 0007). Ein Wert aus dem Link ist ein `pinne
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
 `ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
 URL kam.
+**Drei Zahlen für „die Regler", und sie dürfen sich unterscheiden.** 19
+`Settings`-Felder (#46 `## Input: Settings`); der **Draht** lässt `depthStep` weg
+(18, `public/link/keys.mjs`), weil das kein Regler ist, sondern ein
+`DefaultSet`-Eintrag — der Link nennt seinen `TournamentType`, also ist die Stufe
+aus der Basis reproduzierbar, und zwei Schlüssel über dieselbe Tiefe könnten sich
+widersprechen; das **Blatt** lässt `displays` und `manualWinner` weg (17,
+`SHEET_KEYS` in `public/ui/controls.mjs`), weil beide einen `Rank` benennen und
+an der Kachel gesetzt werden. Keine Überschneidung — Draht und Blatt lassen
+verschiedene Felder weg —, und kein Schlüssel ausserhalb der `Settings`. Wer eine
+vierte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
+sind **20**, weil das aufgelöste Objekt den `id` des Blattes mitträgt (`GAME` in
+`public/sets/onepiece.mjs` — „a name, not a field of #46"). Gemessen in Lauf 8
+(Befund B11) und nachgemessen beim Ablegen; nachschlagen, nicht herleiten.
 _Avoid_: Preset (Oberflächensprache, siehe `DefaultSet`), Permalink, State, Snapshot (sie trägt keinen vollständigen Zustand, nur die `pinned` Regler — ADR 0006)
 
 **LinkMigration**:
