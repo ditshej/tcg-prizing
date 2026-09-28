@@ -56,3 +56,35 @@ können. Nicht weiter verfolgt.
   der Totalität; dass sie den Plan als Eingang nehmen darf, liegt an diesem
   Entscheid. Die Feststellung dort, `distribute()` führe „keinen Zustand mit
   sich", bleibt wahr: der Plan trägt die Eingabe, nicht die Funktion.
+
+## Nachtrag (#86): der Plan trägt die von Hand gesetzten Regler getrennt mit
+
+Der Entscheid oben gibt dem Plan **die Reglerstände als Ganzes**. Das genügt für
+die Wege heraus und für das Angebot, die jeden Wert brauchen — es genügt nicht
+für den `SetupLink`. Der trägt nach ADR 0005 und ADR 0006 **Abweichungen**, nicht
+den ganzen Stand: nur die von Hand gesetzten Regler (`pinned`) plus die Basis
+(`Game` und `TournamentType`, nach dem Nachtrag (#44) zu ADR 0007 immer
+genannt). Der Empfänger stellt daraus den Stand wieder her — Grundsatz plus
+Abweichungen —, und über Versionsgrenzen hinweg sorgt die Migration dafür.
+
+Ein Plan, der nur den aufgelösten Stand mitführt, weiss nicht mehr, welcher Wert
+gesetzt und welcher geerbt war. Wer aus ihm einen Link baut, muss die Pins
+danebenlegen oder eine Regel kennen. Beides ist die Bauart, die dieser ADR
+gerade abgeschafft hat.
+
+Entschieden ist deshalb: **der Plan trägt die von Hand gesetzten Regler
+getrennt mit**, neben dem aufgelösten Stand. Der Kopierknopf greift damit von
+selbst das Richtige — er nimmt, was der Plan als gesetzt ausweist, und braucht
+keine Regel im Kopf des Bauenden.
+
+**Die Zeile, die nie entstehen darf, heisst `encode(plan.settings)`.** Sie sieht
+richtig aus und ist es nicht: der aufgelöste Stand nennt jeden Regler, also
+macht sie aus **einem** Pin stillschweigend zwölf — und der Empfänger bekommt
+einen Link, der zwölf Entscheidungen behauptet, die nie jemand getroffen hat,
+und der beim nächsten `DefaultSet`-Wechsel nicht mehr nachzieht. Gemessen ist
+zudem, dass sie `depthStep` lautlos verliert. Wo eine Kodierung gebraucht wird,
+nimmt sie die Pins, nie den Stand.
+
+Kein eigener ADR-Eintrag und kein Stempel: der Plan trägt weiterhin seine
+Eingabe mit, dieser Nachtrag sagt nur, in welcher Auflösung — Präzedenz sind die
+Nachträge in ADR 0007.
