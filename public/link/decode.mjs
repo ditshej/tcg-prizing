@@ -6,11 +6,11 @@
  */
 
 import { CURVES } from '../core/rules.mjs';
-import { BASE_KEYS, KEYS } from './keys.mjs';
+import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
 
 /**
- * Reads a SetupLink of today's version to `{ version, game, type, pins,
- * unreadable }`.
+ * Reads a SetupLink to `{ version, game, type, pins, unreadable, report }` —
+ * the base, the pinned sliders, and what the link cost on the way in.
  *
  * **Everything out of a URL is a string, and turning it into a number is this
  * function's job, not the core's.** The core reads its Settings fields with
@@ -32,34 +32,164 @@ import { BASE_KEYS, KEYS } from './keys.mjs';
  * word, and a link whose keys are all misspelled read as an empty, entirely
  * well-formed link. The base keys are of course known and are never reported.
  *
- * One list and not two, because the *tolerance* is #51's: which kind of loss
- * is reported how, and whether one entry per name is the right grain. The read
- * path owes it the raw material — what it could read, and everything it could
- * not. The report itself, the fallback for a `game` or `type` nobody knows and
- * the refusal to read a link from the future stay #51's and #52's; this
- * ticket may otherwise assume a well-formed link of the current version.
+ * `unreadable` stays one flat list for the raw material's sake; the `report`
+ * is where the two kinds are told apart. That is the **tolerance**, and it was
+ * #51's to settle:
+ *
+ * - **One entry per key name, for both kinds alike.** A key repeated in the
+ *   URL is named once; a key typo and a value typo lose the same slider and
+ *   each get their own kind, because a reader who is to repair the link needs
+ *   to know which of the two it was.
+ * - **A whole loss is reported whole.** A negative limb throws the entire
+ *   DisplayReservation and a doubled Rank the entire winner card (#49,
+ *   "Entscheid K4"); the entry names the **slider**, not the bent limb. The
+ *   slider is what is gone and what has to be set again — "limb 2 was
+ *   negative" names something that is not a slider and leaves the loss unsaid.
  *
  * No cap is applied: a value out of range is taken as it stands (#47,
  * "Unreadable input and the fallback net"), because a link value is a pinned
- * value like any other (ADR 0006).
+ * value like any other (ADR 0006). It lost nothing, so it is **not** an entry.
+ *
+ * **A link from the future is not read and not rewritten.** `v` above today's,
+ * or none we can read at all, is the link saying "you cannot read this": the
+ * base is taken so there is a type to stand on, not one slider key is
+ * interpreted, and nothing here can touch the address bar — this module names
+ * neither `location` nor `replaceState`, by test.
+ *
+ * The migration chain and its entry kinds — `renamed`, `dropped`,
+ * `setByMigration` — are #52's; `migrate.mjs` does not exist yet, and the
+ * report is built here because #51 owes its acceptance criteria a report and
+ * owns no other file. See the PR of #51 for what that costs #52.
  */
-export function decode(query) {
+export function decode(query, games = null) {
   const params = new URLSearchParams(String(query ?? '').replace(/^[?#]/, ''));
-  const base = Object.fromEntries(BASE_KEYS.map(({ key }) => [key, params.get(key)]));
+  const read = Object.fromEntries(BASE_KEYS.map(({ key }) => [key, params.get(key)]));
+  const base = catchBase({ game: read.game, type: read.type }, games);
+
+  const version = readVersion(read.v);
+  if (version === null || version > CURRENT_VERSION) {
+    return {
+      version,
+      game: base.game,
+      type: base.type,
+      pins: {},
+      unreadable: [],
+      report: reportOf({
+        from: version,
+        entries: [...base.entries, { kind: 'futureVersion', from: version }],
+      }),
+    };
+  }
 
   const pins = {};
-  const unreadable = [];
+  const unreadableValues = [];
   for (const { key, type } of KEYS) {
     if (!params.has(key)) continue;
     const value = readValue(type, params.get(key));
-    if (value === UNREADABLE) unreadable.push(key);
+    if (value === UNREADABLE) unreadableValues.push(key);
     else pins[key] = value;
   }
+  const unknownKeys = [];
   for (const key of new Set(params.keys())) {
-    if (!KNOWN_KEYS.has(key)) unreadable.push(key);
+    if (!KNOWN_KEYS.has(key)) unknownKeys.push(key);
   }
 
-  return { version: Number(base.v), game: base.game, type: base.type, pins, unreadable };
+  const entries = [
+    ...base.entries,
+    ...unreadableValues.map((key) => ({ kind: 'unreadableValue', key })),
+    ...unknownKeys.map((key) => ({ kind: 'unknownKey', key })),
+  ];
+
+  return {
+    version,
+    game: base.game,
+    type: base.type,
+    pins,
+    unreadable: [...unreadableValues, ...unknownKeys],
+    report: reportOf({ from: version, entries }),
+  };
+}
+
+/**
+ * The fallback net for the base, and it is **not a tool of versioning**: it
+ * catches a Game or TournamentType name that **no chain ever knew** — a
+ * hand-bent URL, a type that left a list without a migration. It asserts no
+ * preserved result, it only prevents the typeless state ADR 0003 does not have
+ * (ADR 0007, Nachtrag #44), and the report says it happened. A LinkMigration
+ * may never lean on it: a step that abolishes a type **names its successor**,
+ * or the link would hang off a list position after all.
+ *
+ * A Game behaves exactly as a TournamentType does (#51), down to the entry
+ * kind — and the type is judged against the Game that caught it, because a
+ * Game's type list is its own.
+ *
+ * `games` is a **parameter**, the catalogue to judge against: Games in list
+ * order, each `{ id, types: [{ id }] }`, types in list order — order is
+ * meaningful and never a surface sort (ADR 0003). The register in `keys.mjs`
+ * says what a key *means*; it cannot say which Games exist, and this layer
+ * must not grow a second idea of that. Without a catalogue the net does not
+ * run: a name can only be judged against a list, so the base passes through as
+ * it stood and nothing is reported.
+ */
+function catchBase({ game, type }, games) {
+  if (!Array.isArray(games) || games.length === 0) return { game, type, entries: [] };
+
+  const entries = [];
+  let sheet = games.find((entry) => entry.id === game);
+  if (sheet === undefined) {
+    sheet = games[0];
+    entries.push({ kind: 'gameReplaced', was: game, now: sheet.id, by: 'fallback' });
+  }
+
+  const types = sheet.types ?? [];
+  let chosen = types.find((entry) => entry.id === type);
+  if (chosen === undefined) {
+    chosen = types[0];
+    entries.push({ kind: 'typeReplaced', was: type, now: chosen?.id ?? null, by: 'fallback' });
+  }
+
+  return { game: sheet.id, type: chosen?.id ?? null, entries };
+}
+
+/**
+ * The format version, or `null` when the link does not carry a readable one.
+ * Versions start at **1**; there is no v0 (#47, `## The wire format`), so a
+ * zero or a negative number names no format that ever existed and is as
+ * unreadable as `v=zwei`. Both fall to the future case, exactly as #47's table
+ * says of an absent one.
+ */
+function readVersion(raw) {
+  if (raw === null) return null;
+  const value = readInt(raw);
+  return value === UNREADABLE || value < 1 ? null : value;
+}
+
+/**
+ * The report is a data structure and never a word of text — Spec 2 renders it
+ * (#47, `## The report`). It hangs off the **loss, not off a chain that ran**:
+ * it is there as soon as anything was not taken over as it stood, and `null`
+ * otherwise (ADR 0007, Nachtrag #48). `migrated` is `false` throughout: no
+ * chain runs in this module, and at v1 there is none to run.
+ *
+ * `resaveBookmark` carries the call to save the bookmark again as **part of
+ * the report's statement**, not as a formatted sentence (#51) — without it the
+ * link pinned in Discord stays the old one forever and the loss repeats at
+ * every open. It is true exactly when the address bar now says something other
+ * than the link that was opened, which leaves out the one case where #47 keeps
+ * the address bar untouched: the link from the future. There the bookmark is
+ * the better copy — readable again by a newer app — and asking for it to be
+ * saved again would invite overwriting it with a downgraded one.
+ */
+function reportOf({ from, entries }) {
+  if (entries.length === 0) return null;
+  const fromTheFuture = entries.some((entry) => entry.kind === 'futureVersion');
+  return {
+    from,
+    to: CURRENT_VERSION,
+    migrated: false,
+    resaveBookmark: !fromTheFuture,
+    entries,
+  };
 }
 
 /** Every key the v1 register names, base and sliders — anything else is loss. */
