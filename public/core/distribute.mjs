@@ -19,8 +19,10 @@
  *
  * Since #86 the plan also carries the Settings it was computed from, as one
  * untrimmed field (ADR 0009) — that is what makes `suggestions(plan)` in
- * `suggest.mjs` buildable at all. `distribute()` itself still keeps no state:
- * the plan carries the input, the function does not (ADR 0002).
+ * `suggest.mjs` buildable at all — and, beside it, the sliders that were set by
+ * hand (`plan.pinned`, the addendum (#86) to ADR 0009). `distribute()` itself
+ * still keeps no state: the plan carries the input, the function does not
+ * (ADR 0002).
  */
 
 import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
@@ -200,12 +202,53 @@ function rankCycle(rankPacks, ranked, players) {
  * alongside.
  */
 function carriedSettings(settings) {
-  const carried = { ...settings };
-  if (Array.isArray(settings.displays)) carried.displays = settings.displays.slice();
-  if (settings.manualWinner && typeof settings.manualWinner === 'object') {
-    carried.manualWinner = { ...settings.manualWinner };
+  return snapshot(settings);
+}
+
+/**
+ * The sliders the CommunityLead set **by hand**, carried beside the resolved
+ * stand (addendum (#86) to ADR 0009). Key → value, exactly the keys that were
+ * pinned and no others: a slider still following the DefaultSet chain is absent
+ * here, and absent is the whole information.
+ *
+ * This is what a SetupLink is written from. The link carries **base plus
+ * deviations** — `v`, `game`, `type` and the pinned sliders, nothing else
+ * (ADR 0005, ADR 0006, and the base per the addendum (#44) to ADR 0007) — so
+ * the writing side takes this field. **`encode(plan.settings)` is the line that
+ * must never be written** (finding G3): the resolved stand names *every*
+ * slider, so it turns one pin into twelve, ships twelve decisions nobody made,
+ * stops following the next DefaultSet change, and drops `depthStep` silently
+ * because the wire format has no key for it and reproduces it from the base
+ * instead (`link/keys.mjs`).
+ *
+ * The core carries this, it does not reconcile it. Nothing is dropped for
+ * matching the value it would have inherited — a pin is a stored state, not a
+ * comparison (ADR 0006) — nothing is added, nothing is checked against the key
+ * register, which belongs to `link/`, and no disagreement with `settings` is
+ * refused: `distribute()` stays total (ADR 0002). Callers that build both out
+ * of `resolveSettings({ game, type, pins })` get the agreement for free, since
+ * the resolved stand is built from these very pins.
+ *
+ * The base itself — `Game` and `TournamentType` — is deliberately *not* here.
+ * The addendum puts only the pinned sliders on the plan; the base stays with
+ * the caller, which picked the sheets in the first place.
+ */
+function carriedPins(pinned) {
+  return pinned && typeof pinned === 'object' ? snapshot(pinned) : {};
+}
+
+/**
+ * A shallow copy that also copies the two containers a Settings field can be:
+ * the `displays` vector and the `manualWinner` map. Used for both carried
+ * fields, so neither can be changed from outside after the plan was computed.
+ */
+function snapshot(source) {
+  const copy = { ...source };
+  if (Array.isArray(source.displays)) copy.displays = source.displays.slice();
+  if (source.manualWinner && typeof source.manualWinner === 'object') {
+    copy.manualWinner = { ...source.manualWinner };
   }
-  return carried;
+  return copy;
 }
 
 /**
@@ -214,8 +257,15 @@ function carriedSettings(settings) {
  * `distribute` calls `derivePool` itself and files the result as `plan.pool`:
  * the PrizePool falls out of the Settings rather than standing beside them
  * (ADR 0004, addendum).
+ *
+ * `pinned` is the second half of the input and changes no number in the plan:
+ * which sliders were set by hand is provenance, and the distribution is the
+ * same whether a value was pinned or inherited. It is carried so the copy
+ * button of #72 and the address line of #89 can take what the plan states as
+ * set, instead of knowing a rule — see `carriedPins()`. Omitted it reads as
+ * "nothing pinned", the stand a freshly opened app is in.
  */
-export function distribute(settings) {
+export function distribute(settings, pinned = {}) {
   const players = Math.max(2, int(settings.players, 2));
   const pool = derivePool(settings);
   const { participation, judge, rank } = splitPool(pool, settings, players);
@@ -403,6 +453,7 @@ export function distribute(settings) {
 
   return {
     settings: carriedSettings(settings),
+    pinned: carriedPins(pinned),
     players,
     pool,
     participation: handedOut.participation,

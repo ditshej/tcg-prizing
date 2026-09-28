@@ -67,6 +67,11 @@ function curveIndex(id) {
  * One argument, and it is the plan rather than the Settings, so there is no
  * way to hand in a plan and a Settings that disagree, and any place holding a
  * plan can work out the ways out without carrying anything alongside.
+ *
+ * It reads `plan.settings` and never `plan.pinned`: a way out is a search over
+ * values, and a pin is not a value — a pinned slider is searched like any
+ * other, since a way out that may only touch untouched sliders would have no
+ * way out to offer at the one stand where everything was set by hand.
  */
 export function suggestions(plan) {
   if (!unfit(plan)) return [];
@@ -232,6 +237,13 @@ function nearest(candidates) {
  * and where the state is an overtake, it must additionally keep the overtaking
  * Rank in the plan. Without that, the search picks "Serve 1 rank", abolishes
  * the overtaker, and has solved nothing (#46).
+ *
+ * The probe is computed without pins. Nothing here reads `probe.pinned`, and
+ * provenance changes no number in a plan — a probe answers "do these values
+ * clear the state", which is the same question whether a value was set by hand
+ * or inherited. A probe plan never leaves this function, so no SetupLink can be
+ * written from one; what the accepted way out pins is the surface's decision to
+ * record, not the search's to guess (#60, #61).
  */
 function clears(plan, candidate) {
   const probe = distribute(candidate);
