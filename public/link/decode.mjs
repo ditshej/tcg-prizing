@@ -81,11 +81,13 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * neither `location` nor `replaceState`, by test.
  *
  * The migration chain and its entry kinds — `renamed`, `dropped`,
- * `setByMigration` — are #52's; `migrate.mjs` does not exist yet, and the
- * report is built here because #51 owes its acceptance criteria a report and
- * owns no other file. See the PR of #51 for what that costs #52. The
- * `unknownKey` entry is #52's too since Lauf 8, "Entscheid K4": it is the last
- * word of the chain over a name, and nothing here may say it first.
+ * `setByMigration` — live in `migrate.mjs` (#52), which writes on into the
+ * report this file starts (Lauf 8, "Entscheid K1"). The report is built here
+ * because #51 owed its acceptance criteria a report and owned no other file.
+ * The `unknownKey` entry is the chain's since Lauf 8, "Entscheid K4": it is
+ * the last word over a slider name the read path did not recognise, and
+ * nothing here may say it first — an unknown name leaves this file in
+ * `unknown`, with its raw value and no judgement.
  */
 export function decode(query, games = null) {
   const params = new URLSearchParams(String(query ?? '').replace(/^[?#]/, ''));
@@ -259,9 +261,17 @@ function reportOf({ from, entries }) {
 const KNOWN_KEYS = new Set([...BASE_KEYS, ...KEYS].map(({ key }) => key));
 
 /** What a value that does not fit its key's type reads as — never a default. */
-const UNREADABLE = Symbol('unreadable');
+export const UNREADABLE = Symbol('unreadable');
 
-function readValue(type, raw) {
+/**
+ * Exported for `migrate.mjs` (#52): a name a step renames still has to become
+ * a finished value before it can land in `pins`, by the same grammar every
+ * same-named key has always been read with — a renamed slider does not get a
+ * second, looser idea of what its type means. Reading a value is not a
+ * judgment about a *name* (the read path stopped making those, Lauf 8
+ * "Entscheid K4"), so sharing the function does not reopen that decision.
+ */
+export function readValue(type, raw) {
   switch (type) {
     case 'int':
       return readInt(raw);
