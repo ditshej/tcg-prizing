@@ -53,7 +53,13 @@ gh api graphql -f query='{repository(owner:"ditshej",name:"tcg-prizing"){
   pullRequest(number:<n>){closingIssuesReferences(first:10){nodes{number}}}}}'
 ```
 
-An empty list means nothing is linked.
+An empty list means nothing is linked — **aber erst beim zweiten Mal.** GitHub
+baut die Verknüpfung asynchron auf; die Abfrage ist verzögert konsistent, und
+ein erster Blick direkt nach dem Öffnen oder Bearbeiten des PR kann leer
+antworten, obwohl die Zeile steht und greift. Die Prüfung ist deshalb **einmal
+zu wiederholen**, ein paar Sekunden später. Erst eine zweite leere Antwort ist
+ein Befund; die erste allein kostet nur eine Korrektur an einem Text, der schon
+richtig war.
 
 ## When a skill says "publish to the issue tracker"
 
