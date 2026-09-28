@@ -68,6 +68,11 @@ greift der **erste** Typ des `Game` als Auffangnetz und der Bericht sagt es. Das
 die einzige Stelle mit einem automatischen Ersatz, und sie ist es nur, weil es nach
 ADR 0003 keinen typlosen Zustand gibt.
 
+> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen *wir* einen
+> `TournamentType` ab, muss die `LinkMigration` den Nachfolger **benennen** — das
+> Netz ist kein Weg für eine Migration. Es bleibt nur für Namen, die keine Kette
+> je kannte. Weiterlesen dort, bevor du dich auf diesen Absatz stützt.
+
 **Die Out-of-scope-Grenze bleibt heil.** Die Version ändert nichts daran, dass der
 Link Eingabe ist und keine Persistenz. Die App schreibt nichts weg; sie liest eine
 URL und rechnet, und das `replaceState` beim Hochmigrieren ist dieselbe Geste, die
@@ -79,6 +84,12 @@ Herkunft der Eingabe. Damit teilt es sich keinen Platz mit `ConflictNotice` und
 `Offer` und verschärft die Enge aus dem Ticket zu deren Verdrängung nicht. Es ist
 wegklickbar, kommt nicht zurück, steht nie im `SetupLink` und erscheint nur, wenn
 die Kette tatsächlich gelaufen ist.
+
+> ⚠︎ **Zurückgezogen durch `## Nachtrag (#48)`.** Die Bedingung ist nicht „die
+> Kette lief", sondern **„der Bericht ist da, sobald irgendetwas nicht so
+> übernommen wurde, wie es dastand"** — sonst schweigt die App bei einem Link der
+> heutigen Version, in dem ein einzelner Schlüssel unlesbar ist. `## Nachtrag
+> (#51)` sagt zusätzlich, *wo* der Eintrag entsteht: am Ende der Kette.
 
 ## Nachtrag (#34): die Kette erreicht die Adresse nicht
 

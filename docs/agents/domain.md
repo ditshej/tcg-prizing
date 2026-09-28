@@ -61,6 +61,7 @@ now?**
 | You sharpen your own text while writing it — a `Nachtrag`, a tightened bound, a case you thought of afterwards | no             | the body of that same ADR (ADR-0001 does this twice)         | none                                                                    |
 | A later ADR **extends** it — adds a level, a condition, a case — and overturns nothing             | yes            | the new ADR                                                  | `Ergänzt durch ADR-NNNN.`                                               |
 | A later ADR **overturns** it, in part or in whole                                                  | yes            | the new ADR                                                  | `Teilweise überholt durch ADR-NNNN.` / `Vollständig überholt durch ADR-NNNN.` |
+| A later `Nachtrag` in the **same** ADR retracts a sentence of its own body — tickets and months after it was written | no             | that ADR's `Nachtrag`                                        | no title stamp — a ⚠︎ note **at the retracted sentence** (see below)     |
 
 Either stamp is a single line directly under the title of the earlier ADR:
 
@@ -107,6 +108,46 @@ _wrong_. An extension leaves nothing wrong — it only leaves the ADR
 costs: the next reader arrives at a decision that has since gained a condition,
 sees a document that is correct on every line, and acts on it. Nothing on the
 page tells them the condition exists.
+
+### A `Nachtrag` that retracts its own body is marked at the sentence, not at the title
+
+Row 1 of the table — sharpening your own text, no stamp — is written for the
+moment of **writing**. A `Nachtrag` added tickets later is a different animal:
+ADR-0007 has four of them, and two retract a sentence that still stands
+unmarked in `## Consequences`. A reader who lands in the body takes the wrong
+rule away, and nothing on the line warns them.
+
+The fix is **not** a title stamp. A stamp says „something below is overtaken"
+and sends the reader hunting; and the reader here is usually an agent that
+arrived by `grep`, in the middle of the document, and will never see the title
+at all. So the note goes where the wrong sentence is read:
+
+```md
+… greift der **erste** Typ des `Game` als Auffangnetz und der Bericht sagt es.
+
+> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen *wir* einen
+> `TournamentType` ab, muss die `LinkMigration` den Nachfolger **benennen**.
+> Weiterlesen dort, bevor du dich auf diesen Absatz stützt.
+```
+
+Three rules for the note, and they are what make it worth the maintenance:
+
+- **Directly after the retracted passage**, as a blockquote — so it cannot be
+  read without the sentence, and the sentence cannot be read without it.
+- **It names the `Nachtrag` by its heading**, not by a line number. Headings
+  survive edits; line numbers are wrong by the next commit.
+- **It carries the corrected rule in one sentence**, not just a pointer. A
+  reader who stops at the note still leaves with the right rule; the pointer is
+  for the one who needs the reasoning.
+
+`⚠︎` is the marker so the notes are greppable as a class:
+`grep -rn '⚠︎' docs/adr/` lists every retracted passage in the repo.
+
+**Do not edit the retracted sentence away.** It is the decision that was made,
+and the `Nachtrag` is the decision that changed it; a document that quietly
+reads as if the first had never happened loses the reason the second exists.
+
+Decided 2026-09-28, out of run 8, at ADR-0007.
 
 The vendored `/domain-modeling` skill offers only a whole-file
 `Status: superseded` in frontmatter and never asks for the back-reference. That
