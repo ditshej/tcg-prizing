@@ -1871,6 +1871,20 @@ const GROUP_DESC = {
   rank: 'What is left goes down the standings: how deep, how flat, how steep.',
   winner: 'The scarce prize. Either strictly by rank, or drawn by the Winner raffle.',
 };
+/* ÜBERHOLT: Diese Reglerenden sind der Stand **vor** #46. Verbindlich sind
+   `#46 ## Slider ranges` und, gebaut, `public/ui/controls.mjs` (`FIXED_BOUNDS`
+   und `boundsFor()`, #64) — dort ist fast jeder Deckel höher, und
+   `participationBooster`, `judgeBooster` und `judgeWinner` sind gar keine
+   festen Zahlen mehr, sondern aus dem Stand abgeleitet. Nur `boosterRate` und
+   `participationPack` stehen noch gleich.
+
+   Nicht nachgezogen, und das ist Absicht: #46 sagt zu diesen Deckeln
+   ausdrücklich, sie dürften „jederzeit steigen, ohne dass ein Entscheid
+   fällt", und `docs/agents/setup-link.md` führt „Change a cap" als *keine*
+   Migration. Die Deckel sind weich — der Prototyp hat hier nicht die
+   Autorität, die er für die **Form** einer Fläche hat (#61 nennt ihn
+   „Primärquelle" für seine Messwerte; für diese Zahlen gilt das nicht).
+   Wer eine Reglergrenze sucht, schlägt sie in #46 nach, nicht hier. */
 const RANGE_OF = {
   players: () => [2, 64], rankFloor: () => [0, 6], participationBooster: () => [0, 8],
   participationPack: () => [0, 4], boosterRate: () => [0, 12], displaySize: () => [6, 36],
