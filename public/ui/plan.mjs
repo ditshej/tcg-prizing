@@ -344,10 +344,10 @@ export function planApp() {
       return this.openTile == null ? null : tileGrip(this.openTile, this.stand);
     },
 
-    /** A grip at the tile opens the bubble, the same grip closes it. */
+    /** A grip at the tile opens the bubble, the same grip closes it. The
+     *  placing is not called here: it runs after every drawing (see `init()`). */
     toggleTile(rank) {
       this.openTile = this.openTile === rank ? null : rank;
-      this.$nextTick(() => this.placeBubble());
     },
 
     closeTile() {
@@ -370,7 +370,6 @@ export function planApp() {
       if (next === null) return;
       this.pins.displays = next;
       this.settings.displays = next;
-      this.$nextTick(() => this.placeBubble());
     },
 
     /** The `manual` share of the `WinnerPackAllocation` — the same counters a
@@ -380,7 +379,6 @@ export function planApp() {
       if (next === null) return;
       this.pins.manualWinner = next;
       this.settings.manualWinner = next;
-      this.$nextTick(() => this.placeBubble());
     },
 
     /** The two ± of the open bubble, each moving by one inside its own cap. */
@@ -441,15 +439,42 @@ export function planApp() {
       this.$watch('fullscreen', () => {
         requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed));
       });
-      /* A resized window moves both the anchor and the frame it is judged
-         against, so the bubble is placed again — and closed where the tile it
-         hangs off has left the grid's window in the meantime. */
+      /*
+         The bubble is placed — and closed — after **every drawing**, not at
+         the handlers that open it. That is the prototype's form, and it is a
+         decision rather than a taste: `placePop()` is the last line of its
+         `render()`, with the reason written beside it — "Zugemacht wird jetzt
+         dort, wo es sich messen lässt: `placePop()` schliesst sie, wenn ihr
+         Anker nicht mehr sichtbar ist. Eine Regel für alle vier."
+         (`git show prototype/rank-distribution:prototypes/cockpit.prototype.html`).
+
+         Tied to the three writing handlers instead, the rule misses every way
+         a tile can leave the grid without the bubble being touched — the
+         `Players` slider pulled down under an open bubble is the measured one
+         (#66 AC 9), and `bubble.mjs` names "a shrinking player count" outright.
+
+         Alpine has no single render pass, so its equivalent of that last line
+         is an effect over the state the grid is drawn from. `$nextTick` waits
+         for the `x-for` to have caught up, so the measuring reads the tiles
+         that are there now and not the ones that just left. Closing writes
+         `openTile`, which this effect reads — the second pass then finds
+         nothing open and returns at the first line, so it settles rather than
+         loops.
+      */
+      this._placing = window.Alpine.effect(() => {
+        void [this.activePage, this.fullscreen, this.openTile, this.tiles.length];
+        this.$nextTick(() => this.placeBubble());
+      });
+      /* A resized window moves neither of those, so it stays a listener: it
+         moves the anchor and the frame it is judged against without any state
+         changing, and the same one rule is what it calls. */
       this._onResize = () => this.placeBubble();
       window.addEventListener('resize', this._onResize);
     },
 
     destroy() {
       if (this._detachMeasuring) this._detachMeasuring();
+      if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
     },
   };
