@@ -87,12 +87,31 @@ const EXPECTED_TYPES = [
  * the list shortens the standard it is measured against, and two mistakes
  * cover for each other (the trap named in #54's comment from #53).
  */
+/** The sheet without its name: `id` is what the sheet is called, not a value
+ *  it presets (#64, "Entscheid K3"). */
+function fieldsOf(sheet) {
+  const { id, ...fields } = sheet;
+  return fields;
+}
+
 test('the Game sheet names every presettable variable from #46, in the order the spec lists them', () => {
-  assert.deepEqual(Object.keys(GAME), PRESETTABLE_FIELDS);
+  assert.deepEqual(Object.keys(fieldsOf(GAME)), PRESETTABLE_FIELDS);
 });
 
 test('the Game sheet carries the values #21 wrote down, not values computed back from a plan', () => {
-  assert.deepEqual(GAME, EXPECTED_GAME);
+  assert.deepEqual(fieldsOf(GAME), EXPECTED_GAME);
+});
+
+/**
+ * The sheet carries its own name, and it leads. #64's "Entscheid K3" settled
+ * that against the shape this file had first — a constant beside the sheet —
+ * because the read path judges a link's Game against a catalogue of sheets
+ * (`link/decode.mjs`, `catchBase`: `games.find((entry) => entry.id === game)`),
+ * and a catalogue can only fall out of the sheets if a sheet is named.
+ */
+test('the Game sheet carries its own id, and it is the name a SetupLink writes', () => {
+  assert.equal(GAME.id, 'onepiece');
+  assert.equal(Object.keys(GAME)[0], 'id', 'the name leads the sheet');
 });
 
 test('each TournamentType carries the deviations #21 and #25 wrote down, and nothing else', () => {
