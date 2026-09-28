@@ -555,3 +555,91 @@ four-way merge probe. Two new tickets: #89 (the wiring #50 was forbidden to do)
 and #95 (post-merge catch-up). PR #94 carries two ADR addenda — and the filing
 agent corrected the conductor on the stamp rule: a stamp line is for a *later*
 ADR touching an earlier one, not for an ADR extending its own body.
+
+### Run 9 · 2026-09-28 · #60, #52, #66 · `/round`, four agents, three deaths
+
+**The conductor's context: roughly 137k, against run 8's 55k and run 7's 40k.**
+The number is not comparable and the reason is worth naming rather than
+explaining away: `/ask-hard-questions` ran **inside the conductor session** this
+time, because the maintainer types that command where he is standing. Stages 2
+to 5 brought two composite screenshots, the tool README and a worked example
+into the one context that `/round` exists to keep empty. The `/round` part alone
+— phases A to D plus F — sat around 60k, in line with run 8. If the two skills
+keep meeting in one session, the conductor rule needs an answer for Phase E, and
+"hold paths, not content" is not it: Stage 3 says the reading is the conductor's
+alone.
+
+**The conductor cut the batch wrong, and Phase 0 caught it.** The frontier was
+derived from the specs and the run log while the `blockedBy` query was left
+broken — three `gh` invocations failed on output formatting, and the fourth was
+never written. The tracker had the answer all along: #68 is blocked by #60 and
+#67, both open, and `offerFor` does not exist on `main`. The batch went out as
+#60 · #52 · #68, the maintainer picked #68 from a list that should not have
+contained it, and the fan-out's own disjointness pass found it before a line was
+built. **A failed lookup is not a missing answer; it is an unasked question.**
+
+**Phase D ran twice, and the second run is new.** The three candidates from the
+gates went to cards — three of three, the exact inverse of run 8's six of six in
+the terminal. Then the verification of the dropped list pulled **two** findings
+back, and both were answered in a sentence in the terminal. So the pull-back
+pass paid for itself twice over in one round, and it belongs in the flow rather
+than in a session's good intentions.
+
+**Gate 1 closed a finding with an altered quotation.** G7 was dropped against a
+decision at #89 that reads „hängt die Regel an das Leseergebnis, **nicht an
+`pins`**"; the gate cited it as „nicht an `migrated`" and answered a different
+question with it. Nothing else in the chain would have caught that — the gate is
+the last station before a finding disappears, and it is the one station nobody
+re-reads. Now somebody does.
+
+**The skeptic killed a card and left a better one behind.** K3's decision stood
+verbatim in `CONTEXT.md` („Die Wege heraus stehen ohnehin schon in der
+`ConflictNotice`"), and two of its three ways were not ways — `flagged` is
+defined as covering „jeden **bedienten** `Rank`", so an unserved one cannot be
+marked. Underneath lay a sharper finding the round had not had: the foot claims
+„ranks 3–32 get nothing" while rank 3 holds twelve boosters, because
+`plan.mjs:150` cuts on `booster || packs || winners` and forgets `displays` —
+and the prototype has the same gap, so it decides nothing. **Four runs of the
+skeptic striking out a card; the first where the strike produced a replacement
+instead of a hole.**
+
+**The best answer a card got was a refusal of its question.** K1 asked which
+numbers the offer sentence should name. The maintainer picked none of the four
+ways and wrote instead that with a combined handout there is no separately
+issued participation booster at all — the pool becomes freely distributable, and
+a rank that gets a display gets the display. That is not a wording; it is what
+`CombinedHandout` *means*, and #46, #60 and #61 all treat that as settled in the
+other direction. It became **#103**, deliberately not `ready-for-agent`, and
+nothing in the batch was patched to chase it. A card that comes back with the
+question rewritten is the most expensive kind to build and the cheapest kind to
+be wrong about.
+
+**Two more suites that were green because they were empty** — run 8 found the
+first, and this is now three rounds in a row. #60's criterion 1 *had* a test,
+over six hand-picked states, and each of the six fell through for a different
+reason: removing the guard left **196 of 196 green**. The raster that replaced it
+bites on 70 of 3108 states. #52's v2 test asserted `report === null`, which holds
+just as well when the chain wrongly starts at v1. **A test that passes says the
+test passes** — and the only way to learn which, is to break the code on purpose.
+
+**An instruction from the conductor was wrong and the agent overrode it.** G8's
+finding called the skill text vendored; it is not — `/counter-check` is a real
+directory, absent from `skills-lock.json`, and `AGENTS.md` lists it under
+„ours". The conductor passed the premise through unchecked, the docs agent
+checked it and corrected the sentence at its source instead of routing around
+it. That is the behaviour the fan-out wants from a builder, and it is worth
+saying out loud that it came from doubting the brief.
+
+**Three deaths, zero work lost.** Two auth refusals (403) and one session limit
+(429) killed six agents between them. Every phase wrote incrementally and every
+builder committed per decision, so the restart resumed at phase 1 with Phase 0's
+artefact on disk, and no agent had promised anything it had not already written.
+The rule from run 8 is now load-bearing rather than advisory.
+
+**Counts.** 12 findings from A, 8 more from B, 0 of 12 refuted. Gates: 20 in, 3
+candidates, 17 dropped — of which the verification pulled 2 back. 3 cards, 3
+answered, 1 killed by the skeptic and replaced. Five decisions filed to #103,
+#66 (×2), #68, #52, #47, #89. Suites: 197 · 206 · 213 alone, **240/240 on a
+freshly built four-way merge probe**, and the arithmetic closes exactly
+(188 + 9 + 18 + 25). Two new tickets: #103 (what `CombinedHandout` means) and
+#104 (the curve select that never refreshes and never pins).
