@@ -17,6 +17,10 @@ import {
   reachFor,
   effectiveValue,
   clampToBounds,
+  reservedDisplaysAfter,
+  canReserveDisplays,
+  manualWinnerAfter,
+  canPlaceWinner,
 } from '../public/ui/controls.mjs';
 
 /** The sheet's own reading of a stand: settings resolved, plan computed. */
@@ -314,4 +318,186 @@ test('a type switch replaces the sheet but carries every pinned value across (#6
   // Everything not pinned does follow the new sheet.
   assert.equal(effectiveValue('boosterRate', weekly), 3);
   assert.equal(effectiveValue('boosterRate', release), 9);
+});
+
+/* ── The two set at the tile (#66) ──────────────────────────────────────── */
+
+/**
+ * The DisplayReservation and the `manual` share of the WinnerPackAllocation
+ * are the two Settings fields no slider carries: both name a `Rank`, and the
+ * `Rank` is the tile (#61, "The tiles and their grip"). Their caps live beside
+ * the sliders' all the same, because #61 gives caps one home — "Schieber und
+ * Zählwerk kennen denselben Deckel, sonst schiebt das eine über das andere
+ * hinaus" — and a second home would let the tile and the sheet disagree about
+ * the same stand.
+ *
+ * The rule they are measured against is #61's, verbatim:
+ *
+ * > Ein Anschlag darf keinen Zustand verhindern, den ADR 0002 gemeldet haben
+ * > will.
+ */
+
+/** The reservation vector as it stands, read off the Settings the plan carries. */
+const vectorOf = (s) => (s.settings.displays ?? []).map((v) => Number(v) || 0);
+
+/** `d₁ ≥ d₂ ≥ …`, written out here rather than imported: a test that borrows
+ *  the predicate under test cannot disagree with it. */
+function rises(vector) {
+  for (let i = 1; i < vector.length; i++) if ((vector[i] ?? 0) > (vector[i - 1] ?? 0)) return true;
+  return false;
+}
+
+/** The vector a handling would produce, built naively and without trimming. */
+function vectorWith(vector, rank, count) {
+  const next = vector.slice();
+  while (next.length < rank) next.push(0);
+  next[rank - 1] = count;
+  return next;
+}
+
+test('the reservation never rises over the ranks — the rank above caps the tile below it', () => {
+  // displaySize 2 makes a two-display prefix cheap enough to stand, so the
+  // monotonicity cap is measured on its own and not through a pool that is
+  // empty anyway.
+  const s = stand({ displaySize: 2, displays: [2, 2] });
+  assert.equal(s.plan.conflict, null, 'the stand itself has to be a standing one');
+  // Rank 2 may not pass rank 1 …
+  assert.equal(canReserveDisplays(2, 3, s), false);
+  // … and rank 1 may not sink under rank 2, which is the same rule read downward.
+  assert.equal(canReserveDisplays(1, 1, s), false);
+  // Level with the rank above is not "over" it.
+  assert.equal(canReserveDisplays(3, 2, s), true);
+});
+
+test('a display the RankPool cannot carry is never offered (maintainer decision on #66, 2026-09-27)', () => {
+  const s = stand();
+  // 32 boosters in the RankPool, 24 to a display: one stands, two do not.
+  assert.equal(s.plan.rank.booster, 32);
+  assert.equal(s.settings.displaySize, 24);
+  assert.equal(canReserveDisplays(1, 1, s), true);
+  assert.equal(canReserveDisplays(1, 2, s), false);
+  assert.deepEqual(reservedDisplaysAfter(1, 1, s), [1]);
+  assert.equal(reservedDisplaysAfter(1, 2, s), null);
+});
+
+test('a reservation left standing over a sunk cap is never cut, and the way back is never a wall (ADR 0006)', () => {
+  // The display was reserved at 32 players; the count then fell to 8 and the
+  // RankPool with it. ADR 0006 forbids trimming the stored value …
+  const s = stand({ displays: [1], players: 8 });
+  assert.deepEqual(vectorOf(s), [1]);
+  assert.deepEqual(s.plan.displayVector, [1]);
+  assert.ok(s.plan.conflict, 'the stand really is the one a sunk cap leaves behind');
+  // … and the cap still does its whole job outward …
+  assert.equal(canReserveDisplays(1, 2, s), false);
+  // … while the one way back down stays open. A cap that walled this off would
+  // delete the only handling that clears the conflict it is standing in.
+  assert.equal(canReserveDisplays(1, 0, s), true);
+  assert.deepEqual(reservedDisplaysAfter(1, 0, s), []);
+});
+
+test('an overtake stays reachable, over a second slider that follows afterwards (#61, ADR 0002)', () => {
+  // Reserved at 96 players: it stands, and nothing is overtaken yet.
+  const before = stand({ players: 96 });
+  assert.deepEqual(reservedDisplaysAfter(1, 1, before), [1]);
+  const reserved = stand({ players: 96, displays: [1] });
+  assert.equal(reserved.plan.overtake, null);
+  assert.equal(reserved.plan.conflict, null);
+  // The second slider follows: at 128 players the curve below rank 1 passes
+  // the settled 24, and the plan reports it instead of refusing it.
+  const after = stand({ players: 128, displays: [1] });
+  assert.deepEqual(after.plan.overtake, { under: 1, over: 2, has: 24, gets: 28 });
+  // The reservation that produced it is still one the tile would set today.
+  assert.equal(canReserveDisplays(1, 1, stand({ players: 128 })), true);
+});
+
+test('an orphaned reservation stays reachable, over the depth that follows afterwards (#61, ADR 0002)', () => {
+  const before = stand({ players: 96, displays: [1] });
+  assert.equal(before.plan.orphanedReservation, null);
+  // Rank 2 takes its display at the tile — offered, because the RankPool
+  // carries both.
+  assert.deepEqual(reservedDisplaysAfter(2, 1, before), [1, 1]);
+  const both = stand({ players: 96, displays: [1, 1] });
+  assert.equal(both.plan.conflict, null);
+  // Served ranks then sinks under rank 2, and the promise on it is reported
+  // rather than quietly read away.
+  const after = stand({ players: 96, displays: [1, 1], depth: 1 });
+  assert.deepEqual(after.plan.orphanedReservation, { ranks: [2] });
+});
+
+/**
+ * The grid the property below sweeps: stands with and without a standing
+ * reservation, poor and rich RankPools, and the two player counts that put the
+ * overtake on either side of its threshold.
+ */
+const TILE_STANDS = [
+  stand(),
+  stand({ displays: [1] }),
+  stand({ players: 96 }),
+  stand({ players: 96, displays: [1] }),
+  stand({ players: 128, displays: [1] }),
+  stand({ players: 8, displays: [1] }),
+  stand({ displaySize: 2 }),
+  stand({ displaySize: 2, displays: [2, 2] }),
+  stand({ displaySize: 2, displays: [3, 1], rankFloor: 8 }),
+  stand({ players: 48, displays: [1] }, TOURNAMENT_TYPES[1]),
+  stand({ players: 64, displays: [2, 1] }, TOURNAMENT_TYPES[2]),
+];
+
+test('capped is monotonicity, the rank above and the reservation condition — and nothing else (#66 AC 11)', () => {
+  let refused = 0;
+  const offeredDespite = { overtake: 0, orphanedReservation: 0, unclaimedRemainder: 0 };
+  for (const s of TILE_STANDS) {
+    const vector = vectorOf(s);
+    for (let rank = 1; rank <= Math.min(5, s.plan.players); rank++) {
+      for (let count = 0; count <= 4; count++) {
+        const current = vector[rank - 1] ?? 0;
+        if (count === current) continue;
+        const naive = vectorWith(vector, rank, count);
+        const probe = distribute({ ...s.settings, displays: naive });
+        if (!canReserveDisplays(rank, count, s)) {
+          refused += 1;
+          // Every refusal names one of the two capped rules. Read off the
+          // core's own `conflict` field, never re-derived here.
+          assert.ok(
+            rises(naive) || (count > current && probe.conflict),
+            `rank ${rank} → ${count} was refused without a rule to refuse it`,
+          );
+          continue;
+        }
+        // And the three states ADR 0002 wants reported are never a reason to
+        // refuse: they are counted here so a cap that quietly swallowed them
+        // would show up as a zero.
+        for (const key of Object.keys(offeredDespite)) if (probe[key]) offeredDespite[key] += 1;
+      }
+    }
+  }
+  assert.ok(refused > 0, 'a sweep that refuses nothing measures no cap at all');
+  assert.ok(offeredDespite.overtake > 0, 'an overtake must stay settable at the tile');
+  assert.ok(offeredDespite.orphanedReservation > 0, 'an orphaned reservation must stay settable');
+  assert.ok(offeredDespite.unclaimedRemainder > 0, 'a reservation over the whole depth must stay settable');
+});
+
+test('the tile writes winner packs into the same counters as the rest of the app, and ranked is not among them', () => {
+  const s = stand();
+  // One winner pack is still `open`, so the tile may place it …
+  assert.equal(s.plan.allocation.open, 1);
+  assert.deepEqual(manualWinnerAfter(5, 1, s), { 5: 1 });
+  // … and once it is placed, there is none left to place anywhere.
+  const placed = stand({ manualWinner: { 5: 1 } });
+  assert.equal(placed.plan.allocation.open, 0);
+  assert.equal(canPlaceWinner(7, 1, placed), false);
+  // What `ranked` handed out is not the tile's to take back: rank 1 carries a
+  // winner pack by rank, and the tile's minus finds nothing of its own there.
+  assert.equal(placed.plan.rows[0].winners, 1);
+  assert.equal(placed.plan.allocation.manual[1] ?? 0, 0);
+  assert.equal(canPlaceWinner(1, 0, placed), false);
+  // On the rank it did place, it takes it back — and the counter empties
+  // rather than keeping a zero.
+  assert.deepEqual(manualWinnerAfter(5, 0, placed), {});
+});
+
+test('a rank beyond the player count is addressed by nothing, the tile included (CONTEXT.md, RankPoolDepth)', () => {
+  const s = stand({ players: 8 });
+  assert.equal(canReserveDisplays(9, 1, s), false);
+  assert.equal(canPlaceWinner(9, 1, s), false);
 });

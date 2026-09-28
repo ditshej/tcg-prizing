@@ -32,6 +32,7 @@
  * sheet belongs to #69.
  */
 
+import { distribute } from '../core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
 
 /** The four hot ones, in the order #61 names them. They carry no group title:
@@ -217,4 +218,129 @@ export function clampToBounds(key, value, stand) {
   const number = Math.trunc(Number(value));
   if (!Number.isFinite(number)) return null;
   return Math.min(Math.max(number, bounds.min), bounds.max);
+}
+
+/* ── The two that are set at the tile (#66) ─────────────────────────────── */
+
+/**
+ * `displays` and `manualWinner` are the two Settings fields that carry no
+ * slider: both name a `Rank`, and a `Rank` is a tile, not a number one types
+ * into a control (ADR 0003, #61 "The tiles and their grip"). Their caps stand
+ * here all the same, beside the sliders' — #61 gives a cap **one** home
+ * ("Schieber und Zählwerk kennen denselben Deckel"), and a second home is how
+ * the tile and the sheet come to disagree about the same stand.
+ *
+ * The rule every one of them is measured against is #61's, verbatim:
+ *
+ * > Ein Anschlag darf keinen Zustand verhindern, den ADR 0002 gemeldet haben
+ * > will.
+ *
+ * So what is capped is named, and short: the **monotonicity** of the vector
+ * (`d₁ ≥ d₂ ≥ …`, which is the same statement as "the `Rank` above caps it"
+ * read from either end), the **reservation condition**, and the player count.
+ * The **overtake** and the **orphaned reservation** are not capped: they are
+ * exactly the two states ADR 0002 wants reported rather than prevented, and a
+ * cap that also caught them would delete the states the `ConflictNotice`
+ * exists for, silently and with every test one would otherwise think to write
+ * still green.
+ *
+ * And the asymmetry `reachFor()` already encodes for the sliders holds here
+ * too: a cap stops a handling from reaching **further out**, never from coming
+ * back. A reservation that a sunk cap left standing (a smaller player count, a
+ * `SetupLink` with other values, a Set switch with a smaller `PromoEnvelope`)
+ * is not trimmed — ADR 0006 — and the way down out of it must therefore stay
+ * open, or the one handling that clears the conflict would be gone at the
+ * moment it is wanted.
+ */
+
+/** The reservation vector as a plain array of whole, non-negative numbers. */
+function displayVectorOf(settings) {
+  const raw = Array.isArray(settings.displays) ? settings.displays : [];
+  return raw.map((value) => Math.max(0, Math.trunc(Number(value)) || 0));
+}
+
+/** `d₁ ≥ d₂ ≥ …` — the one rule not even a way out may break (#46, #61). */
+function nonIncreasing(vector) {
+  for (let i = 1; i < vector.length; i++) if (vector[i] > vector[i - 1]) return false;
+  return true;
+}
+
+/** The vector with one `Rank` set, trailing zeroes dropped: an absent entry
+ *  and a zero one are the same reservation, and one spelling is enough. */
+function withDisplay(vector, rank, count) {
+  const next = vector.slice();
+  while (next.length < rank) next.push(0);
+  next[rank - 1] = count;
+  while (next.length > 0 && next[next.length - 1] === 0) next.pop();
+  return next;
+}
+
+/**
+ * What a handling at the tile is allowed to write into `displays`: the whole
+ * new vector, or `null` for "write nothing" — the same convention
+ * `clampToBounds()` uses, and for the same reason: a refused handling leaves
+ * the stand alone rather than writing a value nobody chose.
+ *
+ * The reservation condition is measured by **running the core** on the vector
+ * in question and reading its `conflict` field, not by re-deriving the
+ * inequality here. The shell never reaches past the seam into the calculation
+ * (ADR 0004); asking it a question is not reaching past it, and a second copy
+ * of the condition is a second thing to keep in step.
+ */
+export function reservedDisplaysAfter(rank, count, { settings, plan }) {
+  const r = Math.trunc(Number(rank));
+  const next = Math.trunc(Number(count));
+  if (!Number.isFinite(r) || r < 1 || r > plan.players) return null;
+  if (!Number.isFinite(next) || next < 0) return null;
+
+  const vector = displayVectorOf(settings);
+  const current = vector[r - 1] ?? 0;
+  if (next === current) return null;
+
+  const after = withDisplay(vector, r, next);
+  if (!nonIncreasing(after)) return null;
+  // Outward only: a reservation the RankPool cannot carry is not offered
+  // (maintainer decision on #66, 2026-09-27). Coming back down is never
+  // refused — see the asymmetry above.
+  if (next > current && distribute({ ...settings, displays: after }).conflict) return null;
+  return after;
+}
+
+/** Whether the tile offers that handling at all — what a ± is drawn from. */
+export function canReserveDisplays(rank, count, stand) {
+  return reservedDisplaysAfter(rank, count, stand) !== null;
+}
+
+/**
+ * The same for the `manual` share of the WinnerPackAllocation: the new map, or
+ * `null` for "write nothing".
+ *
+ * Only `manual` is the tile's. What `ranked` handed out is not adjustable
+ * there (CONTEXT.md, `WinnerPackAllocation` — "`ranked` ist nur über die Zahl
+ * steuerbar, nie per `Rank`"), so a minus on a `Rank` that holds nothing but a
+ * `ranked` pack finds nothing to take back.
+ *
+ * Upward the cap is `open`: a `WinnerPack` that is not there is not placed.
+ * That is a cap on the **setting** and not on the state — the overhang of #70
+ * arises when a second value sinks afterwards, and it stays reachable.
+ */
+export function manualWinnerAfter(rank, count, { settings, plan }) {
+  const r = Math.trunc(Number(rank));
+  const next = Math.trunc(Number(count));
+  if (!Number.isFinite(r) || r < 1 || r > plan.players) return null;
+  if (!Number.isFinite(next) || next < 0) return null;
+
+  const current = plan.allocation.manual[r] ?? 0;
+  if (next === current) return null;
+  if (next > current && plan.allocation.open < next - current) return null;
+
+  const map = { ...(settings.manualWinner ?? {}) };
+  if (next === 0) delete map[r];
+  else map[r] = next;
+  return map;
+}
+
+/** Whether the tile offers that handling — what the `Winner packs` ± is drawn from. */
+export function canPlaceWinner(rank, count, stand) {
+  return manualWinnerAfter(rank, count, stand) !== null;
 }
