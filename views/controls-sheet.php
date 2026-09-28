@@ -98,10 +98,15 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       a single game; the app does not — built for One Piece, other games welcome.</p>
     <p class="set-info-foot">Run a different game? Say so on Discord —
       <!--
-        The tag is visible because it has to be typeable when the link goes
-        nowhere. The numeric id behind the link is the prototype's, and the
-        prototype says in so many words that it is still a placeholder — it
-        needs the maintainer's real id before this ships.
+        Tag and profile URL are the maintainer's own, given in #64 ("Lauf 8 ·
+        Angabe"); the value the prototype carried as a placeholder happened to
+        be the same number, and it is no longer one.
+
+        The link opens the Discord app, and a reader without an account lands
+        on a sign-in page instead of the profile. That is known and taken: #64
+        asks for the profile URL and not for a server invite, which would be
+        the robust form. The tag therefore stays visible beside it — where the
+        link goes nowhere, it has to be typeable.
       -->
       <a href="https://discord.com/users/428891117220659241" target="_blank"
          rel="noreferrer"><strong>ditshej</strong></a></p>
@@ -120,10 +125,19 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
               :aria-expanded="openInfo === 'type'" aria-label="About the tournament type level">i</button>
     </div>
 
+    <!--
+      The full name is carried here, and that is what the shortened label is
+      allowed to lean on: `Type` beside the buttons is a shortening of
+      `TournamentType`, not a replacement for it, so it needs no `_Label_` line
+      in the glossary — on the condition CONTEXT.md states in the same breath,
+      that "der volle Name steht zwei Zentimeter weiter im ⓘ der Ebene"
+      (CONTEXT.md, `TournamentType`). Without this opening the label would be a
+      shortening of nothing on screen.
+    -->
     <div class="set-info" x-cloak x-show="openInfo === 'type'">
-      <p>The format inside the game — a Weekly is set up differently from a weekend
-        event. A type carries only what it does differently; the rest it takes from
-        the game above.</p>
+      <p><strong>Tournament type</strong> — the format inside the game, and a Weekly is
+        set up differently from a weekend event. A type carries only what it does
+        differently; the rest it takes from the game above.</p>
       <!--
         The sentence that was wrong in the prototype's own group heading and is
         corrected here: a switch overwrites nothing set by hand (#26, ADR 0003).
