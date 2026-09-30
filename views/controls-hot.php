@@ -40,9 +40,18 @@
       depends on and silently falls back to the first one. x-init runs
       after that first render settles ($nextTick), so it can select the
       right option once there is one to select.
+
+      That first write is not the last one settings.curve needs, though
+      (#104): the sheet, a SetupLink or a Set switch can all move it from
+      outside this rail, and a select's own value never follows a change
+      made to it in script. The $watch below, registered once the options
+      exist, is what keeps $el.value on settings.curve after that.
     -->
-    <select x-init="$nextTick(() => { $el.value = settings.curve })"
-            @change="settings.curve = $event.target.value">
+    <select x-init="$nextTick(() => {
+              $el.value = settings.curve
+              $watch('settings.curve', (value) => { $el.value = value })
+            })"
+            @change="setSlider('curve', $event.target.value)">
       <template x-for="step in curveSteps" :key="step.id">
         <option :value="step.id" x-text="step.id"></option>
       </template>
