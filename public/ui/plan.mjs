@@ -463,9 +463,16 @@ export function planApp(seam = SEAM) {
     /**
      * The four hot sliders, kept under their own names because the fixed rail
      * under `Plan` (`views/controls-hot.php`) calls them. They are plain
-     * `setSlider()` calls now: the rail and the sheet change the same stand
-     * in the same way, and only the explanation text under the title tells
-     * the two apart (#64 AC 9).
+     * `setSlider()` calls now: the rail and the sheet change the same stand in
+     * the same way, because both call exactly these handlers and so cannot
+     * drift in what they *do* (head comment of `views/controls-hot.php`; #61,
+     * which names the rail literally the same content as `Details` — "die
+     * Schiene **ist** `Details` und war nie ein eigener Inhalt").
+     *
+     * What tells the two forms apart is what they *show*, not what they do:
+     * the sheet carries an explanation under every title and a counter, the
+     * rail neither (#64 AC 9 for the explanation text, which is the criterion
+     * that says it appears only on `Details`).
      */
     setPlayers(value) {
       this.setSlider('players', value);
