@@ -53,3 +53,60 @@ export function columnsFor(stageWidth) {
 export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT) {
   return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS));
 }
+
+/* ── The WinnerRaffle bar (#69) ──────────────────────────────────────────── */
+
+/**
+ * The air between the bar's top edge and the last tile row that still reads as
+ * a tile. Both numbers the prototype uses (`padBottom()`, `showHit()`), and it
+ * uses them for the same thing: what counts as "behind the bar".
+ */
+export const RAFFLE_CLEARANCE = 10;
+
+/**
+ * How much bottom padding the scrolling tile grid needs so the tiles run
+ * **behind** the raffle bar instead of stopping at it (#69 AC 3).
+ *
+ * It is the overlap and nothing else — one rule with two results and no `if`
+ * on the surface: in the Plan view the grid window ends far above the bar, the
+ * overlap is zero, and the rule costs nothing. In fullscreen, where the grid
+ * runs to the bottom edge, it is the bar's whole height. Without it the last
+ * ranks are unreachable in exactly the moment a throw lands on one of them.
+ *
+ * `barRect` is `null` while the bar is closed.
+ */
+export function raffleScrollPadding(windowRect, barRect) {
+  if (!barRect) return 0;
+  const overlap = Math.max(0, windowRect.bottom - barRect.top);
+  return overlap > 0 ? overlap + RAFFLE_CLEARANCE : 0;
+}
+
+/**
+ * How far the tile grid has to scroll to show a hit — the centre of the
+ * **free strip**, which is the scroll window cut off at the bar's top edge
+ * (#69: "in die Mitte des freien Streifens").
+ *
+ * `0` means the tile is already in that strip and the grid does not move at
+ * all. That is the ticket's own wording and #61's, and it is the one place
+ * this file departs from the prototype: `showHit()` computes the delta
+ * unconditionally and therefore recentres a tile that was fully readable
+ * where it stood. Its own comment above it says the opposite ("und tut
+ * nichts, wenn die Kachel schon sichtbar ist"), so the prose is taken over
+ * both prose sources and the code of the throwaway is not.
+ *
+ * "Visible" measures against the bar's top edge and not against the bottom of
+ * the scroll window, because the bar stands still while the retraction list
+ * under it grows — a boundary that moved with the list would make the same
+ * tile visible and hidden by turns, without anything having scrolled.
+ *
+ * One move, not two: the target is computed once and scrolled to once. Scrolled
+ * `nearest` first and nudged afterwards, a set `scrollTop` cancels the smooth
+ * run, and the tile is seen sliding to the edge rather than arriving in the
+ * middle (the prototype's Runde 16, repaired in Runde 17).
+ */
+export function hitScrollDelta(windowRect, tileRect, barTop = Infinity) {
+  const top = windowRect.top;
+  const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
+  if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
+  return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
+}

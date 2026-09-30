@@ -37,7 +37,8 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, attachMeasuring } from './measure.mjs';
+import { applyGeometry, applyRafflePadding, attachMeasuring, showRaffleHit } from './measure.mjs';
+import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
 import {
   DEPTH_STEP_LABELS,
@@ -633,6 +634,142 @@ export function planApp(seam = SEAM) {
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
+    },
+
+    /* ── The WinnerRaffle (#69) ───────────────────────────────────────── */
+
+    /**
+     * Whether the raffle bar stands open. Session state like the page, the
+     * fullscreen and the open bubble, and in the `SetupLink` as little as they
+     * are (#61, "Session state").
+     *
+     * **It closes only at a grip, never by itself** (#69 AC 2): `setPage()`,
+     * `openFullscreen()` and `closeFullscreen()` are deliberately left
+     * untouched. The bar is markup inside `page-plan`, so leaving `Plan`
+     * hides it with the page and coming back shows it again — hidden is not
+     * closed, and no `if` on the surface is needed for either. The retraction
+     * list has to be reachable after the last throw, which is precisely when
+     * a bar that tidied itself away would be gone.
+     */
+    raffleOpen: false,
+
+    /**
+     * The `RaffleRange`, and it is **no `Regler`** but session state of this
+     * operating step (#69, #61): no pin, no reset button, not counted in
+     * `Drop all N`, never in the `SetupLink`, and a Set switch leaves it
+     * standing. Its default `all` is a constant of the term, which is why it
+     * sits here as a literal and in no `DefaultSet`.
+     *
+     * That is also why `controls.mjs` has no entry for it and `link/keys.mjs`
+     * no key: with it absent from both, the sentence "`pinned` gilt für alle
+     * Regler gleich" stays true without an exception.
+     */
+    raffleRange: DEFAULT_RANGE,
+
+    /**
+     * The `Rank` the last throw hit — kept only so the announcement can name
+     * it, and only as long as that `Rank` still holds a `manual` allocation.
+     * It is not a record of provenance: it says nothing about *which* of a
+     * `Rank`'s winner packs was drawn, it is dropped on a reload like every
+     * other piece of session state, and taking the allocation back makes the
+     * announcement fall silent rather than keep a claim about a state that no
+     * longer exists (`raffleView()`).
+     */
+    lastDraw: null,
+
+    /** The die, handed over so `node --test` can hand in one that remembers. */
+    _roll: Math.random,
+
+    /** The thirteen steps as the two rows the bar draws, uncut and unfolded. */
+    raffleRows: RANGE_ROWS,
+
+    /** The bar's whole content, recomputed off the plan like everything else. */
+    get raffle() {
+      return raffleView(this.plan, this.raffleRange, this.lastDraw);
+    },
+
+    /**
+     * The grip on the legend's `winner` entry. It is **never locked**, even
+     * when there is nothing to trigger: locked is the trigger *inside* the
+     * bar, never the way to it (#69 AC 1).
+     */
+    toggleRaffle() {
+      this.raffleOpen = !this.raffleOpen;
+    },
+
+    /** The bar's own ✕ — the one grip besides the legend's that closes it. */
+    closeRaffle() {
+      this.raffleOpen = false;
+    },
+
+    /** Session state, so this writes no pin and no address (#69 AC 12). */
+    setRaffleRange(id) {
+      this.raffleRange = id;
+    },
+
+    /**
+     * One throw: exactly one `WinnerPack` to an evenly drawn `Rank` out of the
+     * `RafflePot`, written into the **same** `manual` counters the tile's ±
+     * writes (#69 AC 5). There is no second record beside them — which is what
+     * makes a raffled allocation droppable by #67's `Drop all N` and
+     * retractable at the tile, with nothing left over anywhere.
+     *
+     * The chance sits here, in the input, and never in `distribute()`: that is
+     * the whole of why recomputing never changes a winner (#69 AC 6).
+     */
+    throwRaffle() {
+      const view = this.raffle;
+      if (!view.canRaffle) return;
+      const rank = drawFrom(view.pot, this._roll);
+      if (rank == null) return;
+      this.setManualWinner(rank, (this.plan.allocation.manual[rank] ?? 0) + 1);
+      this.lastDraw = rank;
+      this.$nextTick?.(() => this.showHit(rank));
+    },
+
+    /**
+     * Taking one back, from the list or from the tile — the same handler and
+     * the same counters either way, and the `Rank` is drawable again in the
+     * very next read of `raffle.pot` (#69 AC 9). The list entry names the
+     * `Rank`, because naming it is what tells correcting apart from
+     * re-rolling (#35); the announcement therefore carries no ✕ at all.
+     *
+     * A `Rank` is cleared outright rather than decremented by one, the way
+     * the prototype's list does it (`data-unmanual`): the entry is one `Rank`
+     * and not one allocation, and its count rides along on the chip so two
+     * packs on one `Rank` are never silently one.
+     */
+    takeBackWinner(rank) {
+      this.setManualWinner(rank, 0);
+    },
+
+    /**
+     * The two fleeting channels of a hit, both in the measuring rind: the
+     * grid scrolls to the tile, and the tile lifts out for one animation.
+     * Nothing lasting is written anywhere (#69 AC 10).
+     */
+    showHit(rank) {
+      showRaffleHit(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null, rank);
+    },
+
+    /**
+     * The bar's second measured rule: the grid gets exactly the overlap as
+     * bottom padding, so the tiles scroll **behind** the bar instead of
+     * stopping at it (#69 AC 3).
+     *
+     * Called from `x-effect` on the grid's wrap rather than from `init()`,
+     * which is #66's and #62's. The reads on the first line are what the
+     * effect subscribes to — the bar's height grows with the retraction list
+     * and with the empty-pot sentence, and fullscreen moves the grid's own
+     * bottom edge. `$nextTick` waits for Alpine to have drawn the bar the
+     * measurement is about.
+     */
+    measureRaffle() {
+      const view = this.raffle;
+      void [this.raffleOpen, this.fullscreen, this.activePage, view.takeBack.length, view.hit, view.potEmptyNote];
+      this.$nextTick?.(() =>
+        applyRafflePadding(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null),
+      );
     },
   };
 }
