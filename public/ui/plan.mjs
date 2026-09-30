@@ -23,6 +23,10 @@
 import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
+import { decode } from '../link/decode.mjs';
+import { addressFor, encode } from '../link/encode.mjs';
+import { readLocation, writeLocation } from '../link/location.mjs';
+import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
 import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -37,6 +41,72 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 
+/**
+ * The catalogue, and it **falls out of the sheets**: Games in list order, each
+ * `{ id, types: [{ id }] }`, types in list order — the form the read path
+ * judges a link's base against (`link/decode.mjs`, `catchBase`), with the
+ * screen titles riding along for the two chip rows. The order is meaningful
+ * and is never a surface sort (ADR 0003).
+ *
+ * One list, not two: the list the buttons are drawn from and the list a link
+ * is judged against are the same object, or a Game the screen offers could be
+ * one the link layer replaces without a word.
+ */
+const GAMES = [{ id: GAME.id, title: GAME_TITLE, types: TOURNAMENT_TYPES }];
+
+/**
+ * The second seam of #47, as the app's own pair. It is one argument rather
+ * than two imports used in place, so a `node --test` run can hand over a pair
+ * that remembers instead — the rule about *when* the address bar is written is
+ * this file's, and it would otherwise be provable only at the screen (#89,
+ * "Entscheid K6": "die Regel lebt im Aufrufer, wo `node --test` sie nicht
+ * hält"). What stays unproven is the pair itself, which is the whole point of
+ * it being two lines long.
+ */
+const SEAM = { read: readLocation, write: writeLocation };
+
+/**
+ * What the app opens with, out of the address it was opened at.
+ *
+ * **The rule hangs on the read result, never on `pins`** (Lauf 9, "die
+ * Reichweite der zweiten Ausnahme"). Two cases look alike from the outside —
+ * no pin standing — and they are not the same case:
+ *
+ * - **A cold start**: no query at all. Nothing was read, so nothing is
+ *   reported and the address bar is not touched — an app merely opened has no
+ *   link in circulation, and changing the address because somebody opened the
+ *   page is a movement without a counterpart (#47, "Writing the address bar").
+ *   The read path is not even entered: `decode('')` finds no `v` and answers
+ *   in the future-version branch, so asking it would hand #72's overlay a
+ *   report on every plain visit.
+ * - **A link came in and nothing survived the reading**: there *was* input, so
+ *   the opening place cleans up after it (Entscheid K6) — the address bar is
+ *   written as what actually holds, even when not a single pin stands
+ *   afterwards. Otherwise an unreadable link keeps standing there claiming
+ *   something the screen does not show.
+ *
+ * The one link that is **not** written back is the one from the future: its
+ * base is all that was read, and writing our version over it would devalue a
+ * link a newer app could still read in full (#47). Detected by the report's
+ * own entry, the same way `migrate()` detects it — the first slider drag
+ * overwrites it anyway.
+ *
+ * Read the version off `migrated`? It never comes to that: K6 is strictly
+ * wider — every read that is not from the future is written back, chain or no
+ * chain — so the case `migrated` was to single out is already inside. Said
+ * here because #89's last criterion names the field, and a criterion that
+ * answers a narrower question than the decision above it is answered by the
+ * wider one.
+ */
+function openingRead(query) {
+  const empty = String(query ?? '').replace(/^[?#]/, '') === '';
+  if (empty) return { game: GAME.id, type: TOURNAMENT_TYPES[0].id, pins: {}, report: null, write: false };
+
+  const lifted = migrate(decode(query, GAMES));
+  const fromTheFuture = (lifted.report?.entries ?? []).some((entry) => entry.kind === 'futureVersion');
+  return { ...lifted, report: lifted.report ?? null, write: !fromTheFuture };
+}
+
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
 function restMessage(lastServedRank, players) {
   const from = lastServedRank + 1;
@@ -44,37 +114,58 @@ function restMessage(lastServedRank, players) {
   return from === players ? `rank ${from} gets nothing` : `ranks ${from}–${players} get nothing`;
 }
 
-export function planApp() {
+export function planApp(seam = SEAM) {
+  const opened = openingRead(seam.read());
+  const openedType = TOURNAMENT_TYPES.find((entry) => entry.id === opened.type) ?? TOURNAMENT_TYPES[0];
+  // K6, before the first paint: what came in has been read, so what holds is
+  // what the address bar says from here on.
+  if (opened.write) seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins }));
+
   return {
     /**
      * The chosen Set, as the two names the chain is built from (ADR 0003):
      * the Game and the TournamentType, never a list position — the same two
      * a SetupLink carries as its base (`link/keys.mjs`, `BASE_KEYS`).
      */
-    gameId: GAME.id,
-    typeId: TOURNAMENT_TYPES[0].id,
+    gameId: opened.game,
+    typeId: openedType.id,
+
+    /** The catalogue the chips are drawn from and a link is judged against. */
+    games: GAMES,
 
     /**
-     * The catalogue, and it **falls out of the sheets**: Games in list order,
-     * each `{ id, types: [{ id }] }`, types in list order — the form the read
-     * path judges a link's base against (`link/decode.mjs`, `catchBase`), with
-     * the screen titles riding along for the two chip rows here. The order is
-     * meaningful and is never a surface sort (ADR 0003).
-     *
-     * One list, not two: when #89 hands the catalogue to `decode()`, the list
-     * the buttons are drawn from and the list a link is judged against have to
-     * be the same object, or a Game the screen offers could be one the link
-     * layer replaces without a word.
+     * What the link cost on the way in, as the data structure #51 builds —
+     * `null` when nothing was lost, and `null` on a cold start because nothing
+     * was read at all. #72 is where it becomes the app's one overlay; this
+     * ticket builds the edge that carries it there, and without the edge every
+     * loss stays mute, `migrate()` having no caller at all.
      */
-    games: [{ id: GAME.id, title: GAME_TITLE, types: TOURNAMENT_TYPES }],
+    linkReport: opened.report,
+
+    /**
+     * Whether a SetupLink is in circulation — read out of the address bar, or
+     * put there by a pin. It is what tells the two silent cases apart: before
+     * the first pin of a cold start the address stays empty, and afterwards
+     * every change writes the **whole** form, base included, even one that
+     * leaves no pin standing.
+     */
+    linkInCirculation: opened.write,
+
+    /** The unproven rim, kept as handed in so a test can hand in its own. */
+    _writeAddress: seam.write,
 
     /**
      * What the CommunityLead set by hand — the third level over Game and
      * TournamentType, and the record that makes a Set switch keep his work
      * (#64 AC 7). It is a *stored* state, not a comparison against the sheet
      * (ADR 0006): a slider moved back onto its default value stays in here.
+     *
+     * A link's pins land here unchanged: a value out of a URL is a pinned
+     * value like any other and the app never tracks that it came from one
+     * (ADR 0005), so the migrated stand applies at once rather than waiting
+     * for a click (#47, "Reading a link").
      */
-    pins: {},
+    pins: opened.pins,
 
     /**
      * The resolved sheet, kept as a plain object rather than a getter: the
@@ -83,7 +174,7 @@ export function planApp() {
      * this file goes through `setSlider()`, which writes both here and into
      * `pins`; `resolve()` rebuilds it whenever the Set beneath it changes.
      */
-    settings: resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins: {} }),
+    settings: resolveSettings({ game: GAME, type: openedType, pins: opened.pins }),
     curveSteps: CURVES,
     depthSteps: DEPTH_STEPS.map((id) => ({ id, label: DEPTH_STEP_LABELS[id] })),
 
