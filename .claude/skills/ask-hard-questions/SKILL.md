@@ -172,9 +172,33 @@ fails: it can be read and still not be decidable. The verdict was the same one,
 too: "einen langen Fliesstext, den ich auch gradsogut im Terminal hätte lesen
 können."
 
+**Hold the path, not the evidence.** The rule above already says where a
+screenshot goes — beside the question file, as an `"type": "image"` entry. What
+run 9 added is that the session must not then *open* it. The picture is for the
+maintainer, in the questionnaire; a session that looks at it has bought it once
+for nothing. The same goes for a tool README, a worked example, a long output
+block: produce it, file it, carry the path.
+
+Run 9 is the measurement. Stages 2 to 5 ran inside the `/round` conductor,
+because the maintainer types the command where he is standing, and the round
+came to **137k against run 8's 55k** — phases A to D plus F sat at about 60k, so
+Phase E carried roughly 77k on its own. Two composite screenshots, the tool
+README and one worked example are most of what a session can read without
+noticing. `/round`'s conductor rule — hold paths, not content — was never
+suspended here; it was simply not applied.
+
+The seam is narrow and worth naming, because "never look" is not quite the rule:
+
+- **You took it yourself, from a state you set.** Then the state vouches for it,
+  not the look. File the path and move on.
+- **Someone else produced it, or you cannot say which state it shows.** Then it
+  is not evidence yet and you have to look — once, and the card says what you
+  saw.
+
 Done when every card has at least one piece of evidence produced in this
-session, every numeric one has been through the form question, and every card
-about something visible carries a picture of it.
+session, every numeric one has been through the form question, every card about
+something visible carries a picture of it, and no artefact bigger than its own
+path has been read into this context.
 
 ## Stage 3 — the card has to survive the repo being closed
 
