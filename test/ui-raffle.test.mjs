@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute } from '../public/core/distribute.mjs';
@@ -261,4 +262,69 @@ test('a rank retracted at the tile is the same retraction — one counter, not t
   it.setManualWinner(hit, 0); // the tile's minus, #66
   assert.deepEqual(it.raffle.takeBack, []);
   assert.ok(it.raffle.pot.includes(hit));
+});
+
+/* ── The markup (AC 1, 2, 8, 13) ────────────────────────────────────────── */
+
+/**
+ * The surface of this step is static Alpine markup PHP composes once
+ * (ADR 0004), so there is nothing to import for it. What `node --test` can
+ * still hold is the markup text — and three of this ticket's criteria are
+ * statements about exactly that: a grip that is never locked, an
+ * announcement without a ✕, and a pointer that stays on the sheet.
+ */
+function view(name) {
+  return readFileSync(new URL(`../views/${name}`, import.meta.url), 'utf8');
+}
+
+/** The markup of one element, from its opening tag to the matching close. */
+function element(source, openingTag, closeTag) {
+  const start = source.indexOf(openingTag);
+  assert.ok(start >= 0, `${openingTag} is gone from the view`);
+  const end = source.indexOf(closeTag, start);
+  assert.ok(end > start, `${openingTag} is not closed`);
+  return source.slice(start, end + closeTag.length);
+}
+
+test('the grip sits on the legend and carries no disabled state at all (AC 1)', () => {
+  const legend = element(view('plan.php'), '<div class="plan-legend"', '</div>');
+  const grip = element(legend, '<button type="button" class="legend-handle"', '</button>');
+  assert.ok(grip.includes('toggleRaffle()'), 'the legend grip does not open the bar');
+  assert.ok(grip.includes('mark-winner'), 'the grip does not sit on the `winner` entry');
+  assert.equal(/disabled/.test(grip), false, 'the grip can be locked — the retraction list would be out of reach');
+  // `pack` goes first and stays flat text, so the row does not start with a button.
+  assert.ok(legend.indexOf('mark-pack') < legend.indexOf('legend-handle'));
+});
+
+test('the bar is a child of the Plan page, so no page or fullscreen switch closes it (AC 2)', () => {
+  const source = view('plan.php');
+  const bar = source.indexOf('class="raffle-bar"');
+  assert.ok(bar >= 0, 'the raffle bar is gone');
+  assert.ok(source.indexOf('<div class="page-plan"') < bar, 'the bar left the Plan page');
+  // `x-show`, not `x-if`: hidden with the page, never torn down and rebuilt.
+  assert.ok(element(source, '<div class="raffle-bar"', '>').includes('x-show="raffleOpen"'));
+});
+
+test('the announcement carries no ✕; the retraction names the rank (AC 8)', () => {
+  const source = view('plan.php');
+  const announcement = element(source, '<p class="raffle-hit"', '</p>');
+  assert.equal(announcement.includes('✕'), false, 'the announcement grew a ✕');
+  assert.equal(/takeBackWinner|@click/.test(announcement), false, 'the announcement became a handle');
+
+  const list = element(source, '<div class="raffle-takeback-list"', '</div>');
+  assert.ok(list.includes('takeBackWinner(entry.rank)'));
+  assert.ok(list.includes('entry.label'), 'the entry does not name its rank');
+});
+
+test('the sheet keeps a pointer to the RaffleRange, with its explanation and no control (AC 13)', () => {
+  const sheet = view('controls-sheet.php');
+  const hit = sheet.indexOf('Raffle range');
+  assert.ok(hit >= 0, 'the RaffleRange pointer is gone from the sheet');
+  const block = sheet.slice(sheet.lastIndexOf('<div class="sheet-control">', hit), sheet.indexOf('</div>', hit) + 6);
+  assert.ok(block.includes('Which ranks the Winner raffle may draw from'), 'the explanation is gone');
+  assert.ok(block.includes('raffle.rangeName'), 'the pointer does not say which step stands');
+  // A pointer, not a control: no handler, no pin mark, no reset.
+  assert.equal(/setRaffleRange|sheet_control|pin/.test(block), false);
+  // And it is not among the sliders: `raffleRange` is no key anywhere.
+  assert.equal(sheet.includes("'raffleRange'"), false);
 });

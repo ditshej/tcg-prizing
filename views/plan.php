@@ -57,10 +57,29 @@
       </template>
     </div>
 
+    <!--
+      The legend is where the WinnerRaffle is operated from (#69): the grip
+      sits on the `winner` entry — the key to exactly the mark the raffle
+      produces — so it does not stand far from its own output. `pack` goes
+      first and stays flat text, so the row does not begin with a button; the
+      grip is the exception at the end rather than the rule at the start
+      (prototype, `slotLegend()`).
+
+      It is **never disabled**, not even with nothing left to trigger. Locked
+      is the trigger *inside* the bar; locking the way to the bar would put
+      the retraction list out of reach after the last throw, which is exactly
+      when it is wanted.
+    -->
     <div class="plan-legend" x-ref="legend">
-      <span class="legend-item"><span class="mark mark-winner circle" style="position:static">N</span> winner packs</span>
-      <span class="legend-item"><span class="mark mark-pack circle" style="position:static">N</span> tournament packs</span>
+      <span class="legend-item"><span class="mark mark-pack circle" style="position:static">N</span> pack</span>
       <span class="legend-item"><span class="mark mark-winner dot" style="position:static"></span> one of either</span>
+      <button type="button" class="legend-handle" :aria-expanded="raffleOpen"
+              title="Winner raffle" @click="toggleRaffle()">
+        <span class="mark mark-winner circle" style="position:static">N</span>
+        <span>winner</span>
+        <span class="legend-dice" aria-hidden="true">🎲</span>
+        <span class="legend-open" x-show="raffle.open > 0" x-text="raffle.open"></span>
+      </button>
     </div>
 
     <!--
@@ -74,7 +93,14 @@
       load-bearing, because a minimised ConflictNotice would otherwise leave a
       conflicting plan looking valid.
     -->
-    <div class="plan-grid-wrap">
+    <!--
+      `x-effect` and not a line in `init()`: the raffle bar's height grows with
+      its retraction list, so the padding that lets the tiles scroll behind it
+      has to be re-measured whenever that list, the bar's open state or the
+      fullscreen changes. `measureRaffle()` reads exactly those on its first
+      line, which is what the effect subscribes to (#69 AC 3).
+    -->
+    <div class="plan-grid-wrap" x-effect="measureRaffle()">
       <div class="plan-grid" x-ref="grid" @scroll="placeBubble()">
         <template x-for="row in tiles" :key="row.rank">
           <button type="button" class="tile" :class="tile(row).classes" :data-rank="row.rank"
@@ -183,4 +209,84 @@
   <section class="plan-controls" x-show="!fullscreen">
     <?php require __DIR__ . '/controls-hot.php'; ?>
   </section>
+
+  <!--
+    The WinnerRaffle's fixed bar (#69), over the foot navigation and **not** a
+    bubble at the grip: the retraction list grows with every throw, and a
+    surface whose height depends on its data must not cling to an anchor —
+    measured, it grew from 112 to 201px and tipped over the tiles at the
+    second hit, so it jumped exactly when it was being used.
+
+    It belongs to the `Plan` column, so it is a child of `page-plan` rather
+    than of the app: leaving `Plan` hides it with the page and coming back
+    shows it again, and in fullscreen it becomes full width by itself because
+    there the `Plan` column is the whole screen. One rule, no `if` on the
+    surface — the same shape as the padding under the grid.
+
+    Four things in this order and **no head of its own**: it opens out of a
+    grip that already carries the word. The announcement has **no ✕** —
+    taking back happens in the rank-sorted list or at the tile, that is, only
+    by naming the `Rank`, which is what tells correcting apart from
+    re-rolling (#35). The bar's own ✕ in the top row is something else: it
+    closes the bar and retracts nothing.
+  -->
+  <div class="raffle-bar" x-ref="raffle" x-show="raffleOpen" x-cloak>
+    <div class="raffle-top">
+      <button type="button" class="raffle-trigger" :disabled="!raffle.canRaffle"
+              @click="throwRaffle()">
+        <span aria-hidden="true">🎲</span> Raffle
+      </button>
+      <p class="raffle-stand">
+        <span x-text="raffle.stand"></span>
+        <template x-if="raffle.potEmptyNote">
+          <span class="raffle-empty" x-text="raffle.potEmptyNote"></span>
+        </template>
+      </p>
+      <button type="button" class="raffle-close" aria-label="Close" @click="closeRaffle()">✕</button>
+    </div>
+
+    <!--
+      All thirteen steps, uncut and unfolded (AC 4). The grid costs a measured
+      28 of 227px; shortening it would take five steps #10 deliberately has,
+      folding it would cost a tap in exactly the case the range is there for.
+      Two rows, `all` opening the lower one across two cells so that every
+      lower chip stands under the upper one carrying the same fraction.
+    -->
+    <div class="raffle-ranges" role="group" aria-label="Raffle range">
+      <template x-for="(row, i) in raffleRows" :key="i">
+        <div class="raffle-range-row">
+          <template x-for="chip in row" :key="chip.id">
+            <button type="button" class="raffle-range" :class="{ 'raffle-range-wide': chip.wide }"
+                    :aria-pressed="raffleRange === chip.id" :title="chip.name"
+                    @click="setRaffleRange(chip.id)">
+              <span class="raffle-arrow" aria-hidden="true" x-text="chip.arrow"></span><span x-text="chip.icon"></span>
+            </button>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <template x-if="raffle.hit">
+      <p class="raffle-hit">
+        <strong x-text="`Rank ${raffle.hit}`"></strong>
+        <span class="raffle-hit-said">drew a winner pack</span>
+      </p>
+    </template>
+
+    <template x-if="raffle.takeBack.length">
+      <div class="raffle-takeback">
+        <p class="raffle-takeback-head">Placed by hand — tap to take back:</p>
+        <div class="raffle-takeback-list">
+          <template x-for="entry in raffle.takeBack" :key="entry.rank">
+            <button type="button" class="raffle-chip" @click="takeBackWinner(entry.rank)"
+                    :aria-label="`Take back ${entry.label}`">
+              <span x-text="entry.label"></span>
+              <span x-show="entry.count > 1" x-text="`×${entry.count}`"></span>
+              <span aria-hidden="true">✕</span>
+            </button>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
 </div>

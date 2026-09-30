@@ -809,3 +809,246 @@ body {
   opacity: 1;
   font-weight: 700;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The WinnerRaffle (#69) — the grip on the legend and the fixed bar
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * The bar is anchored to the `Plan` page, not to the app: that puts it
+ * directly over the foot navigation while `Plan` is a page, and over the
+ * whole screen's bottom edge in fullscreen, where the foot is gone — one
+ * rule, two results, no `if` on the surface.
+ */
+.page-plan {
+  position: relative;
+}
+
+/*
+ * The grip on the legend's `winner` entry. It reads as a pill, because it is
+ * the one thing in that row that can be pressed — and it is never disabled,
+ * however little there is to trigger.
+ */
+.legend-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 999px;
+  background: light-dark(rgba(20, 18, 15, 0.07), rgba(255, 255, 255, 0.09));
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.legend-handle[aria-expanded='true'] {
+  background: light-dark(rgba(20, 18, 15, 0.16), rgba(255, 255, 255, 0.2));
+}
+
+.legend-dice {
+  font-size: 0.8rem;
+}
+
+/* The counter of still-open winner packs. It is absent at zero rather than
+   showing a 0: the grip stays reachable, but it stops advertising a throw. */
+.legend-open {
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+  font-weight: 700;
+  text-align: center;
+}
+
+/*
+ * A gap all round through which the background shows, and the bubble's own
+ * shadow set: edge to edge on `--paper` next to another raised surface, two
+ * raised surfaces without a seam read as one broken one. No border instead —
+ * #15 decided "no borders, depth from shadow", and a line here would be the
+ * first that separates no data.
+ */
+.raffle-bar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 40;
+  padding: 10px 12px 12px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  box-shadow: 0 6px 20px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.6));
+}
+
+.raffle-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+
+.raffle-trigger {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* The locked trigger — the only thing in this step that is ever locked. */
+.raffle-trigger:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.raffle-stand {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  opacity: 0.8;
+}
+
+/* The one thing the RafflePot ever shows: that it is empty. It is the reason
+   beside a locked button, not a count. */
+.raffle-empty {
+  display: block;
+  color: light-dark(#a8541f, #eab27a);
+  opacity: 1;
+}
+
+.raffle-close {
+  flex: 0 0 auto;
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.raffle-ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.raffle-range-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.raffle-range {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 5px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 5px;
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.raffle-range-wide {
+  grid-column: 1 / span 2;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.raffle-range[aria-pressed='true'] {
+  background: light-dark(#3f7a5e, #5fae87);
+  border-color: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+}
+
+.raffle-arrow {
+  font-size: 0.6rem;
+  opacity: 0.5;
+}
+
+.raffle-range[aria-pressed='true'] .raffle-arrow {
+  opacity: 0.85;
+}
+
+/* The announcement: a fixed, loud place, and no ✕ on it. */
+.raffle-hit {
+  margin: 9px 0 0;
+  font-size: 0.75rem;
+}
+
+.raffle-hit-said {
+  opacity: 0.7;
+}
+
+.raffle-takeback-head {
+  margin: 9px 0 4px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.raffle-takeback-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.raffle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 999px;
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+/*
+ * The hit, and it is **fleeting**. The class is put on for one animation and
+ * taken off again at `animationend` (`measure.mjs`), so nothing on the screen
+ * and nothing in the component remembers afterwards which rank was drawn and
+ * which was set by hand — that provenance is what the model deliberately does
+ * not keep (CONTEXT.md, `WinnerRaffle`).
+ */
+@keyframes tile-hit {
+  0% {
+    transform: none;
+    box-shadow: none;
+  }
+  35% {
+    transform: scale(1.14);
+    box-shadow: 0 6px 16px light-dark(rgba(20, 18, 15, 0.35), rgba(0, 0, 0, 0.7));
+  }
+  100% {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.tile-hit {
+  animation: tile-hit 900ms ease-out;
+  z-index: 5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-hit {
+    animation-duration: 1ms;
+  }
+}
