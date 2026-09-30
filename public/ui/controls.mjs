@@ -349,3 +349,177 @@ export function manualWinnerAfter(rank, count, { settings, plan }) {
 export function canPlaceWinner(rank, count, stand) {
   return manualWinnerAfter(rank, count, stand) !== null;
 }
+
+/* ── `pinned` against `auto`, and what a reach drops (#67) ──────────────── */
+
+/**
+ * The screen word of every item that can be `pinned`. It is what the question
+ * of the full reach **enumerates** — #61 and #67 ask for *which* sliders fall,
+ * not only how many — so a key without a word here would list itself in code
+ * type, and #52 settled for the `LinkMigration` report that a wire key is only
+ * ever shown where no screen word exists at all.
+ *
+ * The words are the sheet's own (`views/controls-sheet.php`), and
+ * `test/ui-pins.test.mjs` holds the two lists against each other rather than
+ * trusting them: they are two files, and a question that names a slider the
+ * sheet calls something else names nothing.
+ *
+ * Three of them are not `sheet_control()` calls and are therefore written out
+ * here by hand:
+ *
+ * - **`displays` and `manualWinner`** are set at the tile and have no control
+ *   on the sheet (#66). The words are the prototype's, which wrote them for
+ *   this list and no other use (`cockpit.prototype.html`, `LABEL`) — `Displays`
+ *   alone would not say, in a list of things being destroyed, that a
+ *   reservation is meant.
+ * - **`depthStep`** has no screen word at all: it is the step grid *inside*
+ *   `Served ranks` and its chips carry the step names, never the grid's own.
+ *   The word below is therefore **invented**, which this repo does not like
+ *   and which is reported with the ticket. It is not avoidable here: the step
+ *   is a stored pin like any other, so it falls with the rest and a question
+ *   that leaves it out would under-report what it destroys.
+ */
+export const PIN_LABELS = {
+  players: 'Players',
+  depth: 'Served ranks',
+  curve: 'Curve',
+  rankFloor: 'Min boosters per rank',
+  depthStep: 'Served ranks step',
+  boosterRate: 'Boosters per player (pool)',
+  displaySize: 'Boosters per display',
+  tournamentPacks: 'Tournament packs available',
+  envelopeSize: 'Tournament Packs per Promo-Envelope',
+  envelopeYield: 'Winner packs per Promo-Envelope',
+  participationBooster: 'Participation boosters',
+  participationPack: 'Participation packs',
+  judgeBooster: 'Judge boosters',
+  judgeWinner: 'Judge winner packs',
+  combinedHandout: 'Handout',
+  winnerPacks: 'Winner packs available',
+  ranked: 'Winner packs by rank',
+  displays: 'Reserved displays',
+  manualWinner: 'Winner packs by hand',
+};
+
+/** The order the question enumerates in: the sheet's own, then the two that
+ *  are set at the tile. A pin record has the order its pins were *set* in (or,
+ *  out of a `SetupLink`, the register's), and a list that reorders itself
+ *  between two readings cannot be compared by eye. */
+export const PIN_ORDER = [...SHEET_KEYS, 'displays', 'manualWinner'];
+
+/** The selector of the bubble the question is drawn in. A name rather than a
+ *  literal in two files, because #103 brings a second trigger site and the
+ *  bubble is what the two share. */
+export const DROP_BUBBLE = '[data-drop-bubble]';
+
+/**
+ * Whether a key stands `pinned` in a given pin record — the whole of the
+ * marking, and it never looks at the sheet. The pin is set by the handling
+ * (ADR 0006), so what is asked here is only whether the record carries
+ * something, never whether it deviates.
+ *
+ * The two composite pins are the one subtlety, and it is not a special case in
+ * disguise: a vector of zeroes and an empty map are *no* reservation and *no*
+ * hand-placed pack — `withDisplay()` above drops trailing zeroes for the same
+ * reason, and `manualWinnerAfter()` deletes a `Rank` that falls to zero. A
+ * record that still carries the emptied container is a record of a handling
+ * that has been taken all the way back.
+ *
+ * Written over the shape of the value rather than over a list of key names:
+ * #65 pins `winnerPacks`, #69 writes into `manualWinner`, #103 will drop
+ * `rankFloor` and `depth`, and a hand-typed list would have to learn about
+ * each of them.
+ */
+export function isPinned(key, pins) {
+  if (!pins || !Object.prototype.hasOwnProperty.call(pins, key)) return false;
+  const value = pins[key];
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.some((entry) => Number(entry) > 0);
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
+function pinRank(key) {
+  const at = PIN_ORDER.indexOf(key);
+  return at === -1 ? PIN_ORDER.length : at;
+}
+
+/**
+ * What stands `pinned`, in sheet order. `displays` and `manualWinner` are
+ * **one** entry each however many `Rank`s carry one (#61, #67): the question
+ * lists what falls, and what falls is the reservation as a whole. The counter
+ * is the length of this list and not a second count, which is the whole reason
+ * it is a list and not a number (prototype, Runde 23: "der Zähler addierte
+ * bisher jede manual-Zuteilung einzeln, die Meldung zählte sie als einen
+ * Posten — zwei Zahlen für dieselbe Sache").
+ */
+export function pinnedKeys(pins) {
+  return Object.keys(pins ?? {})
+    .filter((key) => isPinned(key, pins))
+    .sort((a, b) => pinRank(a) - pinRank(b));
+}
+
+/** The screen word, or the key itself where a future pin has none yet. */
+export function pinLabel(key) {
+  return PIN_LABELS[key] ?? key;
+}
+
+/** The same list with the words the question reads out. */
+export function pinnedItems(pins) {
+  return pinnedKeys(pins).map((key) => ({ key, label: pinLabel(key) }));
+}
+
+/** The record without the named pins — a new one, because the old one is what
+ *  the plan on screen was computed from. */
+export function pinsWithout(pins, keys) {
+  const drop = new Set(keys ?? []);
+  const next = {};
+  for (const [key, value] of Object.entries(pins ?? {})) if (!drop.has(key)) next[key] = value;
+  return next;
+}
+
+/**
+ * The middle sentence of the question, per reach. It is a table and not an
+ * `if`, and that is the seam #103 is owed: its Entscheid 4 puts the same third
+ * reach at a second trigger — switching `CombinedHandout` back off lists
+ * `rankFloor` and `depth` and carries the button that drops them, "keine neue
+ * Mechanik: dieselbe dritte Reichweite des Rückwegs an neuer Stelle". What it
+ * adds here is one entry; what it adds elsewhere is one `askDrop()` call.
+ *
+ * The wording is the prototype's (`confirmPop()`), including that `carry`
+ * differs from `all` in the middle sentence alone: the two reaches are the
+ * same handling, so a question that looked different would say they are not.
+ */
+export const DROP_NOTES = {
+  all: ({ many, typeTitle }) =>
+    `${many ? 'Each one goes' : 'It goes'} back to what ${typeTitle} says.`,
+  carry: ({ many, typeTitle }) =>
+    `${many ? 'They' : 'It'} stayed behind when you switched. Following ${typeTitle} now means ` +
+    `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
+};
+
+/** The one sentence no reach may drop: there is no undo, and it is said
+ *  because #33 withdrew the session-wide undo that would have made the
+ *  question dispensable (ADR 0006, second addendum). */
+export const NO_UNDO = 'There is no undo.';
+
+/**
+ * The question itself, as text: `{ keys, typeTitle, reach }` → what the bubble
+ * shows. No DOM and no state — where it lands is the shell's measuring rind
+ * and is judged at the picture (#61, "Anker und Schichtung").
+ */
+export function dropConfirmation({ keys, typeTitle, reach = 'all' }) {
+  const list = [...(keys ?? [])];
+  const count = list.length;
+  const many = count > 1;
+  const note = (DROP_NOTES[reach] ?? DROP_NOTES.all)({ many, typeTitle, count });
+  return {
+    keys: list,
+    count,
+    names: list.map(pinLabel).join(', '),
+    headline: `${count} ${many ? 'sliders' : 'slider'} back to ${typeTitle}?`,
+    note: `${note} ${NO_UNDO}`,
+    confirm: `Drop ${count}`,
+    cancel: 'Keep them',
+  };
+}
