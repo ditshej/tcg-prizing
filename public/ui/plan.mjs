@@ -724,7 +724,13 @@ export function planApp(seam = SEAM) {
       if (rank == null) return;
       this.setManualWinner(rank, (this.plan.allocation.manual[rank] ?? 0) + 1);
       this.lastDraw = rank;
-      this.$nextTick?.(() => this.showHit(rank));
+      /* Two waits, and the second is the load-bearing one. `$nextTick` waits
+         for the tile to carry its new mark; the frame after it waits for the
+         **bar** to have grown by the announcement and the new list entry, and
+         for `measureRaffle()` to have written the padding that goes with it.
+         Measured without it, the scroll was computed against the bar's old,
+         shorter box and put the hit behind the grown one. */
+      this.$nextTick?.(() => requestAnimationFrame(() => this.showHit(rank)));
     },
 
     /**
