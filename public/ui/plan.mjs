@@ -359,6 +359,7 @@ export function planApp(seam = SEAM) {
      */
     resolve() {
       this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
+      this.syncAddress();
     },
 
     /** One ⓘ per level, each with its own sentence — the same handle closes it. */
@@ -400,6 +401,30 @@ export function planApp(seam = SEAM) {
       if (next === null) return;
       this.pins[key] = next;
       this.settings[key] = next;
+      this.syncAddress();
+    },
+
+    /**
+     * The address bar after a change the SetupLink carries — a pin, or the
+     * base beneath it. It takes the **pins**, never the resolved stand: the
+     * stand names every slider, so `encode(this.settings)` would turn one pin
+     * into twelve decisions nobody made and lose `depthStep` on the way
+     * (Befund G3, `## Nachtrag (#86)` in ADR 0009).
+     *
+     * Which of the two forms is written hangs on whether a link is in
+     * circulation, not on how many pins stand. Before the first pin of a cold
+     * start `addressFor()` answers `null` — leave it alone — and that is the
+     * whole of #50's exception. From the first pin on, and from the first
+     * incoming link on, the **complete** form is written: a Set switch under
+     * a link with no pins has to move the address too, or it would keep
+     * naming the type the sender chose.
+     */
+    syncAddress() {
+      const setup = { game: this.gameId, type: this.typeId, pins: this.pins };
+      const url = this.linkInCirculation ? encode(setup) : addressFor(setup);
+      if (url === null) return;
+      this.linkInCirculation = true;
+      this._writeAddress(url);
     },
 
     /** The counter's ±, moving by one inside the same bounds the slider has. */
@@ -471,6 +496,7 @@ export function planApp(seam = SEAM) {
       if (next === null) return;
       this.pins.displays = next;
       this.settings.displays = next;
+      this.syncAddress();
     },
 
     /** The `manual` share of the `WinnerPackAllocation` — the same counters a
@@ -480,6 +506,7 @@ export function planApp(seam = SEAM) {
       if (next === null) return;
       this.pins.manualWinner = next;
       this.settings.manualWinner = next;
+      this.syncAddress();
     },
 
     /** The two ± of the open bubble, each moving by one inside its own cap. */

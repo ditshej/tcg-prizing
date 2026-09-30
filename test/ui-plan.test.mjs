@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { decode } from '../public/link/decode.mjs';
+import { TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { planApp } from '../public/ui/plan.mjs';
 
 /**
@@ -44,6 +45,51 @@ test('the cold start is the state a fresh app has always shown', () => {
   assert.equal(app.gameId, 'onepiece');
   assert.equal(app.typeId, 'weekly');
   assert.deepEqual(app.pins, {});
+});
+
+/**
+ * #89 AC 2 and AC 3: the first pin writes the whole base with it, every
+ * further one writes the address on. The strings are the register's order
+ * (#48), not the order the pins were set in — a link is compared by eye.
+ */
+test('the first pin writes the base along with it, and every further pin writes on', () => {
+  const { app, written } = opened('');
+  app.setSlider('rankFloor', 3);
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekly&rankFloor=3']);
+
+  app.setSlider('players', 48);
+  assert.equal(written.length, 2);
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly&players=48&rankFloor=3');
+});
+
+/** The two composite sliders are set at the tile, not at a slider, and they are
+ *  pins like any other (ADR 0006, CONTEXT.md `SetupLink`). */
+test('a reservation set at the tile reaches the address bar', () => {
+  const { app, written } = opened('');
+  app.setDisplays(1, 1);
+  assert.deepEqual(app.pins.displays, [1]);
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly&displays=1');
+});
+
+/**
+ * #89 AC 5, at the seam it is asked about: what the screen produced, read back
+ * through `decode()`, is the stand the screen holds — base and pins, nothing
+ * added. Twelve decisions out of one pin is what `encode(plan.settings)` would
+ * have written (Befund G3), and this is the assertion that would see it.
+ */
+test('what the screen wrote decodes back into the stand the screen holds', () => {
+  const { app, written } = opened('');
+  app.setSlider('rankFloor', 3);
+  app.setSlider('curve', 'steep');
+  app.setDisplays(1, 1);
+  app.setManualWinner(4, 1);
+  assert.deepEqual(Object.keys(app.pins).sort(), ['curve', 'displays', 'manualWinner', 'rankFloor']);
+
+  const read = decode(written.at(-1), [{ id: 'onepiece', types: [...TOURNAMENT_TYPES] }]);
+  assert.equal(read.game, app.gameId);
+  assert.equal(read.type, app.typeId);
+  assert.deepEqual(read.pins, app.pins);
+  assert.equal(read.report, null);
 });
 
 /** What `decode('')` answers on its own — the reason the cold start reads nothing. */
