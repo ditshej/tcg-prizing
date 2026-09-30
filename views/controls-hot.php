@@ -16,11 +16,22 @@
  *
  * Every `x-…` attribute is static markup composed once by PHP; the values and
  * handlers come from `planApp()` (ADR 0004).
+ *
+ * #67 marks these four as well. The marking belongs to the *control*, not to
+ * the sheet: the rail and the sheet are the same four controls in two forms
+ * (#61, "die Schiene **ist** `Details`"), and a slider that reads `pinned` on
+ * one page and says nothing on the other would make the state look like a
+ * property of the page. The prototype builds both from one `slider()`, where
+ * only the explanation text hangs on the context. What stays off the rail is
+ * the way back: the reset is a second button per control, and the rail is a
+ * fixed strip whose height the fold arithmetic counts — the way back is one
+ * page switch away, and #71 folds the two together anyway.
  */
 ?>
 <div class="controls-hot">
   <label class="plan-control">
-    <span>Players (<span x-text="settings.players"></span>)</span>
+    <span>Players (<span x-text="settings.players"></span>)<span class="pin-state"
+          :class="`is-${stateWord('players')}`" x-text="stateWord('players')"></span></span>
     <input type="range" min="2" max="128" :value="settings.players"
            @input="setPlayers($event.target.value)">
   </label>
@@ -42,14 +53,16 @@
       height the fold arithmetic counts, so it takes the prototype's short
       form of that note instead of a third line.
     -->
-    <span>RankPoolDepth (<span x-text="plan.depth"></span>)<span class="plan-control-note"
+    <span>RankPoolDepth (<span x-text="plan.depth"></span>)<span class="pin-state"
+          :class="`is-${stateWord('depth')}`" x-text="stateWord('depth')"></span><span class="plan-control-note"
           x-text="`cap ${plan.depthCap}`"></span></span>
     <input type="range" min="1" :max="plan.players" :value="plan.depth"
            @input="setDepth($event.target.value)">
   </label>
 
   <label class="plan-control">
-    <span>DistributionCurve (<span x-text="settings.curve"></span>)</span>
+    <span>DistributionCurve (<span x-text="settings.curve"></span>)<span class="pin-state"
+          :class="`is-${stateWord('curve')}`" x-text="stateWord('curve')"></span></span>
     <!--
       Not x-model/:value: the seven options come from an x-for on a child
       <template>, and Alpine walks a parent's own bindings before its
@@ -76,7 +89,8 @@
   </label>
 
   <label class="plan-control">
-    <span>RankFloor (<span x-text="settings.rankFloor"></span>)</span>
+    <span>RankFloor (<span x-text="settings.rankFloor"></span>)<span class="pin-state"
+          :class="`is-${stateWord('rankFloor')}`" x-text="stateWord('rankFloor')"></span></span>
     <input type="number" min="0" :value="settings.rankFloor"
            @input="setRankFloor($event.target.value)">
   </label>

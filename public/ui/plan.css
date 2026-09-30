@@ -809,3 +809,164 @@ body {
   opacity: 1;
   font-weight: 700;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   `pinned` against `auto`, and the three reaches of the way back (#67)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The marking is a **word**, not a colour: `pinned` and `auto` stand on screen
+   as the glossary writes them (CONTEXT.md, `Pinned`), and colour alone would
+   not survive either mode. The prototype's violet (`--pin`) carries it, and
+   the bold label beside it is its second channel (`.ctl.pinned .lbl`). */
+.pin-state {
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  padding: 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.pin-state.is-pinned {
+  color: light-dark(#7b3fb5, #d5b9f0);
+  background: light-dark(#f2ebfa, #2c2036);
+  font-weight: 700;
+}
+
+.pin-state.is-auto {
+  opacity: 0.5;
+}
+
+.sheet-control.is-pinned .sheet-control-label {
+  font-weight: 700;
+}
+
+/* The counter pushes itself right (`.counter { margin-left: auto }`); a
+   control without one — Curve, Handout — needs the same shove, or its way
+   back sits against the title. */
+.pin-spacer {
+  margin-left: auto;
+}
+
+/* The first reach: one control back on the chosen type, and it asks nothing.
+   Dimmed rather than hidden while the control is `auto` — a button that
+   appears on the first drag moves the counter beside it — and live rather
+   than `disabled`, which would read as broken where it is merely idle. */
+.pin-reset {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: light-dark(#7b3fb5, #d5b9f0);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pin-reset.is-idle {
+  opacity: 0.28;
+}
+
+/* The second reach, beside the `TournamentType` title: the count of what is
+   pinned, and it is the length of the list the question reads out. A word or
+   a number, never a bare symbol on its own. */
+.pin-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 999px;
+  background: light-dark(#ffffff, #232019);
+  color: light-dark(#7b3fb5, #d5b9f0);
+  font: inherit;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pin-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+/*
+ * The question. Same form as the tile's bubble and a higher layer than the
+ * messages: since the third reach sits in a button *inside* the NoticeStack,
+ * a bubble on the stack's own layer had its lower half covered by the message
+ * that opened it (prototype, `.pop`: "z 38, nicht mehr 30"). It is placed
+ * against the **viewport** (`position: fixed`), because its anchor stands in a
+ * column that scrolls itself — an absolutely placed bubble would scroll away
+ * from the button it hangs on. That does not make it an overlay: no backdrop,
+ * no modality, and it covers nothing but the strip it needs.
+ */
+.drop-bubble {
+  position: fixed;
+  z-index: 40;
+  min-width: 210px;
+  max-width: 292px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
+  box-shadow: 0 6px 18px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.55));
+}
+
+.drop-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+}
+
+/* Which sliders fall, by name — the half the ticket asks for over a bare
+   count. It wraps rather than scrolls: a list that is cut off is a list that
+   under-reports what it destroys. */
+.drop-names {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: light-dark(#7b3fb5, #d5b9f0);
+}
+
+.drop-note {
+  margin: 0 0 9px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+
+/* Declining has a named place beside confirming — that is the whole reason
+   this is a bubble and not a button that turns into a question (#33). */
+.drop-ask {
+  display: flex;
+  gap: 6px;
+}
+
+.drop-go,
+.drop-no {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.drop-go {
+  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
+  background: light-dark(#7b3fb5, #d5b9f0);
+  color: light-dark(#ffffff, #14120f);
+  font-weight: 700;
+}
+
+.drop-no {
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  background: none;
+  color: inherit;
+}
