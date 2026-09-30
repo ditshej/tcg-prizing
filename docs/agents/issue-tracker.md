@@ -61,6 +61,43 @@ zu wiederholen**, ein paar Sekunden später. Erst eine zweite leere Antwort ist
 ein Befund; die erste allein kostet nur eine Korrektur an einem Text, der schon
 richtig war.
 
+### And sometimes it never takes — what to do then
+
+Waiting longer is not always the answer. Measured on **2026-09-30** (run 10,
+batch #89 · #104): PR #107 and PR #108 each carried `Closes #104` / `Closes #89`
+as the bare first line of the body, and the link never appeared — **in neither
+direction**, still empty 24 minutes after the PRs were opened.
+
+Ask the other direction too before concluding anything, because it is the one
+that tells a missing edge from a delayed query:
+
+```sh
+gh issue view <n> --json number,state,closedByPullRequestsReferences \
+  --jq '"#\(.number) state=\(.state) closedBy=\(.closedByPullRequestsReferences|map(.number))"'
+```
+
+That run got `#89 closedBy=[]` and `#104 closedBy=[]` against `#52 closedBy=[101]`
+and `#66 closedBy=[102]` — so the mechanism works in this repo, and the cause is
+not the text. Ruled out by measurement: wording (byte-identical in form to the
+PRs that did link), base branch (`main` in all four), draft state, author, and
+the state of the tickets. What was left sat at GitHub's end and no session could
+reach it.
+
+**Do not rewrite a body that is already right, and do not keep waiting.** Decided
+in run 10: merge as built, then `gh issue close <n>` by hand. The machine-readable
+edge is gone for good, and that is accepted — the price is one lookup, not one
+rewrite.
+
+Pay that price the same minute, or the edge is gone twice: **put a comment on the
+ticket naming the PR that did the work** ("dieses Ticket wird erledigt von PR
+#108, Zweig `…`"). A comment is what the next session reads anyway
+(`gh issue view <n> --comments`), and it answers the question GitHub's link list
+can no longer answer — "welche Arbeit hat #89 erledigt".
+
+And the reason this matters beyond tidiness: a finished ticket that stays open
+sits in the frontier and gets counted into the next batch. Run 9 made exactly
+that mistake once.
+
 ## When a skill says "publish to the issue tracker"
 
 Create a GitHub issue.
