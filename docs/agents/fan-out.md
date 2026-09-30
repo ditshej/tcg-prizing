@@ -569,6 +569,18 @@ keep meeting in one session, the conductor rule needs an answer for Phase E, and
 "hold paths, not content" is not it: Stage 3 says the reading is the conductor's
 alone.
 
+**Settled on 2026-09-30, and the last sentence above was wrong.** Stage 3 is a
+test on the card's *text* — "read it out loud with the repo closed" — and costs
+almost nothing; it can stay where the maintainer types. The 77k sat in Stage 2,
+which already said to file a screenshot beside the question file and point an
+evidence entry at it, and never said not to open it afterwards. So the conductor
+rule needed no exception, only applying: Stage 2 now ends on "no artefact bigger
+than its own path has been read into this context", with the one seam where
+looking is still required — evidence you did not produce yourself, or cannot say
+which state it shows. Phase E keeps its session. The lesson generalises past this
+skill: a rule that says where an artefact *goes* is not yet a rule about whether
+you may read it, and the second half is the one that costs.
+
 **The conductor cut the batch wrong, and Phase 0 caught it.** The frontier was
 derived from the specs and the run log while the `blockedBy` query was left
 broken — three `gh` invocations failed on output formatting, and the fourth was

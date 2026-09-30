@@ -24,7 +24,7 @@
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
-import { suggestions } from '../public/core/suggest.mjs';
+import { offerFor, suggestions } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
@@ -639,6 +639,20 @@ function waysOut(plan) {
   return suggestions(plan);
 }
 
+/**
+ * The Offer (#60, `public/core/suggest.mjs`) — the bench's single seam onto
+ * that function, kept apart from `waysOut()` for the same reason.
+ *
+ * It is the mirror image of the ways out and never their neighbour: `waysOut()`
+ * computes only where `unfit` holds, `offerFor()` only where it does not. Two
+ * seams beside each other is how a bench shows that the two never speak at
+ * once — a list that fell silent next to an offer that appeared is the whole
+ * statement.
+ */
+function offer(plan) {
+  return offerFor(plan);
+}
+
 const settings = neutralSettings();
 
 /**
@@ -677,6 +691,7 @@ const el = {
   presets: document.getElementById('presets'),
   sheets: document.getElementById('sheets'),
   waysOut: document.getElementById('waysOut'),
+  offer: document.getElementById('offer'),
   bars: document.getElementById('bars'),
   series: document.getElementById('series'),
   derived: document.getElementById('derived'),
@@ -855,6 +870,7 @@ function render() {
   el.raw.textContent = JSON.stringify(plan, null, 2);
   renderInvariants(plan);
   renderWaysOut(plan);
+  renderOffer(plan);
   renderPresetVerdicts();
 }
 
@@ -904,6 +920,61 @@ function renderWaysOut(plan) {
     }),
   );
   el.waysOut.append(list);
+}
+
+/**
+ * The Offer, beside the ways out: what the core proposes while the plan is
+ * still fit. It is the other half of the same seam — where `renderWaysOut()`
+ * falls silent this fills, and never the other way round.
+ *
+ * The fields are shown **raw**, not as the sentence the app will say. What the
+ * Offer reads like on screen is Spec 2's decision and lives in `prototypes/`
+ * (`AGENTS.md`, "A decided form is looked up too"); a bench that phrased it
+ * would become a second, unowned answer to that question. What a bench owes is
+ * the numbers — above all `also`, the Ranks the proposal moves along with it,
+ * because that list is the price the Offer has to name (#60, CONTEXT.md
+ * "Offer") and the one part no single row shows.
+ */
+function renderOffer(plan) {
+  el.offer.replaceChildren();
+  const entry = offer(plan);
+  if (!entry) {
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent = unfit(plan)
+      ? 'the plan is unfit — offerFor() stays silent and the ways out speak instead'
+      : 'fit, and no Rank sits close enough to a full Display — offerFor() returns null';
+    el.offer.append(note);
+    return;
+  }
+
+  const line = document.createElement('p');
+  line.textContent =
+    `Rank ${entry.rank}: ${entry.value} Display(s), ${entry.from} → ${entry.to} Booster` +
+    (entry.from === entry.to ? ' (exactly on a multiple — the trade, not the distance)' : '');
+  el.offer.append(line);
+
+  const also = document.createElement('p');
+  also.className = 'note';
+  also.textContent =
+    entry.also.length === 0
+      ? 'also: no other Rank moves'
+      : `also: ${entry.also.map((m) => `Rank ${m.rank} ${m.before} → ${m.after}`).join(', ')}`;
+  el.offer.append(also);
+
+  const key = document.createElement('p');
+  key.className = 'note';
+  key.textContent = `key: ${entry.key}`;
+  el.offer.append(key);
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = `Take it — displays[${entry.rank}] = ${entry.value}`;
+  button.addEventListener('click', () => {
+    applyWayOut({ key: 'displays', rank: entry.rank, value: entry.value });
+    render();
+  });
+  el.offer.append(button);
 }
 
 /**
