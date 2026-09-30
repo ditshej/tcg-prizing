@@ -73,6 +73,33 @@ test('a reservation set at the tile reaches the address bar', () => {
 });
 
 /**
+ * A reservation taken back again, which is the one shape of change that leaves
+ * **no pin encoding at all**: an all-zero vector encodes as absent (#47, "Die
+ * zwei zusammengesetzten Werte"), so the setup is back to its bare base. Two
+ * clicks at the screen — `stepDisplays(1)`, then `stepDisplays(-1)` at the ±
+ * of the open tile (`views/plan.php`); the same handler, reached without a
+ * bubble here.
+ *
+ * It is the assertion `syncAddress()`'s `linkInCirculation = true` was missing
+ * (Befund G1). Drop that line and nothing else, and the suite stayed green:
+ * after a cold start every later write would go through `addressFor()`, which
+ * answers `null` for a setup that encodes as its bare base — and "write
+ * nothing" here does not mean "nothing changed", it means the address bar
+ * keeps claiming the reservation that was just taken back. From the first pin
+ * on, a link **is** in circulation, and a link in circulation is written
+ * whole.
+ */
+test('a reservation taken back again clears the address bar down to its base', () => {
+  const { app, written } = opened('');
+  app.setDisplays(1, 1);
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly&displays=1');
+
+  app.setDisplays(1, 0);
+  assert.equal(written.length, 2, 'taking it back writes, it does not fall silent');
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly');
+});
+
+/**
  * #89 AC 5, at the seam it is asked about: what the screen produced, read back
  * through `decode()`, is the stand the screen holds — base and pins, nothing
  * added. Twelve decisions out of one pin is what `encode(plan.settings)` would
