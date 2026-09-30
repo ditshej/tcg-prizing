@@ -223,6 +223,17 @@ test('past the first pin the address bar is exactly the copy form', () => {
  */
 const CODE_ONLY = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
+/**
+ * A module specifier is not a reach for the API. The seam exists to be
+ * **called** from somewhere — #89 is that somewhere, and `import { writeLocation
+ * } from '../link/location.mjs'` in `plan.mjs` would otherwise trip this very
+ * rule over the one call it was written to protect. The importer never names
+ * `window.location` or `replaceState`; it names a file. So the path is blanked
+ * before the scan and nothing else is: a third place that reaches for either
+ * API still turns this red, with or without an import.
+ */
+const WITHOUT_SPECIFIERS = (source) => source.replace(/from\s+(['"])[^'"]*\1/g, 'from _');
+
 test('location and replaceState occur in exactly one file, and that file carries no logic', () => {
   const root = new URL('..', import.meta.url);
   const shipped = ['public', 'views', 'dev']
@@ -232,7 +243,7 @@ test('location and replaceState occur in exactly one file, and that file carries
     .filter((path) => !path.startsWith('public/vendor/'));
 
   const touching = shipped.filter((path) => {
-    const source = CODE_ONLY(readFileSync(new URL(path, root), 'utf8'));
+    const source = WITHOUT_SPECIFIERS(CODE_ONLY(readFileSync(new URL(path, root), 'utf8')));
     return /\blocation\b/.test(source) || /\breplaceState\b/.test(source);
   });
   assert.deepEqual(touching, ['public/link/location.mjs']);
