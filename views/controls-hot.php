@@ -26,7 +26,24 @@
   </label>
 
   <label class="plan-control">
-    <span>RankPoolDepth (<span x-text="plan.depth"></span> of <span x-text="plan.depthCap"></span>)</span>
+    <!--
+      The counter shows the value and nothing else, and `depthCap` stands
+      beside it as its own note (#104). "8 of 15" read as a fraction of the
+      slider's range and was not one: the slider runs to the player count
+      (#61, "Caps at the controls" — "auf die Spielerzahl gedeckelt sind
+      `depth` und `ranked`"), while `depthCap` is how far the pool reaches at
+      this floor, which the core computes and no control enforces. Measured
+      cold: "8 of 15" beside a slider running to 32 under weekly, "8 of 31"
+      under weekend, both 32 under release — a gap of 17, 1 and 0, hanging on
+      the sheet rather than on an off-by-one.
+
+      `Details` says the same thing under its slider ("the pool covers N ranks
+      at this floor", `controls-sheet.php`); the rail is a fixed strip whose
+      height the fold arithmetic counts, so it takes the prototype's short
+      form of that note instead of a third line.
+    -->
+    <span>RankPoolDepth (<span x-text="plan.depth"></span>)<span class="plan-control-note"
+          x-text="`cap ${plan.depthCap}`"></span></span>
     <input type="range" min="1" :max="plan.players" :value="plan.depth"
            @input="setDepth($event.target.value)">
   </label>

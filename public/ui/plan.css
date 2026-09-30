@@ -454,6 +454,19 @@ body {
 }
 
 /*
+ * A note beside a rail control's counter — today only the `RankPoolDepth`
+ * cap (#104). It is `.sheet-foot`'s job in the rail's dimensions: the sheet
+ * can afford a line under the slider, this strip's height is counted by the
+ * fold arithmetic, so the note sits inline after the counter and wraps only
+ * where the column is too narrow for both.
+ */
+.plan-control-note {
+  margin-left: 6px;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+/*
  * The Details sheet (#64): the Set block and the seventeen controls.
  *
  * Two levels, and the indent is the whole form of the nesting — no
