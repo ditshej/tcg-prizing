@@ -82,24 +82,50 @@ test('a link from the future reads no slider key at all, and says so in one entr
   assert.equal(read.report.to, CURRENT_VERSION);
 });
 
-test('a missing or unreadable version is the future case too, and its `from` is null', () => {
-  for (const query of ['?game=onepiece&type=weekend&players=48', '?v=zwei&game=onepiece&players=48']) {
+/**
+ * The counterpart, and the whole of Lauf 10 "Entscheid K1": a link with no
+ * readable `v` is **broken**, not newer than this app. Its slider keys go
+ * unread for the same reason — without a version we would be guessing which
+ * register to read them by — but everything the report says about it differs.
+ * `v=0` is a link from the *past*, and the four other forms name no version at
+ * all; calling any of them "from the future" is a false statement, not a rough
+ * edge of the cut.
+ *
+ * All five forms in one table because the decision names all five, and because
+ * the bug it fixes was found in exactly one of them.
+ */
+test('a link with no readable version is broken, not from the future', () => {
+  const cases = [
+    ['?game=onepiece&type=weekend&players=48', null],
+    ['?v=&game=onepiece&type=weekend&players=48', ''],
+    ['?v=0&game=onepiece&type=weekend&players=48', '0'],
+    ['?v=abc&game=onepiece&type=weekend&players=48', 'abc'],
+    ['?v=1.0&game=onepiece&type=weekend&players=48', '1.0'],
+  ];
+  for (const [query, was] of cases) {
     const read = decode(query);
     assert.equal(read.version, null, query);
     assert.deepEqual(read.pins, {}, query);
-    assert.deepEqual(read.report.entries, [{ kind: 'futureVersion', from: null }], query);
+    assert.deepEqual(read.report.entries, [{ kind: 'unreadableVersion', was }], query);
+    assert.equal(read.report.from, null, query);
+    assert.equal(read.report.to, CURRENT_VERSION, query);
   }
 });
 
 /**
- * There is no v0 (#47, `## The wire format`): a version below one names no
- * format we ever had, so it is unreadable rather than old, and falls into the
- * same case as an absent one.
+ * The half of the entry that is not its name: the broken link asks for the
+ * bookmark to be saved again, and the link from the future is the one case
+ * that suppresses it. The reason the future case gives — the bookmark is the
+ * better copy, readable in full by a newer app — is exactly what does not hold
+ * for a link no later app will ever read.
  */
-test('a version below one is unreadable, not an old link to be lifted', () => {
-  const read = decode('?v=0&game=onepiece&type=weekend&players=48');
-  assert.equal(read.version, null);
-  assert.deepEqual(read.report.entries, [{ kind: 'futureVersion', from: null }]);
+test('the broken link asks for the bookmark again, the future one does not', () => {
+  const broken = decode('?game=onepiece&type=weekend&players=48').report;
+  const future = decode('?v=99&game=onepiece&type=weekend&players=48').report;
+  assert.deepEqual(broken.entries, [{ kind: 'unreadableVersion', was: null }]);
+  assert.deepEqual(future.entries, [{ kind: 'futureVersion', from: 99 }]);
+  assert.equal(broken.resaveBookmark, true);
+  assert.equal(future.resaveBookmark, false);
 });
 
 /**

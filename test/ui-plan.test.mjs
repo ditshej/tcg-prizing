@@ -29,10 +29,11 @@ function opened(query = '') {
  * counterpart (#47, "Writing the address bar").
  *
  * The report has to stay `null` too, and that is the sharper half: `decode('')`
- * finds no `v`, falls into the future-version branch and answers with a report
- * carrying `futureVersion` plus two fallback entries. Handed on, it would make
- * #72's overlay say "this link is newer than this app" to everyone who merely
- * opens the page. Nothing was read, so nothing is reported.
+ * finds no `v` and answers with a report carrying `unreadableVersion` plus two
+ * fallback entries. Handed on, it would make #72's overlay call a plain visit
+ * a broken link — and, since a broken link is one the address bar is cleaned
+ * up for (Lauf 10, "Entscheid K1"), it would also write an address nobody
+ * linked to. Nothing was read, so nothing is reported and nothing is written.
  */
 test('a cold start leaves the address bar alone and reports nothing', () => {
   const { app, written } = opened('');
@@ -153,6 +154,39 @@ test('a link from the future leaves the address bar standing', () => {
   assert.equal(app.linkReport.resaveBookmark, false);
 });
 
+/**
+ * The other half of Lauf 10 "Entscheid K1", and the case it was decided over:
+ * a link that lost its `v=1&` on the way through a chat client. It looks like
+ * the future link from the inside — no slider read — and it is the opposite
+ * of it from the outside. Before the decision this address stayed standing
+ * word for word while the screen showed 32 players and the header said
+ * "Weekend"; now the opening place cleans up after it, K6 and Lauf 9 applying
+ * without exception because there *was* input to read.
+ *
+ * All five forms, because the decision names all five and because the pass
+ * that missed this one had checked exactly one.
+ */
+test('a link with no readable version has its address bar cleaned up', () => {
+  const forms = [
+    '?game=onepiece&type=weekend&rankFloor=3&players=48',
+    '?v=&game=onepiece&type=weekend&rankFloor=3&players=48',
+    '?v=0&game=onepiece&type=weekend&rankFloor=3&players=48',
+    '?v=abc&game=onepiece&type=weekend&rankFloor=3&players=48',
+    '?v=1.0&game=onepiece&type=weekend&rankFloor=3&players=48',
+  ];
+  for (const query of forms) {
+    const { app, written } = opened(query);
+    assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend'], query);
+    assert.deepEqual(app.pins, {}, query);
+    assert.equal(app.typeId, 'weekend', query);
+    assert.ok(
+      app.linkReport.entries.some((entry) => entry.kind === 'unreadableVersion'),
+      query,
+    );
+    assert.equal(app.linkReport.resaveBookmark, true, query);
+  }
+});
+
 /** …and the first drag overwrites it anyway, which is the price #47 accepts. */
 test('the first pin after a future link takes the address over', () => {
   const { app, written } = opened('?v=99&game=onepiece&type=weekend&players=48');
@@ -180,9 +214,9 @@ test('a Set switch on a cold start leaves the address bar alone', () => {
 });
 
 /** What `decode('')` answers on its own — the reason the cold start reads nothing. */
-test('the empty query would decode as a link from the future', () => {
+test('the empty query would decode as a broken link', () => {
   const read = decode('', [{ id: 'onepiece', types: [{ id: 'weekend' }] }]);
   assert.equal(read.version, null);
   assert.notEqual(read.report, null);
-  assert.ok(read.report.entries.some((entry) => entry.kind === 'futureVersion'));
+  assert.ok(read.report.entries.some((entry) => entry.kind === 'unreadableVersion'));
 });

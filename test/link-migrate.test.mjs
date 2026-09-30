@@ -332,6 +332,28 @@ test('a link from the future is passed through untouched, and the chain never ru
 });
 
 /**
+ * The same for the link Lauf 10 "Entscheid K1" split off: no readable `v` at
+ * all, so no version was ever established and there is nothing to lift from.
+ * The trap it guards is arithmetic, not doctrine — `version` is `null`, so
+ * `steps.slice(version - 1)` slices at `NaN`, which JavaScript reads as `0`:
+ * the **whole** chain would run over a link that never claimed to be v1.
+ * Invisible while the production chain is empty, wrong the moment it is not.
+ */
+test('a link with no readable version is passed through too, and the chain never runs for it', () => {
+  function explodingStep() {
+    throw new Error('must not be called for a read with no version');
+  }
+  const read = decode('?game=onepiece&type=weekend&players=48&legacyBoosterRate=9');
+  const result = migrate(read, [explodingStep]);
+  assert.deepEqual(result.pins, {});
+  assert.equal(result.game, 'onepiece');
+  assert.equal(result.type, 'weekend');
+  assert.deepEqual(result.report.entries, [{ kind: 'unreadableVersion', was: null }]);
+  assert.equal(result.report.resaveBookmark, true, 'this bookmark is the worse copy');
+  assert.equal(result.migrated, false);
+});
+
+/**
  * Purity against a **badly behaved** step (Befund G6). Every fixture above
  * returns fresh structures, so they prove only that the chain does not
  * mutate on its own — not that it survives a step that does. A real

@@ -74,11 +74,26 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * "Unreadable input and the fallback net"), because a link value is a pinned
  * value like any other (ADR 0006). It lost nothing, so it is **not** an entry.
  *
- * **A link from the future is not read and not rewritten.** `v` above today's,
- * or none we can read at all, is the link saying "you cannot read this": the
- * base is taken so there is a type to stand on, not one slider key is
- * interpreted, and nothing here can touch the address bar — this module names
- * neither `location` nor `replaceState`, by test.
+ * **A link from the future is not read and not rewritten.** `v` above today's
+ * is the link saying "you cannot read this": the base is taken so there is a
+ * type to stand on, not one slider key is interpreted, and nothing here can
+ * touch the address bar — this module names neither `location` nor
+ * `replaceState`, by test.
+ *
+ * **A link with no readable `v` at all is a different thing: it is broken, not
+ * from the future** (Lauf 10, "Entscheid K1", from Befund B4). Its slider keys
+ * are equally unread — without a version we do not know which register to read
+ * them by, and reading them anyway would be guessing a version — but the two
+ * cases part company in what the report says and therefore in what the caller
+ * does with the address bar. The future case earns its silence from a
+ * reason that does not carry here: a link that names a version above ours
+ * would be complete again on an updated app, so the address it arrived in is
+ * worth keeping. A link that names no version never becomes complete on any
+ * later app, and `v=0` is a link from the **past** — calling either one "newer
+ * than this app" is not a rough edge of the cut, it is a false statement. The
+ * entry is `unreadableVersion`, it carries the raw `v` as it stood (`null`
+ * when the key was absent), and it leaves `resaveBookmark` alone — saving the
+ * bookmark again is the one way out that helps here.
  *
  * The migration chain and its entry kinds — `renamed`, `dropped`,
  * `setByMigration` — live in `migrate.mjs` (#52), which writes on into the
@@ -96,6 +111,10 @@ export function decode(query, games = null) {
 
   const version = readVersion(read.v);
   if (version === null || version > CURRENT_VERSION) {
+    const entry =
+      version === null
+        ? { kind: 'unreadableVersion', was: read.v }
+        : { kind: 'futureVersion', from: version };
     return {
       version,
       game: base.game,
@@ -103,10 +122,7 @@ export function decode(query, games = null) {
       pins: {},
       unknown: {},
       unreadable: [],
-      report: reportOf({
-        from: version,
-        entries: [...base.entries, { kind: 'futureVersion', from: version }],
-      }),
+      report: reportOf({ from: version, entries: [...base.entries, entry] }),
     };
   }
 
@@ -220,8 +236,10 @@ function assertCatalogueEntry(entry) {
  * The format version, or `null` when the link does not carry a readable one.
  * Versions start at **1**; there is no v0 (#47, `## The wire format`), so a
  * zero or a negative number names no format that ever existed and is as
- * unreadable as `v=zwei`. Both fall to the future case, exactly as #47's table
- * says of an absent one.
+ * unreadable as `v=zwei`. Five forms answer `null` — `v` absent, `v=`, `v=0`,
+ * `v=abc`, `v=1.0` — and all five are the **broken** link, never the one from
+ * the future (Lauf 10, "Entscheid K1"; #47, `## Unreadable input and the
+ * fallback net`, whose earlier row equating the two is withdrawn).
  */
 function readVersion(raw) {
   if (raw === null) return null;
@@ -244,6 +262,13 @@ function readVersion(raw) {
  * the address bar untouched: the link from the future. There the bookmark is
  * the better copy — readable again by a newer app — and asking for it to be
  * saved again would invite overwriting it with a downgraded one.
+ *
+ * **`futureVersion` is that one case, and `unreadableVersion` is expressly not
+ * it** (Lauf 10, "Entscheid K1"). A link with no readable `v` is not a better
+ * copy of anything: no later app will ever read it, so the bookmark that holds
+ * it is the worse one and asking for it to be saved again is the only way out
+ * that helps. The two entries are told apart here for exactly this reason, and
+ * the caller reads the same pair to decide whether it writes the address bar.
  */
 function reportOf({ from, entries }) {
   if (entries.length === 0) return null;

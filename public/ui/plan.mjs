@@ -86,8 +86,12 @@ const SEAM = { read: readLocation, write: writeLocation };
  *   link in circulation, and changing the address because somebody opened the
  *   page is a movement without a counterpart (#47, "Writing the address bar").
  *   The read path is not even entered: `decode('')` finds no `v` and answers
- *   in the future-version branch, so asking it would hand #72's overlay a
- *   report on every plain visit.
+ *   with a report calling the link broken, so asking it would hand #72's
+ *   overlay a report on every plain visit — and, since a broken link is one
+ *   the address bar gets cleaned up for, would write the address of an app
+ *   nobody linked to. This cut is older than that consequence and survives it
+ *   unchanged (PR #108, point 2, the half Lauf 10 "Entscheid K1" leaves
+ *   standing).
  * - **A link came in and nothing survived the reading**: there *was* input, so
  *   the opening place cleans up after it (Entscheid K6) — the address bar is
  *   written as what actually holds, even when not a single pin stands
@@ -99,6 +103,15 @@ const SEAM = { read: readLocation, write: writeLocation };
  * link a newer app could still read in full (#47). Detected by the report's
  * own entry, the same way `migrate()` detects it — the first slider drag
  * overwrites it anyway.
+ *
+ * **"From the future" is read off the wire's own verdict, and it is narrower
+ * than "no slider was read"** (Lauf 10, "Entscheid K1"). A link with no
+ * readable `v` gets its sliders left unread just the same, but it is broken,
+ * not newer than us, and it carries `unreadableVersion` rather than
+ * `futureVersion` — so it falls into the cleanup branch above with no test of
+ * its own here. That is the whole of the wiring this file owes the decision:
+ * the cut is made once, at the wire (`link/decode.mjs`), and this place reads
+ * the result instead of deciding the same thing a second time.
  *
  * Read the version off `migrated`? It never comes to that: K6 is strictly
  * wider — every read that is not from the future is written back, chain or no
