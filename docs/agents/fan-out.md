@@ -655,3 +655,63 @@ answered, 1 killed by the skeptic and replaced. Five decisions filed to #103,
 freshly built four-way merge probe**, and the arithmetic closes exactly
 (188 + 9 + 18 + 25). Two new tickets: #103 (what `CombinedHandout` means) and
 #104 (the curve select that never refreshes and never pins).
+
+### Run 10 · 2026-09-30 · #89, #104 · `/round`, four agents, no cards
+
+**The conductor's context: roughly 35k, against run 9's 137k, run 8's 55k and
+run 7's 40k.** Phase E did not happen — all four candidates were answered in the
+terminal — so this number measures `/round` alone, and it is the lowest yet. The
+comparable figure is run 9's „`/round` part alone, around 60k".
+
+**The counter-check refuted the parent's integration section, and that section
+is why the phase exists.** Phase A built an octopus merge probe (257/257,
+conflict-free) and concluded „no merge order is wrong", then recommended #89
+before #104 — in a sentence whose own first half said the opposite. Phase B
+rebuilt the probe, agreed on the end state, and named what an octopus merge
+cannot see: the intermediate states. **#89 first** leaves the address bar writing
+without the rail pinning the curve — measured, link says `players=48` while the
+screen says `curve=extreme`, which is exactly the defect B4 was written against.
+**#104 first** is harmless. The lesson is narrow and reusable: a merge probe
+proves the end state, never the order.
+
+**The gates did what they were added for.** Thirteen findings in, four candidates
+out, nine dissolved — four as lookups, five as agent work. Of the four lookups,
+one was settled in `prototypes/` (G3: `depth` is capped at the player count, said
+by the prototype, by #61 and by the built `Details` sheet; only
+`views/controls-hot.php:29` disagreed — a repair, not a decision). All four
+candidates were answered off the cuff. **No evidence gathered, no chart drawn, no
+skeptic run, and Phase E skipped entirely**, so the round cost one interaction
+instead of two.
+
+**A finding reversed itself during Phase F, an hour after it was written.** B3
+said both PRs carried a closing line GitHub had not accepted — checked twice,
+still empty after 24 minutes. The maintainer decided accordingly: merge as-is,
+close by hand. At 15:44 UTC the links appeared, in both directions, with nothing
+edited. So B3 was a *delay* twenty times longer than the docs knew of, not a
+failure, and the decision it produced is still valid but moot. Phase F filed both
+states in order — the finding, then the measurement that overturns it. Worth
+keeping as a shape: **a finding about an external system's timing has a shelf
+life, and the round is long enough to outlive one.**
+
+**The most valuable defect was found by building the decision, not by reviewing
+it.** K1 asked what an incoming link without a readable `v` should mean. Filing
+and building it surfaced that `migrate()` never excluded the versionless read —
+`steps.slice(version - 1)` with `version: null` is `slice(NaN)` → `slice(0)`,
+the whole chain over a link that never claimed to be v1. Invisible while `STEPS`
+is empty, wrong at the first real bump. Neither A nor B saw it.
+
+**One exception, reported rather than smuggled.** The answer to K1 said „version
+decision with a `LinkMigration` in the same commit"; Phase F built it with
+neither, and said so. Its reasons were looked up, not invented: `setup-link.md`
+sets a start date for that rule which has not been reached (no `SetupLink` is in
+circulation — #89 writes the first one), and a migration from „no N" to N+1 has
+no beginning and cannot be written. Filed in ADR 0007. That is the right handling
+of an instruction that turns out to be unbuildable: build the rest, name the gap.
+
+**Counts.** 10 findings from A, 3 more from B, 0 of 10 refuted, 2 sharpened, 1
+weakened. Gates: 13 in, 4 candidates, 9 dropped. 4 answered in the terminal, 0
+cards. Suites: 244 (#104) · 257 (#89) alone, **261/261 on a freshly built octopus
+merge probe**, arithmetic closing exactly (240 + 17 + 4). Decisions filed to #89,
+#104, #47, #72, #73, ADR 0007, `docs/agents/setup-link.md` and
+`docs/agents/issue-tracker.md`. Three PRs open: #107 (#104), #108 (#89), #109
+(docs). Merge order: **#104, then #89, then #109.**
