@@ -65,13 +65,23 @@ test('the select keeps following settings.curve after the first $nextTick, not o
   // before $nextTick settles (the comment explains why).
   assert.match(select, /\$nextTick\(\(\) => \{[^}]*\$el\.value = settings\.curve/);
   // And something has to reapply $el.value whenever settings.curve changes
-  // afterwards — a $watch on settings.curve is the one this ticket picked,
-  // an x-effect or a recreating :key would show up just as well. What must
-  // not be true is that the assignment above is the only place $el.value is
-  // ever written.
-  const assignments = select.match(/\$el\.value\s*=/g) ?? [];
+  // afterwards. Name and body are read off the *same* call (run 10, decision
+  // K2): the earlier or-chain was blind in both of its branches on their own.
+  // A $watch on the wrong key slipped through the "more than one assignment"
+  // branch, because the watch body was itself the second assignment; a $watch
+  // on the right key with a body that writes nothing slipped through the
+  // name-only branch. Required is therefore the name of the curve AND an
+  // assignment to the field inside that watch's own body.
+  const watch = select.match(/\$watch\(\s*'settings\.curve'\s*,[^{]*\{([^}]*)\}/);
   assert.ok(
-    assignments.length > 1 || /\$watch\(\s*'settings\.curve'/.test(select) || /x-effect/.test(select),
-    'nothing reapplies $el.value when settings.curve changes from outside the rail',
+    watch,
+    "no $watch('settings.curve', (value) => { … }) reapplies the field when the "
+    + 'curve changes from outside the rail',
+  );
+  assert.match(
+    watch[1],
+    /\$el\.value\s*=/,
+    'the $watch names settings.curve but its body never writes $el.value, so the '
+    + 'field still stops following after the first $nextTick',
   );
 });
