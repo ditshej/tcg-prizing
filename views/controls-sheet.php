@@ -235,10 +235,16 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
   `placeConfirm()` runs after every drawing rather than at the handler that
   opened it — the one rule for all the bubble's inhabitants: it closes when
   its anchor is no longer visible, and the chip can scroll out of `Details`
-  without anything being touched.
+  without anything being touched. The `void` line is the same device the tile
+  bubble's effect uses: the measuring has to wait for `$nextTick`, and what is
+  read inside a `$nextTick` is read outside the effect and tracked by nothing.
+  So the states that can take the anchor away are named here — the question
+  itself, the active page and the fullscreen, the last of which would
+  otherwise leave a `fixed` bubble standing over a page it does not belong to.
 -->
 <div class="drop-bubble" data-drop-bubble x-cloak x-show="dropQuestion" role="dialog"
-     x-effect="placeConfirm()" @click.outside="cancelDrop()"
+     x-effect="void [dropQuestion, activePage, fullscreen]; $nextTick(() => placeConfirm())"
+     @click.outside="cancelDrop()"
      @keydown.escape.window="cancelDrop()" @resize.window="placeConfirm()">
   <template x-if="dropQuestion">
     <div>

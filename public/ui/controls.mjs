@@ -429,10 +429,20 @@ export const DROP_BUBBLE = '[data-drop-bubble]';
  * #65 pins `winnerPacks`, #69 writes into `manualWinner`, #103 will drop
  * `rankFloor` and `depth`, and a hand-typed list would have to learn about
  * each of them.
+ *
+ * **It reads the value, and it may not ask whether the key is there.** The
+ * record it is handed at the surface is an Alpine proxy, and the reactivity
+ * behind it (`@vue/reactivity`) tracks a *read* and a `key in pins`, but not
+ * `hasOwnProperty` — that lands on the `getOwnPropertyDescriptor` trap, which
+ * is tracked by nothing. Written that way, the marking was right in
+ * `node --test` and dead on screen: a pinned slider kept reading `auto` until
+ * something else happened to redraw it. Measured at the picture on
+ * 2026-09-30, which is exactly the class of fault #61 says a test will not
+ * find. An absent key and one holding `undefined` say the same thing here
+ * anyway.
  */
 export function isPinned(key, pins) {
-  if (!pins || !Object.prototype.hasOwnProperty.call(pins, key)) return false;
-  const value = pins[key];
+  const value = pins == null ? undefined : pins[key];
   if (value == null) return false;
   if (Array.isArray(value)) return value.some((entry) => Number(entry) > 0);
   if (typeof value === 'object') return Object.keys(value).length > 0;

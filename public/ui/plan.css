@@ -970,3 +970,15 @@ body {
   background: none;
   color: inherit;
 }
+
+/* On the rail the word is the same word, in the compact form the strip is:
+   the rail's height is counted by the fold arithmetic (#71), and `cap N`
+   beside `RankPoolDepth` wrapped to a second line once a padded badge stood
+   in front of it (measured at the picture, 2026-09-30). The state is not
+   dropped there — it belongs to the control, not to the page — only its
+   box. */
+.controls-hot .pin-state {
+  padding: 0 2px;
+  background: none;
+  font-size: 0.58rem;
+}
