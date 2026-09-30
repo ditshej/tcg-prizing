@@ -18,6 +18,15 @@
  * numbers a control is drawn from — its two ends, what it shows while it is
  * `auto` — come from `controls.mjs`, which is on the proven side of the seam
  * so that a cap has exactly one home and slider and counter cannot disagree.
+ *
+ * #89 hangs the `SetupLink` on it at both ends — the link the app was opened
+ * at is read here, and every pin writes the address bar from here. This is the
+ * **opening place** of Entscheid K6, which means two rules live in this file
+ * and nowhere else: what is written back after a read (see `openingRead()`),
+ * and which of the two forms a change writes (see `syncAddress()`). Neither is
+ * a rule about the wire — `encode.mjs`, `decode.mjs`, `migrate.mjs` and
+ * `location.mjs` are used here and adjusted nowhere (#47: "Spec 3 never needs
+ * the surface").
  */
 
 import { resolveSettings } from '../core/defaults.mjs';
