@@ -41,6 +41,13 @@ tomorrow. Decided in
 A version bump without its migration is worse than no version: the app then claims
 a compatibility it does not have.
 
+**The example URLs in #47 are examples, not the start choice.** They all read
+`type=weekend`, and `weekend` is the *second* `TournamentType` — the first is
+`weekly`, which is what a cold start shows. Copy an example string into a test as
+an expected value and you get a red run with nothing wrong in the code; it has
+cost one already. Read the list off `public/sets/onepiece.mjs`, never off a
+sample link.
+
 ## What counts as a breaking change
 
 | Change | Migration needed? |
@@ -93,6 +100,30 @@ It appears whenever the report is non-`null` — not only when the chain ran: a
 current-version link with an unreadable value loses something too, and stays
 silent otherwise (ADR 0007, addendum). A clean link — every key known, every
 value readable, no version to lift — shows nothing.
+
+## A link with no readable version is broken, not from the future
+
+Three cases, not two, and the third is the one a build keeps folding into the
+second (ADR 0007, `## Nachtrag (#89)`; Lauf 10, Entscheid K1, in the comments of
+#89):
+
+| What came in | What happens |
+|---|---|
+| Nothing at all — a cold start | Not read, not reported, address bar untouched |
+| `v` above today's | Base taken, no slider key read, **address bar untouched**, no call to save the bookmark again |
+| No readable `v` — absent, `v=`, `v=0`, `v=abc`, `v=1.0` | Base taken, no slider key read, **address bar cleaned up**, and the report asks for the bookmark to be saved again |
+
+The future link keeps its address because it would be complete again on an
+updated app. A link with no readable version never becomes complete on any later
+app, and `v=0` is a link from the *past* — calling either "newer than this app"
+is a false statement, not a rough edge. Its sliders still go unread: without a
+version we would be guessing which register to read them by.
+
+**Tell the two apart at the wire, in `decode.mjs`, never at the caller.**
+Separate entry kinds, so there is one place that decides and every caller reads
+the same answer. And a read whose version was never established must not enter
+the chain — `steps.slice(version - 1)` on `version: null` slices at `NaN`, which
+is `0`, which is the whole chain over a link that never claimed to be v1.
 
 ## Eighteen keys, and that is not the only count
 

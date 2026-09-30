@@ -28,14 +28,15 @@ export const STEPS = [];
  * `{ game, type, pins, migrated, report }` — the same read, lifted to today's
  * version.
  *
- * **A link from the future is passed through untouched.** `decode()` already
- * decided that case: no slider key read, the base taken as it stood, one
- * `futureVersion` entry and nothing else — there is nothing left here to lift
- * or to judge, because every name the link might have carried is unlooked-at
- * (#47, "Unreadable input and the fallback net"). Detected by the report
- * carrying that entry, not by comparing `version` against a number this
- * module does not hold an opinion on — see the next paragraph for why it
- * cannot.
+ * **A link whose version was never established is passed through untouched** —
+ * the one from the future, and the one with no readable `v` at all. `decode()`
+ * already decided both: no slider key read, the base taken as it stood, one
+ * entry (`futureVersion` or `unreadableVersion`) and nothing else — there is
+ * nothing left here to lift or to judge, because every name the link might
+ * have carried is unlooked-at (#47, "Unreadable input and the fallback net";
+ * Lauf 10, "Entscheid K1"). Detected by the report carrying one of those two
+ * entries, not by comparing `version` against a number this module does not
+ * hold an opinion on — see the next paragraph for why it cannot.
  *
  * **The chain runs from the read version through every step that applies.**
  * `steps` is an ordered list, one entry per version bump: `steps[0]` lifts
@@ -99,8 +100,9 @@ export function migrate(read, steps = STEPS) {
   const { version, game, type, pins = {}, unknown = {}, report = null } = read;
 
   // Nothing was lifted here, and nothing will be: the chain does not run for a
-  // future-version read at all, so `migrated` is false rather than absent.
-  if (isFutureRead(report)) return { game, type, pins, migrated: false, report };
+  // read whose version was never established, so `migrated` is false rather
+  // than absent.
+  if (isUnversionedRead(report)) return { game, type, pins, migrated: false, report };
 
   const applicable = steps.slice(version - 1);
 
@@ -138,11 +140,24 @@ export function migrate(read, steps = STEPS) {
 }
 
 /**
- * A future-version read has exactly one entry, `futureVersion`, and nothing
- * left for the chain to decide over (`decode.mjs`, the early-return branch).
+ * A read that never established a version — the link is from the future
+ * (`futureVersion`), or it carries no readable `v` at all
+ * (`unreadableVersion`, Lauf 10 "Entscheid K1"). Both leave `decode.mjs`
+ * through the same early return, with the base taken, not one slider key read
+ * and nothing left for the chain to decide over.
+ *
+ * **Both have to be caught, and the broken one is the newer reason.** Its
+ * `version` is `null`, so `steps.slice(version - 1)` would slice at `NaN` —
+ * which JavaScript reads as `0`, i.e. the *whole* chain — and a link whose
+ * version we could not read would be lifted from v1 as though it had claimed
+ * to be one. Harmless while the production chain is empty, wrong the moment it
+ * is not; the fixture chains in `test/link-migrate.test.mjs` show it at once.
  */
-function isFutureRead(report) {
-  return report != null && report.entries.some((entry) => entry.kind === 'futureVersion');
+function isUnversionedRead(report) {
+  if (report == null) return false;
+  return report.entries.some(
+    (entry) => entry.kind === 'futureVersion' || entry.kind === 'unreadableVersion',
+  );
 }
 
 /**
@@ -150,7 +165,9 @@ function isFutureRead(report) {
  * same report, carried on rather than started twice (Lauf 8, "Entscheid K1").
  * `resaveBookmark` is unconditionally `true` here: the one case where it is
  * not — the link from the future — never reaches this function at all (see
- * `isFutureRead` above), so there is no second case to weigh here.
+ * `isUnversionedRead` above), so there is no second case to weigh here. The
+ * broken link does not reach it either, but it would not have needed the
+ * exception: it wants the bookmark saved again (Lauf 10, "Entscheid K1").
  */
 function buildReport({ from, to, migrated, entries }) {
   if (entries.length === 0) return null;

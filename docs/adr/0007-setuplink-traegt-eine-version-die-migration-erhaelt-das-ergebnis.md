@@ -194,3 +194,72 @@ Stufe weiter, bis die Kette ihn abräumt. Dafür gibt es genau eine Stelle, an d
 Kein eigener ADR-Eintrag und kein Stempel: es ist dieselbe Entscheidung, deren
 zu weit gefasste Lesart hier geschlossen wird — Präzedenz sind die Nachträge
 (#34), (#44) und (#48) in diesem Dokument.
+
+## Nachtrag (#89): ein Link ohne lesbare Version ist kaputt, nicht aus der Zukunft
+
+Dieses Dokument hat den Fall nie benannt, den es am dringendsten gebraucht
+hätte: einen Link, der **gar keine lesbare Version** nennt. #47 hat die Lücke
+mit einer Tabellenzeile gefüllt — „`v` fehlt oder ist unlesbar | wie ‚grösser
+als heute'" —, und die wird hiermit **zurückgezogen**. Entschieden im Terminal
+am 2026-09-30 (Lauf 10, Entscheid K1, aus Befund B4); der Wortlaut steht im
+Kommentar zu
+[#89](https://github.com/ditshej/tcg-prizing/issues/89), gebaut in PR #108.
+
+**Warum die Gleichsetzung nicht trägt.** Der Zukunftsfall verdient sein
+Schweigen aus einem Grund, den dieses Dokument oben gibt: die Adresszeile bleibt
+stehen, weil ein Herunterschreiben einen Link entwertete, der auf einer
+aktualisierten App wieder vollständig wäre. Ein Link ohne lesbares `v` wird auf
+**keiner** späteren App vollständig — er ist nicht neuer als wir, er ist kaputt.
+Und `v=0` ist ein Link aus der **Vergangenheit**: ihn „neuer als diese App" zu
+nennen ist keine grobe Kante am Schnitt, sondern eine falsche Aussage. Betroffen
+sind fünf Formen: `v` fehlt ganz, `v=`, `v=0`, `v=abc`, `v=1.0`.
+
+**Unterschieden wird am Draht, nicht am Aufrufer.** Die billigere Variante — die
+öffnende Stelle liest `from: null` gegen `from: 99` am Bericht ab — ist
+verworfen. Sie liesse zwei Stellen entstehen, an denen über dieselbe Sache
+entschieden wird, und der Bericht behauptete weiterhin „aus der Zukunft" über
+einen Link, der es nicht ist. Dasselbe Argument wie im Nachtrag (#51): es gibt
+genau eine Stelle, an der über eine Eingabe entschieden wird, und es ist die,
+die die Antwort kennt.
+
+**Was der kaputte Link bekommt.** Seine Regler bleiben ungelesen wie beim
+Zukunftslink — ohne Version wüssten wir nicht, nach welchem Register sie zu
+lesen wären, und sie trotzdem zu lesen hiesse, eine Version zu raten. Getrennt
+wird alles danach: der Bericht trägt einen eigenen Eintrag statt `futureVersion`,
+er fordert das Lesezeichen neu an (`resaveBookmark`), und die öffnende Stelle
+**räumt die Adresszeile auf**, statt den Unsinn stehenzulassen. Damit gilt der
+Lauf-9-Entscheid zu #89 zum ersten Mal ohne Loch: der unlesbare Link bleibt nie
+in der Adresszeile stehen und behauptet etwas, das der Schirm nicht zeigt.
+
+**Kein Versionssprung, und das ist keine Ausnahme von der Disziplin oben.**
+`docs/agents/setup-link.md` verlangt bei einer Änderung am Drahtformat Version
+plus `LinkMigration` im selben Commit. Beides entfällt hier aus zwei Gründen,
+die beide nachschlagbar sind und nicht abgewogen werden müssen:
+
+1. **Die Regel hat ein Startdatum, und es ist nicht erreicht** (`setup-link.md`,
+   „Not yet — the rule has a start date"): es ist kein `SetupLink` im Umlauf.
+   #89 ist das Ticket, das überhaupt den ersten in eine Adresszeile schreibt.
+2. **Für keinen v1-Link ändert sich etwas.** Ein Link mit lesbarer Version wird
+   vorher wie nachher identisch gelesen. Geändert ist allein die Behandlung von
+   Eingaben, die **keine** Version nennen — und die treten in keine Kette ein:
+   eine `LinkMigration` läuft von N nach N+1 und hat für „kein N" keinen Anfang.
+   Sie wäre hier nicht überflüssig, sie ist nicht schreibbar.
+
+**Ein Fund beim Bauen, der die zweite Begründung schärft.** Die Kette hat den
+Fall bisher nicht ausgeschlossen, sondern nur nicht bemerkt: ein Lesevorgang mit
+`version: null` lief in `steps.slice(version - 1)`, also `slice(NaN)` und damit
+`slice(0)` — die **ganze** Kette über einen Link, der nie behauptet hat, v1 zu
+sein. Solange `STEPS` leer ist, ist das unsichtbar; beim ersten echten
+Versionssprung wäre es falsch. `migrate()` erkennt jetzt beide Fälle, und eine
+Zusicherung mit einem Fixture-Schritt hält es fest.
+
+**Preis, bewusst genommen:** die Regler eines Links ohne `v` sind verloren, auch
+wenn sie lesbar dastehen. Sie zu übernehmen hiesse, eine Version zu raten, und
+eine geratene Version ist genau die stille Verfälschung, gegen die dieses
+Dokument geschrieben ist. Der Benutzer bekommt dafür die Wahrheit und den einen
+Ausweg, der hilft.
+
+Kein eigener ADR-Eintrag und kein Stempel an einem früheren: dieses Dokument
+sagte zum Fall nie etwas, das falsch geworden wäre — es sagte gar nichts. Die
+zurückgezogene Zeile steht in #47 und ist dort als zurückgezogen markiert;
+Präzedenz für die Form sind die Nachträge (#34), (#44), (#48) und (#51).
