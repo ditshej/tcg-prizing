@@ -61,38 +61,49 @@ zu wiederholen**, ein paar Sekunden später. Erst eine zweite leere Antwort ist
 ein Befund; die erste allein kostet nur eine Korrektur an einem Text, der schon
 richtig war.
 
-### And sometimes it never takes — what to do then
+### "A few seconds" is wrong — it can take an hour
 
-Waiting longer is not always the answer. Measured on **2026-09-30** (run 10,
-batch #89 · #104): PR #107 and PR #108 each carried `Closes #104` / `Closes #89`
-as the bare first line of the body, and the link never appeared — **in neither
-direction**, still empty 24 minutes after the PRs were opened.
+Measured end to end on **2026-09-30** (run 10, batch #89 · #104), and this is the
+real number the rule above was missing:
 
-Ask the other direction too before concluding anything, because it is the one
-that tells a missing edge from a delayed query:
+| Time after the PRs were opened | `closingIssuesReferences` |
+|---|---|
+| ~2 and ~8 minutes (the building agents, five looks each) | empty |
+| **24 minutes** (an independent session, both directions) | **empty** |
+| **~60 minutes** (a later session, both directions) | **`#107 → 104`, `#108 → 89`** |
+
+Both PRs carried `Closes #104` / `Closes #89` as the bare first line all along;
+nothing was edited in between. The link simply arrived an hour late. A session
+that concludes "the link failed" at minute 24 is drawing a finding from a query
+that had not settled — and the repair it then reaches for is an edit to a body
+that was already right, which is the one move that can genuinely break the link.
+
+So the check has **two** tries with a gap, not two looks a second apart, and the
+second one asks the other direction as well — the issue side settles separately,
+and having both says more than asking one of them twice:
 
 ```sh
 gh issue view <n> --json number,state,closedByPullRequestsReferences \
   --jq '"#\(.number) state=\(.state) closedBy=\(.closedByPullRequestsReferences|map(.number))"'
 ```
 
-That run got `#89 closedBy=[]` and `#104 closedBy=[]` against `#52 closedBy=[101]`
-and `#66 closedBy=[102]` — so the mechanism works in this repo, and the cause is
-not the text. Ruled out by measurement: wording (byte-identical in form to the
-PRs that did link), base branch (`main` in all four), draft state, author, and
-the state of the tickets. What was left sat at GitHub's end and no session could
-reach it.
+**Do not rewrite a body that is already right.** Where the first look is empty,
+say so as an observation, carry on, and look again before the merge. A control
+PR that did link (`#101 → 52`, `#102 → 66`) tells you the mechanism works in
+this repo; it does not tell you this PR's link is lost.
 
-**Do not rewrite a body that is already right, and do not keep waiting.** Decided
-in run 10: merge as built, then `gh issue close <n>` by hand. The machine-readable
-edge is gone for good, and that is accepted — the price is one lookup, not one
-rewrite.
+### If it really is still missing at merge time
 
-Pay that price the same minute, or the edge is gone twice: **put a comment on the
-ticket naming the PR that did the work** ("dieses Ticket wird erledigt von PR
+Decided in run 10, for that case and no earlier: merge as built, then
+`gh issue close <n>` by hand. No browser step before the merge. The
+machine-readable edge is then gone for good, and that is accepted.
+
+Pay the other half the same minute, or the edge is gone twice: **put a comment on
+the ticket naming the PR that did the work** ("dieses Ticket wird erledigt von PR
 #108, Zweig `…`"). A comment is what the next session reads anyway
 (`gh issue view <n> --comments`), and it answers the question GitHub's link list
-can no longer answer — "welche Arbeit hat #89 erledigt".
+then cannot — "welche Arbeit hat #89 erledigt". It costs nothing when the link
+does arrive, so it is worth writing on the suspicion alone.
 
 And the reason this matters beyond tidiness: a finished ticket that stays open
 sits in the frontier and gets counted into the next batch. Run 9 made exactly
