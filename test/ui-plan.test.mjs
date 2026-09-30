@@ -92,6 +92,93 @@ test('what the screen wrote decodes back into the stand the screen holds', () =>
   assert.equal(read.report, null);
 });
 
+/**
+ * #89 AC 6, the read edge: an incoming link runs `decode()` → `migrate()` and
+ * the stand it yields **applies at once**, pinned, with nothing waiting for a
+ * click (#47, "Reading a link"). A value past a cap would stand too; nothing
+ * here clamps (ADR 0006).
+ */
+test('an incoming link opens with its own stand, pinned', () => {
+  const { app } = opened('?v=1&game=onepiece&type=weekend&players=48&rankFloor=3&curve=steep');
+  assert.equal(app.typeId, 'weekend');
+  assert.deepEqual(app.pins, { players: 48, rankFloor: 3, curve: 'steep' });
+  assert.equal(app.settings.players, 48);
+  assert.equal(app.plan.players, 48);
+  assert.equal(app.linkReport, null);
+});
+
+/** The report of a lossless read is `null` — the loss is what it hangs on, not
+ *  the reading (ADR 0007, Nachtrag #48). A clean link says nothing. */
+test('a clean link is written back unchanged and says nothing', () => {
+  const clean = '?v=1&game=onepiece&type=weekend&players=48';
+  const { app, written } = opened(clean);
+  assert.deepEqual(written, [clean]);
+  assert.equal(app.linkReport, null);
+});
+
+/**
+ * The hole K6 and #50's exception tore between them, and the Lauf 9 decision
+ * that closes it: a link came in, nothing of it survived the reading, and the
+ * opening place still writes what holds. Were the rule hung on `pins`, this
+ * address would stay as it arrived and claim a slider the screen does not show.
+ */
+test('a link whose every slider was unreadable is still cleaned up', () => {
+  const { app, written } = opened('?v=1&game=onepiece&type=weekend&rankFloor=fuenf');
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend']);
+  assert.deepEqual(app.linkReport.entries, [{ kind: 'unreadableValue', key: 'rankFloor' }]);
+});
+
+/** The base caught by the fallback net is written back as what holds, too —
+ *  the screen shows the first of the list, so the address says so. */
+test('a base no chain ever knew is written back as the one that holds', () => {
+  const { app, written } = opened('?v=1&game=yugioh&type=monthly&players=48');
+  assert.equal(app.gameId, 'onepiece');
+  assert.equal(app.typeId, 'weekly');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekly&players=48']);
+  assert.ok(app.linkReport.entries.some((entry) => entry.kind === 'gameReplaced'));
+});
+
+/**
+ * The one link the opening place leaves alone (#47): writing our version over
+ * it would devalue a link a newer app could still read in full. The base is
+ * taken so there is a type to stand on; no slider key is read.
+ */
+test('a link from the future leaves the address bar standing', () => {
+  const { app, written } = opened('?v=99&game=onepiece&type=weekend&players=48');
+  assert.deepEqual(written, []);
+  assert.deepEqual(app.pins, {});
+  assert.equal(app.typeId, 'weekend');
+  assert.ok(app.linkReport.entries.some((entry) => entry.kind === 'futureVersion'));
+  assert.equal(app.linkReport.resaveBookmark, false);
+});
+
+/** …and the first drag overwrites it anyway, which is the price #47 accepts. */
+test('the first pin after a future link takes the address over', () => {
+  const { app, written } = opened('?v=99&game=onepiece&type=weekend&players=48');
+  app.setSlider('rankFloor', 3);
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend&rankFloor=3']);
+});
+
+/**
+ * A link with no pin at all is a link in circulation — so the Set block moves
+ * the address with it, although not one pin stands. This is the same
+ * distinction once more: the origin of the state, not the number of pins.
+ */
+test('a Set switch under a pinless incoming link moves the address', () => {
+  const { app, written } = opened('?v=1&game=onepiece&type=weekend');
+  app.setType('release');
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=release');
+});
+
+/** …and on a cold start it does not: nothing is in circulation yet. */
+test('a Set switch on a cold start leaves the address bar alone', () => {
+  const { app, written } = opened('');
+  app.setType('release');
+  assert.deepEqual(written, []);
+  assert.equal(app.typeId, 'release');
+});
+
 /** What `decode('')` answers on its own — the reason the cold start reads nothing. */
 test('the empty query would decode as a link from the future', () => {
   const read = decode('', [{ id: 'onepiece', types: [{ id: 'weekend' }] }]);
