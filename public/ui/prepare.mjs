@@ -45,12 +45,16 @@
  *    (#65, `CONTEXT.md`), not a `keep` line of its own — a `Herkunftsangabe`
  *    and not a second hint.
  *
- * A fifth is a plain correction: the prototype falls silent about the next
- * `WinnerPack` once every threshold inside the opened envelope has passed
- * (`nextAt = partialYield < y ? thresholds[partialYield] : null`), although
- * more packs still yield one — at the next envelope. The opportunity is what
- * the hint exists for (#61, story 44), so it is computed against
- * `derivePool()` itself rather than off the threshold table.
+ * The hint follows the prototype's arithmetic (`nextAt =
+ * partialYield < y ? thresholds[partialYield] : null`): it counts **only
+ * inside the opened envelope**. Built first as a "correction" that reached
+ * across into the next envelope, it said `21 more packs would make it 5` at
+ * Release with 54 packs; the maintainer's run-11 decision on #65 (K2) took it
+ * back, because a sentence asking for a whole further envelope for one card is
+ * exactly the extra order the closing note says nothing here is. The same
+ * decision makes a fifth departure: where nothing is opened, the prototype
+ * still offers its first threshold, and this hint stays silent — see
+ * `nextWinner()`.
  */
 
 import { derivePool } from '../core/distribute.mjs';
@@ -164,22 +168,32 @@ function envelopesItem(plan) {
 
 /**
  * How many more `TournamentPack`s the next `WinnerPack` is away, and what it
- * would make — both read out of `derivePool()` rather than off the threshold
- * table, so the envelope boundary needs no case of its own (see the head
- * comment). One full envelope more always yields at least one more
- * `WinnerPack`, so the sweep is bounded by the envelope size and always finds
- * something.
+ * would make — **inside the opened `PromoEnvelope` and nowhere else** (#65,
+ * run-11 decision K2). The way is the prototype's: the next threshold of the
+ * envelope's staffel, minus what is already counted off it.
+ *
+ * Two stands have no such way, and the hint falls silent at both, beside the
+ * pin (the ticket's first silence; this is its second):
+ *
+ * - **Nothing is opened** — the packs come out even in sealed envelopes. The
+ *   next `WinnerPack` would need a further envelope fetched and broken, and
+ *   that is an extra order. The prototype would still offer it here; the
+ *   decision names this stand (64 packs, two even envelopes) as silent, and
+ *   the decision is what is built.
+ * - **The opened envelope has passed every threshold** — the next
+ *   `WinnerPack` lies a whole envelope away (Release at 54 packs: 4 winner
+ *   packs, and no sentence about a 5th).
+ *
+ * What the count would make is read out of `derivePool()` rather than written
+ * as `+ 1`, so the promise is the core's and not this function's.
  */
 function nextWinner(plan) {
-  const settings = plan.settings;
-  const perEnvelope = size(settings.envelopeSize, 1);
-  const now = plan.pool.winnersDerived;
-  const packs = plan.pool.packs;
-  for (let n = 1; n <= perEnvelope; n++) {
-    const would = derivePool({ ...settings, tournamentPacks: packs + n }).winnersDerived;
-    if (would > now) return { need: n, value: packs + n, would };
-  }
-  return null;
+  const { opened, partialYield, thresholds, packs } = plan.pool;
+  if (opened === 0 || partialYield >= thresholds.length) return null;
+  const need = thresholds[partialYield] - opened;
+  if (need <= 0) return null;
+  const would = derivePool({ ...plan.settings, tournamentPacks: packs + need }).winnersDerived;
+  return { need, value: packs + need, would };
 }
 
 /**
@@ -196,11 +210,12 @@ function nextWinner(plan) {
  * `NoticeStack`. It falls silent while `winnerPacks` is `pinned` — read off
  * the plan's own record of what was set by hand, which is the same stored
  * `pins` the app keeps (ADR 0006: the pin is set by the operating gesture) —
- * because then the staffel is not what the number follows.
+ * because then the staffel is not what the number follows. It falls silent,
+ * too, where the opened envelope has no next threshold left (`nextWinner()`).
  *
  * The button raises **`tournamentPacks`**: the way to another `WinnerPack`
- * runs over more packs, more sealed `PromoEnvelope`s, more yield. It is not an
- * extra `WinnerPack` conjured onto the table.
+ * runs over more packs out of the envelope already opened, up to its next
+ * threshold. It is not an extra `WinnerPack` conjured onto the table.
  */
 function winnersItem(plan) {
   const perEnvelope = size(plan.settings.envelopeSize, 1);
@@ -209,6 +224,11 @@ function winnersItem(plan) {
   const winners = plan.pool.winners;
   const derived = plan.pool.winnersDerived;
   const off = winners - derived;
+  // `hasOwnProperty` holds here only because `plan.pinned` is the core's
+  // `snapshot()` of the pins, a plain object whose spread has already done the
+  // tracked reads (`ownKeys`, `get`) on the Alpine proxy; asked of that proxy
+  // itself it would land on the `getOwnPropertyDescriptor` trap, which nothing
+  // tracks (#67). `test/ui-prepare.test.mjs` holds the read with a counting proxy.
   const pinned = Object.prototype.hasOwnProperty.call(plan.pinned, 'winnerPacks');
 
   const lines = [

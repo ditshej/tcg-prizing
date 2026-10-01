@@ -77,6 +77,31 @@ test('Release comes out even: 288 boosters in 12 displays and one Promo-Envelope
   assert.ok(texts(list.envelopes).includes('comes out even'));
 });
 
+/**
+ * AK 4's only Release stand is 32 packs in envelopes of 32, the one stand at
+ * which rounding up and rounding down agree — so it cannot tell them apart.
+ * This one has a remainder: 39 packs at `envelopeSize` 9 (#61, Testing
+ * Decisions: the `PreparationList` breakdown is a probe of its own).
+ */
+test('39 packs in envelopes of 9: the procurement rounds up, the sealed count down', () => {
+  const { plan, list } = stand('weekly', { players: 39 });
+  assert.equal(plan.pool.packs, 39);
+  assert.equal(plan.settings.envelopeSize, 9);
+
+  assert.equal(list.envelopes.fetch, 5);
+  assert.equal(list.envelopes.unit, 'Promo-Envelopes');
+  assert.equal(list.envelopes.total, '39 tournament packs');
+  const sealed = list.envelopes.lines.find((line) => line.text === '4 sealed');
+  assert.ok(sealed, texts(list.envelopes).join(' | '));
+  assert.equal(sealed.value, 36);
+  const broken = list.envelopes.lines.find((line) => line.text === '+ 3 loose from the 5th');
+  assert.ok(broken, texts(list.envelopes).join(' | '));
+  assert.equal(broken.value, 39);
+
+  // The WinnerPack item counts the same sealed envelopes.
+  assert.equal(list.winners.lines[0].text, '4 sealed envelopes');
+});
+
 test('the ordinal of the broken unit is built, not pasted', () => {
   // The prototype writes `${sealed + 1}${sealed ? 'th' : 'st'}`, which says
   // `2th` and `3th`. Two displays' worth plus a remainder breaks the 3rd.
@@ -157,33 +182,58 @@ test('the WinnerPack hint names the amount, carries a button and points at the p
 });
 
 /**
- * The hint's arithmetic, held against the core rather than against itself: the
- * packs it points at are the **smallest** `tournamentPacks` count at which
- * `derivePool()` yields more `WinnerPack`s than it does now, and the number it
- * promises is what comes out there. Swept over a range of stands, so the
- * envelope boundary — where the next `WinnerPack` only falls in the *next*
- * envelope — is inside the sweep and not a case somebody remembered.
+ * The hint counts **only inside the opened `PromoEnvelope`** (#65, run-11
+ * decision K2), the way the prototype does. Held against the core rather than
+ * against itself: where it speaks, the packs it points at are the smallest
+ * `tournamentPacks` count at which `derivePool()` yields one more
+ * `WinnerPack`, and that count still lies inside the envelope already opened.
+ * Where that envelope has nothing left to give — or nothing is opened — it is
+ * silent. Swept over a range of stands so both envelope boundaries are inside
+ * the sweep and not a case somebody remembered.
  */
-test('the hint points at the first packs count that really yields one more', () => {
+test('the hint speaks only where the opened envelope still yields one more', () => {
   const type = TOURNAMENT_TYPES.find((entry) => entry.id === 'release');
-  for (let packs = 0; packs <= 70; packs++) {
+  let spoke = 0;
+  let silent = 0;
+  for (let packs = 0; packs <= 100; packs++) {
     const pins = { tournamentPacks: packs };
     const settings = resolveSettings({ game: GAME, type, pins });
-    const offer = preparationList(distribute(settings, pins)).winners.offer;
+    const plan = distribute(settings, pins);
+    const offer = preparationList(plan).winners.offer;
     const now = derivePool(settings).winnersDerived;
+    const size = settings.envelopeSize;
+    const envelopeEnd = (Math.floor(packs / size) + 1) * size;
 
     let first = null;
-    for (let n = packs + 1; n <= packs + 200 && first === null; n++) {
+    for (let n = packs + 1; n < envelopeEnd && first === null; n++) {
       if (derivePool({ ...settings, tournamentPacks: n }).winnersDerived > now) first = n;
+    }
+    if (plan.pool.opened === 0 || first === null) {
+      assert.equal(offer, null, `packs ${packs} offers past the opened envelope`);
+      silent++;
+      continue;
     }
     assert.ok(offer, `packs ${packs} has no hint`);
     assert.equal(offer.value, first, `packs ${packs}`);
     assert.equal(offer.need, first - packs, `packs ${packs}`);
     assert.equal(offer.would, derivePool({ ...settings, tournamentPacks: first }).winnersDerived);
+    spoke++;
   }
+  assert.ok(spoke > 0 && silent > 0, 'the sweep has to hold both sides');
 });
 
-test('the hint is silent while winnerPacks is pinned, and only then', () => {
+/** The two stands the decision names, measured on the real Release sheet. */
+test('Release at 54 packs and at 64 packs carries no hint', () => {
+  const at54 = stand('release', { tournamentPacks: 54 }).list.winners;
+  assert.equal(at54.fetch, 4);
+  assert.equal(at54.offer, null);
+
+  const at64 = stand('release', { tournamentPacks: 64 });
+  assert.equal(at64.plan.pool.opened, 0, 'two even envelopes, nothing opened');
+  assert.equal(at64.list.winners.offer, null);
+});
+
+test('the hint is silent while winnerPacks is pinned', () => {
   assert.ok(stand('weekly').list.winners.offer);
   assert.equal(stand('weekly', { winnerPacks: 4 }).list.winners.offer, null);
   // A pin on some other slider says nothing about the staffel.
