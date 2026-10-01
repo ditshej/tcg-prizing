@@ -87,6 +87,32 @@ branch's doing. The batch of 2026-09-24 ran while four commits landed on
 question. The wrong form only ever over-reports, so it is not a breach that
 slips through; it is a check that gets waved away on the second run.
 
+### The merge probe is built with two of this repo's settings turned off
+
+A freshly built state for several branches is a merge probe, and building one
+by hand runs into two settings this repo has on. Run 11's counter-check walked
+into both, each on the recommended path:
+
+- **`merge.conflictStyle = diff3`** writes a fourth marker, `|||||||`, opening
+  the base block. An instruction that says „remove the markers" does not name
+  it. Left in `.mjs` it is a `SyntaxError`; left in `.css` it is **silent**.
+- **`rerere.enabled = true`** replayed a resolution that had once been
+  practised wrong into the next, fresh merge — **without asking**.
+
+So, for every probe, standing rule:
+
+```sh
+git -c rerere.enabled=false merge <branch>
+# resolve; under diff3 "keep both sides" means the ||||||| block goes too
+grep -rc '<<<<<<<' <conflicted files>   # every count 0
+grep -rc '|||||||' <conflicted files>   # every count 0
+node --test
+```
+
+Both greps, not one: the first alone passes a file that still carries a base
+block. And the suite comes after the greps, because only the `.mjs` half of a
+leftover marker makes it red.
+
 ## Mutation hygiene
 
 Mutation testing turns the implementation wrong on purpose, so it is the one
