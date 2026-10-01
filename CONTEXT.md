@@ -339,8 +339,11 @@ Sie ist deshalb nicht dasselbe wie der Default, und der ist `all`.
 Die `RaffleRange` ist **kein `Regler`**, sondern eine Einstellung des
 Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor und geht in
 `distribute()` nicht ein. Daraus folgt alles Einzelne — keine
-`pinned`/`auto`-Markierung, kein Rückweg am Element, nicht gezählt in `Drop all
-N`, und ein Set-Wechsel lässt sie stehen. Sie **steht im `SetupLink`**, als
+`pinned`/`auto`-Markierung, kein Rückweg am Element, und ein Set-Wechsel lässt
+sie stehen. Der Knopf neben dem `TournamentType`-Titel zählt sie trotzdem mit,
+wo sie von `all` abweicht, und sein Rückweg in voller Reichweite stellt sie auf
+`all` (Maintainer, Lauf 12, Phase G an #72) — als von Hand gesetzter Posten,
+nicht als Pin; *Drop all N and follow* im `CarryOverNotice` kennt sie nicht. Sie **steht im `SetupLink`**, als
 eigener Schlüssel `raffleRange` neben den Reglern und nie als einer von ihnen
 (Maintainer, Lauf 12, K1b an #72: „Auch die RaffleRange reist im Link mit"):
 geschrieben nur, wenn sie von `all` abweicht, und ein Link, der sie nennt,
@@ -791,7 +794,9 @@ Gesetzt wird er durch die **Bedienhandlung**, nicht durch den Wert — wer einen
 Regler verstellt und wieder auf den Ausgangswert zurückzieht, hat entschieden und
 lässt ihn `pinned`. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
-zurück, der Knopf neben dem `TournamentType`-Titel **alle**, und derselbe Weg in
+zurück, der Knopf neben dem `TournamentType`-Titel **alle** — und dazu die
+`RaffleRange` auf `all`, die kein Pin ist, aber mitgezählt wird (Lauf 12,
+Phase G an #72) —, und derselbe Weg in
 voller Reichweite steht momentan im `CarryOverNotice`. Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die beiden **vollen**
 Reichweiten fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
@@ -852,7 +857,10 @@ Zahlen für „die Regler", und sie dürfen sich unterscheiden: 19 `Settings`-Fe
 `public/ui/controls.mjs`), weil beide einen `Rank` benennen und an der Kachel
 gesetzt werden. Ein einziger Schlüssel steht ausserhalb der `Settings`:
 `raffleRange` (`CHOICE_KEYS` in `public/link/keys.mjs`), und er zählt zu keiner
-der zwei Zahlen, weil er kein Regler ist. _Überholt:_ bis Lauf 12
+der zwei Zahlen, weil er kein Regler ist. Er ist von der `WinnerRaffle` der
+**einzige** Schlüssel im Link — kein Wurfzähler, keine Trefferliste (Lauf 12,
+Phase G an #72); ein gewürfelter Treffer reist nur als `manual`-Zuteilung, weil
+der Wurf in dieselben Zähler schreibt wie die Kachel (offener Befund dort). _Überholt:_ bis Lauf 12
 stand hier, der Draht lasse `depthStep` weg (18), weil die Stufe „aus der Basis
 reproduzierbar" sei — das trägt nur für eine ungepinnte Stufe, und seit #67 pinnt
 der Stufen-Chip sie. Wer eine dritte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das

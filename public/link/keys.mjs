@@ -93,8 +93,10 @@ export const KEYS = [
  * `KEYS` and are written after them. The one so far is the `RaffleRange`
  * (run 12, K1b on #72): "Auch die RaffleRange reist im Link mit." It stays
  * **no `Regler`** — no `Settings` field, no input to `distribute()`, no pin,
- * no reset, not in `Drop all N`, untouched by a Set switch — so it is not
- * mixed into the slider list, where every reader would take it for one.
+ * no reset at the element, untouched by a Set switch — so it is not mixed
+ * into the slider list, where every reader would take it for one. (The pin
+ * chip counts it and drops it back to `all` — run 12, Phase G on #72 — but
+ * that is the screen's business, not the wire's.)
  *
  * `term` is what a missing key means: the term's own constant, never a
  * `DefaultSet` leaf. The key is written only when the value differs from it —

@@ -47,6 +47,7 @@ import {
   dropConfirmation,
   dropNoun,
   effectiveValue,
+  handSetKeys,
   isPinned,
   manualWinnerAfter,
   pinnedItems,
@@ -673,8 +674,9 @@ export function planApp(seam = SEAM) {
 
     /**
      * The `RaffleRange`, and it is **no `Regler`** (#69, #61): no pin, no
-     * reset button, not counted in `Drop all N`, and a Set switch leaves it
-     * standing. Its default `all` is a constant of the term, which is why it
+     * reset button, and a Set switch leaves it standing. The full reach at the
+     * pin chip counts it all the same and puts it back to `all` (run 12,
+     * Phase G on #72, `zaehlt-mit`) — `handSetKeys`, never `pinnedKeys`. Its default `all` is a constant of the term, which is why it
      * sits here as a literal and in no `DefaultSet`.
      *
      * It **travels in the `SetupLink`** all the same (run 12, K1b on #72: "Auch
@@ -838,11 +840,26 @@ export function planApp(seam = SEAM) {
       return pinnedItems(this.pins);
     },
 
+    /** What the pin chip counts and hands its question: the pinned items
+     *  and the `RaffleRange` off `all` (run 12, Phase G on #72). */
+    get handSetKeys() {
+      return handSetKeys(this.pins, this.linkChoices);
+    },
+
+    /** Whether an item of the chip's list stands set by hand — a pin, or the
+     *  `RaffleRange` off `all`. `isPinned()` stays the marking's question. */
+    isHandSet(key) {
+      if (key === 'raffleRange') return this.raffleRange !== DEFAULT_RANGE;
+      return this.isPinned(key);
+    },
+
     /** The counter beside the type row. It counts `displays` and
      *  `manualWinner` as **one** item each, however many `Rank`s carry one
-     *  (#61, #67) — by being the same list the question enumerates. */
+     *  (#61, #67) — by being the same list the question enumerates — and the
+     *  `RaffleRange` as one where it is off `all`, so it names the items the
+     *  link carries (N2; run 12, Phase G on #72). */
     get pinCount() {
-      return this.pinnedKeys.length;
+      return this.handSetKeys.length;
     },
 
     /** The counter chip's spoken label, in the question's own word. */
@@ -870,13 +887,13 @@ export function planApp(seam = SEAM) {
      * owed: its Entscheid 4 puts this same handling at a second trigger, with
      * two pins and another button, and calls it "keine neue Mechanik".
      * Nothing here knows "everything but Game and TournamentType" — the type
-     * row's chip passes `pinnedKeys`, and a caller with a shorter list gets a
+     * row's chip passes `handSetKeys`, and a caller with a shorter list gets a
      * shorter question.
      */
     confirmDrop: null,
 
     askDrop({ keys, anchor, reach = 'all', bubble = DROP_BUBBLE, done = null }) {
-      const list = (keys ?? []).filter((key) => this.isPinned(key));
+      const list = (keys ?? []).filter((key) => this.isHandSet(key));
       if (!list.length) return;
       this.openTile = null;
       this.openInfo = null;
@@ -901,7 +918,7 @@ export function planApp(seam = SEAM) {
         keys: ask.keys,
         typeTitle: this.typeTitle,
         reach: ask.reach,
-        after: { settings: after.settings, plan: distribute(after.settings, after.pins) },
+        after: { settings: after.settings, choices: after.choices, plan: distribute(after.settings, after.pins) },
       });
     },
 
@@ -938,19 +955,22 @@ export function planApp(seam = SEAM) {
       const after = this.afterDrop(keys);
       this.pins = after.pins;
       this.settings = after.settings;
+      this.raffleRange = after.choices.raffleRange;
       this.syncAddress();
     },
 
     /**
      * What a drop installs, without installing it: the pin record without the
-     * named items and the sheet resolved over it. `dropPins()` installs exactly
+     * named items, the sheet resolved over it, and the `RaffleRange` — back on
+     * `all` where the list names it (run 12, Phase G on #72), else as it stands. `dropPins()` installs exactly
      * this, and the question reads its target values off exactly this — one
      * computation for the announcement and the effect, so the bubble cannot
      * promise a value the handling then does not set (#67, run 11, K3).
      */
     afterDrop(keys) {
       const pins = pinsWithout(this.pins, keys);
-      return { pins, settings: this.resolvedFor(pins) };
+      const raffleRange = (keys ?? []).includes('raffleRange') ? DEFAULT_RANGE : this.raffleRange;
+      return { pins, settings: this.resolvedFor(pins), choices: { raffleRange } };
     },
 
     /**

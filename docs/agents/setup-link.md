@@ -140,7 +140,7 @@ not read a count off one of them to check the other — `CONTEXT.md`,
 
 **One key stands outside the nineteen: `raffleRange`** (`CHOICE_KEYS`; run 12,
 K1b on #72: "Auch die RaffleRange reist im Link mit"). It is set by hand but is
-**no `Regler`**: no `Settings` field, no pin, no reset, not in `Drop all N`,
+**no `Regler`**: no `Settings` field, no pin, no reset at the element,
 untouched by a Set switch. So it is kept out of `KEYS` and out of `pins` —
 `encode()` and `decode()` carry it as `choices` — and it counts toward neither
 number above. It is written only when it differs from `all`, its term
@@ -157,8 +157,13 @@ above), and the start date below the title had not been reached.
 
 What is not set by hand stays out: page, fullscreen, folding, an open bubble,
 the raffle bar (#61, "Session state" — overruled there only for the
-`RaffleRange`, by K1b). Whether the pin counter beside `Copy link` counts the
-`RaffleRange` is open with the maintainer; until then it counts pins only.
+`RaffleRange`, by K1b). The pin chip beside `Copy link` counts the
+`RaffleRange` where it is off `all`, and its drop puts it back to `all` (run 12,
+Phase G on #72) — the screen's business; the wire still carries it as a choice,
+never as a pin. Of the WinnerRaffle, the `RaffleRange` is the **only** key that
+travels: no throw count, no hit list, no last draw (Phase G, `G-raffle-hits`).
+A thrown hit does reach the link — as a `manualWinner` pin, because a throw
+writes the tile's own counters (#69 AC 5); that collision is open on #72.
 
 ## Caps are not a migration concern
 
