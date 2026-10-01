@@ -1019,5 +1019,23 @@ export function planApp(seam = SEAM) {
     takeOffer(offer) {
       this.setSlider(offer.key, offer.value);
     },
+
+    // SetupLink on screen (#72)
+
+    /**
+     * The copy form: **base plus deviations**, read off what the plan reports
+     * as set by hand (`plan.pinned`, the addendum (#86) to ADR 0009) and never
+     * off the resolved stand. `encode(plan.settings)` is the line that must
+     * not be written (Befund G3; K5 on #72): it turns one pin into twelve and
+     * ships twelve decisions nobody made.
+     *
+     * "Complete" means the base is always there, with zero pins too (#47,
+     * "Die Kopierform ist immer vollständig") — not the whole resolved state.
+     * It may differ from the address bar, which stays empty after a cold
+     * start until the first pin (#50, narrowed by run 9 on #89).
+     */
+    get linkQuery() {
+      return encode({ game: this.gameId, type: this.typeId, pins: this.plan.pinned });
+    },
   };
 }
