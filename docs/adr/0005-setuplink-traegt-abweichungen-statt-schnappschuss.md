@@ -80,3 +80,28 @@ später wieder geöffnet. Der Link ist damit ein zweiter, ungepflegter Ort für
 wiederkehrende Einstellungen, und das ist hingenommen, nicht wegdefiniert. Die
 Folge trägt ADR 0007: eine Version in der URL und eine `LinkMigration` je
 Erhöhung.
+
+Nachtrag (Lauf 12, Entscheid K1 an #72): **Der Link trägt alles, was von Hand
+gesetzt ist — jeden Pin, ohne Ausnahme.** Der Maintainer, wörtlich: „der link
+soll alles tragen, was man eingestellt hat." Bis hierher liess der Draht einen
+Pin weg: den Stufen-Pin `depthStep` (Stufen-Chips unter `Served ranks`), mit der
+Begründung, die Stufe sei kein Regler, sondern ein `DefaultSet`-Eintrag und darum
+aus der Basis reproduzierbar. Das stimmt nur für eine **ungepinnte** Stufe; seit
+#67 pinnt der Griff an den Chip sie, und ein Link, der diesen Pin verliert, zeigt
+beim Empfänger eine andere Tiefe (gemessen: `Weekly`, 48 Leute, `top quarter` —
+12 Ränge beim Absender, 8 beim Empfänger). Die Gleichung dieses Dokuments —
+der Link trägt die `pinned` Regler — gilt damit ohne Lücke: was gepinnt ist,
+reist. Zwei Pins über die Tiefe (`depth` und `depthStep`) sind keine zwei
+Angaben über denselben Regler im Sinn der verworfenen Option „Werte plus
+angefasst-Bit", sondern zwei Pins, die der Empfänger mit demselben Kern auflöst
+wie der Absender. Kein Versionssprung: ein neuer Schlüssel ist nach
+`docs/agents/setup-link.md` keine brechende Änderung, und die Regel hat ihr
+Startdatum noch nicht erreicht (ADR 0007, `## Nachtrag (#89)`, Grund 1).
+Nicht berührt ist der Sitzungszustand — Seite, Faltung, offene Blase (#61,
+„Session state"). Offen ist allein der `RaffleRange`: #61 und #69 legen ihn als
+Sitzungszustand ab, „nie im Link"; ob der Grundsatz ihn mitmeint, ist dem
+Maintainer vorgelegt (Kommentar K1 an #72) und bis dahin gilt #61.
+
+Kein eigener ADR-Eintrag und kein Stempel: die Absicht dieses Dokuments ändert
+sich nicht, eine Lücke in ihrer Umsetzung wird geschlossen — Präzedenz sind die
+Nachträge oben und die in ADR 0007.

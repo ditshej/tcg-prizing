@@ -9,9 +9,11 @@ Decided in ADR 0007. This file is the working rule that follows from it.
 
 ## Not yet — the rule has a start date
 
-**There is no encoding yet, no version, and no `SetupLink` in circulation.** Until
-there is, renaming a slider key is free: there is no version to bump and no old link
-a migration could rewrite. Decided in
+**There is an encoding now (v1, `public/link/`), but no `SetupLink` in
+circulation:** the app is not deployed (#30 is open). Until it is, renaming a slider
+key is free: there is no old link a migration could rewrite. Look the deploy up
+before you lean on this — `gh issue view 30` — rather than assuming it is still
+open. Decided in
 [Etiketten weichen von den Identifiern ab](https://github.com/ditshej/tcg-prizing/issues/27),
 which set the deadline in those words — no code, no link out there — and applied it
 again in [WinnerPack-Zahl](https://github.com/ditshej/tcg-prizing/issues/29).
@@ -125,14 +127,28 @@ the same answer. And a read whose version was never established must not enter
 the chain — `steps.slice(version - 1)` on `version: null` slices at `NaN`, which
 is `0`, which is the whole chain over a link that never claimed to be v1.
 
-## Eighteen keys, and that is not the only count
+## Nineteen keys: the link carries everything set by hand
 
-The wire carries **18** slider keys, `Settings` has **19** fields, and the
-`Details` sheet draws **17**. All three are right, and they are allowed to
-differ: the wire drops `depthStep`, the sheet drops `displays` and
-`manualWinner`. Do not reconcile them, and do not read a count off one of them
-to check another — `CONTEXT.md`, `SetupLink`, says which is which and why, and
-names the trap that makes a fourth number.
+**Every pin travels, without exception** — the maintainer's principle (run 12,
+K1 on #72; ADR 0005, addendum run 12): "der link soll alles tragen, was man
+eingestellt hat." The wire therefore carries all **19** `Settings` fields, the
+step pin `depthStep` included, and the `Details` sheet draws **17** — it drops
+`displays` and `manualWinner`, which are set at the tile. Do not read a count
+off one of them to check the other — `CONTEXT.md`, `SetupLink`, says which is
+which and names the trap that makes a third number.
+
+_Overruled:_ until run 12 this section said the wire carries 18 and drops
+`depthStep` because "the step is reproducible from the base", and told you not
+to reconcile the counts. That held only for an **unpinned** step; since #67 the
+step chip pins it, and a link that lost the pin showed the receiver a different
+depth (`Weekly`, 48 players, `top quarter`: 12 ranks sent, 8 received). Adding
+the key needed no version bump — a new key is not a breaking change (table
+above), and the start date below the title had not been reached.
+
+A hand-set value that is **not** a pin is session state and stays out (#61,
+"Session state"). The one open case is the `RaffleRange`: #61 and #69 file it as
+session state, "never in the link"; whether the principle covers it is put to
+the maintainer (comment K1 on #72), and until then #61 holds.
 
 ## Caps are not a migration concern
 

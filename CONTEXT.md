@@ -838,16 +838,17 @@ stille Entscheidung (Nachtrag zu ADR 0007). Ein Wert aus dem Link ist ein `pinne
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
 `ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
 URL kam.
-**Drei Zahlen für „die Regler", und sie dürfen sich unterscheiden.** 19
-`Settings`-Felder (#46 `## Input: Settings`); der **Draht** lässt `depthStep` weg
-(18, `public/link/keys.mjs`), weil das kein Regler ist, sondern ein
-`DefaultSet`-Eintrag — der Link nennt seinen `TournamentType`, also ist die Stufe
-aus der Basis reproduzierbar, und zwei Schlüssel über dieselbe Tiefe könnten sich
-widersprechen; das **Blatt** lässt `displays` und `manualWinner` weg (17,
-`SHEET_KEYS` in `public/ui/controls.mjs`), weil beide einen `Rank` benennen und
-an der Kachel gesetzt werden. Keine Überschneidung — Draht und Blatt lassen
-verschiedene Felder weg —, und kein Schlüssel ausserhalb der `Settings`. Wer eine
-vierte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
+**Der Link trägt alles, was von Hand gesetzt ist** — jeden Pin, ohne Ausnahme
+(Maintainer, Lauf 12, K1 an #72; ADR 0005, Nachtrag Lauf 12). Darum **zwei**
+Zahlen für „die Regler", und sie dürfen sich unterscheiden: 19 `Settings`-Felder
+(#46 `## Input: Settings`), und der **Draht** trägt alle 19
+(`public/link/keys.mjs`), den Stufen-Pin `depthStep` eingeschlossen; das
+**Blatt** lässt `displays` und `manualWinner` weg (17, `SHEET_KEYS` in
+`public/ui/controls.mjs`), weil beide einen `Rank` benennen und an der Kachel
+gesetzt werden. Kein Schlüssel ausserhalb der `Settings`. _Überholt:_ bis Lauf 12
+stand hier, der Draht lasse `depthStep` weg (18), weil die Stufe „aus der Basis
+reproduzierbar" sei — das trägt nur für eine ungepinnte Stufe, und seit #67 pinnt
+der Stufen-Chip sie. Wer eine dritte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
 sind **20**, weil das aufgelöste Objekt den `id` des Blattes mitträgt (`GAME` in
 `public/sets/onepiece.mjs` — „a name, not a field of #46"). Gemessen in Lauf 8
 (Befund B11) und nachgemessen beim Ablegen; nachschlagen, nicht herleiten.
