@@ -33,7 +33,7 @@
  */
 
 import { distribute } from '../core/distribute.mjs';
-import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
+import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
 
 /** The four hot ones, in the order #61 names them. They carry no group title:
  *  the page head is their title (#64). */
@@ -558,6 +558,18 @@ export const DROP_NOTES = {
 export const NO_UNDO = 'There is no undo.';
 
 /**
+ * Whether a step's name already says how many ranks it serves: an absolute
+ * step of the RaffleRange (`abs` in `RANGES` — `top 8`, `top 16`) that the
+ * player count has not capped. A fractional step and `all` name a share, so
+ * the number has to be written beside them; so does an absolute step capped
+ * below its own number, whose name then says something the counter does not.
+ */
+function stepCarriesNumber(stepId, ranks) {
+  const step = RANGES.find((range) => range.id === stepId);
+  return step?.abs !== undefined && step.abs === ranks;
+}
+
+/**
  * What an item will **show** once it has fallen — the value the reset sets it
  * to, read off the stand *after* the drop and in the form the control itself
  * shows it. It computes nothing of its own: the stand handed in is the one the
@@ -570,8 +582,11 @@ export const NO_UNDO = 'There is no undo.';
  * - **`Served ranks`** shows a step and a number — the chip that is pressed
  *   and the counter beside it. A step's screen word is a *value* here and
  *   comes out of `DEPTH_STEP_LABELS`; the number is the one the counter will
- *   show, read off the plan like the counter reads it. Where the slider stays pinned
- *   no chip follows it, and the number alone is what stands.
+ *   show, read off the plan like the counter reads it. The number stands in
+ *   brackets only where the step's name does not already carry it (maintainer
+ *   decision on #67, run 11, Phase G): `top 8`, but `top quarter (10)`. Where
+ *   the slider stays pinned no chip follows it, and the number alone is what
+ *   stands.
  * - **`Curve`** shows its step by name, as the sheet's foot line does.
  * - **`Handout`** is a checkbox: `on` or `off`.
  * - **`Reserved displays`** and **`Winner packs by hand`** are the tiles'
@@ -584,7 +599,8 @@ export function pinTarget(item, stand) {
   if (item === 'depth') {
     const ranks = effectiveValue('depth', stand);
     if (settings.depth != null) return String(ranks);
-    return `${DEPTH_STEP_LABELS[settings.depthStep] ?? settings.depthStep} (${ranks})`;
+    const word = DEPTH_STEP_LABELS[settings.depthStep] ?? settings.depthStep;
+    return stepCarriesNumber(settings.depthStep, ranks) ? word : `${word} (${ranks})`;
   }
   if (item === 'curve') return String(settings.curve);
   if (item === 'combinedHandout') return settings.combinedHandout ? 'on' : 'off';

@@ -287,6 +287,39 @@ test('the target is the chosen type\'s own value, not the pinned one', () => {
   assert.ok(to.depth.startsWith(DEPTH_STEP_LABELS[cold.settings.depthStep]), 'a step is named by its chip word');
 });
 
+/* ── The number beside a step only where its name lacks it (run 11, G) ──── */
+
+/** What the question says `Served ranks` falls to, and the number the counter
+ *  shows beside it, for a step at a player count — both set the way the
+ *  screen sets them. The number is read off the plan, not computed here. */
+function servedRanksTo(step, players) {
+  const { app } = opened();
+  app.setSlider('players', players);
+  app.setSlider('depthStep', step);
+  return { to: pinTarget('depth', app.stand), ranks: app.value('depth') };
+}
+
+test('an absolute step names its number itself and gets no brackets', () => {
+  for (const [step, word, ranks] of [['top8', 'top 8', 8], ['top16', 'top 16', 16]]) {
+    const served = servedRanksTo(step, 64);
+    assert.equal(served.ranks, ranks, `${word} serves what it says at 64 players`);
+    assert.equal(served.to, word);
+  }
+});
+
+test('a share and all ranks carry the number in brackets', () => {
+  for (const step of ['topQuarter', 'topThird', 'topHalf', 'topTwoThirds', 'topThreeQuarters', 'all']) {
+    const served = servedRanksTo(step, 40);
+    assert.equal(served.to, `${DEPTH_STEP_LABELS[step]} (${served.ranks})`);
+  }
+});
+
+test('an absolute step that serves fewer than its own number shows the number it serves', () => {
+  const served = servedRanksTo('top16', 10);
+  assert.ok(served.ranks < 16, 'the plan serves fewer than sixteen here');
+  assert.equal(served.to, `top 16 (${served.ranks})`);
+});
+
 /* ── Served ranks is one item (#67, run 11, K3) ─────────────────────────── */
 
 test('slider and step of Served ranks are one item, in the counter as in the question', () => {
