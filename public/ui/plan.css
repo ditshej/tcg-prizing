@@ -1383,8 +1383,15 @@ body {
  * the same rule puts both on the bottom edge.
  *
  * `--notice-right` is the indent the open surface keeps from the controls
- * column, so it never covers their pin markings. The app folds into one page
- * at every width today, so it is 0; the fold sets it once there are columns.
+ * column once the controls stand beside the plan as a column (from 740px,
+ * #71): there it ends before them and leaves their pin markings free. On a
+ * narrow screen the open notice covers the controls, `pinned` and reset
+ * included, on purpose — the lighter loss, since the ways out are clickable in
+ * the notice itself (the prototype's comment over `.stack > *`; maintainer
+ * decision on #68, run 12, K3 `prototyp-gilt`, which overrides the ticket's
+ * "must not cover the pin markings"). The app folds into one page at every
+ * width until #71 builds the columns, so it is 0 and the notice covers
+ * everywhere; the fold sets it once there are columns.
  * `--notice-foot` is the foot's measured 56px (`.foot`: 20 + 3 + 12 + 2 × 10
  * + 1).
  *
