@@ -25,7 +25,7 @@
 
 import { unfit } from '../core/distribute.mjs';
 import { offerFor, waysOut } from '../core/suggest.mjs';
-import { pinLabel } from './controls.mjs';
+import { dropNoun, pinLabel } from './controls.mjs';
 
 /**
  * The ways out and the Offer of a plan, computed once per stand. Both are
@@ -259,7 +259,9 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, fold 
       id: 'carryOver',
       closable: true,
       lines: [
-        `${n} pinned ${plural(n, 'slider')} stayed behind.`,
+        // The item's word is `dropNoun()`'s, never spelled out here: #113
+        // swaps it from *slider* to *value* in one place (#113 AC 16).
+        `${n} pinned ${dropNoun(n)} stayed behind.`,
         `${names} — set by hand, so ${n > 1 ? 'they do' : 'it does'} not follow ${carry.to}.`,
       ],
       actions: [{ label: carryLabel(n, carry.to), drop: carry.keys }],

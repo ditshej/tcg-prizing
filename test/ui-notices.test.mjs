@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { offerFor, waysOut } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
+import { dropNoun } from '../public/ui/controls.mjs';
 import {
   conflictKind,
   dismiss,
@@ -256,6 +257,21 @@ test('a fit plan without an Offer and without a switch shows nothing', () => {
 test('a switch that carried nothing over raises no CarryOverNotice', () => {
   const stack = stackFor(fit, freshFold(), { to: 'Release', keys: [] });
   assert.deepEqual(stack.open, []);
+});
+
+/**
+ * B6 (run 12): the CarryOverNotice calls a pinned item by `dropNoun()`, the
+ * word #113 swaps in one place — so the sentence is right in any merge order,
+ * and no generated text in this module spells *slider* or *setting* itself.
+ */
+test('the CarryOverNotice calls a pinned item by the one shared word', () => {
+  const one = stackFor(fit, freshFold(), { to: 'Release', keys: ['players'] }).open[0];
+  assert.equal(one.lines[0], `1 pinned ${dropNoun(1)} stayed behind.`);
+  const two = stackFor(fit, freshFold(), { to: 'Release', keys: ['players', 'rankFloor'] }).open[0];
+  assert.equal(two.lines[0], `2 pinned ${dropNoun(2)} stayed behind.`);
+  const source = readFileSync(new URL('../public/ui/notices.mjs', import.meta.url), 'utf8');
+  const code = source.split('\n').filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line)).join('\n');
+  assert.ok(!/['`][^'`]*\b(sliders?|settings?)\b[^'`]*['`]/i.test(code.replace(/plan\.settings|settings\b(?=[.)?,;\s])/g, '')), 'no screen text says slider or setting');
 });
 
 test('the open stack is in the order of what it talks about: the plan above, the input below', () => {
