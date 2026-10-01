@@ -23,7 +23,7 @@
 
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute, unfit } from '../public/core/distribute.mjs';
-import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
+import { CURVES, DEPTH_STEPS, RANGES, rafflePot } from '../public/core/rules.mjs';
 import { offerFor, suggestions } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
@@ -653,6 +653,21 @@ function offer(plan) {
   return offerFor(plan);
 }
 
+/**
+ * The RafflePot (#69, `public/core/rules.mjs`) — the bench's single seam onto
+ * `rafflePot()`, kept apart like `waysOut()` and `offer()`.
+ *
+ * The `RaffleRange` it takes is **not** a Settings field: CONTEXT.md calls it
+ * session state, outside `SetupLink` and outside `pinned`. So the bench holds
+ * it beside `settings` rather than in it, never pins it, and no stand loaded
+ * through a button or the JSON field touches it. It starts on `all`, the step
+ * that excludes nothing but the Ranks already holding a WinnerPack.
+ */
+let raffleRange = 'all';
+function pot(plan) {
+  return rafflePot(plan, raffleRange);
+}
+
 const settings = neutralSettings();
 
 /**
@@ -692,6 +707,8 @@ const el = {
   sheets: document.getElementById('sheets'),
   waysOut: document.getElementById('waysOut'),
   offer: document.getElementById('offer'),
+  raffleRange: document.getElementById('raffleRange'),
+  rafflePot: document.getElementById('rafflePot'),
   bars: document.getElementById('bars'),
   series: document.getElementById('series'),
   derived: document.getElementById('derived'),
@@ -703,6 +720,7 @@ const el = {
 buildControls();
 buildPresets();
 buildSheets();
+buildRaffleRange();
 render();
 
 function buildControls() {
@@ -871,7 +889,51 @@ function render() {
   renderInvariants(plan);
   renderWaysOut(plan);
   renderOffer(plan);
+  renderRafflePot(plan);
   renderPresetVerdicts();
+}
+
+/** The thirteen `RaffleRange` steps, straight from `RANGES` — ids, not labels. */
+function buildRaffleRange() {
+  for (const step of RANGES) {
+    const option = document.createElement('option');
+    option.value = step.id;
+    option.textContent = step.id;
+    el.raffleRange.append(option);
+  }
+  el.raffleRange.value = raffleRange;
+  el.raffleRange.addEventListener('change', () => {
+    raffleRange = el.raffleRange.value;
+    render();
+  });
+}
+
+/**
+ * The pot, raw: the Ranks a throw may land on, and beside them the Ranks that
+ * hold a WinnerPack, read off `row.winners`. The second list is what the pot
+ * leaves out wherever the range reaches it — "eine Siegerkarte gewinnt niemand
+ * zweimal" (CONTEXT.md, `RafflePot`). The throw itself is not here: the core
+ * has none, and neither has the bench.
+ */
+function renderRafflePot(plan) {
+  el.rafflePot.replaceChildren();
+  const ranks = pot(plan);
+  const holding = plan.rows.flatMap((row, i) => (row.winners > 0 ? [i + 1] : []));
+
+  const line = document.createElement('p');
+  line.textContent =
+    ranks.length === 0
+      ? `${raffleRange}: the pot is empty`
+      : `${raffleRange}: ${ranks.length} Rank(s) — ${ranks.join(' · ')}`;
+  el.rafflePot.append(line);
+
+  const note = document.createElement('p');
+  note.className = 'note';
+  note.textContent =
+    holding.length === 0
+      ? 'no Rank holds a WinnerPack yet'
+      : `holding a WinnerPack, never in the pot: ${holding.join(' · ')}`;
+  el.rafflePot.append(note);
 }
 
 /**

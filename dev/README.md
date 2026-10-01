@@ -415,3 +415,21 @@ Konsole (ausser dem fehlenden Favicon), am Start `pinned (#86) = none`.
   Verweis auf Entscheid K1.
 
 `node --test` ist davon unberührt — die Bank ist von keinem Test erreicht.
+
+## Nachgezogen nach Lauf 11 — #69 (Stand `main` `265e52c`, 2026-10-01)
+
+`rafflePot()` kam mit #69 in den Kern (`public/core/rules.mjs`), und die Bank
+hat es nicht importiert. Ein Abschnitt **RafflePot (#69)** neben dem `Offer`
+ruft es jetzt live, mit einer Auswahl über die dreizehn Stufen aus `RANGES`
+(Ids, keine Beschriftungen), und zeigt den Topf roh: die `Rank`s, auf die ein
+Wurf fallen darf, und daneben die `Rank`s, die schon einen `WinnerPack` halten.
+
+Die `RaffleRange` ist **kein Feld der `Settings`**, sondern Sitzungszustand
+(`CONTEXT.md`, `RaffleRange`). Die Bank hält sie deshalb neben den `Settings`,
+pinnt sie nie, und kein geladener Stand setzt sie zurück. Sie startet auf `all`.
+Einen Wurf gibt es hier nicht — der Kern hat keinen.
+
+Gefahren über `python3 -m http.server` und Playwright: am neutralen Start
+`all` → 31 `Rank`s (2–32), Rang 1 hält den `WinnerPack`; am `overhang`-Knopf
+`all` und `top8` → `4·5·6·7·8`, `bottomHalf` → `5·6·7·8`, die Ränge 1–3 halten
+je einen und fehlen. Kein Fehler auf der Konsole ausser dem Favicon.
