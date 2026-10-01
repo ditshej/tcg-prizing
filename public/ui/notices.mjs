@@ -232,11 +232,13 @@ export function carryLabel(count, to) {
  * would be wrong there, and that is a finding, not a case for a second one.
  *
  * Wording is a builder's proposal, not yet decided (K2: „Der Wortlaut ist
- * nicht entschieden"). It keeps clear of glossary terms beyond the label it
- * quotes, and of *slider* or *setting* (#113 AC 16).
+ * nicht entschieden"). It keeps clear of *slider* and *setting* (#113 AC 16)
+ * and of glossary terms, but for the label it quotes and *boosters* in their
+ * own sense: "nothing to give out" would be untrue, since tournament and
+ * winner packs still reach the ranks at a `boosterRate` of 0.
  */
 const NO_WAY_OUT = {
-  lines: [`With “${pinLabel('boosterRate')}” at 0, there is nothing to give out.`],
+  lines: [`With “${pinLabel('boosterRate')}” at 0, there are no boosters to give out.`],
   actions: [],
   chip: { glyph: '⚠', word: 'Nothing to give' },
 };
