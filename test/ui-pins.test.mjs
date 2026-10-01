@@ -622,6 +622,7 @@ test('a pinned value a wall sank under stands, and its minus still leaves it (AD
 const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
 const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
 const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url), 'utf8');
+const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
 
 /**
  * The screen word of a control and the word the question uses have to be the
@@ -629,8 +630,9 @@ const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url),
  * two files, so the pairing is held here rather than trusted.
  */
 test('the sheet labels and the question labels are the same words', () => {
-  const calls = [...SHEET.matchAll(/sheet_control\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g)];
-  assert.ok(calls.length >= 13, 'the sheet still composes its controls through sheet_control()');
+  const pattern = /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
+  const calls = [...SHEET.matchAll(pattern), ...RAIL.matchAll(pattern)];
+  assert.ok(calls.length >= 17, 'sheet and rail compose their numbers through the shared row');
   for (const [, key, label] of calls) {
     assert.equal(PIN_LABELS[key], label.replace(/\\'/g, "'"), `${key} is called the same in both places`);
   }
@@ -644,23 +646,30 @@ test('the sheet labels and the question labels are the same words', () => {
  * `Handout`).
  */
 test('every control on the sheet carries its state word and its own way back', () => {
-  assert.match(SHEET, /function sheet_pin_head[^]*stateWord\('<\?= \$k \?>'\)/);
-  assert.match(SHEET, /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/);
-  assert.match(SHEET, /function sheet_control[^]*sheet_pin_head\(\$key\)/);
-  assert.match(SHEET, /function sheet_control[^]*sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(ROW, /function sheet_pin_head[^]*stateWord\('<\?= \$k \?>'\)/);
+  assert.match(ROW, /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/);
+  assert.match(ROW, /function control_row[^]*sheet_pin_head\(\$key\)/);
+  assert.match(ROW, /function control_row[^]*sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(SHEET, /function sheet_control[^]*control_row\(\$key, \$label/);
+  const drawn = (key, helper) =>
+    SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`control_row('${key}'`) ||
+    SHEET.includes(`${helper}('${key}'`);
   for (const key of SHEET_KEYS) {
     if (key === 'depthStep') continue; // the step grid inside `Served ranks`, not a control of its own
-    const marked = SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`sheet_pin_head('${key}'`);
+    const marked = drawn(key, 'sheet_pin_head');
     assert.ok(marked, `${key} shows pinned or auto`);
-    const back = SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`sheet_pin_reset('${key}'`);
+    const back = drawn(key, 'sheet_pin_reset');
     assert.ok(back, `${key} has the single reach`);
   }
 });
 
 test('the rail under the plan marks its four the same way', () => {
-  for (const key of ['players', 'depth', 'curve', 'rankFloor']) {
-    assert.ok(RAIL.includes(`stateWord('${key}')`), `${key} is marked on the rail too`);
+  // Three through the shared row, which carries the word; the curve select
+  // marks itself as it did (#104).
+  for (const key of ['players', 'depth', 'rankFloor']) {
+    assert.ok(RAIL.includes(`control_row('${key}'`), `${key} is marked on the rail too`);
   }
+  assert.ok(RAIL.includes(`stateWord('curve')`), 'curve is marked on the rail too');
 });
 
 test('the full reach hangs off the type row and asks before it acts', () => {
