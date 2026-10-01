@@ -56,6 +56,7 @@ import {
 } from './controls.mjs';
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
+import { preparationList } from './prepare.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -832,6 +833,48 @@ export function planApp(seam = SEAM) {
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;
+    },
+
+    /* ── The PreparationList (#65) ────────────────────────────────────── */
+
+    /**
+     * What `Prepare` shows: the three procurement items with their step
+     * sequences written out, and the closing sentence. The whole of it is
+     * `preparationList()` (`prepare.mjs`), on the proven side of the seam —
+     * this file holds no word and no number of it, the same split the tile
+     * and the bubble already have.
+     *
+     * It takes the plan alone: the sheet it needs (`displaySize`,
+     * `envelopeSize`) and the record of what was set by hand ride on the plan
+     * itself (ADR 0009 and its addendum (#86)), so nothing here can hand it a
+     * stand the plan was not computed from.
+     */
+    get preparation() {
+      return preparationList(this.plan);
+    },
+
+    /** The three items as a list, because the view draws them with one
+     *  template: they differ in what they say, never in how they are built. */
+    get preparationItems() {
+      const list = this.preparation;
+      return [list.displays, list.envelopes, list.winners];
+    },
+
+    /**
+     * The `WinnerPack` hint's button. It is an **opportunity, not a notice**
+     * — it never enters the `NoticeStack` — and the way to another
+     * `WinnerPack` runs over more `TournamentPack`s, so what it sets is
+     * `tournamentPacks` and not `winnerPacks` (the prototype's
+     * `prepContent()`: `data-apply="tournamentPacks"`).
+     *
+     * It goes through `setSlider()` like every other control rather than
+     * writing `settings` itself: taking the offer is an operating gesture, so
+     * it pins the slider (ADR 0006) and writes the address bar, and the
+     * `pinned` record the hint then falls silent on stays the one there
+     * already is.
+     */
+    takeOffer(offer) {
+      this.setSlider(offer.key, offer.value);
     },
   };
 }

@@ -718,35 +718,13 @@ body {
   font-size: 0.78rem;
 }
 
-/* `Prepare`'s Grundform (#63): the three procurement items as plain numbers. */
-.prepare-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.prepare-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-}
-
-.prepare-label {
-  font-size: 0.85rem;
-  opacity: 0.85;
-}
-
-.prepare-value {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
+/*
+ * #63's Grundform of `Prepare` — `.prepare-list`, `.prepare-item`,
+ * `.prepare-label`, `.prepare-value` — stood here and is gone with the markup
+ * it dressed: #65 replaces the three plain pool numbers with the three items
+ * and their written-out derivations, whose rules are appended at the end of
+ * this file. Left standing, four rules nothing selects.
+ */
 
 /*
  * The foot (#63): three page entries, icon over word, never icon alone.
@@ -1006,4 +984,144 @@ body {
   padding: 0 2px;
   background: none;
   font-size: 0.58rem;
+}
+
+/*
+ * ── `Prepare` and its written-out derivations (#65) ────────────────────────
+ *
+ * The form is the prototype's `prepContent()` (`.prepitem` / `.steps` /
+ * `.offerline` in `prototypes/cockpit.prototype.html`, branch
+ * `prototype/rank-distribution`): a big headline number with its unit, the
+ * raw piece count pushed to the far end, and under it the step sequence as
+ * hairline-separated rows whose totals line up on the right.
+ *
+ * Three things the rows do on purpose:
+ *
+ * - **The totals are tabular.** A derivation is read down the right edge, so
+ *   the figures have to sit under one another — `tabular-nums` and
+ *   `margin-left: auto`, never a fixed column width, which would break the
+ *   moment a four-digit booster count turns up.
+ * - **The separator is between rows and never above the first.** A line here
+ *   separates data from data, which is the one place `CONTEXT.md` allows one
+ *   (`NoticeStack`); a line under the headline would separate the number from
+ *   its own derivation.
+ * - **`keep` is the accent, not a warning colour.** The reservation split and
+ *   a yield set by hand are facts about where pieces come from, not problems
+ *   — the three notice colours belong to the `NoticeStack` and stay there.
+ *
+ * No scroll fade band, and that is a decision: `Prepare` does not scroll at
+ * usual height (#61, 566 px of content against 542 for Release), and a band
+ * belongs to the surface that really scrolls.
+ */
+.prep-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.prep-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+}
+
+.prep-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.prep-count {
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.prep-unit {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.prep-aside {
+  margin-left: auto;
+  font-size: 0.72rem;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.prep-steps {
+  margin-top: 8px;
+  font-size: 0.75rem;
+}
+
+.prep-step {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  border-top: 1px solid light-dark(#ece7db, #2d2921);
+}
+
+.prep-step:first-child {
+  border-top: 0;
+}
+
+.prep-sub {
+  opacity: 0.6;
+}
+
+.prep-value {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.prep-muted {
+  opacity: 0.6;
+}
+
+.prep-keep {
+  color: light-dark(#8a5a14, #e0a752);
+  font-weight: 600;
+}
+
+.prep-keep .prep-sub {
+  opacity: 0.8;
+}
+
+/*
+ * The opportunity, and it reads as one: it sits under the last step, carries
+ * the one button on this page, and wraps rather than squeezing the button —
+ * in portrait the sentence and the button do not fit on one line, and a
+ * button pushed to two characters would stop saying what it does.
+ */
+.prep-offer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid light-dark(#ece7db, #2d2921);
+}
+
+.prep-offer button {
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: light-dark(#8a5a14, #e0a752);
+  color: light-dark(#fdfbf6, #1b1812);
+}
+
+.prep-note {
+  margin: 10px 2px 0;
+  font-size: 0.7rem;
+  opacity: 0.6;
 }
