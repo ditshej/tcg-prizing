@@ -1995,6 +1995,17 @@ function explain(key) {
   return ctx === 'sheet' && DESC[key] ? `<div class="desc">${esc(DESC[key])}</div>` : '';
 }
 
+/* ÜBERHOLT durch #113: der Schieber fällt — hier, in `depthControl()` und in
+   der Plan-Schiene. Verbindlich ist die Form aus #113: jede der vierzehn
+   Zahlen ist nur noch das Zählwerk `− [Zahl] +`, und die Zahl ist tippbar.
+   Kein fester Höchstwert; eine Wand steht nur dort, wo der Kern still
+   schneidet (`depth`, `ranked`, `participationBooster`, `judgeBooster`,
+   `judgeWinner`). Die Schiene ist dieselbe Zeile ohne Erklärtext.
+
+   Nicht nachgezogen, wie schon bei `RANGE_OF`: wer an einer Fläche baut, die
+   hier einen Schieber zeigt, baut gegen #113 und nicht gegen diese Zeilen.
+   Was bleibt, ist alles andere an der Zeile — Titel, Einheit, `auto`, Pin,
+   Reset, und dass die Zahl nur einmal steht. */
 /* Ein Regler mit Zählwerk. Die Zahl steht nur im Zählwerk, nicht zusätzlich
    in der Kopfzeile — zweimal dieselbe Zahl liest sich wie zwei Werte. */
 function slider(key, plan, opts) {
