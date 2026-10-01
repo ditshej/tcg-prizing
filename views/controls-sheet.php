@@ -185,7 +185,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       -->
       <button type="button" class="pin-chip" data-drop-all x-cloak x-show="pinCount > 0"
               :aria-expanded="!!dropQuestion"
-              :aria-label="`Drop ${pinCount} hand-set ${pinCount === 1 ? 'slider' : 'sliders'}`"
+              :aria-label="dropAllLabel"
               @click="askDrop({ keys: pinnedKeys, anchor: '[data-drop-all]' })">
         <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
         <span aria-hidden="true">&#8634;</span>

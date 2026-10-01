@@ -531,3 +531,17 @@ test('the bubble draws a title and a target per item, and no run-on list of name
   assert.match(SHEET, /x-text="item\.to"/);
   assert.ok(!SHEET.includes('dropQuestion.names'), 'the comma-separated line is gone');
 });
+
+/**
+ * #113 swaps the word the question calls an item by. It stands once, in
+ * `DROP_NOUN`, and nothing in the bubble or at its chip spells it out again.
+ */
+test('the question\'s word for an item stands in one place', () => {
+  const CONTROLS = readFileSync(new URL('../public/ui/controls.mjs', import.meta.url), 'utf8');
+  const code = CONTROLS.split('\n').filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line)).join('\n');
+  assert.equal((code.match(/'slider/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
+  assert.ok(!/'sliders?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
+  const { app } = opened();
+  app.setSlider('players', 24);
+  assert.equal(app.dropAllLabel, 'Drop 1 hand-set slider');
+});

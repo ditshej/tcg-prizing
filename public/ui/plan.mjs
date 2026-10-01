@@ -44,6 +44,7 @@ import {
   DROP_BUBBLE,
   clampToBounds,
   dropConfirmation,
+  dropNoun,
   effectiveValue,
   isPinned,
   manualWinnerAfter,
@@ -681,6 +682,11 @@ export function planApp(seam = SEAM) {
      *  (#61, #67) — by being the same list the question enumerates. */
     get pinCount() {
       return this.pinnedKeys.length;
+    },
+
+    /** The counter chip's spoken label, in the question's own word. */
+    get dropAllLabel() {
+      return `Drop ${this.pinCount} hand-set ${dropNoun(this.pinCount)}`;
     },
 
     /**

@@ -597,6 +597,19 @@ export function pinTarget(item, stand) {
 }
 
 /**
+ * The one word the question calls an item by — in the bubble's head line and
+ * in the counter chip's spoken label. It stands here once so that #113, which
+ * replaces the sliders with counters and the word with another (comment on
+ * #67, "Aus #113 nachgetragen"), changes it in one place.
+ */
+export const DROP_NOUN = 'slider';
+
+/** The word with its count's number: `1 slider`, `2 sliders`. */
+export function dropNoun(count) {
+  return count === 1 ? DROP_NOUN : `${DROP_NOUN}s`;
+}
+
+/**
  * The question itself, as text: `{ keys, typeTitle, reach, after }` → what the
  * bubble shows. No DOM and no state — where it lands is the shell's measuring
  * rind and is judged at the picture (#61, "Anker und Schichtung").
@@ -615,7 +628,7 @@ export function dropConfirmation({ keys, typeTitle, reach = 'all', after = null 
     keys: list,
     count,
     items: list.map((key) => ({ key, label: pinLabel(key), to: after ? pinTarget(key, after) : null })),
-    headline: `${count} ${many ? 'sliders' : 'slider'} back to ${typeTitle}?`,
+    headline: `${count} ${dropNoun(count)} back to ${typeTitle}?`,
     note: `${note} ${NO_UNDO}`,
     confirm: `Drop ${count}`,
     cancel: 'Keep them',
