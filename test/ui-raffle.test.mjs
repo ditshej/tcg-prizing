@@ -296,6 +296,44 @@ test('the grip sits on the legend and carries no disabled state at all (AC 1)', 
   assert.ok(legend.indexOf('mark-pack') < legend.indexOf('legend-handle'));
 });
 
+/** The words a piece of markup puts on screen: marks and tags out, spaces folded. */
+function words(markup) {
+  return markup
+    .replace(/<span class="mark[^"]*"[^>]*>[^<]*<\/span>/g, '')
+    .replace(/<(?:[^>"]|"[^"]*")*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/*
+ * The words are looked up, not read off the view: #69 and #61 ("`pack` steht
+ * voran und bleibt flacher Text … `winner` ist eine Pille mit Würfel und dem
+ * Zähler der noch offenen `WinnerPack`s") and the prototype's `slotLegend()`,
+ * which renders `pack`, then `winner🎲` with the count only while `open > 0`.
+ * The order test above holds the marks; without this one, the legend's words
+ * could change — or go back to the `winner packs` / `tournament packs` #69
+ * replaced — and every probe would stay green.
+ */
+test('the legend says `pack`, then `winner` 🎲 with the open count on the pill (#69, #61)', () => {
+  const legend = element(view('plan.php'), '<div class="plan-legend"', '</div>');
+  const grip = element(legend, '<button type="button" class="legend-handle"', '</button>');
+  const flat = legend.slice(0, legend.indexOf('<button'));
+
+  const [, first] = flat.split('<span class="legend-item">');
+  assert.equal(words(first ?? ''), 'pack', 'the flat entry in front is not `pack`');
+  assert.equal(words(grip), 'winner 🎲', 'the pill does not read `winner` with the die');
+  assert.equal(/\bpacks\b/.test(words(legend)), false, 'the legend went back to plural pack words');
+
+  // The counter: the open winner packs, and shown only while there are any.
+  const counter = grip.match(/<span class="legend-open"(?:[^>"]|"[^"]*")*>/);
+  assert.ok(counter, 'the pill carries no counter');
+  assert.match(counter[0], /x-text="raffle\.open"/, 'the counter does not count the open winner packs');
+  assert.match(counter[0], /x-show="raffle\.open > 0"/, 'the counter shows while nothing is open');
+
+  const { it } = app();
+  assert.equal(it.raffle.open, it.plan.allocation.open, '`raffle.open` is not the allocation\'s open share');
+});
+
 test('the bar is a child of the Plan page, so no page or fullscreen switch closes it (AC 2)', () => {
   const source = view('plan.php');
   const bar = source.indexOf('class="raffle-bar"');
