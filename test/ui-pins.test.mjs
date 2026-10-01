@@ -707,20 +707,134 @@ test('the question\'s word for an item stands in one place, and it is value', ()
   assert.equal(app.dropAllLabel, 'Drop 1 hand-set value');
 });
 
-test('no text on screen calls a control a slider (#113 AC 16)', () => {
+/**
+ * The string and template literals of a module, comments left out — the
+ * screen text a `public/ui/*.mjs` file can put on screen. A template's
+ * `${…}` parts are code and fall out of its text; the literals nested in them
+ * are read as literals of their own. A regex literal is skipped, so a quote
+ * inside one does not open a string. Deliberately small: it reads this
+ * repo's modules, not JavaScript at large.
+ */
+function screenLiterals(source) {
+  const found = [];
+  const n = source.length;
+  let i = 0;
+  let prev = '';
+  const quoted = (quote) => {
+    let j = i + 1;
+    let text = '';
+    while (j < n && source[j] !== quote) {
+      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
+      text += source[j++];
+    }
+    i = j + 1;
+    return text;
+  };
+  const template = () => {
+    let j = i + 1;
+    let text = '';
+    while (j < n && source[j] !== '`') {
+      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
+      if (source[j] === '$' && source[j + 1] === '{') {
+        let depth = 1;
+        j += 2;
+        while (j < n && depth > 0) {
+          const c = source[j];
+          if (c === "'" || c === '"' || c === '`') {
+            i = j;
+            found.push(c === '`' ? template() : quoted(c));
+            j = i;
+            continue;
+          }
+          if (c === '{') depth++;
+          else if (c === '}') depth--;
+          j++;
+        }
+        text += ' … ';
+        continue;
+      }
+      text += source[j++];
+    }
+    i = j + 1;
+    return text;
+  };
+  while (i < n) {
+    const c = source[i];
+    if (c === '/' && source[i + 1] === '/') { while (i < n && source[i] !== '\n') i++; continue; }
+    if (c === '/' && source[i + 1] === '*') { const close = source.indexOf('*/', i + 2); i = close < 0 ? n : close + 2; continue; }
+    if (c === "'" || c === '"') { found.push(quoted(c)); prev = 'x'; continue; }
+    if (c === '`') { found.push(template()); prev = 'x'; continue; }
+    if (c === '/' && (prev === '' || '(,=:[!&|?{};'.includes(prev))) {
+      let j = i + 1;
+      let inClass = false;
+      while (j < n && (inClass || source[j] !== '/')) {
+        if (source[j] === '\\') j++;
+        else if (source[j] === '[') inClass = true;
+        else if (source[j] === ']') inClass = false;
+        j++;
+      }
+      i = j + 1;
+      prev = 'x';
+      continue;
+    }
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  return found;
+}
+
+/**
+ * #113 AC 16: no text on screen calls a control a *slider*, and its
+ * replacement is not *setting* either — `Settings` names all nineteen fields
+ * at once. Screen text is the views' markup **and** what `public/ui/*.mjs`
+ * composes: a sentence such as `${n} pinned ${plural(n, 'slider')} stayed
+ * behind.` reaches the screen from a module and was invisible to a probe that
+ * read the views alone (B6, run 12). Handler names (`setSlider`,
+ * `resetSlider`) are code, and so is a property read off `settings` in an
+ * Alpine expression (`settings.curve`).
+ */
+const NOT_ON_SCREEN = [/slider/i, /\bsettings?\b(?!\.[A-Za-z_$]|\[)/i];
+
+function screenWords(text) {
+  return text.replace(/\b(set|reset)Slider\b/g, '');
+}
+
+test('no text on screen calls a control a slider, nor a setting (#113 AC 16)', () => {
   const VIEWS = new URL('../views/', import.meta.url);
   for (const file of readdirSync(VIEWS).filter((name) => name.endsWith('.php'))) {
     const markup = readFileSync(new URL(file, VIEWS), 'utf8')
       .replace(/<\?php[^]*?\?>/g, (block) => (block.includes('/**') || block.includes('//') ? '' : block))
       .replace(/<!--[^]*?-->/g, '');
-    // Handler names (`setSlider`, `resetSlider`) are code, not text.
-    const text = markup.replace(/\b(set|reset)Slider\b/g, '');
-    assert.doesNotMatch(text, /slider/i, `${file} says slider on screen`);
+    for (const word of NOT_ON_SCREEN) assert.doesNotMatch(screenWords(markup), word, `${file} says ${word} on screen`);
+  }
+  const UI = new URL('../public/ui/', import.meta.url);
+  for (const file of readdirSync(UI).filter((name) => name.endsWith('.mjs'))) {
+    for (const literal of screenLiterals(readFileSync(new URL(file, UI), 'utf8'))) {
+      for (const word of NOT_ON_SCREEN) {
+        assert.doesNotMatch(screenWords(literal), word, `${file} puts ${JSON.stringify(literal)} on screen`);
+      }
+    }
   }
   const { app } = opened();
   app.setSlider('players', 24);
   app.setSlider('rankFloor', 3);
   const question = dropConfirmation({ keys: app.pinnedKeys, typeTitle: 'Weekly' });
-  assert.doesNotMatch(JSON.stringify(question), /slider/i);
-  assert.doesNotMatch(app.dropAllLabel, /slider/i);
+  for (const word of NOT_ON_SCREEN) {
+    assert.doesNotMatch(JSON.stringify(question), word);
+    assert.doesNotMatch(app.dropAllLabel, word);
+  }
+});
+
+test('the screen-text probe reads what a module composes, and not its comments', () => {
+  const literals = screenLiterals([
+    "// a slider in a comment is no screen text",
+    "/* nor is a setting in a block */",
+    "const re = /'not a string/g;",
+    "const line = `${n} pinned ${plural(n, 'slider')} stayed behind.`;",
+    "const report = 'not a setting of this app';",
+  ].join('\n'));
+  assert.deepEqual(literals, ['slider', ' …  pinned  …  stayed behind.', 'not a setting of this app']);
+  assert.ok(literals.some((text) => NOT_ON_SCREEN[0].test(text)), 'the #68 sentence would turn the probe red');
+  assert.ok(literals.some((text) => NOT_ON_SCREEN[1].test(text)), 'the #72 sentence would turn the probe red');
+  assert.ok(!NOT_ON_SCREEN[1].test('settings.curve'), 'a property read is code');
 });
