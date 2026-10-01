@@ -718,35 +718,13 @@ body {
   font-size: 0.78rem;
 }
 
-/* `Prepare`'s Grundform (#63): the three procurement items as plain numbers. */
-.prepare-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.prepare-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-}
-
-.prepare-label {
-  font-size: 0.85rem;
-  opacity: 0.85;
-}
-
-.prepare-value {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
+/*
+ * #63's Grundform of `Prepare` — `.prepare-list`, `.prepare-item`,
+ * `.prepare-label`, `.prepare-value` — stood here and is gone with the markup
+ * it dressed: #65 replaces the three plain pool numbers with the three items
+ * and their written-out derivations, whose rules are appended at the end of
+ * this file. Left standing, four rules nothing selects.
+ */
 
 /*
  * The foot (#63): three page entries, icon over word, never icon alone.
@@ -1051,4 +1029,342 @@ body {
   .tile-hit {
     animation-duration: 1ms;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   `pinned` against `auto`, and the three reaches of the way back (#67)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The marking is a **word**, not a colour: `pinned` and `auto` stand on screen
+   as the glossary writes them (CONTEXT.md, `Pinned`), and colour alone would
+   not survive either mode. The prototype's violet (`--pin`) carries it, and
+   the bold label beside it is its second channel (`.ctl.pinned .lbl`). */
+.pin-state {
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  padding: 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.pin-state.is-pinned {
+  color: light-dark(#7b3fb5, #d5b9f0);
+  background: light-dark(#f2ebfa, #2c2036);
+  font-weight: 700;
+}
+
+.pin-state.is-auto {
+  opacity: 0.5;
+}
+
+.sheet-control.is-pinned .sheet-control-label {
+  font-weight: 700;
+}
+
+/* The counter pushes itself right (`.counter { margin-left: auto }`); a
+   control without one — Curve, Handout — needs the same shove, or its way
+   back sits against the title. */
+.pin-spacer {
+  margin-left: auto;
+}
+
+/* The first reach: one control back on the chosen type, and it asks nothing.
+   Dimmed rather than hidden while the control is `auto` — a button that
+   appears on the first drag moves the counter beside it — and live rather
+   than `disabled`, which would read as broken where it is merely idle. */
+.pin-reset {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: light-dark(#7b3fb5, #d5b9f0);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pin-reset.is-idle {
+  opacity: 0.28;
+}
+
+/* The second reach, beside the `TournamentType` title: the count of what is
+   pinned, and it is the length of the list the question reads out. A word or
+   a number, never a bare symbol on its own. */
+.pin-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 999px;
+  background: light-dark(#ffffff, #232019);
+  color: light-dark(#7b3fb5, #d5b9f0);
+  font: inherit;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pin-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+/*
+ * The question. Same form as the tile's bubble and a higher layer than the
+ * messages: since the third reach sits in a button *inside* the NoticeStack,
+ * a bubble on the stack's own layer had its lower half covered by the message
+ * that opened it (prototype, `.pop`: "z 38, nicht mehr 30"). It is placed
+ * against the **viewport** (`position: fixed`), because its anchor stands in a
+ * column that scrolls itself — an absolutely placed bubble would scroll away
+ * from the button it hangs on. That does not make it an overlay: no backdrop,
+ * no modality, and it covers nothing but the strip it needs.
+ */
+.drop-bubble {
+  position: fixed;
+  z-index: 40;
+  min-width: 210px;
+  max-width: 292px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
+  box-shadow: 0 6px 18px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.55));
+}
+
+.drop-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+}
+
+/* Which controls fall and where each one goes — a title and a value per line.
+   It wraps rather than scrolls: a list that is cut off is a list that
+   under-reports what it destroys. The value keeps its own column so the four
+   or five lines read as a table and a long title wraps inside its cell. */
+.drop-items {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 5px;
+  row-gap: 2px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.drop-items li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.drop-item-label {
+  color: light-dark(#7b3fb5, #d5b9f0);
+}
+
+.drop-item-arrow {
+  opacity: 0.6;
+}
+
+.drop-item-to {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.drop-note {
+  margin: 0 0 9px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+
+/* Declining has a named place beside confirming — that is the whole reason
+   this is a bubble and not a button that turns into a question (#33). */
+.drop-ask {
+  display: flex;
+  gap: 6px;
+}
+
+.drop-go,
+.drop-no {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.drop-go {
+  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
+  background: light-dark(#7b3fb5, #d5b9f0);
+  color: light-dark(#ffffff, #14120f);
+  font-weight: 700;
+}
+
+.drop-no {
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  background: none;
+  color: inherit;
+}
+
+/* On the rail the word is the same word, in the compact form the strip is:
+   the rail's height is counted by the fold arithmetic (#71), and `cap N`
+   beside `RankPoolDepth` wrapped to a second line once a padded badge stood
+   in front of it (measured at the picture, 2026-09-30). The state is not
+   dropped there — it belongs to the control, not to the page — only its
+   box. */
+.controls-hot .pin-state {
+  padding: 0 2px;
+  background: none;
+  font-size: 0.58rem;
+}
+
+/*
+ * ── `Prepare` and its written-out derivations (#65) ────────────────────────
+ *
+ * The form is the prototype's `prepContent()` (`.prepitem` / `.steps` /
+ * `.offerline` in `prototypes/cockpit.prototype.html`, branch
+ * `prototype/rank-distribution`): a big headline number with its unit, the
+ * raw piece count pushed to the far end, and under it the step sequence as
+ * hairline-separated rows whose totals line up on the right.
+ *
+ * Three things the rows do on purpose:
+ *
+ * - **The totals are tabular.** A derivation is read down the right edge, so
+ *   the figures have to sit under one another — `tabular-nums` and
+ *   `margin-left: auto`, never a fixed column width, which would break the
+ *   moment a four-digit booster count turns up.
+ * - **The separator is between rows and never above the first.** A line here
+ *   separates data from data, which is the one place `CONTEXT.md` allows one
+ *   (`NoticeStack`); a line under the headline would separate the number from
+ *   its own derivation.
+ * - **`keep` is the accent, not a warning colour.** The reservation split and
+ *   a yield set by hand are facts about where pieces come from, not problems
+ *   — the three notice colours belong to the `NoticeStack` and stay there.
+ *
+ * No scroll fade band, and that is a decision: `Prepare` does not scroll at
+ * usual height (#61, 566 px of content against 542 for Release), and a band
+ * belongs to the surface that really scrolls.
+ */
+.prep-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.prep-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: light-dark(#ffffff, #232019);
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+}
+
+.prep-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.prep-count {
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.prep-unit {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.prep-aside {
+  margin-left: auto;
+  font-size: 0.72rem;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.prep-steps {
+  margin-top: 8px;
+  font-size: 0.75rem;
+}
+
+.prep-step {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  border-top: 1px solid light-dark(#ece7db, #2d2921);
+}
+
+.prep-step:first-child {
+  border-top: 0;
+}
+
+.prep-sub {
+  opacity: 0.6;
+}
+
+.prep-value {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.prep-muted {
+  opacity: 0.6;
+}
+
+.prep-keep {
+  color: light-dark(#8a5a14, #e0a752);
+  font-weight: 600;
+}
+
+.prep-keep .prep-sub {
+  opacity: 0.8;
+}
+
+/*
+ * The opportunity, and it reads as one: it sits under the last step, carries
+ * the one button on this page, and wraps rather than squeezing the button —
+ * in portrait the sentence and the button do not fit on one line, and a
+ * button pushed to two characters would stop saying what it does.
+ */
+.prep-offer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid light-dark(#ece7db, #2d2921);
+}
+
+.prep-offer button {
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: light-dark(#8a5a14, #e0a752);
+  color: light-dark(#fdfbf6, #1b1812);
+}
+
+.prep-note {
+  margin: 10px 2px 0;
+  font-size: 0.7rem;
+  opacity: 0.6;
 }
