@@ -37,18 +37,27 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, attachMeasuring } from './measure.mjs';
+import { applyGeometry, applyRafflePadding, attachMeasuring, showRaffleHit } from './measure.mjs';
+import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
 import {
   DEPTH_STEP_LABELS,
+  DROP_BUBBLE,
   clampToBounds,
+  dropConfirmation,
+  dropNoun,
   effectiveValue,
+  isPinned,
   manualWinnerAfter,
+  pinnedItems,
+  pinnedKeys,
+  pinsWithout,
   reachFor,
   reservedDisplaysAfter,
 } from './controls.mjs';
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
+import { preparationList } from './prepare.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -380,8 +389,14 @@ export function planApp(seam = SEAM) {
      * one Game set up there is nothing yet to look up.
      */
     resolve() {
-      this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
+      this.settings = this.resolvedFor(this.pins);
       this.syncAddress();
+    },
+
+    /** The sheet under the chosen type with a given pin record laid over it —
+     *  the one place both `resolve()` and the drop's announcement get it. */
+    resolvedFor(pins) {
+      return resolveSettings({ game: GAME, type: this.currentType, pins });
     },
 
     /** One ⓘ per level, each with its own sentence — the same handle closes it. */
@@ -633,6 +648,376 @@ export function planApp(seam = SEAM) {
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
+    },
+
+    /* ── The WinnerRaffle (#69) ───────────────────────────────────────── */
+
+    /**
+     * Whether the raffle bar stands open. Session state like the page, the
+     * fullscreen and the open bubble, and in the `SetupLink` as little as they
+     * are (#61, "Session state").
+     *
+     * **It closes only at a grip, never by itself** (#69 AC 2): `setPage()`,
+     * `openFullscreen()` and `closeFullscreen()` are deliberately left
+     * untouched. The bar is markup inside `page-plan`, so leaving `Plan`
+     * hides it with the page and coming back shows it again — hidden is not
+     * closed, and no `if` on the surface is needed for either. The retraction
+     * list has to be reachable after the last throw, which is precisely when
+     * a bar that tidied itself away would be gone.
+     */
+    raffleOpen: false,
+
+    /**
+     * The `RaffleRange`, and it is **no `Regler`** but session state of this
+     * operating step (#69, #61): no pin, no reset button, not counted in
+     * `Drop all N`, never in the `SetupLink`, and a Set switch leaves it
+     * standing. Its default `all` is a constant of the term, which is why it
+     * sits here as a literal and in no `DefaultSet`.
+     *
+     * That is also why `controls.mjs` has no entry for it and `link/keys.mjs`
+     * no key: with it absent from both, the sentence "`pinned` gilt für alle
+     * Regler gleich" stays true without an exception.
+     */
+    raffleRange: DEFAULT_RANGE,
+
+    /**
+     * The `Rank` the last throw hit — kept only so the announcement can name
+     * it, and only as long as that `Rank` still holds a `manual` allocation.
+     * It is not a record of provenance: it says nothing about *which* of a
+     * `Rank`'s winner packs was drawn, it is dropped on a reload like every
+     * other piece of session state, and taking the allocation back makes the
+     * announcement fall silent rather than keep a claim about a state that no
+     * longer exists (`raffleView()`).
+     */
+    lastDraw: null,
+
+    /** The die, handed over so `node --test` can hand in one that remembers. */
+    _roll: Math.random,
+
+    /** The thirteen steps as the two rows the bar draws, uncut and unfolded. */
+    raffleRows: RANGE_ROWS,
+
+    /** The bar's whole content, recomputed off the plan like everything else. */
+    get raffle() {
+      return raffleView(this.plan, this.raffleRange, this.lastDraw);
+    },
+
+    /**
+     * The grip on the legend's `winner` entry. It is **never locked**, even
+     * when there is nothing to trigger: locked is the trigger *inside* the
+     * bar, never the way to it (#69 AC 1).
+     */
+    toggleRaffle() {
+      this.raffleOpen = !this.raffleOpen;
+    },
+
+    /** The bar's own ✕ — the one grip besides the legend's that closes it. */
+    closeRaffle() {
+      this.raffleOpen = false;
+    },
+
+    /** Session state, so this writes no pin and no address (#69 AC 12). */
+    setRaffleRange(id) {
+      this.raffleRange = id;
+    },
+
+    /**
+     * One throw: exactly one `WinnerPack` to an evenly drawn `Rank` out of the
+     * `RafflePot`, written into the **same** `manual` counters the tile's ±
+     * writes (#69 AC 5). There is no second record beside them — which is what
+     * makes a raffled allocation droppable by #67's `Drop all N` and
+     * retractable at the tile, with nothing left over anywhere.
+     *
+     * The chance sits here, in the input, and never in `distribute()`: that is
+     * the whole of why recomputing never changes a winner (#69 AC 6).
+     */
+    throwRaffle() {
+      const view = this.raffle;
+      if (!view.canRaffle) return;
+      const rank = drawFrom(view.pot, this._roll);
+      if (rank == null) return;
+      this.setManualWinner(rank, (this.plan.allocation.manual[rank] ?? 0) + 1);
+      this.lastDraw = rank;
+      /* Two waits, and the second is the load-bearing one. `$nextTick` waits
+         for the tile to carry its new mark; the frame after it waits for the
+         **bar** to have grown by the announcement and the new list entry, and
+         for `measureRaffle()` to have written the padding that goes with it.
+         Measured without it, the scroll was computed against the bar's old,
+         shorter box and put the hit behind the grown one. */
+      this.$nextTick?.(() => requestAnimationFrame(() => this.showHit(rank)));
+    },
+
+    /**
+     * Taking one back, from the list or from the tile — the same handler and
+     * the same counters either way, and the `Rank` is drawable again in the
+     * very next read of `raffle.pot` (#69 AC 9). The list entry names the
+     * `Rank`, because naming it is what tells correcting apart from
+     * re-rolling (#35); the announcement therefore carries no ✕ at all.
+     *
+     * A `Rank` is cleared outright rather than decremented by one, the way
+     * the prototype's list does it (`data-unmanual`): the entry is one `Rank`
+     * and not one allocation, and its count rides along on the chip so two
+     * packs on one `Rank` are never silently one.
+     */
+    takeBackWinner(rank) {
+      this.setManualWinner(rank, 0);
+    },
+
+    /**
+     * The two fleeting channels of a hit, both in the measuring rind: the
+     * grid scrolls to the tile, and the tile lifts out for one animation.
+     * Nothing lasting is written anywhere (#69 AC 10).
+     */
+    showHit(rank) {
+      showRaffleHit(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null, rank);
+    },
+
+    /**
+     * The bar's second measured rule: the grid gets exactly the overlap as
+     * bottom padding, so the tiles scroll **behind** the bar instead of
+     * stopping at it (#69 AC 3).
+     *
+     * Called from `x-effect` on the grid's wrap rather than from `init()`,
+     * which is #66's and #62's. The reads on the first line are what the
+     * effect subscribes to — the bar's height grows with the retraction list
+     * and with the empty-pot sentence, and fullscreen moves the grid's own
+     * bottom edge. `$nextTick` waits for Alpine to have drawn the bar the
+     * measurement is about.
+     */
+    measureRaffle() {
+      const view = this.raffle;
+      void [this.raffleOpen, this.fullscreen, this.activePage, view.takeBack.length, view.hit, view.potEmptyNote];
+      this.$nextTick?.(() =>
+        applyRafflePadding(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null),
+      );
+    },
+
+    /* ── `pinned` against `auto`, and the three reaches back (#67) ─────── */
+
+    /**
+     * Whether a control is marked. Read off the **stored** record and never
+     * off a comparison with the sheet (ADR 0006): whoever drags a slider and
+     * drags it back has decided, and the marking says "follows the
+     * calculation no longer", never "deviates".
+     */
+    isPinned(key) {
+      return isPinned(key, this.pins);
+    },
+
+    /** The word at the control. Both stand on screen as they are written
+     *  here — `pinned` and `auto` are the glossary's own (CONTEXT.md,
+     *  `Pinned`: "Beide Wörter stehen so auch am Schirm"). */
+    stateWord(key) {
+      return this.isPinned(key) ? 'pinned' : 'auto';
+    },
+
+    /** What stands pinned, in sheet order — the list the counter is the
+     *  length of and the question reads out, so the two cannot disagree. */
+    get pinnedKeys() {
+      return pinnedKeys(this.pins);
+    },
+
+    get pinnedItems() {
+      return pinnedItems(this.pins);
+    },
+
+    /** The counter beside the type row. It counts `displays` and
+     *  `manualWinner` as **one** item each, however many `Rank`s carry one
+     *  (#61, #67) — by being the same list the question enumerates. */
+    get pinCount() {
+      return this.pinnedKeys.length;
+    },
+
+    /** The counter chip's spoken label, in the question's own word. */
+    get dropAllLabel() {
+      return `Drop ${this.pinCount} hand-set ${dropNoun(this.pinCount)}`;
+    },
+
+    /**
+     * The **first** reach: one control back onto the chosen TournamentType,
+     * and it asks nothing. There is a visible value there and one grip sets
+     * it again, so a question would be friction without a counterpart (#33).
+     *
+     * One control is one item: the reset at `Served ranks` takes its step
+     * with it (`PIN_MEMBERS`), or the control would go on saying `pinned`
+     * after its own way back.
+     */
+    resetSlider(key) {
+      if (!this.isPinned(key)) return;
+      this.dropPins([key]);
+    },
+
+    /**
+     * The open question, or `null`. It carries the **set of pins** and the
+     * **anchor** rather than a reach's name, which is the whole seam #103 is
+     * owed: its Entscheid 4 puts this same handling at a second trigger, with
+     * two pins and another button, and calls it "keine neue Mechanik".
+     * Nothing here knows "everything but Game and TournamentType" — the type
+     * row's chip passes `pinnedKeys`, and a caller with a shorter list gets a
+     * shorter question.
+     */
+    confirmDrop: null,
+
+    askDrop({ keys, anchor, reach = 'all', bubble = DROP_BUBBLE, done = null }) {
+      const list = (keys ?? []).filter((key) => this.isPinned(key));
+      if (!list.length) return;
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = { keys: list, anchor, reach, bubble, done, type: this.typeId, game: this.gameId };
+    },
+
+    /**
+     * The question as text, and `null` once it no longer applies.
+     *
+     * A Set switch **withdraws** it: the question was asked of the old sheet,
+     * it names the type the pins would go back to, and under a new one it
+     * would name the wrong one (prototype, `switchType()`: "eine offene Frage
+     * gilt dem alten Blatt"). Derived here rather than cleared in `setType()`,
+     * so that every way the base can move is covered by the one rule.
+     */
+    get dropQuestion() {
+      const ask = this.confirmDrop;
+      if (!ask) return null;
+      if (ask.type !== this.typeId || ask.game !== this.gameId) return null;
+      const after = this.afterDrop(ask.keys);
+      return dropConfirmation({
+        keys: ask.keys,
+        typeTitle: this.typeTitle,
+        reach: ask.reach,
+        after: { settings: after.settings, plan: distribute(after.settings, after.pins) },
+      });
+    },
+
+    /** Declining has a named place beside confirming, which is why this is a
+     *  bubble and not a button that turns into a question (#33). */
+    cancelDrop() {
+      this.confirmDrop = null;
+    },
+
+    /** Confirming. The pins of the question fall — no more and no fewer — and
+     *  whoever asked runs its own errand afterwards: #103's message closes
+     *  itself with the answer, the type row's chip has nothing to close. */
+    applyDrop() {
+      const ask = this.dropQuestion;
+      const done = this.confirmDrop?.done;
+      this.confirmDrop = null;
+      if (!ask) return;
+      this.dropPins(ask.keys);
+      if (done) done();
+    },
+
+    /**
+     * The drop itself, over any set of keys. `Game` and `TournamentType` are
+     * out of reach here by construction rather than by an exception: they are
+     * no pins and stand in `gameId`/`typeId`, so this resets the screen to the
+     * chosen type and never chooses a new one (ADR 0006, addendum #26).
+     *
+     * A new record rather than a deletion in place: `plan.settings` is a
+     * snapshot of what was computed, and `afterDrop()` lays the survivors back
+     * over the sheet the way `resolve()` does; the address bar is written
+     * exactly as setting a pin writes it (#89).
+     */
+    dropPins(keys) {
+      const after = this.afterDrop(keys);
+      this.pins = after.pins;
+      this.settings = after.settings;
+      this.syncAddress();
+    },
+
+    /**
+     * What a drop installs, without installing it: the pin record without the
+     * named items and the sheet resolved over it. `dropPins()` installs exactly
+     * this, and the question reads its target values off exactly this — one
+     * computation for the announcement and the effect, so the bubble cannot
+     * promise a value the handling then does not set (#67, run 11, K3).
+     */
+    afterDrop(keys) {
+      const pins = pinsWithout(this.pins, keys);
+      return { pins, settings: this.resolvedFor(pins) };
+    },
+
+    /**
+     * The measuring rind of the question's bubble — the same two lines the
+     * tile's bubble has, and the same arithmetic behind them (`bubble.mjs`),
+     * because it is the same bubble form: it hangs off the button that was
+     * pressed, flips up where there is no room, stays in the frame, and
+     * **closes when its anchor is no longer visible**. One rule for all its
+     * inhabitants (#66).
+     *
+     * Two things differ from `placeBubble()`, both because this bubble's
+     * trigger is not inside `Plan`'s stage and #103's will be somewhere else
+     * again:
+     *
+     * - The **anchor is found by selector**, handed in with the question. A
+     *   second trigger site is then a second selector and not a second
+     *   handler.
+     * - The **frame is the viewport**, and the bubble is placed in it. The
+     *   scrolling box the anchor can leave is its own `[data-bubble-frame]`,
+     *   which is what the visibility is judged against — `Details` scrolls
+     *   itself, so an absolutely placed bubble inside it would scroll away
+     *   from the button it hangs on.
+     */
+    placeConfirm() {
+      if (!this.confirmDrop || typeof document === 'undefined') return;
+      const bubbleEl = document.querySelector(this.confirmDrop.bubble);
+      if (!bubbleEl) return;
+      const anchorEl = document.querySelector(this.confirmDrop.anchor);
+      const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
+      const viewport = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, frameEl ? frameEl.getBoundingClientRect() : viewport)) {
+        this.confirmDrop = null;
+        return;
+      }
+      const at = bubblePosition({
+        anchor,
+        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        stage: viewport,
+      });
+      bubbleEl.style.left = `${at.left}px`;
+      bubbleEl.style.top = `${at.top}px`;
+    },
+
+    /* ── The PreparationList (#65) ────────────────────────────────────── */
+
+    /**
+     * What `Prepare` shows: the three procurement items with their step
+     * sequences written out, and the closing sentence. The whole of it is
+     * `preparationList()` (`prepare.mjs`), on the proven side of the seam —
+     * this file holds no word and no number of it, the same split the tile
+     * and the bubble already have.
+     *
+     * It takes the plan alone: the sheet it needs (`displaySize`,
+     * `envelopeSize`) and the record of what was set by hand ride on the plan
+     * itself (ADR 0009 and its addendum (#86)), so nothing here can hand it a
+     * stand the plan was not computed from.
+     */
+    get preparation() {
+      return preparationList(this.plan);
+    },
+
+    /** The three items as a list, because the view draws them with one
+     *  template: they differ in what they say, never in how they are built. */
+    get preparationItems() {
+      const list = this.preparation;
+      return [list.displays, list.envelopes, list.winners];
+    },
+
+    /**
+     * The `WinnerPack` hint's button. It is an **opportunity, not a notice**
+     * — it never enters the `NoticeStack` — and the way to another
+     * `WinnerPack` runs over more `TournamentPack`s, so what it sets is
+     * `tournamentPacks` and not `winnerPacks` (the prototype's
+     * `prepContent()`: `data-apply="tournamentPacks"`).
+     *
+     * It goes through `setSlider()` like every other control rather than
+     * writing `settings` itself: taking the offer is an operating gesture, so
+     * it pins the slider (ADR 0006) and writes the address bar, and the
+     * `pinned` record the hint then falls silent on stays the one there
+     * already is.
+     */
+    takeOffer(offer) {
+      this.setSlider(offer.key, offer.value);
     },
   };
 }

@@ -16,9 +16,18 @@
  * The page scrolls (`.page-details` has its own `overflow-y`), and everything
  * in it scrolls with it — the Set block and the hot four included. "First" is
  * an arrangement, not an assurance (#61).
+ *
+ * `data-bubble-frame` is the other half of that scrolling (#67): the question
+ * of the full reach hangs off a button in the Set block, and a bubble closes
+ * when its anchor is no longer visible — one rule for all its inhabitants
+ * (#66). "Visible" has to be measured against **what scrolls**, and here that
+ * is this page, so the frame is named here rather than guessed at in
+ * `placeConfirm()`. The `@scroll` is what makes it move and close while the
+ * column is dragged; the marking above it needs neither.
  */
 ?>
-<div class="page-details" x-cloak x-show="activePage === 'details'">
+<div class="page-details" data-bubble-frame @scroll="placeConfirm()"
+     x-cloak x-show="activePage === 'details'">
   <header class="page-head">
     <h1>Details</h1>
     <p class="page-lede">everything you can turn</p>

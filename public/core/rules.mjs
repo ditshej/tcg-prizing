@@ -67,6 +67,45 @@ export function rangeSize(id, players) {
 }
 
 /**
+ * The `RafflePot` (#10, #69): the `Rank`s a `WinnerRaffle` may really draw
+ * from — the `RaffleRange` minus every `Rank` that already holds a
+ * `WinnerPack`, `ranked` and `manual` alike.
+ *
+ * **That exclusion is an invariant, not a control** (CONTEXT.md, `RafflePot`:
+ * "eine Siegerkarte gewinnt niemand zweimal"). There is no setting that turns
+ * it off, and there is no second record of who won already: `row.winners` is
+ * the core's own sum of both shares, so a retracted allocation makes its
+ * `Rank` drawable again in the very next call, with nothing to reset.
+ *
+ * Pure, on the core side of the seam (ADR 0004; #61, "The seam" — "aus der
+ * `RaffleRange` fällt über `rangeSize()` ein Präfix oder dessen Komplement").
+ * The **throw** is not here and never will be: the randomness sits in the
+ * input, which is why recomputing never changes a winner.
+ *
+ * An upper step is a prefix from `Rank` 1, a lower one the suffix of the same
+ * length its complement is short — which is what makes the five pairs tile the
+ * `Ranking` without gap or overlap. `top8`, `top16` and `all` have no
+ * complement and need none.
+ *
+ * Returns the `Rank`s in ascending order, as a fresh array.
+ */
+export function rafflePot(plan, raffleRange) {
+  const players = Math.max(0, Math.trunc(Number(plan?.players)) || 0);
+  const rows = plan?.rows ?? [];
+  const size = rangeSize(raffleRange, players);
+  const fromTheBottom = RANGE_BY_ID.get(raffleRange)?.comp !== undefined;
+
+  const pot = [];
+  for (let rank = 1; rank <= players; rank++) {
+    const inRange = fromTheBottom ? rank > players - size : rank <= size;
+    if (!inRange) continue;
+    if ((rows[rank - 1]?.winners ?? 0) > 0) continue;
+    pot.push(rank);
+  }
+  return pot;
+}
+
+/**
  * Splits `total` over `weights` in whole units: cut the nominal shares, hand
  * out the rest by largest remainder, and **on an equal remainder the higher
  * Rank gets it** — the smaller index first (ADR 0001, addendum #45).

@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap } from './geometry.mjs';
+import { columnsFor, diagramCap, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -63,4 +63,55 @@ export function attachMeasuring(stageEl, fixedEls = []) {
   const observer = new ResizeObserver(run);
   observer.observe(stageEl);
   return () => observer.disconnect();
+}
+
+/* ── The WinnerRaffle bar (#69) ──────────────────────────────────────────── */
+
+/**
+ * Gives the scrolling tile grid exactly the padding the open raffle bar takes
+ * off it, so the tiles run **behind** the bar (#69 AC 3). `barEl` is `null`
+ * while the bar is closed.
+ *
+ * Reads two boxes, writes one length. The rule itself — how much, and that it
+ * comes to nothing where the grid ends above the bar — is
+ * `raffleScrollPadding()` in `geometry.mjs`, under `node --test`.
+ */
+export function applyRafflePadding(gridEl, barEl) {
+  if (!gridEl) return;
+  const pad = raffleScrollPadding(
+    gridEl.getBoundingClientRect(),
+    barEl ? barEl.getBoundingClientRect() : null,
+  );
+  gridEl.style.paddingBottom = pad ? `${pad}px` : '';
+}
+
+/**
+ * Shows a hit over the two fleeting channels (#69 AC 10): the grid scrolls to
+ * the tile — into the middle of the free strip, and not at all when it is
+ * already in it — and the tile lifts out briefly.
+ *
+ * **Fleeting on purpose, and nowhere written down.** The class is put on for
+ * the length of one animation and taken off again at `animationend`, so the
+ * mark lives in the running animation and in no field of the component. A
+ * lasting mark would be the provenance the model deliberately does not keep
+ * (CONTEXT.md, `WinnerRaffle`).
+ */
+export function showRaffleHit(gridEl, barEl, rank) {
+  if (!gridEl) return;
+  const tileEl = gridEl.querySelector(`.tile[data-rank="${rank}"]`);
+  if (!tileEl) return;
+
+  const delta = hitScrollDelta(
+    gridEl.getBoundingClientRect(),
+    tileEl.getBoundingClientRect(),
+    barEl ? barEl.getBoundingClientRect().top : Infinity,
+  );
+  if (delta !== 0) gridEl.scrollTo({ top: gridEl.scrollTop + delta, behavior: 'smooth' });
+
+  /* Taken off and put back on with a reflow in between, or a second hit on
+     the same tile would find the class already there and run nothing. */
+  tileEl.classList.remove('tile-hit');
+  void tileEl.offsetWidth;
+  tileEl.classList.add('tile-hit');
+  tileEl.addEventListener('animationend', () => tileEl.classList.remove('tile-hit'), { once: true });
 }

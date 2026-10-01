@@ -336,6 +336,18 @@ acht beschränkt. Bemessungsgrundlage ist immer die Spielerzahl, nie
 `RankPoolDepth`. Die **Reihenfolge ist bedeutungstragend**: sie ist die des
 Reglers, die oberen acht steigen darum der Grösse nach und `all` steht am Ende.
 Sie ist deshalb nicht dasselbe wie der Default, und der ist `all`.
+Die `RaffleRange` ist **kein `Regler`, sondern Sitzungszustand** des
+Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor, geht in
+`distribute()` nicht ein und steht nie im `SetupLink`. Daraus folgt alles
+Einzelne — keine `pinned`/`auto`-Markierung, kein Rückweg am Element, nicht
+gezählt in `Drop all N`, und ein Set-Wechsel lässt sie stehen. Ihr Default
+`all` ist eine **Konstante des Begriffs** und kein Blatteintrag: kein
+`DefaultSet` trägt sie, ein Neuladen setzt sie auf `all` zurück. Damit bleibt
+der Satz „`Pinned` gilt für alle `Regler` gleich" ausnahmslos wahr, statt eine
+Ausnahme zu bekommen. Eingestellt wird sie **in** der Verlosungsleiste, damit
+der Bereich zwischen zwei Würfen änderbar ist; im Reglerblatt steht nur ein
+Zeiger samt Erklärungstext, weil die Leiste dafür keinen Platz hat und die
+`RaffleRange` sonst ihre einzige Erklärung im Programm verlöre.
 _Avoid_: RaffleMode (es ist ein Bereich, kein zweiter Rechenweg), Lostopf (das ist der `RafflePot`)
 
 **RafflePot**:
