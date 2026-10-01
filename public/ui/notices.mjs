@@ -231,16 +231,17 @@ export function carryLabel(count, to) {
  * `test/ui-notices.test.mjs`. Should one turn up elsewhere, this sentence
  * would be wrong there, and that is a finding, not a case for a second one.
  *
- * Wording is a builder's proposal, not yet decided (K2: „Der Wortlaut ist
- * nicht entschieden"). It keeps clear of *slider* and *setting* (#113 AC 16)
- * and of glossary terms, but for the label it quotes and *boosters* in their
- * own sense: "nothing to give out" would be untrue, since tournament and
- * winner packs still reach the ranks at a `boosterRate` of 0.
+ * The chip word is decided (run 12, Phase G, `G-chip-0-booster` on #68):
+ * `No boosters`. The builder's earlier `Nothing to give` fell because it is
+ * untrue — tournament and winner packs still reach the ranks at a
+ * `boosterRate` of 0; only the boosters are missing. *Boosters* stands in its
+ * own sense, and the word keeps clear of *slider* and *setting* (#113 AC 16).
+ * The sentence is still the builder's proposal from PR #118.
  */
 const NO_WAY_OUT = {
   lines: [`With “${pinLabel('boosterRate')}” at 0, there are no boosters to give out.`],
   actions: [],
-  chip: { glyph: '⚠', word: 'Nothing to give' },
+  chip: { glyph: '⚠', word: 'No boosters' },
 };
 
 /**

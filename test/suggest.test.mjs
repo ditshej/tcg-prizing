@@ -732,7 +732,7 @@ test('a fit plan has no ways out at all, combined or single', () => {
  */
 const bench = { players: 8, boosterRate: 0, rankFloor: 2, depth: 3, curve: 'steep' };
 
-test('K1 bench: there is no way out, combined or single — the evening has nothing to give', () => {
+test('K1 bench: there is no way out, combined or single — the evening has no boosters to give', () => {
   const plan = distribute(bench);
   assert.equal(unfit(plan), true);
   assert.deepEqual(suggestions(plan), []);

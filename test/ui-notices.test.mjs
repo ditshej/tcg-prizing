@@ -276,7 +276,8 @@ test('K1 bench: no way out — no button, one sentence naming the fact, a chip w
   assert.match(notice.lines[0], /\b0\b/);
   const chip = stackFor(bench, minimize(freshFold(), 'conflict')).chips[0];
   assert.equal(chip.id, 'conflict');
-  assert.ok(chip.word.length > 0);
+  assert.equal(chip.word, 'No boosters', 'decided wording (run 12, Phase G, G-chip-0-booster on #68)');
+  assert.equal(chip.glyph, '⚠');
   assert.doesNotMatch(chip.word, /\d/);
   assert.doesNotMatch(`${chip.word} ${notice.lines[0]}`, /\b(sliders?|settings?|ways? out)\b/i);
 });

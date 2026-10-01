@@ -152,9 +152,11 @@ nennt die Tatsache, die den `RankPool` leert. Gemessen: in B3 über 15 360 Stän
 (3 072); die Rasterprobe in `test/ui-notices.test.mjs` variiert zusätzlich die
 Kurve und findet über 12 096 Stände dasselbe — 3 024 ohne Weg, alle und nur bei
 `boosterRate` 0. Taucht je ein Stand mit `boosterRate` > 0 ohne Weg auf, ist
-**das** der Befund; ein zweiter Satz dafür ist nicht vorgesehen. Der Wortlaut
-von Satz und Chip-Wort ist ein Vorschlag des Builders (PR #118) und noch nicht
-entschieden.
+**das** der Befund; ein zweiter Satz dafür ist nicht vorgesehen. Das Chip-Wort
+ist entschieden (Lauf 12, Phase G, `G-chip-0-booster`, Kommentar an #68):
+**`⚠ No boosters`** — der Vorschlag `⚠ Nothing to give` fiel, weil `TournamentPack`s
+und `WinnerPack`s bei `boosterRate` 0 weiter an die Ränge gehen. Der Satz selbst
+bleibt ein Vorschlag des Builders (PR #118).
 
 Bewusst so entschieden (Entscheid 3 im Kommentar „Drei Entscheide aus der
 Fragebogenrunde" an #56, 2026-09-27): `conflict` (eine Tiefe über dem Deckel oder
