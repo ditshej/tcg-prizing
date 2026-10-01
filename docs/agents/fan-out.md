@@ -741,3 +741,76 @@ merge probe**, arithmetic closing exactly (240 + 17 + 4). Decisions filed to #89
 #104, #47, #72, #73, ADR 0007, `docs/agents/setup-link.md` and
 `docs/agents/issue-tracker.md`. Three PRs open: #107 (#104), #108 (#89), #109
 (docs). Merge order: **#104, then #89, then #109.**
+
+### Run 11 · 2026-09-30 – 10-01 · #65, #67, #69 · `/round`, one quota death, a grilling in parallel
+
+**The conductor's context: roughly 130k, of which about 40k is Phase E.** That is
+the `/round` part at about 90k, against run 10's 35k. It is an estimate,
+summed from the session's token counter over three segments, because the round
+spanned two session restarts. Where the extra came from is clear:
+the restart after a quota death in Phase B, the conductor filing two corrections
+itself in Phase F, and the conductor reading the comments of a grilling (#113)
+that came back while Phase F was building. The last of those was content, not
+paths, and a fresh agent could have read it instead.
+
+**The conductor opened by asking a question whose answer was on disk.** Before
+Phase A it put #103 to the maintainer as an open decision. Six decisions had
+been filed there as a comment that same day. That is the failure `AGENTS.md`
+names as the most expensive kind, made in the first minute by the one session
+that is supposed to hold the lookup lists. The fix is plain: read
+`--comments` before asking about any ticket, including one labelled `question`.
+
+**Phase B died at a quota limit with no artefact on disk, and was restarted
+rather than believed.** The rule „a phase is done when its artefact is on disk"
+did its job: two screenshots and no report meant B had not happened. The
+restarted B was told to write its report early and keep extending it. It
+finished in one go, so that instruction is still untested.
+
+**B refuted the reason A gave for its one blocker.** A said a wrong `--ours` in
+the hand merge would delete a whole ticket „and no probe goes red", because the
+three test files are disjoint. They are disjoint, but they also do not collide:
+the other ticket's tests merge in cleanly and point at the deleted code. 15,
+10 and 10 probes go red. In exchange, B walked into two real traps on the
+recommended path, `diff3`'s fourth marker and `rerere` replaying a practised
+resolution. Those became the standing merge rule in this file.
+
+**Phase D produced a third outcome the skill does not name: a question opened
+instead of answered.** K1 (a button promising a value beyond a slider's end) was
+not answered and not deferred to a card. The maintainer asked whether sliders
+were the right form at all. The conductor filed it as a grilling ticket (#113),
+the maintainer grilled it in a parallel session, and its decisions landed in
+the round's tickets while Phase F was building. One of them reached a builder
+mid-run through a message, and it reshaped that branch (`DROP_NOUN`, the one
+place #113 will swap *slider* for *value*). K4 hung itself on the same ticket
+and was settled there. The round absorbed this without restarting anything.
+Worth keeping: **a parallel session can feed a running round, as long as it
+files to the tickets the builders read.**
+
+**The one card was answered with none of its options, and that is the card
+working.** K3 asked what to call the step grid in the reset confirmation. The
+skeptic killed one option (its label was another glossary term), struck an
+invented price (height, not width) and a false necessity (dropping the line
+would also drop the pin from the reset), and found the missing way of folding
+the step into `Served ranks`. The maintainer then chose a fifth way in free
+text: name each item with its target value. Two screenshots made the situation
+visible enough that he answered with what he wanted rather than the least bad
+of four.
+
+**Filing is not self-checking.** F1 cited the wrong decision in #103 (number 4,
+the switch-back notice, instead of 3, the `ConflictNotice` source) and left #61
+without a comment. The docs builder caught both while reading the filed comments
+against the sources. That is the second time a later reader has caught the
+filer, after run 5's glossary follow-up.
+
+**Counts.** 15 findings from A, 6 more from B, 1 partly refuted, 2 sharpened,
+1 weakened. Gates: 21 in, 7 candidates, 14 dropped. Phase D: 4 answered, 1 card,
+2 moved to #113. Suites after Phase F: 277 (#65) · 301 (#67) · 302 (#69) alone,
+on a base of 261. **The merged total is not measured.** By arithmetic it is
+261 + 16 + 40 + 41 = 358, and the merge is where that is checked. Decisions filed
+to #61, #65, #67, #70, #103, `CONTEXT.md` (the named `ConflictNotice`
+sources) and this file. New tickets: #113 (grilled, `ready-for-agent`, blocked
+by #67) and #114 (B14). PRs: #110 (#65), #112 (#67), #111 (#69), #115 (docs).
+Merge order: **#110, then #112, then #111, then #115.** #113 needs #112 first.
+After the merge: `dev/` picks up `rafflePot()`, and #65's pin read gets its row
+in `READ_SITES`. That row needs its own key list, because only `winnerPacks`
+changes what it reads.
