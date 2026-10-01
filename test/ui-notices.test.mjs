@@ -413,3 +413,58 @@ test('the Offer is taken with one click and pins the reservation', () => {
   assert.equal(a.settings.displays[offer.actions[0].offer.rank - 1], offer.actions[0].offer.value);
   assert.equal(a.isPinned('displays'), true);
 });
+
+/* ── The layer as markup (views/notices.php, views/app.php) ─────────────── */
+
+import { readFileSync } from 'node:fs';
+
+const view = (name) => readFileSync(new URL(`../views/${name}`, import.meta.url), 'utf8');
+const css = () => readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
+
+test('the layer is required once, by the app root, outside every page and before the foot', () => {
+  const root = view('app.php');
+  const lines = root.split('\n');
+  const at = lines.findIndex((line) => line.includes("'/notices.php'"));
+  const foot = lines.findIndex((line) => line.includes("'/foot.php'"));
+  assert.equal(root.split("'/notices.php'").length, 2, 'required exactly once');
+  assert.ok(at >= 0 && at < foot, 'before foot.php');
+  for (const page of ['plan.php', 'details.php', 'prepare.php']) {
+    assert.doesNotMatch(view(page), /notices\.php/, `${page} must not own the layer`);
+  }
+});
+
+test('the open notices and the chips lie over the app and take no height from the tile grid', () => {
+  const sheet = css();
+  for (const selector of ['.notice-stack', '.notice-chips']) {
+    const block = sheet.slice(sheet.indexOf(`${selector} {`));
+    assert.ok(sheet.includes(`${selector} {`), `${selector} is styled`);
+    assert.match(block.slice(0, block.indexOf('}')), /position:\s*fixed/, `${selector} is out of the flow`);
+  }
+});
+
+test('the only ✕ in the layer is bound to a closable notice, and a chip only opens', () => {
+  const markup = view('notices.php');
+  const close = markup.slice(markup.lastIndexOf('<template', markup.indexOf('dismissNotice(')), markup.indexOf('dismissNotice('));
+  assert.match(close, /x-if="notice\.closable"/);
+  const chip = markup.slice(markup.indexOf('class="notice-chip"'));
+  const click = chip.match(/@click="([^"]*)"/)[1];
+  assert.equal(click, 'expandNotice(chip.id)');
+});
+
+test('the layer runs the fold after every change', () => {
+  assert.match(view('notices.php'), /x-effect="refreshNotices\(\)"/);
+});
+
+test('away from Details, the CarryOverNotice asks in a bubble of its own form, since the sheet\'s is hidden there', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 3);
+  a.setType('weekend');
+  a.refreshNotices();
+  a.dropCarried('[data-notice-carry]');
+  assert.equal(a.confirmDrop.bubble, '[data-notice-drop]');
+  a.cancelDrop();
+  a.setPage('details');
+  a.dropCarried('[data-notice-carry]');
+  assert.equal(a.confirmDrop.bubble, '[data-drop-bubble]');
+  assert.match(view('notices.php'), /data-notice-drop/);
+});

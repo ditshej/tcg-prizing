@@ -1143,8 +1143,21 @@ export function planApp(seam = SEAM) {
         keys: this.carryOver.keys,
         anchor,
         reach: 'carry',
+        bubble: this.carryBubble,
         done: () => this.dismissNotice('carryOver'),
       });
+    },
+
+    /**
+     * Where the question is drawn. The sheet's bubble (`DROP_BUBBLE`) is
+     * markup inside `Details`, so on any other page it sits under a hidden
+     * ancestor and cannot show — while the CarryOverNotice lies over every
+     * page. Away from `Details` the question is therefore drawn in the
+     * layer's own bubble of the same form (`views/notices.php`), the second
+     * trigger site `askDrop()`'s `bubble` argument was left open for.
+     */
+    get carryBubble() {
+      return this.activePage === 'details' ? DROP_BUBBLE : '[data-notice-drop]';
     },
   };
 }

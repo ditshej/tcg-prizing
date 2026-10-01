@@ -16,5 +16,6 @@
   <?php require __DIR__ . '/prepare.php'; ?>
   <?php require __DIR__ . '/plan.php'; ?>
   <?php require __DIR__ . '/details.php'; ?>
+  <?php require __DIR__ . '/notices.php'; ?>
   <?php require __DIR__ . '/foot.php'; ?>
 </div>
