@@ -85,6 +85,10 @@ function sheet_pin_reset(string $key, string $label): void
  * latter reads back an empty string for anything it cannot parse, so "not a
  * number falls back" could not be told from "emptied", and its own spinner
  * would be a third pair of arrows beside the `−` and `+`.
+ *
+ * `data-number-field` is what `confirm-first.mjs` knows a number field by:
+ * while one holds an unconfirmed number, a press anywhere else only confirms
+ * it (K4 of run 12), and a press into another number field is no activation.
  */
 function control_row(string $key, string $label, string $unit = '', string $note = ''): void
 {
@@ -105,6 +109,7 @@ function control_row(string $key, string $label, string $unit = '', string $note
         <button type="button" @click="step('<?= $k ?>', -1)" :disabled="!canStep('<?= $k ?>', -1)"
                 aria-label="<?= $l ?>, one less">&minus;</button>
         <input type="text" inputmode="numeric" class="counter-value" aria-label="<?= $l ?>"
+               data-number-field="<?= $k ?>"
                autocomplete="off" spellcheck="false"
                :value="value('<?= $k ?>')"
                @focus="$el.select()"

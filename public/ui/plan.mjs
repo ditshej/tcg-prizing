@@ -60,6 +60,7 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
+import { attachConfirmFirst } from './confirm-first.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -545,6 +546,25 @@ export function planApp(seam = SEAM) {
       this.setSlider(key, next);
     },
 
+    /**
+     * The field whose typed text is not yet confirmed, or `null` (K4 of run
+     * 12, "erst bestätigen"): while one stands, a press anywhere else only
+     * confirms it (`confirm-first.mjs`). Unconfirmed is `isDraft()` — text
+     * that differs from the value standing — so a field that only has the
+     * focus, or holds the number it shows, blocks nothing.
+     */
+    get pendingDraft() {
+      return Object.keys(this.drafts).find((key) => this.isDraft(key)) ?? null;
+    },
+
+    /** Confirms the pending field as Enter would; answers its key, or `null`. */
+    confirmDraft() {
+      const key = this.pendingDraft;
+      if (key === null) return null;
+      this.commitTyped(key, this.drafts[key]);
+      return key;
+    },
+
     /* ── The tile as a grip (#66) ─────────────────────────────────────── */
 
     /** What a tile shows beyond its numbers: 2×2 from the first `Display` on,
@@ -688,9 +708,15 @@ export function planApp(seam = SEAM) {
          changing, and the same one rule is what it calls. */
       this._onResize = () => this.placeBubble();
       window.addEventListener('resize', this._onResize);
+      /* "Erst bestätigen" (K4 of run 12): a press outside a field with an
+         unconfirmed number confirms it and activates nothing else. On the
+         document, so it covers every control there is and every one a later
+         branch adds. */
+      this._detachConfirmFirst = attachConfirmFirst(document, this);
     },
 
     destroy() {
+      if (this._detachConfirmFirst) this._detachConfirmFirst();
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
