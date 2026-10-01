@@ -104,6 +104,133 @@ test('a reservation taken back off the last rank is no pin any more', () => {
   assert.equal(app.pinCount, 0, 'an empty vector is not a pinned reservation');
 });
 
+/* ── The reads the screen draws from (#67, run 11, K5) ─────────────────── */
+
+/**
+ * A probe against the class "green because it does not look", not against the
+ * one case that found it. At the surface the pin record is an Alpine proxy,
+ * and its reactivity (`@vue/reactivity`) redraws a binding only when one of the
+ * binding's own *tracked* reads changes. It tracks `get`, `has` and the key
+ * list (`ownKeys`) — and **not** `getOwnPropertyDescriptor`, which is where
+ * `hasOwnProperty` lands. A marking that asks "is the key there?" that way is
+ * right in every test that calls it again, and frozen on screen: a dragged
+ * slider kept saying `auto` (B3, PR #112). Every test above calls again.
+ *
+ * So this proxy runs without Alpine and **separates the two kinds of read**: it
+ * counts what each read site saw through a tracked trap, and keeps the blind
+ * `getOwnPropertyDescriptor` reads apart. A handling then writes a pin through
+ * it, and the read site is redrawn **only if** the write hit one of its tracked
+ * reads — the way the screen does it. What the site shows afterwards has to be
+ * what is true.
+ *
+ * `READ_SITES` is every read of a pin the screen draws from on this branch
+ * (`views/controls-sheet.php`, `views/controls-hot.php`). A new site goes into
+ * this table and not into a second probe (#65's is to be added here, comment
+ * on #65 from run 11). Replacing the whole record (`dropPins()`) is not probed:
+ * that writes `app.pins` itself, which every site reads through `this`, and
+ * which redraws all of them.
+ */
+const ITERATE = Symbol('ownKeys');
+
+function counted(record) {
+  const reads = { tracked: new Set(), blind: 0 };
+  const writes = new Set();
+  const proxy = new Proxy(record, {
+    get(target, key, receiver) {
+      reads.tracked.add(key);
+      return Reflect.get(target, key, receiver);
+    },
+    has(target, key) {
+      reads.tracked.add(key);
+      return Reflect.has(target, key);
+    },
+    ownKeys(target) {
+      reads.tracked.add(ITERATE);
+      return Reflect.ownKeys(target);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      reads.blind += 1;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+    set(target, key, value, receiver) {
+      if (!Reflect.getOwnPropertyDescriptor(target, key)) writes.add(ITERATE);
+      writes.add(key);
+      return Reflect.set(target, key, value, receiver);
+    },
+    deleteProperty(target, key) {
+      writes.add(ITERATE);
+      writes.add(key);
+      return Reflect.deleteProperty(target, key);
+    },
+  });
+  return { proxy, reads, writes };
+}
+
+const READ_SITES = {
+  'isPinned(key) — the is-pinned frame and the idle reset': (app, key) => app.isPinned(pinItem(key)),
+  'stateWord(key) — the word at the control and on the rail': (app, key) => app.stateWord(pinItem(key)),
+  'pinCount — the counter on the type row': (app) => app.pinCount,
+  'pinnedKeys — what the counter hands the question': (app) => app.pinnedKeys,
+  'pinnedItems — the list with its words': (app) => app.pinnedItems,
+};
+
+const PINNABLE = [...SHEET_KEYS, 'displays', 'manualWinner'];
+
+/** Each stored key pinned the way the screen pins it, on the value it has —
+ *  a pin on the default value is a pin all the same (ADR 0006). */
+function pinIt(app, key) {
+  if (key === 'displays') return app.setDisplays(1, 1);
+  if (key === 'manualWinner') return app.setManualWinner(1, 1);
+  if (key === 'curve' || key === 'depthStep' || key === 'combinedHandout') return app.setSlider(key, app.settings[key]);
+  return app.setSlider(key, app.value(key));
+}
+
+/** One read, redrawn the way the screen redraws it, and the truth beside it. */
+function drawnAfter(app, read, handling) {
+  const watch = counted(app.pins);
+  app.pins = watch.proxy;
+  const before = structuredClone(read(app));
+  const seen = new Set(watch.reads.tracked);
+  handling();
+  const truth = structuredClone(read(app));
+  const redrawn = [...watch.writes].some((key) => seen.has(key));
+  return { before, truth, shown: redrawn ? truth : before };
+}
+
+for (const [site, read] of Object.entries(READ_SITES)) {
+  test(`a pin set by a handling reaches the screen through ${site}`, () => {
+    for (const key of PINNABLE) {
+      const { app } = opened();
+      const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => pinIt(app, key));
+      assert.notDeepEqual(truth, before, `${key}: the handling changed what the site reads (the probe looks)`);
+      assert.deepEqual(shown, truth, `${key}: the site is redrawn, not left on what it said before`);
+    }
+  });
+}
+
+test('a reservation taken back to nothing reaches the screen the same way', () => {
+  for (const [site, read] of Object.entries(READ_SITES)) {
+    for (const [key, set] of [['displays', (a, n) => a.setDisplays(1, n)], ['manualWinner', (a, n) => a.setManualWinner(1, n)]]) {
+      const { app } = opened();
+      set(app, 1);
+      const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => set(app, 0));
+      assert.notDeepEqual(truth, before, `${site}, ${key}: the probe looks`);
+      assert.deepEqual(shown, truth, `${site}, ${key}: taken back, and the screen says so`);
+    }
+  }
+});
+
+/** The proxy itself has to tell the two reads apart, or the probe above
+ *  passes because it cannot see the difference it is about. */
+test('the counting proxy keeps a blind read apart from a tracked one', () => {
+  const watch = counted({ rankFloor: 3 });
+  Object.prototype.hasOwnProperty.call(watch.proxy, 'rankFloor');
+  assert.equal(watch.reads.blind, 1);
+  assert.equal(watch.reads.tracked.size, 0, 'hasOwnProperty is tracked by nothing');
+  void watch.proxy.rankFloor;
+  assert.ok(watch.reads.tracked.has('rankFloor'));
+});
+
 /* ── The question (#67 AC 4) ────────────────────────────────────────────── */
 
 test('the question names the sliders that fall and says there is no undo', () => {
