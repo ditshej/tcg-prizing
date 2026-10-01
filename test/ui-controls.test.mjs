@@ -24,6 +24,7 @@ import {
   typedNumber,
   typedValueAfter,
 } from '../public/ui/controls.mjs';
+import { planApp } from '../public/ui/plan.mjs';
 
 /** The sheet's own reading of a stand: settings resolved, plan computed. */
 function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
@@ -282,6 +283,33 @@ test('the judge boosters end at the rest after participation, not at the whole p
   assert.equal(s.plan.pool.booster, 1152);
   assert.deepEqual(boundsFor('judgeBooster', s), { min: 0, max: 384 });
   assert.equal(clampToBounds('judgeBooster', 1152, s), 384);
+});
+
+/**
+ * The walls are remembered per stand (B8 of run 12): one `distribute()` per
+ * wall is too dear to pay at every read once `players` has no roof. The shell
+ * writes `settings` in place, so the stand is recognised by content — a cache
+ * keyed by the object would hand back the walls of the stand before.
+ */
+test('a wall asked again after the stand was written in place is the new stand\'s wall', () => {
+  const s = stand({ players: 128, boosterRate: 9, participationBooster: 6 });
+  assert.equal(boundsFor('judgeBooster', s).max, 384);
+  s.settings.participationBooster = 3;
+  s.plan = distribute(s.settings);
+  assert.equal(boundsFor('judgeBooster', s).max, 1152 - 3 * 128);
+  s.settings.participationBooster = 6;
+  s.plan = distribute(s.settings);
+  assert.equal(boundsFor('judgeBooster', s).max, 384);
+});
+
+test('the plan on screen follows a stand written in place, and is computed once per stand', () => {
+  const app = planApp({ read: () => '', write: () => {} });
+  const first = app.plan;
+  assert.equal(app.plan, first, 'an unchanged stand reads the same plan');
+  app.setSlider('players', 64);
+  assert.notEqual(app.plan, first);
+  assert.equal(app.plan.players, 64);
+  assert.equal(app.plan.pinned.players, 64, 'the pins are part of the stand the plan is remembered for');
 });
 
 test('the search range of rankFloor stays the search\'s, and the control reaches past it', () => {

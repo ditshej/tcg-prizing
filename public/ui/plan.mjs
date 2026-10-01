@@ -154,6 +154,12 @@ export function planApp(seam = SEAM) {
   // what the address bar says from here on.
   if (opened.write) seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins }));
 
+  // The last plan and the stand it was computed from — see the `plan` getter.
+  // Kept in this closure rather than on the component, so that remembering a
+  // plan is never a write Alpine's reactivity would see.
+  let planStand = null;
+  let planMemo = null;
+
   return {
     /**
      * The chosen Set, as the two names the chain is built from (ADR 0003):
@@ -272,9 +278,22 @@ export function planApp(seam = SEAM) {
      * Handed one argument, `plan.pinned` is `{}` at the surface however many
      * sliders the CommunityLead has moved — true of the object, false of the
      * app (maintainer decision on #66, 2026-09-28).
+     *
+     * It is computed once per stand and not once per read. Every number on
+     * screen reads it several times per drawing (`value`, `bounds`, `canStep`
+     * at `−` and at `+`), and with no roof on `players` (#113) one
+     * `distribute()` at 5000 players takes a fifth of a second. The stand is
+     * recognised by content, because `settings` and `pins` are written in
+     * place; and reading the whole of both for the key is also what keeps
+     * Alpine's reactivity tracking every field the plan depends on.
      */
     get plan() {
-      return distribute(this.settings, this.pins);
+      const stand = JSON.stringify([this.settings, this.pins]);
+      if (stand !== planStand) {
+        planStand = stand;
+        planMemo = distribute(this.settings, this.pins);
+      }
+      return planMemo;
     },
 
     /** The last Rank that gets anything at all — booster, packs or winners. */

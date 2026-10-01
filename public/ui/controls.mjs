@@ -179,9 +179,33 @@ const WALLS = {
 /** A number past every wall the core has, and still a safe integer. */
 const PAST_ANY_WALL = Number.MAX_SAFE_INTEGER;
 
+/**
+ * The walls of the last stand asked about, by wall key. Asking costs one full
+ * `distribute()` per wall, and with no roof on `players` (#113) that is no
+ * longer small: at 5000 players one pass over the six walls took over a
+ * second, and a drawing asks every wall several times (`canStep` at `−` and
+ * `+`, the typed commit, the clamp). So each wall is asked once per stand.
+ *
+ * The stand is recognised by its **content**, not by object identity: the
+ * shell writes `settings` in place (`setSlider()`), so the same object is a
+ * different stand after every handling, and a cache keyed by identity would
+ * hand back the walls of the stand before. The pins are not part of the key —
+ * `distribute()` carries them onto the plan and computes nothing from them.
+ */
+let wallStand = null;
+let wallCache = {};
+
 /** The core's own cut for a wall key at this stand: what it takes of a number past it. */
 function wallOf(key, { settings, plan }) {
-  return WALLS[key].took(distribute({ ...settings, [key]: PAST_ANY_WALL }, plan.pinned));
+  const stand = JSON.stringify(settings);
+  if (stand !== wallStand) {
+    wallStand = stand;
+    wallCache = {};
+  }
+  if (!(key in wallCache)) {
+    wallCache[key] = WALLS[key].took(distribute({ ...settings, [key]: PAST_ANY_WALL }, plan.pinned));
+  }
+  return wallCache[key];
 }
 
 /**
