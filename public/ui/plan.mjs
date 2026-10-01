@@ -58,7 +58,7 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
-import { copyText, flashCopied, linkAddress } from './link-screen.mjs';
+import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -1082,5 +1082,51 @@ export function planApp(seam = SEAM) {
         cancel: clearTimeout,
       };
     },
+
+    /**
+     * Whether the `LinkMigration` report still stands. It starts true exactly
+     * when #51/#52 hand over a non-`null` report (`linkReport`) and turns
+     * false once, at the one exit, and nothing turns it back: no chip, no
+     * handling reopens it — it comments on the arrival, not on the screen, and
+     * is taken note of once per opening (#72; #61, "The LinkMigration report").
+     */
+    linkReportShown: opened.report !== null,
+
+    /** What the overlay says, or `null` once it is gone (`link-screen.mjs`). */
+    get linkReportView() {
+      return this.linkReportShown ? reportView(this.linkReport, this.games) : null;
+    },
+
+    /**
+     * Opens the overlay as a modal `<dialog>`: the top layer is what puts it
+     * over everything, the `NoticeStack` included, and makes the rest of the
+     * app inert while it stands. It takes the focus onto its one exit and
+     * remembers where the focus was, to give it back (#72 AC 10). Every bubble
+     * is shut first — "solange er steht, ist keine Blase offen" — which costs
+     * nothing at an opening, where nothing has been touched yet.
+     */
+    showLinkReport(dialog, exit, returnTo = globalThis.document?.activeElement ?? null) {
+      if (!this.linkReportShown || !dialog) return;
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = null;
+      this._linkDialog = dialog;
+      this._linkReturn = returnTo;
+      if (!dialog.open) dialog.showModal();
+      exit?.focus?.();
+    },
+
+    /** The one exit. The report is gone for this opening, and the focus goes back. */
+    closeLinkReport() {
+      this.linkReportShown = false;
+      if (this._linkDialog?.open) this._linkDialog.close();
+      this._linkDialog = null;
+      const back = this._linkReturn;
+      this._linkReturn = null;
+      back?.focus?.();
+    },
+
+    _linkDialog: null,
+    _linkReturn: null,
   };
 }

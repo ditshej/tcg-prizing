@@ -243,3 +243,65 @@ test('a link with no readable version is called damaged, not newer, and asks for
   ]);
   assert.equal(view.resave, true);
 });
+
+/* ── The overlay at the component (#72 AC 5, AC 6, AC 7, AC 10) ────────── */
+
+test('the report stands exactly when the read path hands one over', () => {
+  assert.equal(opened('').app.linkReportView, null, 'a cold start reads nothing and reports nothing');
+  assert.equal(opened('?v=1&game=onepiece&type=weekly&rankFloor=5').app.linkReportView, null, 'a clean link is silent');
+  const { app } = opened('?v=1&game=onepiece&type=weekly&rankFloor=banana');
+  assert.equal(app.linkReport.entries.length, 1);
+  assert.deepEqual(app.linkReportView.lines.length, 1);
+});
+
+test('closed once, it never comes back — no handling reopens it (#72 AC 5, AC 6)', () => {
+  const { app } = opened('?v=1&game=onepiece&type=weekly&rankFloor=banana');
+  app.closeLinkReport();
+  assert.equal(app.linkReportView, null);
+  app.setSlider('rankFloor', 4);
+  app.setType('weekend');
+  app.setPage('details');
+  assert.equal(app.linkReportView, null);
+});
+
+test('the bookmark prompt appears exactly when the address bar was rewritten (#72 AC 7, AC 8)', () => {
+  for (const query of [
+    '?v=1&game=onepiece&type=weekly&rankFloor=banana',
+    '?v=1&game=onepiece&type=nope',
+    '?v=0&game=onepiece&type=weekly',
+    '?v=9&game=onepiece&type=weekly&rankFloor=5',
+  ]) {
+    const { app, written } = opened(query);
+    assert.notEqual(app.linkReportView, null, query);
+    assert.equal(app.linkReportView.resave, written.length > 0, query);
+  }
+  const future = opened('?v=9&game=onepiece&type=weekly');
+  assert.deepEqual(future.written, [], 'the future link keeps its address');
+  assert.equal(future.app.linkReportView.bookmark, null);
+});
+
+test('while the report stands no bubble is open, and closing hands the focus back (#72 AC 10)', () => {
+  const { app } = opened('?v=1&game=onepiece&type=weekly&rankFloor=banana');
+  app.openTile = 3;
+  app.openInfo = 'type';
+  const focused = [];
+  const before = { focus: () => focused.push('before') };
+  const exit = { focus: () => focused.push('exit') };
+  const dialog = { showModal() { this.open = true; }, close() { this.open = false; }, open: false };
+  app.showLinkReport(dialog, exit, before);
+  assert.equal(dialog.open, true);
+  assert.equal(app.openTile, null);
+  assert.equal(app.openInfo, null);
+  assert.equal(app.confirmDrop, null);
+  assert.deepEqual(focused, ['exit'], 'it takes the focus when it opens');
+  app.closeLinkReport();
+  assert.equal(dialog.open, false);
+  assert.deepEqual(focused, ['exit', 'before'], 'and gives it back');
+});
+
+test('with no report, showing does nothing', () => {
+  const { app } = opened('');
+  const dialog = { showModal() { this.open = true; }, open: false };
+  app.showLinkReport(dialog, { focus() {} }, null);
+  assert.equal(dialog.open, false);
+});
