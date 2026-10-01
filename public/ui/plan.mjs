@@ -386,8 +386,14 @@ export function planApp(seam = SEAM) {
      * one Game set up there is nothing yet to look up.
      */
     resolve() {
-      this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
+      this.settings = this.resolvedFor(this.pins);
       this.syncAddress();
+    },
+
+    /** The sheet under the chosen type with a given pin record laid over it —
+     *  the one place both `resolve()` and the drop's announcement get it. */
+    resolvedFor(pins) {
+      return resolveSettings({ game: GAME, type: this.currentType, pins });
     },
 
     /** One ⓘ per level, each with its own sentence — the same handle closes it. */
@@ -681,6 +687,10 @@ export function planApp(seam = SEAM) {
      * The **first** reach: one control back onto the chosen TournamentType,
      * and it asks nothing. There is a visible value there and one grip sets
      * it again, so a question would be friction without a counterpart (#33).
+     *
+     * One control is one item: the reset at `Served ranks` takes its step
+     * with it (`PIN_MEMBERS`), or the control would go on saying `pinned`
+     * after its own way back.
      */
     resetSlider(key) {
       if (!this.isPinned(key)) return;
@@ -719,7 +729,13 @@ export function planApp(seam = SEAM) {
       const ask = this.confirmDrop;
       if (!ask) return null;
       if (ask.type !== this.typeId || ask.game !== this.gameId) return null;
-      return dropConfirmation({ keys: ask.keys, typeTitle: this.typeTitle, reach: ask.reach });
+      const after = this.afterDrop(ask.keys);
+      return dropConfirmation({
+        keys: ask.keys,
+        typeTitle: this.typeTitle,
+        reach: ask.reach,
+        after: { settings: after.settings, plan: distribute(after.settings, after.pins) },
+      });
     },
 
     /** Declining has a named place beside confirming, which is why this is a
@@ -747,13 +763,27 @@ export function planApp(seam = SEAM) {
      * chosen type and never chooses a new one (ADR 0006, addendum #26).
      *
      * A new record rather than a deletion in place: `plan.settings` is a
-     * snapshot of what was computed, and `resolve()` lays the survivors back
-     * over the sheet and writes the address bar, exactly as setting a pin
-     * does (#89).
+     * snapshot of what was computed, and `afterDrop()` lays the survivors back
+     * over the sheet the way `resolve()` does; the address bar is written
+     * exactly as setting a pin writes it (#89).
      */
     dropPins(keys) {
-      this.pins = pinsWithout(this.pins, keys);
-      this.resolve();
+      const after = this.afterDrop(keys);
+      this.pins = after.pins;
+      this.settings = after.settings;
+      this.syncAddress();
+    },
+
+    /**
+     * What a drop installs, without installing it: the pin record without the
+     * named items and the sheet resolved over it. `dropPins()` installs exactly
+     * this, and the question reads its target values off exactly this — one
+     * computation for the announcement and the effect, so the bubble cannot
+     * promise a value the handling then does not set (#67, run 11, K3).
+     */
+    afterDrop(keys) {
+      const pins = pinsWithout(this.pins, keys);
+      return { pins, settings: this.resolvedFor(pins) };
     },
 
     /**

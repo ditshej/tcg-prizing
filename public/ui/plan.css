@@ -924,14 +924,39 @@ body {
   font-size: 0.78rem;
 }
 
-/* Which sliders fall, by name — the half the ticket asks for over a bare
-   count. It wraps rather than scrolls: a list that is cut off is a list that
-   under-reports what it destroys. */
-.drop-names {
+/* Which controls fall and where each one goes — a title and a value per line.
+   It wraps rather than scrolls: a list that is cut off is a list that
+   under-reports what it destroys. The value keeps its own column so the four
+   or five lines read as a table and a long title wraps inside its cell. */
+.drop-items {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 5px;
+  row-gap: 2px;
   margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
   font-size: 0.72rem;
   line-height: 1.35;
+}
+
+.drop-items li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.drop-item-label {
   color: light-dark(#7b3fb5, #d5b9f0);
+}
+
+.drop-item-arrow {
+  opacity: 0.6;
+}
+
+.drop-item-to {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .drop-note {

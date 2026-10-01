@@ -228,7 +228,10 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
   the lower half of its own question (prototype, `.pop`: "z 38, nicht mehr
   30").
 
-  It names **which** sliders fall and says there is no undo. Both come out of
+  It names **which** controls fall, each by its screen title and with the
+  value the reset sets it to, and says there is no undo (#67, run 11, K3: "was
+  genau passiert … wohin sie sich verändern"). The values are read off the
+  stand the drop installs, never worked out a second time. All of it comes out of
   `dropConfirmation()` on the proven side, so the two reaches say the same
   thing in the same bubble and only the middle sentence differs.
 
@@ -253,7 +256,13 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         <button type="button" class="bubble-close" aria-label="Keep them"
                 @click="cancelDrop()">&#10005;</button>
       </div>
-      <p class="drop-names" x-text="dropQuestion.names"></p>
+      <ul class="drop-items">
+        <template x-for="item in dropQuestion.items" :key="item.key">
+          <li><span class="drop-item-label" x-text="item.label"></span><span
+                class="drop-item-arrow" aria-hidden="true">&rarr;</span><span
+                class="drop-item-to" x-text="item.to"></span></li>
+        </template>
+      </ul>
       <p class="drop-note" x-text="dropQuestion.note"></p>
       <div class="drop-ask">
         <button type="button" class="drop-go" @click="applyDrop()"

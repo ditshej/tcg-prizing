@@ -4,12 +4,15 @@ import { readFileSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
 import {
+  DEPTH_STEP_LABELS,
   DROP_BUBBLE,
   PIN_LABELS,
   SHEET_KEYS,
   dropConfirmation,
   isPinned,
   pinnedItems,
+  pinItem,
+  pinTarget,
   pinnedKeys,
   pinsWithout,
 } from '../public/ui/controls.mjs';
@@ -109,11 +112,78 @@ test('the question names the sliders that fall and says there is no undo', () =>
   app.setDisplays(1, 1);
   app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
   const ask = app.dropQuestion;
-  assert.match(ask.names, /Min boosters per rank/);
-  assert.match(ask.names, /Reserved displays/);
+  assert.deepEqual(ask.items.map((item) => item.label), ['Min boosters per rank', 'Reserved displays']);
   assert.match(ask.note, /no undo/i);
   assert.match(ask.headline, /Weekly/, 'the question names the type it goes back to');
   assert.equal(ask.confirm, 'Drop 2');
+});
+
+/**
+ * #67, run 11, K3. The question names each control by its screen title and
+ * says where the reset puts it. The value is not worked out a second time:
+ * what is announced has to be what the handling then sets, so the probe asks
+ * for it after the drop, at the stand the drop really installed.
+ */
+test('the question says per item where the reset puts it — and the drop puts it there', () => {
+  const { app } = opened();
+  app.setType('weekend');
+  app.setSlider('players', 40);
+  app.setSlider('rankFloor', 3);
+  app.setSlider('displaySize', 25);
+  app.setSlider('depthStep', 'topQuarter');
+  app.setSlider('curve', 'gentle');
+  app.setSlider('combinedHandout', !app.settings.combinedHandout);
+  app.setDisplays(1, 1);
+  app.setManualWinner(2, 1);
+
+  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  const announced = app.dropQuestion.items;
+  assert.ok(announced.every((item) => typeof item.to === 'string' && item.to !== ''), 'every item has a target');
+  app.applyDrop();
+
+  for (const item of announced) {
+    assert.equal(pinTarget(item.key, app.stand), item.to, `${item.label} lands where the question said`);
+  }
+});
+
+test('the target is the chosen type\'s own value, not the pinned one', () => {
+  const cold = opened().app;
+  cold.setType('weekend');
+  const { app } = opened();
+  app.setType('weekend');
+  app.setSlider('players', cold.value('players') + 9);
+  app.setSlider('depthStep', 'topQuarter');
+  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  const to = Object.fromEntries(app.dropQuestion.items.map((item) => [item.key, item.to]));
+  assert.equal(to.players, String(cold.value('players')));
+  assert.equal(to.depth, pinTarget('depth', cold.stand));
+  assert.ok(to.depth.startsWith(DEPTH_STEP_LABELS[cold.settings.depthStep]), 'a step is named by its chip word');
+});
+
+/* ── Served ranks is one item (#67, run 11, K3) ─────────────────────────── */
+
+test('slider and step of Served ranks are one item, in the counter as in the question', () => {
+  const { app } = opened();
+  app.setSlider('depthStep', 'topQuarter');
+  assert.deepEqual(app.pinnedKeys, ['depth'], 'the step alone is the item');
+  assert.equal(app.stateWord('depth'), 'pinned', 'and the control says so');
+  app.setSlider('depth', 6);
+  app.setSlider('players', 24);
+  assert.deepEqual(app.pinnedKeys, ['players', 'depth']);
+  assert.equal(app.pinCount, 2, 'two pins, one control, one count');
+  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  assert.equal(app.dropQuestion.count, app.pinCount);
+  assert.deepEqual(app.dropQuestion.items.map((item) => item.label), ['Players', 'Served ranks']);
+});
+
+test('the reset at Served ranks takes its step with it', () => {
+  const { app } = opened();
+  app.setSlider('depthStep', 'topQuarter');
+  app.setSlider('depth', 6);
+  app.resetSlider('depth');
+  assert.equal(app.pinCount, 0);
+  assert.equal(app.stateWord('depth'), 'auto');
+  assert.equal(app.pins.depthStep, undefined);
 });
 
 test('the question enumerates in sheet order, not in the order the pins were set', () => {
@@ -253,10 +323,21 @@ test('dropping keys leaves the record it was given alone', () => {
  * The enumeration may not go looking for a name it does not have: a question
  * that lists `manualWinner` in code type has stopped naming what falls.
  */
-test('every pinnable key has a screen word', () => {
+test('every pinnable key has a screen word — its own, or its control\'s', () => {
   for (const key of [...SHEET_KEYS, 'displays', 'manualWinner']) {
-    assert.ok(PIN_LABELS[key], `${key} has a screen word`);
+    assert.ok(PIN_LABELS[pinItem(key)], `${key} has a screen word`);
   }
+});
+
+/**
+ * #67, run 11, K3: no word in the question that the screen does not carry.
+ * `depthStep` is the step grid inside `Served ranks`, and a title of its own
+ * would be one.
+ */
+test('the step grid has no title of its own — it is a member of Served ranks', () => {
+  assert.equal(PIN_LABELS.depthStep, undefined);
+  assert.equal(pinItem('depthStep'), 'depth');
+  assert.ok(!Object.values(PIN_LABELS).some((label) => /step/i.test(label)), 'no invented step word');
 });
 
 /* ── The markup (#67 AC 1, AC 4, AC 7) ──────────────────────────────────── */
@@ -315,4 +396,11 @@ test('the question is a bubble anchored at the button, and not the app one overl
   assert.ok(SHEET.includes(DROP_BUBBLE.replace(/[[\]]/g, '')), 'the bubble carries the anchor hook');
   assert.match(SHEET, /placeConfirm\(\)/);
   assert.match(DETAILS, /data-bubble-frame/);
+});
+
+test('the bubble draws a title and a target per item, and no run-on list of names', () => {
+  assert.match(SHEET, /x-for="item in dropQuestion\.items"/);
+  assert.match(SHEET, /x-text="item\.label"/);
+  assert.match(SHEET, /x-text="item\.to"/);
+  assert.ok(!SHEET.includes('dropQuestion.names'), 'the comma-separated line is gone');
 });

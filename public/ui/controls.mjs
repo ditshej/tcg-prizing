@@ -364,27 +364,25 @@ export function canPlaceWinner(rank, count, stand) {
  * trusting them: they are two files, and a question that names a slider the
  * sheet calls something else names nothing.
  *
- * Three of them are not `sheet_control()` calls and are therefore written out
- * here by hand:
+ * Two of them are not `sheet_control()` calls and are therefore written out
+ * here by hand: **`displays` and `manualWinner`** are set at the tile and have
+ * no control on the sheet (#66). The words are the prototype's, which wrote
+ * them for this list and no other use (`cockpit.prototype.html`, `LABEL`) —
+ * `Displays` alone would not say, in a list of things being destroyed, that a
+ * reservation is meant.
  *
- * - **`displays` and `manualWinner`** are set at the tile and have no control
- *   on the sheet (#66). The words are the prototype's, which wrote them for
- *   this list and no other use (`cockpit.prototype.html`, `LABEL`) — `Displays`
- *   alone would not say, in a list of things being destroyed, that a
- *   reservation is meant.
- * - **`depthStep`** has no screen word at all: it is the step grid *inside*
- *   `Served ranks` and its chips carry the step names, never the grid's own.
- *   The word below is therefore **invented**, which this repo does not like
- *   and which is reported with the ticket. It is not avoidable here: the step
- *   is a stored pin like any other, so it falls with the rest and a question
- *   that leaves it out would under-report what it destroys.
+ * **`depthStep` has no word here, and that is the point.** It is the step grid
+ * *inside* `Served ranks` (`views/controls-sheet.php`: "part of this control,
+ * not a control beside it"), so it is no item of its own: it is a member of
+ * the item `depth`, see `PIN_MEMBERS`. What a step is called on screen —
+ * `top 8`, `top quarter` — is a **value** of that item and stands in
+ * `DEPTH_STEP_LABELS`, never a label (maintainer decision on #67, run 11, K3).
  */
 export const PIN_LABELS = {
   players: 'Players',
   depth: 'Served ranks',
   curve: 'Curve',
   rankFloor: 'Min boosters per rank',
-  depthStep: 'Served ranks step',
   boosterRate: 'Boosters per player (pool)',
   displaySize: 'Boosters per display',
   tournamentPacks: 'Tournament packs available',
@@ -400,6 +398,38 @@ export const PIN_LABELS = {
   displays: 'Reserved displays',
   manualWinner: 'Winner packs by hand',
 };
+
+/**
+ * The items that are made of more than one stored pin. An item is what the
+ * screen has **one control** for, and the counter, the marking, the question
+ * and the drop all go by items: `Served ranks` is one control whose slider is
+ * `depth` and whose step grid is `depthStep`, so it is one item `depth` with
+ * two members (maintainer decision on #67, run 11, K3: "Tiefe und Stufe sind
+ * ein Posten `Served ranks`, im Zähler genauso").
+ *
+ * It is the same device `displays` and `manualWinner` already use, one level
+ * up: there one pin carries many `Rank`s and counts as one, here one item
+ * carries two pins and counts as one. The record itself stays per key — the
+ * `SetupLink` carries `depth` and `depthStep` as two keys (#86) — so the
+ * grouping lives here and nowhere in `pins`.
+ */
+export const PIN_MEMBERS = {
+  depth: ['depth', 'depthStep'],
+};
+
+const ITEM_OF = Object.fromEntries(
+  Object.entries(PIN_MEMBERS).flatMap(([item, keys]) => keys.map((key) => [key, item])),
+);
+
+/** The item a stored key belongs to — itself, unless it is a member of one. */
+export function pinItem(key) {
+  return ITEM_OF[key] ?? key;
+}
+
+/** The stored keys an item is made of — itself, unless it has members. */
+export function pinMembers(item) {
+  return PIN_MEMBERS[item] ?? [item];
+}
 
 /** The order the question enumerates in: the sheet's own, then the two that
  *  are set at the tile. A pin record has the order its pins were *set* in (or,
@@ -440,9 +470,18 @@ export const DROP_BUBBLE = '[data-drop-bubble]';
  * 2026-09-30, which is exactly the class of fault #61 says a test will not
  * find. An absent key and one holding `undefined` say the same thing here
  * anyway.
+ *
+ * Asked of an item with members (`PIN_MEMBERS`), it answers for the item:
+ * `Served ranks` stands `pinned` when its slider or its step grid carries a
+ * pin, because the counter counts it then, and a counter that says 1 over a
+ * sheet on which every control says `auto` would count something nobody can
+ * find.
  */
 export function isPinned(key, pins) {
-  const value = pins == null ? undefined : pins[key];
+  return pinMembers(key).some((member) => holdsPin(pins == null ? undefined : pins[member]));
+}
+
+function holdsPin(value) {
   if (value == null) return false;
   if (Array.isArray(value)) return value.some((entry) => Number(entry) > 0);
   if (typeof value === 'object') return Object.keys(value).length > 0;
@@ -462,10 +501,14 @@ function pinRank(key) {
  * it is a list and not a number (prototype, Runde 23: "der Zähler addierte
  * bisher jede manual-Zuteilung einzeln, die Meldung zählte sie als einen
  * Posten — zwei Zahlen für dieselbe Sache").
+ *
+ * It lists **items**, not stored keys: `depth` and `depthStep` come out as the
+ * one entry `depth`, whichever of the two carries the pin (`PIN_MEMBERS`).
  */
 export function pinnedKeys(pins) {
-  return Object.keys(pins ?? {})
-    .filter((key) => isPinned(key, pins))
+  const items = new Set(Object.keys(pins ?? {}).map(pinItem));
+  return [...items]
+    .filter((item) => isPinned(item, pins))
     .sort((a, b) => pinRank(a) - pinRank(b));
 }
 
@@ -479,10 +522,11 @@ export function pinnedItems(pins) {
   return pinnedKeys(pins).map((key) => ({ key, label: pinLabel(key) }));
 }
 
-/** The record without the named pins — a new one, because the old one is what
- *  the plan on screen was computed from. */
+/** The record without the named items — a new one, because the old one is
+ *  what the plan on screen was computed from. An item falls with all its
+ *  members: dropping `Served ranks` drops its slider and its step. */
 export function pinsWithout(pins, keys) {
-  const drop = new Set(keys ?? []);
+  const drop = new Set((keys ?? []).flatMap(pinMembers));
   const next = {};
   for (const [key, value] of Object.entries(pins ?? {})) if (!drop.has(key)) next[key] = value;
   return next;
@@ -514,11 +558,55 @@ export const DROP_NOTES = {
 export const NO_UNDO = 'There is no undo.';
 
 /**
- * The question itself, as text: `{ keys, typeTitle, reach }` → what the bubble
- * shows. No DOM and no state — where it lands is the shell's measuring rind
- * and is judged at the picture (#61, "Anker und Schichtung").
+ * What an item will **show** once it has fallen — the value the reset sets it
+ * to, read off the stand *after* the drop and in the form the control itself
+ * shows it. It computes nothing of its own: the stand handed in is the one the
+ * drop is about to install (`planApp().afterDrop()`), so the question and the
+ * handling cannot drift apart (maintainer decision on #67, run 11, K3: "Der
+ * Zielwert wird nachgeschlagen, nicht hergeleitet").
+ *
+ * The forms are the controls' own:
+ *
+ * - **`Served ranks`** shows a step and a number — the chip that is pressed
+ *   and the counter beside it. A step's screen word is a *value* here and
+ *   comes out of `DEPTH_STEP_LABELS`; the number is the one the counter will
+ *   show, read off the plan like the counter reads it. Where the slider stays pinned
+ *   no chip follows it, and the number alone is what stands.
+ * - **`Curve`** shows its step by name, as the sheet's foot line does.
+ * - **`Handout`** is a checkbox: `on` or `off`.
+ * - **`Reserved displays`** and **`Winner packs by hand`** are the tiles'
+ *   counts summed, and `none` where nothing is left — a reach drops a
+ *   reservation as a whole, so it says what is left as a whole.
+ * - Every other control shows its number.
  */
-export function dropConfirmation({ keys, typeTitle, reach = 'all' }) {
+export function pinTarget(item, stand) {
+  const { settings } = stand;
+  if (item === 'depth') {
+    const ranks = effectiveValue('depth', stand);
+    if (settings.depth != null) return String(ranks);
+    return `${DEPTH_STEP_LABELS[settings.depthStep] ?? settings.depthStep} (${ranks})`;
+  }
+  if (item === 'curve') return String(settings.curve);
+  if (item === 'combinedHandout') return settings.combinedHandout ? 'on' : 'off';
+  if (item === 'displays' || item === 'manualWinner') {
+    const counts = Object.values(settings[item] ?? {}).map(Number);
+    const total = counts.reduce((sum, count) => sum + (count > 0 ? count : 0), 0);
+    return total > 0 ? String(total) : 'none';
+  }
+  return String(effectiveValue(item, stand));
+}
+
+/**
+ * The question itself, as text: `{ keys, typeTitle, reach, after }` → what the
+ * bubble shows. No DOM and no state — where it lands is the shell's measuring
+ * rind and is judged at the picture (#61, "Anker und Schichtung").
+ *
+ * It names, **per item, the control's screen title and the value the reset
+ * sets it to** (#67, run 11, K3: "Players auf …, Served ranks auf top 8").
+ * `after` is the stand the drop installs; without one — a caller that only
+ * wants the count — every `to` is `null`.
+ */
+export function dropConfirmation({ keys, typeTitle, reach = 'all', after = null }) {
   const list = [...(keys ?? [])];
   const count = list.length;
   const many = count > 1;
@@ -526,7 +614,7 @@ export function dropConfirmation({ keys, typeTitle, reach = 'all' }) {
   return {
     keys: list,
     count,
-    names: list.map(pinLabel).join(', '),
+    items: list.map((key) => ({ key, label: pinLabel(key), to: after ? pinTarget(key, after) : null })),
     headline: `${count} ${many ? 'sliders' : 'slider'} back to ${typeTitle}?`,
     note: `${note} ${NO_UNDO}`,
     confirm: `Drop ${count}`,
