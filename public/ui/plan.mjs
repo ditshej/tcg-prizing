@@ -17,7 +17,8 @@
  * a stored third level over it, and one handler for every control. The
  * numbers a control is drawn from — its two ends, what it shows while it is
  * `auto` — come from `controls.mjs`, which is on the proven side of the seam
- * so that a cap has exactly one home and slider and counter cannot disagree.
+ * so that a wall has exactly one home, and that home is the core's own cut
+ * (#113).
  *
  * #89 hangs the `SetupLink` on it at both ends — the link the app was opened
  * at is read here, and every pin writes the address bar from here. This is the
@@ -418,11 +419,11 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The one cap. The slider element and the counter's ± both draw from
-     * here, so neither can push past the other (#61, "Caps at the controls").
-     * `reachFor()` is the cap widened to take in a pinned value that a sunk
-     * cap left standing — it stops a handling from reaching further out and
-     * never from coming back (ADR 0006).
+     * A control's two ends. The counter's ± and the typed commit both hold at
+     * them, and a wall among them is the core's own cut (#113). `reachFor()`
+     * is the ends widened to take in a pinned value a sunk wall left standing
+     * — it stops a handling from reaching further out and never from coming
+     * back (ADR 0006). An open number's `max` is `Infinity`.
      */
     bounds(key) {
       return reachFor(key, this.stand) ?? { min: 0, max: 0 };
@@ -431,8 +432,10 @@ export function planApp(seam = SEAM) {
     /**
      * Every handling of a control, the four hot ones included. It writes the
      * pin as well as the value, because the pin is set by the handling and
-     * not by the value (ADR 0006) — a slider dragged back onto its default
-     * stays pinned, and a Set switch therefore keeps it.
+     * not by the value (ADR 0006) — a number stepped back onto its default
+     * stays pinned, and a Set switch therefore keeps it. The name stays
+     * `setSlider` although the sliders are gone (#113): other branches call
+     * it, and it is the one writer of a pin.
      */
     setSlider(key, value) {
       const next = clampToBounds(key, value, this.stand);

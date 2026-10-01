@@ -5,13 +5,17 @@
  * proves them, which is what #61's Testing Decisions ask of the shell's
  * provable half ("Die Deckel an den Bedienelementen").
  *
- * The one thing this file is *for*: a cap has exactly one home. #61 —
- * "Schieber und Zählwerk kennen denselben Deckel, sonst schiebt das eine über
- * das andere hinaus." The slider element, the counter's ±, and the clamp that
- * writes a value all read `boundsFor()`.
+ * The one thing this file is *for*: a control's ends have exactly one home.
+ * Since #113 the sliders are gone and every number is a counter with a typed
+ * field; the counter's ±, the typed commit and the clamp that writes a value
+ * all read `boundsFor()`, and its walls are asked of the core — "Die Wand am
+ * Bedienelement steht dort, wo der Kern still schneidet, und sie ist dieselbe
+ * Grösse wie im Kern." That is what #61's older "Schieber und Zählwerk kennen
+ * denselben Deckel" meant to protect, and #64's comment of 2026-10-01 says it
+ * lives on in that rule.
  *
  * The labels and the explanation texts are deliberately *not* here: PHP
- * composes what never changes while a slider is dragged (#61, "The seam" —
+ * composes what never changes while a number is set (#61, "The seam" —
  * "Gruppentitel, Erklärtexte, die ⓘ-Texte"), so they live in
  * `views/controls-sheet.php` as markup. What lives here is what a number
  * depends on.
@@ -19,7 +23,7 @@
  * ## Why seventeen, spelled out
  *
  * #46 gives `Settings` nineteen fields. Two of them name a `Rank` —
- * `displays` and `manualWinner` — and are set at the tile, never on a slider
+ * `displays` and `manualWinner` — and are set at the tile, never at a counter
  * (#61, "The tiles and their grip"; #66). The remaining seventeen are what
  * #64 and #61 call "alle siebzehn Regler". `depthStep` is one of them and is
  * *not* a control of its own: it is the step grid inside `Served ranks`
@@ -99,7 +103,7 @@ export const DEPTH_STEP_LABELS = {
   all: 'all ranks',
 };
 
-/** The four trailing sliders read their number off the plan while they are
+/** The four trailing numbers read their value off the plan while they are
  *  `auto`: `null` in `Settings` means "the core computes it" (ADR 0006). */
 const FROM_PLAN = {
   depth: (plan) => plan.depth,
@@ -202,20 +206,15 @@ export function effectiveValue(key, { settings, plan }) {
 }
 
 /**
- * The cap as the control actually draws it: `boundsFor()`, widened to take in
- * the value that stands.
+ * The ends as the control actually draws them: `boundsFor()`, widened to take
+ * in the value that stands.
  *
- * A pinned value is never cut by a cap that sank under it (ADR 0006) — so a
- * cap that sank under it must not turn into a wall either, or the one way
- * back down would be gone at exactly the moment it is wanted. The cap keeps
- * doing its whole job in the direction that matters: it still stops a
- * handling from reaching *further* out.
- *
- * Slider and counter both draw from here, which is what makes "Schieber und
- * Zählwerk kennen denselben Deckel" (#64) true of the drawn control and not
- * merely of the table it was drawn from: a range input silently pins its
- * thumb to its own `max`, so a narrower `max` here would show a number that
- * is not the value.
+ * A pinned value is never cut by a wall that sank under it (ADR 0006) — so a
+ * wall that sank under it must not turn into a barrier on the way back, or
+ * the one way down would be gone at exactly the moment it is wanted. The wall
+ * keeps doing its whole job in the direction that matters: it still stops a
+ * handling from reaching *further* out. The `+` stays closed there, the `−`
+ * and a typed smaller number leave it.
  */
 export function reachFor(key, stand) {
   const bounds = boundsFor(key, stand);
@@ -227,7 +226,7 @@ export function reachFor(key, stand) {
 
 /**
  * What a handling is allowed to write. Numbers are clamped into the very
- * bounds the slider and the counter are drawn from; a step id that is not a
+ * ends the counter and the typed field are drawn from; a step id that is not a
  * step, and anything else that cannot be meant, comes back as `null` so the
  * caller writes nothing rather than a value nobody chose.
  */
@@ -285,11 +284,11 @@ export function typedValueAfter(key, text, stand) {
 
 /**
  * `displays` and `manualWinner` are the two Settings fields that carry no
- * slider: both name a `Rank`, and a `Rank` is a tile, not a number one types
- * into a control (ADR 0003, #61 "The tiles and their grip"). Their caps stand
- * here all the same, beside the sliders' — #61 gives a cap **one** home
- * ("Schieber und Zählwerk kennen denselben Deckel"), and a second home is how
- * the tile and the sheet come to disagree about the same stand.
+ * counter on the sheet: both name a `Rank`, and a `Rank` is a tile, not a
+ * number one types into a control (ADR 0003, #61 "The tiles and their grip").
+ * Their caps stand here all the same, beside the numbers' ends — a cap has
+ * **one** home, and a second home is how the tile and the sheet come to
+ * disagree about the same stand.
  *
  * The rule every one of them is measured against is #61's, verbatim:
  *
@@ -305,7 +304,7 @@ export function typedValueAfter(key, text, stand) {
  * exists for, silently and with every test one would otherwise think to write
  * still green.
  *
- * And the asymmetry `reachFor()` already encodes for the sliders holds here
+ * And the asymmetry `reachFor()` already encodes for the numbers holds here
  * too: a cap stops a handling from reaching **further out**, never from coming
  * back. A reservation that a sunk cap left standing (a smaller player count, a
  * `SetupLink` with other values, a Set switch with a smaller `PromoEnvelope`)
@@ -675,13 +674,15 @@ export function pinTarget(item, stand) {
 
 /**
  * The one word the question calls an item by — in the bubble's head line and
- * in the counter chip's spoken label. It stands here once so that #113, which
- * replaces the sliders with counters and the word with another (comment on
- * #67, "Aus #113 nachgetragen"), changes it in one place.
+ * in the counter chip's spoken label. Since #113 it is *value*: the sliders
+ * fell, and no text on screen calls a control a slider any more. Not
+ * *setting* — `Settings` is a glossary term, and a word for one control that
+ * is also the word for all nineteen fields would point the reader at the
+ * wrong entry (`AGENTS.md`, "Language").
  */
-export const DROP_NOUN = 'slider';
+export const DROP_NOUN = 'value';
 
-/** The word with its count's number: `1 slider`, `2 sliders`. */
+/** The word with its count's number: `1 value`, `2 values`. */
 export function dropNoun(count) {
   return count === 1 ? DROP_NOUN : `${DROP_NOUN}s`;
 }

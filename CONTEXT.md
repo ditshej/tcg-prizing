@@ -785,7 +785,14 @@ Der Zustand eines Reglers, den der `CommunityLead` selbst gesetzt hat: er folgt
 keiner Rechnung mehr, steht im `SetupLink` und ist in der Oberfläche markiert.
 Gesetzt wird er durch die **Bedienhandlung**, nicht durch den Wert — wer einen
 Regler verstellt und wieder auf den Ausgangswert zurückzieht, hat entschieden und
-lässt ihn `pinned`. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
+lässt ihn `pinned`. Eine **getippte** Zahl ist erst beim Commit eine
+Bedienhandlung — bei Enter oder beim Verlassen des Felds — und nur, wenn sie
+etwas ändert: wer ins Feld tippt und es mit derselben Zahl wieder verlässt, hat
+nichts gesetzt, und es entsteht kein Pin (#113). Verglichen wird mit dem Wert,
+den das Bedienelement zeigt, also auch mit dem `auto`-Wert. Der Grund ist das
+Handy: dort gibt es keine Abbruchgeste, jedes Verlassen des Felds ist ein Commit,
+und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. `−`
+und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
 zurück, der Knopf neben dem `TournamentType`-Titel **alle**, und derselbe Weg in
 voller Reichweite steht momentan im `CarryOverNotice`. Ein Wechsel von

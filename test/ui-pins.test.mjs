@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
 import {
@@ -386,11 +386,11 @@ test('the carry reach asks the same question in other words', () => {
   assert.match(carry.note, /no undo/i);
 });
 
-test('one slider is one slider, and the plural follows the count', () => {
+test('one value is one value, and the plural follows the count', () => {
   const one = dropConfirmation({ keys: ['players'], typeTitle: 'Weekly' });
   const two = dropConfirmation({ keys: ['players', 'ranked'], typeTitle: 'Weekly' });
-  assert.match(one.headline, /^1 slider back to Weekly\?$/);
-  assert.match(two.headline, /^2 sliders back to Weekly\?$/);
+  assert.match(one.headline, /^1 value back to Weekly\?$/);
+  assert.match(two.headline, /^2 values back to Weekly\?$/);
 });
 
 /* ── The reaches (#67 AC 3, AC 5) ───────────────────────────────────────── */
@@ -692,15 +692,35 @@ test('the bubble draws a title and a target per item, and no run-on list of name
 });
 
 /**
- * #113 swaps the word the question calls an item by. It stands once, in
- * `DROP_NOUN`, and nothing in the bubble or at its chip spells it out again.
+ * #113 swaps the word the question calls an item by, from *slider* to
+ * *value* — not *setting*, because `Settings` is a glossary term. It stands
+ * once, in `DROP_NOUN`, and nothing in the bubble or at its chip spells it out
+ * again; and no text on screen calls a control a slider any more (#113 AC 16).
  */
-test('the question\'s word for an item stands in one place', () => {
+test('the question\'s word for an item stands in one place, and it is value', () => {
   const CONTROLS = readFileSync(new URL('../public/ui/controls.mjs', import.meta.url), 'utf8');
   const code = CONTROLS.split('\n').filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line)).join('\n');
-  assert.equal((code.match(/'slider/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
-  assert.ok(!/'sliders?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
+  assert.equal((code.match(/'value/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
+  assert.ok(!/'values?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
   const { app } = opened();
   app.setSlider('players', 24);
-  assert.equal(app.dropAllLabel, 'Drop 1 hand-set slider');
+  assert.equal(app.dropAllLabel, 'Drop 1 hand-set value');
+});
+
+test('no text on screen calls a control a slider (#113 AC 16)', () => {
+  const VIEWS = new URL('../views/', import.meta.url);
+  for (const file of readdirSync(VIEWS).filter((name) => name.endsWith('.php'))) {
+    const markup = readFileSync(new URL(file, VIEWS), 'utf8')
+      .replace(/<\?php[^]*?\?>/g, (block) => (block.includes('/**') || block.includes('//') ? '' : block))
+      .replace(/<!--[^]*?-->/g, '');
+    // Handler names (`setSlider`, `resetSlider`) are code, not text.
+    const text = markup.replace(/\b(set|reset)Slider\b/g, '');
+    assert.doesNotMatch(text, /slider/i, `${file} says slider on screen`);
+  }
+  const { app } = opened();
+  app.setSlider('players', 24);
+  app.setSlider('rankFloor', 3);
+  const question = dropConfirmation({ keys: app.pinnedKeys, typeTitle: 'Weekly' });
+  assert.doesNotMatch(JSON.stringify(question), /slider/i);
+  assert.doesNotMatch(app.dropAllLabel, /slider/i);
 });
