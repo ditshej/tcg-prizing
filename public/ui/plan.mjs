@@ -58,6 +58,7 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
+import { copyText, flashCopied, linkAddress } from './link-screen.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -1036,6 +1037,50 @@ export function planApp(seam = SEAM) {
      */
     get linkQuery() {
       return encode({ game: this.gameId, type: this.typeId, pins: this.plan.pinned });
+    },
+
+    /**
+     * The address, open in a preselected field, when the clipboard could not
+     * take it — or `null`. Session state like an open bubble, and in the
+     * `SetupLink` as little (#61, "Session state").
+     */
+    linkField: null,
+
+    /**
+     * The button's one handling. `env` is what a browser has — the clipboard,
+     * the page's own address, a timer — handed in so `node --test` can hand in
+     * its own; the defaults are read only here, at the rind.
+     */
+    async copyLink(button, env = this.linkEnv()) {
+      const address = linkAddress(this.linkQuery, env.page);
+      const outcome = await copyText(address, env.clipboard);
+      if (outcome === 'copied') {
+        this.linkField = null;
+        flashCopied(button, env);
+      } else {
+        this.linkField = address;
+      }
+      return outcome;
+    },
+
+    closeLinkField() {
+      this.linkField = null;
+    },
+
+    /**
+     * What the `Copy link` handling needs from a browser: the clipboard, if
+     * there is one, and the page's own address to resolve the copy form
+     * against. `document.baseURI` rather than the address bar's own object:
+     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page address
+     * is all that is needed here — its query is replaced anyway.
+     */
+    linkEnv() {
+      return {
+        clipboard: globalThis.navigator?.clipboard,
+        page: globalThis.document?.baseURI,
+        later: setTimeout,
+        cancel: clearTimeout,
+      };
     },
   };
 }

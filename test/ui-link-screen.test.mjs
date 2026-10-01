@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { planApp } from '../public/ui/plan.mjs';
+import { copyText, linkAddress } from '../public/ui/link-screen.mjs';
 
 /**
  * The SetupLink on screen (#72): the `Copy link` button and the
@@ -77,4 +78,86 @@ test('after an incoming link the base stands in both, with zero pins (run 9 on #
   assert.equal(app.pinCount, 0);
   assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend']);
   assert.equal(app.linkQuery, '?v=1&game=onepiece&type=weekend');
+});
+
+/* ── The copy itself, and the field when it cannot be done (#72 AC 4) ──── */
+
+test('the copied text is a whole address: page plus the copy form, no stale query or hash', () => {
+  assert.equal(
+    linkAddress('?v=1&game=onepiece&type=weekly', 'https://prizing.optcg.ch/?v=1&type=release#x'),
+    'https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly',
+  );
+});
+
+test('a clipboard that takes the text answers copied', async () => {
+  const taken = [];
+  const outcome = await copyText('https://a/?v=1', { writeText: async (t) => taken.push(t) });
+  assert.equal(outcome, 'copied');
+  assert.deepEqual(taken, ['https://a/?v=1']);
+});
+
+test('no clipboard interface, or one that refuses, answers manual — never a claimed success', async () => {
+  assert.equal(await copyText('x', undefined), 'manual');
+  assert.equal(await copyText('x', {}), 'manual');
+  assert.equal(await copyText('x', { writeText: async () => { throw new Error('denied'); } }), 'manual');
+});
+
+/** A button stand-in: only what a confirmation could ever touch on it. */
+function fakeButton() {
+  return { dataset: {} };
+}
+
+/** A timer that fires only when told to, so the fall-back can be watched. */
+function fakeTimer() {
+  const pending = [];
+  return {
+    later: (fn) => pending.push(fn),
+    cancel: () => {},
+    fire: () => pending.splice(0).forEach((fn) => fn()),
+  };
+}
+
+/** The component's own data members — what a confirmation must not write to. */
+function dataOf(app) {
+  return JSON.stringify(
+    Object.entries(Object.getOwnPropertyDescriptors(app))
+      .filter(([, d]) => 'value' in d && typeof d.value !== 'function')
+      .map(([k, d]) => [k, d.value]),
+  );
+}
+
+test('Copy link puts the whole address on the clipboard', async () => {
+  const { app } = opened();
+  app.setSlider('rankFloor', 5);
+  const taken = [];
+  const outcome = await app.copyLink(fakeButton(), {
+    clipboard: { writeText: async (t) => taken.push(t) },
+    page: 'https://prizing.optcg.ch/',
+    ...fakeTimer(),
+  });
+  assert.equal(outcome, 'copied');
+  assert.deepEqual(taken, ['https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5']);
+});
+
+test('the confirmation is fleeting: the button flips and falls back, and the component keeps nothing (#72 AC 3)', async () => {
+  const { app } = opened();
+  const button = fakeButton();
+  const timer = fakeTimer();
+  const before = dataOf(app);
+  await app.copyLink(button, { clipboard: { writeText: async () => {} }, page: 'https://a/', ...timer });
+  assert.ok('linkCopied' in button.dataset, 'the button says it, for a moment');
+  assert.equal(dataOf(app), before, 'no member of the component changed');
+  timer.fire();
+  assert.ok(!('linkCopied' in button.dataset), 'and falls back');
+});
+
+test('without a clipboard the address opens in a field instead (#72 AC 4)', async () => {
+  const { app } = opened();
+  const button = fakeButton();
+  const outcome = await app.copyLink(button, { clipboard: undefined, page: 'https://a/', ...fakeTimer() });
+  assert.equal(outcome, 'manual');
+  assert.equal(app.linkField, 'https://a/?v=1&game=onepiece&type=weekly');
+  assert.ok(!('linkCopied' in button.dataset), 'no success is claimed');
+  app.closeLinkField();
+  assert.equal(app.linkField, null);
 });
