@@ -72,7 +72,6 @@
     -->
     <div class="plan-legend" x-ref="legend">
       <span class="legend-item"><span class="mark mark-pack circle" style="position:static">N</span> pack</span>
-      <span class="legend-item"><span class="mark mark-winner dot" style="position:static"></span> one of either</span>
       <button type="button" class="legend-handle" :aria-expanded="raffleOpen"
               title="Winner raffle" @click="toggleRaffle()">
         <span class="mark mark-winner circle" style="position:static">N</span>

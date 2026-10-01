@@ -324,6 +324,11 @@ test('the legend says `pack`, then `winner` 🎲 with the open count on the pill
   assert.equal(words(grip), 'winner 🎲', 'the pill does not read `winner` with the die');
   assert.equal(/\bpacks\b/.test(words(legend)), false, 'the legend went back to plural pack words');
 
+  // #69, run 11, phase G: `one of either` is gone — the flat part is `pack`
+  // and nothing else, so no second entry can slip in beside it.
+  assert.equal(words(flat), 'pack', 'the legend carries more than `pack` in front of the pill');
+  assert.equal(/one of either/.test(words(legend)), false, 'the legend says `one of either` again');
+
   // The counter: the open winner packs, and shown only while there are any.
   const counter = grip.match(/<span class="legend-open"(?:[^>"]|"[^"]*")*>/);
   assert.ok(counter, 'the pill carries no counter');
