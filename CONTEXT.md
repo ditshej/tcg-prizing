@@ -489,6 +489,31 @@ nicht Grösse, und die Anwesenheit sagen dann der Chip und die rot markierten
 sie behauptete ein minimierter Konflikt einen gültigen Plan.
 Sie kann nie zugleich mit einem `Offer` stehen: das eine setzt einen ungültigen
 Plan voraus, das andere einen gültigen.
+**Ihre Quellen tragen Namen, keine Nummern** (K7, Lauf 11). Eine Quelle ist eine
+Bedingung, unter der die Meldung steht. Jede wird mit ihrem Namen genannt — in
+Tickets, Code, Kommentaren und Proben —, und kein Text zählt sie: #103 sagte
+„dritte Quelle", #70 „zweite", #61 „the fourth", und das waren zwei verschiedene
+Quellen nach drei verschiedenen Zählungen. Die ersten vier sind die
+Konfliktfelder des `DistributionPlan`; ihr Name ist der Feldname, `unfit(plan)`
+ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
+- `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
+  die den `RankPool` allein schon übersteigt.
+- `overtake` — die Überholung ohne Verlierer.
+- `orphanedReservation` — eine Reservation auf einem `Rank`, den die
+  `RankPoolDepth` nicht bedient.
+- `unclaimedRemainder` — die randabdeckende Reservation: ein gedeckter
+  Überschuss ohne Empfänger.
+
+Zwei weitere sind entschieden und noch nicht gebaut:
+- `WinnerPack` overhang (#70) — `ranked + manualCount` über dem Bestand. Der
+  einzige Zustand, den der Kern nicht selbst meldet; seine Wege sind gerechnet,
+  nicht gesucht. #61 überschreibt ihn mit „overplaced winner packs".
+- `CombinedHandout` depth (#103) — `CombinedHandout` an und die `RankPoolDepth`
+  unter der Spielerzahl, sodass die Ränge unter der Tiefe null bekommen. Der Weg
+  heraus kommt aus `suggestions()` und setzt `rankFloor` und `depth` als `pinned` Werte.
+
+Eine neue Quelle bekommt ihren Namen hier, im selben Zug wie das Ticket, das sie
+baut.
 **Woraus die Wege gewählt werden**, sagt ADR 0002 nicht — das Verfahren schon
 (einen Regler über seinen Bereich variieren, nie zwei zugleich, den
 nächstliegenden Wert nehmen, der räumt). Durchsucht wird ein Regler genau dann,
