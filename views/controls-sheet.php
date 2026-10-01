@@ -190,6 +190,29 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
         <span aria-hidden="true">&#8634;</span>
       </button>
+
+      <!--
+        `Copy link` (#72), behind the reset chip: the Set block already shows
+        the base and the pin count, which is exactly what the link carries.
+        Not in the foot — that carries only what lies across the pages, and an
+        address is no destination. `link` shortens `SetupLink`, so no
+        `_Label_` line. It copies the copy form, base plus pins, never the
+        resolved stand (K5 on #72). The confirmation is fleeting and lives on
+        the button element alone (`flashCopied()`); without a clipboard the
+        address opens in a preselected field instead of claiming a success.
+      -->
+      <button type="button" class="link-copy" :class="{ 'link-copy-alone': pinCount === 0 }"
+              @click="copyLink($el)">
+        <span class="link-copy-word">Copy link</span>
+        <span class="link-copy-done" aria-hidden="true">Copied</span>
+      </button>
+      <div class="link-field" x-cloak x-show="linkField !== null">
+        <input class="link-field-input" type="text" readonly aria-label="Link to copy"
+               :value="linkField ?? ''"
+               x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
+        <button type="button" class="link-field-close" aria-label="Close the link field"
+                @click="closeLinkField()">&#10005;</button>
+      </div>
     </div>
 
     <!--

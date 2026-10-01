@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
 import { copyText, linkAddress, reportView } from '../public/ui/link-screen.mjs';
@@ -304,4 +305,45 @@ test('with no report, showing does nothing', () => {
   const dialog = { showModal() { this.open = true; }, open: false };
   app.showLinkReport(dialog, { focus() {} }, null);
   assert.equal(dialog.open, false);
+});
+
+/* ── The markup (#72 AC 1, AC 6) ───────────────────────────────────────── */
+
+const view = (name) => readFileSync(new URL(`../views/${name}`, import.meta.url), 'utf8');
+
+/** The `Type` row of the Set block, from its label to the row's end. */
+function typeRow() {
+  const sheet = view('controls-sheet.php');
+  const start = sheet.indexOf('<span class="set-label">Type</span>');
+  assert.ok(start > 0, 'the Type row exists');
+  const rowStart = sheet.lastIndexOf('<div class="set-row">', start);
+  const end = sheet.indexOf('\n    </div>', start);
+  return sheet.slice(rowStart, end);
+}
+
+test('Copy link sits in the Set block on Details, in the Type row, behind the reset chip (#72 AC 1)', () => {
+  const row = typeRow();
+  const chip = row.indexOf('class="pin-chip"');
+  const copy = row.indexOf('class="link-copy"');
+  assert.ok(chip > 0 && copy > chip, 'behind the pin chip');
+  assert.match(row, /@click="copyLink\(\$el\)"/);
+  assert.match(row, />Copy link</);
+  assert.ok(view('details.php').includes("controls-sheet.php"), 'the sheet is the Details page');
+});
+
+test('the report is a dialog with exactly one exit, required after the foot (#72 AC 6)', () => {
+  const report = view('link-report.php');
+  assert.equal((report.match(/<dialog\b/g) ?? []).length, 1);
+  assert.equal((report.match(/<button\b/g) ?? []).length, 1, 'one exit');
+  assert.match(report, /@click="closeLinkReport\(\)"/);
+  assert.match(report, /showLinkReport\(/);
+  const app = view('app.php');
+  assert.ok(app.indexOf("'/link-report.php'") > app.indexOf("'/foot.php'"), 'after foot.php');
+});
+
+test('no other view opens an overlay (#72 AC 6: the one overlay of the app)', () => {
+  for (const name of readdirSync(new URL('../views/', import.meta.url))) {
+    if (name === 'link-report.php') continue;
+    assert.ok(!/<dialog\b|showModal/.test(view(name)), `${name} opens no dialog`);
+  }
 });
