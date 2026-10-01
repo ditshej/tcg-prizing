@@ -438,14 +438,14 @@ export function canPlaceWinner(rank, count, stand) {
 
 /**
  * The screen word of every item that can be `pinned`. It is what the question
- * of the full reach **enumerates** — #61 and #67 ask for *which* sliders fall,
+ * of the full reach **enumerates** — #61 and #67 ask for *which* values fall,
  * not only how many — so a key without a word here would list itself in code
  * type, and #52 settled for the `LinkMigration` report that a wire key is only
  * ever shown where no screen word exists at all.
  *
  * The words are the sheet's own (`views/controls-sheet.php`), and
  * `test/ui-pins.test.mjs` holds the two lists against each other rather than
- * trusting them: they are two files, and a question that names a slider the
+ * trusting them: they are two files, and a question that names a control the
  * sheet calls something else names nothing.
  *
  * Two of them are not `sheet_control()` calls and are therefore written out
@@ -486,7 +486,7 @@ export const PIN_LABELS = {
 /**
  * The items that are made of more than one stored pin. An item is what the
  * screen has **one control** for, and the counter, the marking, the question
- * and the drop all go by items: `Served ranks` is one control whose slider is
+ * and the drop all go by items: `Served ranks` is one control whose number is
  * `depth` and whose step grid is `depthStep`, so it is one item `depth` with
  * two members (maintainer decision on #67, run 11, K3: "Tiefe und Stufe sind
  * ein Posten `Served ranks`, im Zähler genauso").
@@ -549,14 +549,14 @@ export const DROP_BUBBLE = '[data-drop-bubble]';
  * behind it (`@vue/reactivity`) tracks a *read* and a `key in pins`, but not
  * `hasOwnProperty` — that lands on the `getOwnPropertyDescriptor` trap, which
  * is tracked by nothing. Written that way, the marking was right in
- * `node --test` and dead on screen: a pinned slider kept reading `auto` until
+ * `node --test` and dead on screen: a pinned control kept reading `auto` until
  * something else happened to redraw it. Measured at the picture on
  * 2026-09-30, which is exactly the class of fault #61 says a test will not
  * find. An absent key and one holding `undefined` say the same thing here
  * anyway.
  *
  * Asked of an item with members (`PIN_MEMBERS`), it answers for the item:
- * `Served ranks` stands `pinned` when its slider or its step grid carries a
+ * `Served ranks` stands `pinned` when its number or its step grid carries a
  * pin, because the counter counts it then, and a counter that says 1 over a
  * sheet on which every control says `auto` would count something nobody can
  * find.
@@ -608,7 +608,7 @@ export function pinnedItems(pins) {
 
 /** The record without the named items — a new one, because the old one is
  *  what the plan on screen was computed from. An item falls with all its
- *  members: dropping `Served ranks` drops its slider and its step. */
+ *  members: dropping `Served ranks` drops its number and its step. */
 export function pinsWithout(pins, keys) {
   const drop = new Set((keys ?? []).flatMap(pinMembers));
   const next = {};
@@ -669,7 +669,7 @@ function stepCarriesNumber(stepId, ranks) {
  *   show, read off the plan like the counter reads it. The number stands in
  *   brackets only where the step's name does not already carry it (maintainer
  *   decision on #67, run 11, Phase G): `top 8`, but `top quarter (10)`. Where
- *   the slider stays pinned no chip follows it, and the number alone is what
+ *   the number stays pinned no chip follows it, and the number alone is what
  *   stands.
  * - **`Curve`** shows its step by name, as the sheet's foot line does.
  * - **`Handout`** is a checkbox: `on` or `off`.

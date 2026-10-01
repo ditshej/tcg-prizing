@@ -1,6 +1,6 @@
 /**
  * The Alpine component behind the Plan screen (#62): reads a DistributionPlan
- * off `distribute()` and shows it, plus the four hot sliders that change the
+ * off `distribute()` and shows it, plus the four hot controls that change the
  * Settings it was built from. It never reaches past the seam into the
  * calculation itself (ADR 0004) and never tracks where a value came from.
  *
@@ -112,12 +112,12 @@ const SEAM = { read: readLocation, write: writeLocation };
  * The one link that is **not** written back is the one from the future: its
  * base is all that was read, and writing our version over it would devalue a
  * link a newer app could still read in full (#47). Detected by the report's
- * own entry, the same way `migrate()` detects it — the first slider drag
+ * own entry, the same way `migrate()` detects it — the first handling of a control
  * overwrites it anyway.
  *
  * **"From the future" is read off the wire's own verdict, and it is narrower
- * than "no slider was read"** (Lauf 10, "Entscheid K1"). A link with no
- * readable `v` gets its sliders left unread just the same, but it is broken,
+ * than "no value was read"** (Lauf 10, "Entscheid K1"). A link with no
+ * readable `v` gets its values left unread just the same, but it is broken,
  * not newer than us, and it carries `unreadableVersion` rather than
  * `futureVersion` — so it falls into the cleanup branch above with no test of
  * its own here. That is the whole of the wiring this file owes the decision:
@@ -197,7 +197,7 @@ export function planApp(seam = SEAM) {
      * What the CommunityLead set by hand — the third level over Game and
      * TournamentType, and the record that makes a Set switch keep his work
      * (#64 AC 7). It is a *stored* state, not a comparison against the sheet
-     * (ADR 0006): a slider moved back onto its default value stays in here.
+     * (ADR 0006): a number stepped back onto its default value stays in here.
      *
      * A link's pins land here unchanged: a value out of a URL is a pinned
      * value like any other and the app never tracks that it came from one
@@ -273,10 +273,10 @@ export function planApp(seam = SEAM) {
      * The plan, built from the resolved stand **and** the pins beside it. The
      * second argument changes no number (`distribute()` reads it only to carry
      * it on), and it is the whole point: the addendum (#86) to ADR 0009 puts
-     * the hand-set sliders on the plan separately, so that whoever builds a
+     * the hand-set values on the plan separately, so that whoever builds a
      * `SetupLink` from it takes the deviations and never the resolved stand.
      * Handed one argument, `plan.pinned` is `{}` at the surface however many
-     * sliders the CommunityLead has moved — true of the object, false of the
+     * values the CommunityLead has set — true of the object, false of the
      * app (maintainer decision on #66, 2026-09-28).
      *
      * It is computed once per stand and not once per read. Every number on
@@ -467,7 +467,7 @@ export function planApp(seam = SEAM) {
     /**
      * The address bar after a change the SetupLink carries — a pin, or the
      * base beneath it. It takes the **pins**, never the resolved stand: the
-     * stand names every slider, so `encode(this.settings)` would turn one pin
+     * stand names every control, so `encode(this.settings)` would turn one pin
      * into twelve decisions nobody made and lose `depthStep` on the way
      * (Befund G3, `## Nachtrag (#86)` in ADR 0009).
      *
@@ -571,7 +571,7 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The `DisplayReservation`, written where the sliders' values are written:
+     * The `DisplayReservation`, written where the controls' values are written:
      * into `settings` and into `pins` in the same handling, because the pin is
      * set by the handling and not by the value (ADR 0006). It counts as **one**
      * pinned item however many `Rank`s carry a reservation (#61, "The
@@ -668,7 +668,7 @@ export function planApp(seam = SEAM) {
 
          Tied to the three writing handlers instead, the rule misses every way
          a tile can leave the grid without the bubble being touched — the
-         `Players` slider pulled down under an open bubble is the measured one
+         `Players` count pulled down under an open bubble is the measured one
          (#66 AC 9), and `bubble.mjs` names "a shrinking player count" outright.
 
          Alpine has no single render pass, so its equivalent of that last line
@@ -842,8 +842,8 @@ export function planApp(seam = SEAM) {
 
     /**
      * Whether a control is marked. Read off the **stored** record and never
-     * off a comparison with the sheet (ADR 0006): whoever drags a slider and
-     * drags it back has decided, and the marking says "follows the
+     * off a comparison with the sheet (ADR 0006): whoever steps a number and
+     * steps it back has decided, and the marking says "follows the
      * calculation no longer", never "deviates".
      */
     isPinned(key) {
@@ -1058,7 +1058,7 @@ export function planApp(seam = SEAM) {
      *
      * It goes through `setSlider()` like every other control rather than
      * writing `settings` itself: taking the offer is an operating gesture, so
-     * it pins the slider (ADR 0006) and writes the address bar, and the
+     * it pins the value (ADR 0006) and writes the address bar, and the
      * `pinned` record the hint then falls silent on stays the one there
      * already is.
      */
