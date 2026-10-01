@@ -382,4 +382,26 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
   <p class="sheet-desc">The scarce prize. Either strictly by rank, or drawn by the Winner raffle.</p>
   <?php sheet_control('winnerPacks', 'Winner packs available', 'The ceiling for winner packs. The Promo-Envelopes yield a number; by hand you may put more on the table.'); ?>
   <?php sheet_control('ranked', 'Winner packs by rank', 'How many winner packs go out strictly by rank, starting at rank 1. The rest stay open for the raffle.'); ?>
+
+  <!--
+    The RaffleRange is **no control** but session state of the WinnerRaffle's
+    operating step (#69, #61): no pin mark, no reset button, not counted in
+    `Drop all N`, never in the SetupLink, and a Set switch leaves it standing.
+    So what stands here is a **pointer** — and above all the explanation text:
+    the bar has no room for one, and without this line the RaffleRange would
+    lose its only explanation in the whole program (prototype, `winnerBlock()`).
+
+    It carries the current step so the pointer is worth reading even when one
+    is not going to the legend; it carries no way to change it, because the
+    place to change it is the one this text points at.
+  -->
+  <div class="sheet-control">
+    <h3 class="sheet-subhead">Raffle range</h3>
+    <p class="sheet-desc">Which ranks the Winner raffle may draw from when it places an open
+      winner pack.</p>
+    <p class="sheet-foot">Raffled from the legend above the tiles — the handle on
+      <strong>winner</strong>, where the range is set too. Currently
+      <strong x-text="raffle.rangeName"></strong>,
+      <span x-text="`${raffle.open} winner ${raffle.open === 1 ? 'pack' : 'packs'} still open`"></span>.</p>
+  </div>
 </div>

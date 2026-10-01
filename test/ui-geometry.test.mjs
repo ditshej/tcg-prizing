@@ -1,7 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { TILE_SIZE, TILE_GAP, MIN_COLUMNS, MIN_ROWS, rowsHeight, columnsFor, diagramCap } from '../public/ui/geometry.mjs';
+import {
+  TILE_SIZE,
+  TILE_GAP,
+  MIN_COLUMNS,
+  MIN_ROWS,
+  RAFFLE_CLEARANCE,
+  rowsHeight,
+  columnsFor,
+  diagramCap,
+  hitScrollDelta,
+  raffleScrollPadding,
+} from '../public/ui/geometry.mjs';
 
 test('rowsHeight(2) is the master floor: two 54px tiles plus one 5px gap', () => {
   assert.equal(rowsHeight(2), 113);
@@ -60,4 +71,55 @@ test('MIN_ROWS is the master floor used by rowsHeight when called without an arg
 test('TILE_SIZE and TILE_GAP are the tile constants the spec measures against', () => {
   assert.equal(TILE_SIZE, 54);
   assert.equal(TILE_GAP, 5);
+});
+
+/* ── The WinnerRaffle bar's two measured rules (#69) ─────────────────────── */
+
+/**
+ * The bar lies **over** the tile grid, so the grid is given exactly the
+ * overlap as padding and the tiles scroll behind it (#69 AC 3). One rule, two
+ * results, no `if` on the surface: in the Plan view the grid window ends well
+ * above the bar, the overlap is zero, and nothing happens by itself.
+ */
+test('the scroll padding is exactly the overlap, plus the clearance that makes the last row readable', () => {
+  // The grid ends at 700, the bar's top edge is at 640 → 60px are covered.
+  assert.equal(raffleScrollPadding({ bottom: 700 }, { top: 640 }), 60 + RAFFLE_CLEARANCE);
+});
+
+test('a bar that does not reach the grid window costs no padding at all', () => {
+  assert.equal(raffleScrollPadding({ bottom: 400 }, { top: 640 }), 0);
+  assert.equal(raffleScrollPadding({ bottom: 640 }, { top: 640 }), 0); // edge to edge
+  assert.equal(raffleScrollPadding({ bottom: 700 }, null), 0); // bar closed
+});
+
+/**
+ * "Sichtbar" measures against the **top edge of the bar**, not the bottom of
+ * the scroll window (#69, #61): the bar stands still while the retraction list
+ * under it grows, so the boundary stands still too.
+ */
+test('a tile already inside the free strip is not scrolled to at all', () => {
+  const window = { top: 100, bottom: 500 };
+  // The bar's top edge at 410 leaves the free strip 100…400 once the same
+  // clearance the padding uses is taken off it.
+  assert.equal(hitScrollDelta(window, { top: 200, bottom: 254, height: 54 }, 410), 0);
+  assert.equal(hitScrollDelta(window, { top: 346, bottom: 400, height: 54 }, 410), 0); // edge to edge
+});
+
+test('a tile hidden behind the bar is scrolled to, even though it is inside the scroll window', () => {
+  const window = { top: 100, bottom: 500 };
+  // Free strip 100…400, its middle 250. The tile sits at 420…474 — inside the
+  // window, behind the bar — so its centre 447 has to travel up by 197.
+  assert.equal(hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }, 410), 197);
+});
+
+test('with the bar closed the free strip is the whole scroll window', () => {
+  const window = { top: 100, bottom: 500 };
+  assert.equal(hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }), 0);
+  // Below the window: centre 747 against the middle 300 → 447 down.
+  assert.equal(hitScrollDelta(window, { top: 720, bottom: 774, height: 54 }), 447);
+});
+
+test('the target is the middle of the free strip, not "just barely in"', () => {
+  // A tile far above: free strip 100…400 (middle 250), tile centre 27 → −223.
+  assert.equal(hitScrollDelta({ top: 100, bottom: 500 }, { top: 0, bottom: 54, height: 54 }, 410), -223);
 });
