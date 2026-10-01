@@ -228,7 +228,8 @@ function winnersItem(plan) {
   // `snapshot()` of the pins, a plain object whose spread has already done the
   // tracked reads (`ownKeys`, `get`) on the Alpine proxy; asked of that proxy
   // itself it would land on the `getOwnPropertyDescriptor` trap, which nothing
-  // tracks (#67). After #67 merges, this read is a row in its `READ_SITES`.
+  // tracks (#67). The `Prepare` row of `READ_SITES` (test/ui-pins.test.mjs)
+  // turns red if that ever stops holding.
   const pinned = Object.prototype.hasOwnProperty.call(plan.pinned, 'winnerPacks');
 
   const lines = [

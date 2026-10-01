@@ -123,12 +123,22 @@ test('a reservation taken back off the last rank is no pin any more', () => {
  * reads — the way the screen does it. What the site shows afterwards has to be
  * what is true.
  *
- * `READ_SITES` is every read of a pin the screen draws from on this branch
- * (`views/controls-sheet.php`, `views/controls-hot.php`). A new site goes into
- * this table and not into a second probe (#65's is to be added here, comment
- * on #65 from run 11). Replacing the whole record (`dropPins()`) is not probed:
- * that writes `app.pins` itself, which every site reads through `this`, and
- * which redraws all of them.
+ * `READ_SITES` is every read of a pin the screen draws from
+ * (`views/controls-sheet.php`, `views/controls-hot.php`, `views/prepare.php`).
+ * A new site goes into this table and not into a second probe. A row is either
+ * the read alone, which then has to change under **every** pinnable key, or
+ * `{ read, keys }` for a site that looks at some pins only — the probe asks
+ * "the handling changed what the site reads" of each key it runs, and a site
+ * that never reads a key would fail that for the wrong reason. Replacing the
+ * whole record (`dropPins()`) is not probed: that writes `app.pins` itself,
+ * which every site reads through `this`, and which redraws all of them.
+ *
+ * The `Prepare` row (#65) is the one read that does not go through
+ * `controls.mjs`: `winnersItem()` asks `hasOwnProperty` of `plan.pinned`. That
+ * is a blind read, and it holds only because `plan.pinned` is the core's
+ * `snapshot()` (`carriedPins()`), whose spread did the tracked reads on the
+ * record first. This row is what turns red if the core ever hands the record
+ * through as it is.
  */
 const ITERATE = Symbol('ownKeys');
 
@@ -172,7 +182,16 @@ const READ_SITES = {
   'pinCount — the counter on the type row': (app) => app.pinCount,
   'pinnedKeys — what the counter hands the question': (app) => app.pinnedKeys,
   'pinnedItems — the list with its words': (app) => app.pinnedItems,
+  'preparation — the WinnerPack item of Prepare (#65)': {
+    read: (app) => app.preparation.winners,
+    keys: ['winnerPacks'],
+  },
 };
+
+/** A row as `{ read, keys }`; a bare read is a site that every pin reaches. */
+function siteOf(row) {
+  return typeof row === 'function' ? { read: row, keys: PINNABLE } : row;
+}
 
 const PINNABLE = [...SHEET_KEYS, 'displays', 'manualWinner'];
 
@@ -197,9 +216,10 @@ function drawnAfter(app, read, handling) {
   return { before, truth, shown: redrawn ? truth : before };
 }
 
-for (const [site, read] of Object.entries(READ_SITES)) {
+for (const [site, row] of Object.entries(READ_SITES)) {
+  const { read, keys } = siteOf(row);
   test(`a pin set by a handling reaches the screen through ${site}`, () => {
-    for (const key of PINNABLE) {
+    for (const key of keys) {
       const { app } = opened();
       const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => pinIt(app, key));
       assert.notDeepEqual(truth, before, `${key}: the handling changed what the site reads (the probe looks)`);
@@ -209,8 +229,10 @@ for (const [site, read] of Object.entries(READ_SITES)) {
 }
 
 test('a reservation taken back to nothing reaches the screen the same way', () => {
-  for (const [site, read] of Object.entries(READ_SITES)) {
+  for (const [site, row] of Object.entries(READ_SITES)) {
+    const { read, keys } = siteOf(row);
     for (const [key, set] of [['displays', (a, n) => a.setDisplays(1, n)], ['manualWinner', (a, n) => a.setManualWinner(1, n)]]) {
+      if (!keys.includes(key)) continue;
       const { app } = opened();
       set(app, 1);
       const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => set(app, 0));
