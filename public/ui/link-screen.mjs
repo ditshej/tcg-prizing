@@ -136,7 +136,7 @@ function lineFor(entry, words) {
     case 'gameReplaced':
       return replaced('Game', 'game', entry, words.game);
     case 'unknownKey':
-      return [{ wire: String(entry.key) }, t(' is not a setting of this app — it was left out.')];
+      return [t('This app does not know '), { wire: String(entry.key) }, t(' — it was left out.')];
     case 'unreadableValue':
       return [control(entry.key), t(' could not be read — it was left out.')];
     case 'futureVersion':

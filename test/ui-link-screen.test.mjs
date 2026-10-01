@@ -218,7 +218,7 @@ test('a key with no screen word shows the wire key and invents no label (#72 AC 
     GAMES,
   );
   assert.deepEqual(view.lines.map(said), [
-    '`rankfloor` is not a setting of this app — it was left out.',
+    'This app does not know `rankfloor` — it was left out.',
     '`oldSlider` no longer exists — its value was dropped.',
     '`floor` is now Min boosters per rank.',
   ]);
