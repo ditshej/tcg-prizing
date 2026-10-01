@@ -219,12 +219,35 @@ export function carryLabel(count, to) {
 }
 
 /**
+ * A ConflictNotice with **no way out at all** (maintainer decision on #68,
+ * run 12, K2 `satz-zur-tatsache`; ADR 0002, addendum K2). It says in one
+ * sentence the fact of the evening that empties the RankPool — no
+ * `Boosters per player (pool)` — and offers no button, because no value the
+ * app may suggest changes it (`players`, `boosterRate`, `displaySize` are
+ * never a way out). The chip carries a word and no number: `⚠ 0 ways out`
+ * announced something that does not exist.
+ *
+ * Zero ways occur **only** at a `boosterRate` of 0 — measured over a grid in
+ * `test/ui-notices.test.mjs`. Should one turn up elsewhere, this sentence
+ * would be wrong there, and that is a finding, not a case for a second one.
+ *
+ * Wording is a builder's proposal, not yet decided (K2: „Der Wortlaut ist
+ * nicht entschieden"). It keeps clear of glossary terms beyond the label it
+ * quotes, and of *slider* or *setting* (#113 AC 16).
+ */
+const NO_WAY_OUT = {
+  lines: [`With “${pinLabel('boosterRate')}” at 0, there is nothing to give out.`],
+  actions: [],
+  chip: { glyph: '⚠', word: 'Nothing to give' },
+};
+
+/**
  * The stack as it stands: `{ open, chips }`, each in the order of what it
  * talks about — the plan's notice first, the input's last (#31).
  *
  * - `plan` — the DistributionPlan on screen.
  * - `ways` — its ways out, `waysOut(plan)`: the single ones, or the one
- *   combined way where no single slider clears.
+ *   combined way where no single slider clears, or none — then `NO_WAY_OUT`.
  * - `offer` — `offerFor(plan)`, or `null`.
  * - `carry` — the last Set switch, `{ to, keys }`: the type it went to and the
  *   pinned items that stayed behind; `null` before the first switch.
@@ -237,9 +260,13 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, fold 
     notices.push({
       id: 'conflict',
       closable: false,
-      lines: conflictLines(plan),
-      actions: ways.map((way) => ({ label: way.label, way })),
-      chip: { glyph: '⚠', word: `${ways.length} ${plural(ways.length, 'way')} out` },
+      ...(ways.length
+        ? {
+            lines: conflictLines(plan),
+            actions: ways.map((way) => ({ label: way.label, way })),
+            chip: { glyph: '⚠', word: `${ways.length} ${plural(ways.length, 'way')} out` },
+          }
+        : NO_WAY_OUT),
     });
   } else if (offer && offer.key !== fold.offer.dismissed) {
     const displaySize = plan.settings?.displaySize ?? 1;

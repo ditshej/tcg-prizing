@@ -5,6 +5,7 @@ import { distribute, unfit } from '../public/core/distribute.mjs';
 import { offerFor, waysOut } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { dropNoun } from '../public/ui/controls.mjs';
+import { CURVES } from '../public/core/rules.mjs';
 import {
   conflictKind,
   dismiss,
@@ -234,6 +235,68 @@ test('the unclaimed rest gets a sentence of its own', () => {
   const text = notice.lines.join(' ');
   assert.match(text, /settle/);
   assert.match(text, new RegExp(`${plan.shapedRemainder} boosters`));
+});
+
+/**
+ * K2 (decision on #68, run 12, `satz-zur-tatsache`): on the K1 bench no value
+ * the app may suggest clears the stand, so the ConflictNotice offers no button
+ * and says the fact instead — no `Boosters per player (pool)`. Its chip
+ * carries a word and no digit: `⚠ 0 ways out` announced what is not there.
+ */
+test('K1 bench: no way out — no button, one sentence naming the fact, a chip without a number', () => {
+  const plan = distribute(bench);
+  assert.deepEqual(waysOut(plan), []);
+  const notice = stackFor(bench).open[0];
+  assert.equal(notice.id, 'conflict');
+  assert.deepEqual(notice.actions, []);
+  assert.equal(notice.lines.length, 1);
+  assert.match(notice.lines[0], /Boosters per player \(pool\)/);
+  assert.match(notice.lines[0], /\b0\b/);
+  const chip = stackFor(bench, minimize(freshFold(), 'conflict')).chips[0];
+  assert.equal(chip.id, 'conflict');
+  assert.ok(chip.word.length > 0);
+  assert.doesNotMatch(chip.word, /\d/);
+  assert.doesNotMatch(`${chip.word} ${notice.lines[0]}`, /\b(sliders?|settings?|ways? out)\b/i);
+});
+
+/**
+ * The fact sentence is only true if zero ways occur **only** at a
+ * `boosterRate` of 0 (B3 measured it over 15 360 stands without varying the
+ * curve). This grid varies the curve too. A stand with a `boosterRate` above
+ * 0 and no way out is a finding for #68, not a case for a second sentence.
+ */
+test('over a grid, a ConflictNotice without a way out stands only at a boosterRate of 0', () => {
+  let unfitStands = 0;
+  let none = 0;
+  let zeroRate = 0;
+  const elsewhere = [];
+  for (const curve of CURVES.map((c) => c.id)) {
+    for (const players of [4, 8, 16]) {
+      for (const boosterRate of [0, 1, 2, 3]) {
+        for (const participationBooster of [0, 1]) {
+          for (const rankFloor of [0, 2, 5]) {
+            for (const depth of [1, 3, 8]) {
+              for (const displays of [[], [1], [0, 0, 2], [2, 1, 1]]) {
+                for (const displaySize of [1, 4]) {
+                  const settings = { players, boosterRate, participationBooster, rankFloor, depth, displays, displaySize, curve };
+                  const plan = distribute(settings);
+                  if (boosterRate === 0) zeroRate++;
+                  if (!unfit(plan)) continue;
+                  unfitStands++;
+                  if (waysOut(plan).length) continue;
+                  none++;
+                  if (boosterRate !== 0) elsewhere.push(JSON.stringify(settings));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(elsewhere, [], 'stands without a way out at a boosterRate above 0');
+  assert.ok(unfitStands > none, `${none} of ${unfitStands} unfit stands without a way out`);
+  assert.equal(none, zeroRate, 'and every stand at a boosterRate of 0 is one of them');
 });
 
 test('every way out is one action; a combined way is one action over all its changes', () => {

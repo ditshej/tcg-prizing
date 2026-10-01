@@ -719,21 +719,25 @@ test('a fit plan has no ways out at all, combined or single', () => {
  * this ticket was built from both expect a computed way over several sliders
  * here that clears `unfit` when applied.
  *
- * **It does not come out, and the criterion is the side that is wrong.** At a
+ * **It does not come out, and the criterion was the side that was wrong.** At a
  * `boosterRate` of 0 the PrizePool holds no Booster, so the RankPool holds
  * none whatever the searched sliders say; a fit plan needs at least one —
  * the Rank 1 lead when nothing is settled, or a whole Display when something
  * is. Only `boosterRate` clears it, and that is a fact about the evening a way
  * out may not ask the CommunityLead to change (CONTEXT.md, `ConflictNotice`).
- * The test below is left as the criterion states it and marked `todo`; the one
- * after it is the proof, by running the core over every searched slider.
+ * Reported on #68 and decided there (run 12, K2 `satz-zur-tatsache`): no way
+ * out is the answer, and the ConflictNotice names the fact instead
+ * (`test/ui-notices.test.mjs`). The test after it is the proof, by
+ * running the core over every searched slider.
  */
 const bench = { players: 8, boosterRate: 0, rankFloor: 2, depth: 3, curve: 'steep' };
 
-test('K1 bench: a combined way out exists and clears unfit when applied', { todo: 'unsatisfiable — see the proof below; reported on #68' }, () => {
-  const way = combinedWayOut(distribute(bench));
-  assert.ok(way, 'a combined way out is found');
-  assert.equal(unfit(distribute(applyWay(bench, way))), false);
+test('K1 bench: there is no way out, combined or single — the evening has nothing to give', () => {
+  const plan = distribute(bench);
+  assert.equal(unfit(plan), true);
+  assert.deepEqual(suggestions(plan), []);
+  assert.equal(combinedWayOut(plan), null);
+  assert.deepEqual(waysOutOf(plan), []);
 });
 
 test('K1 bench: no combination of the searched sliders clears it — only boosterRate, a fact, would', () => {
