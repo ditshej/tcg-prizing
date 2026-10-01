@@ -522,6 +522,101 @@ test('the step grid has no title of its own — it is a member of Served ranks',
   assert.ok(!Object.values(PIN_LABELS).some((label) => /step/i.test(label)), 'no invented step word');
 });
 
+/* ── The typed field and its commit (#113) ──────────────────────────────── */
+
+/**
+ * #113: a typed number counts at Enter or when the field is left, and only if
+ * it changed. Until then the field is marked as not yet valid and the plan
+ * stands still. Escape discards. `−` and `+` write and pin at once. On a phone
+ * every leaving of the field is a commit — there is no gesture to cancel — so
+ * "unchanged writes nothing" is what stops a tap into the field from leaving a
+ * pin nobody set, which the question of the full reach would then read out by
+ * name (comment on #67, "Aus #113 nachgetragen").
+ */
+test('typing marks the field and moves nothing until the commit', () => {
+  const { app, written } = opened();
+  app.draft('players', '128');
+  assert.equal(app.isDraft('players'), true, 'the field says it is not yet valid');
+  assert.equal(app.plan.players, 32, 'the plan stands still');
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+
+  app.commitTyped('players', '128');
+  assert.equal(app.isDraft('players'), false);
+  assert.equal(app.plan.players, 128);
+  assert.equal(app.pins.players, 128, 'a changed commit pins');
+  assert.equal(written.length, 1);
+});
+
+test('a field typed back to its own value is not marked, and committing it writes and pins nothing', () => {
+  const { app, written } = opened();
+  app.draft('tournamentPacks', '32');
+  assert.equal(app.isDraft('tournamentPacks'), false, 'the auto value, typed again, is no draft');
+  app.commitTyped('tournamentPacks', '32');
+  app.commitTyped('players', ' 32');
+  assert.deepEqual(app.pins, {});
+  assert.equal(app.isPinned('tournamentPacks'), false);
+  assert.deepEqual(written, []);
+});
+
+test('Escape discards, and the leaving that follows it commits nothing', () => {
+  const { app, written } = opened();
+  app.draft('rankFloor', '7');
+  assert.equal(app.isDraft('rankFloor'), true);
+  app.discardDraft('rankFloor');
+  assert.equal(app.isDraft('rankFloor'), false);
+  // The field shows the standing value again, so the blur commits that.
+  app.commitTyped('rankFloor', String(app.value('rankFloor')));
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+});
+
+test('an entry that is not a number writes nothing and drops the draft', () => {
+  const { app, written } = opened();
+  for (const text of ['', 'abc', '3.5']) {
+    app.draft('players', text);
+    app.commitTyped('players', text);
+    assert.equal(app.isDraft('players'), false, JSON.stringify(text));
+  }
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+});
+
+test('minus and plus write and pin at once, on an auto value too', () => {
+  const { app } = opened();
+  app.step('tournamentPacks', 1);
+  assert.equal(app.pins.tournamentPacks, 33);
+  app.step('rankFloor', -1);
+  assert.equal(app.pins.rankFloor, 1);
+});
+
+test('the plus of an open number is never closed, and a wall closes it exactly there', () => {
+  const { app } = opened();
+  app.commitTyped('players', '128');
+  app.commitTyped('boosterRate', '9');
+  app.commitTyped('participationBooster', '6');
+  for (const key of ['players', 'boosterRate', 'tournamentPacks', 'winnerPacks', 'displaySize',
+    'envelopeSize', 'envelopeYield', 'rankFloor']) {
+    assert.equal(app.canStep(key, 1), true, `${key} + is open`);
+  }
+  app.commitTyped('judgeBooster', '384');
+  assert.equal(app.canStep('judgeBooster', 1), false, 'the wall at 384 closes the plus');
+  assert.equal(app.canStep('judgeBooster', -1), true);
+  app.commitTyped('judgeBooster', '9999');
+  assert.equal(app.value('judgeBooster'), 384, 'a typed number past the wall holds at it');
+});
+
+test('a pinned value a wall sank under stands, and its minus still leaves it (ADR 0006)', () => {
+  const { app } = opened();
+  app.commitTyped('participationBooster', '3');
+  app.commitTyped('boosterRate', '1');
+  assert.equal(app.value('participationBooster'), 3, 'never cut');
+  assert.equal(app.canStep('participationBooster', 1), false);
+  assert.equal(app.canStep('participationBooster', -1), true);
+  app.step('participationBooster', -1);
+  assert.equal(app.value('participationBooster'), 2);
+});
+
 /* ── The markup (#67 AC 1, AC 4, AC 7) ──────────────────────────────────── */
 
 const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');

@@ -21,6 +21,8 @@ import {
   canReserveDisplays,
   manualWinnerAfter,
   canPlaceWinner,
+  typedNumber,
+  typedValueAfter,
 } from '../public/ui/controls.mjs';
 
 /** The sheet's own reading of a stand: settings resolved, plan computed. */
@@ -401,6 +403,55 @@ test('setting clamps to the same bounds the counter and the typed field are draw
   assert.equal(clampToBounds('curve', 'nonsense', s), null);
   assert.equal(clampToBounds('depthStep', 'topHalf', s), 'topHalf');
   assert.equal(clampToBounds('combinedHandout', true, s), true);
+});
+
+/* ── The typed field (#113) ─────────────────────────────────────────────── */
+
+test('a typed field reads a whole number and nothing else', () => {
+  assert.equal(typedNumber('523'), 523);
+  assert.equal(typedNumber(' 42 '), 42);
+  assert.equal(typedNumber('-3'), -3);
+  assert.equal(typedNumber('+7'), 7);
+  // Not a number: nothing is written, and the field falls back (#113 AC 12).
+  // `Number('')` is 0, which is the trap an emptied field would walk into.
+  for (const text of ['', '   ', 'abc', '12x', '1.5', '1e3', '0x10', null, undefined]) {
+    assert.equal(typedNumber(text), null, JSON.stringify(text));
+  }
+});
+
+test('a typed number past the former stop is what gets written (#113, the measured 523)', () => {
+  const s = stand({ players: 128, tournamentPacks: 512 }, TOURNAMENT_TYPES[2]);
+  assert.equal(typedValueAfter('tournamentPacks', '523', s), 523);
+});
+
+test('a typed number that changes nothing writes nothing — the stand it shows is the one it would set', () => {
+  const s = stand();
+  // `tournamentPacks` is `auto` and shows the 32 the core computed: typing 32
+  // back is not a handling, so it may not become a pin (#113 AC 11).
+  assert.equal(s.settings.tournamentPacks, null);
+  assert.equal(typedValueAfter('tournamentPacks', '32', s), null);
+  assert.equal(typedValueAfter('players', ' 32 ', s), null);
+  assert.equal(typedValueAfter('players', 'abc', s), null);
+  assert.equal(typedValueAfter('players', '', s), null);
+  assert.equal(typedValueAfter('players', '33', s), 33);
+});
+
+test('a typed number holds at a wall, and at a minimum', () => {
+  const s = stand({ players: 128, boosterRate: 9, participationBooster: 6 });
+  assert.equal(typedValueAfter('judgeBooster', '2000', s), 384);
+  assert.equal(typedValueAfter('players', '1', s), 2);
+  assert.equal(typedValueAfter('displaySize', '0', s), 1);
+});
+
+test('a pinned value over a wall is never cut by typing at it, and typing down leaves it (ADR 0006)', () => {
+  const s = stand({ participationBooster: 6, boosterRate: 1 });
+  assert.equal(boundsFor('participationBooster', s).max, 1, 'the wall sank under the pin');
+  assert.equal(effectiveValue('participationBooster', s), 6, 'the pin stands');
+  // Further out is held at the value that stands, which writes nothing …
+  assert.equal(typedValueAfter('participationBooster', '9', s), null);
+  // … and the way down is open, also past the wall in one go.
+  assert.equal(typedValueAfter('participationBooster', '3', s), 3);
+  assert.equal(typedValueAfter('participationBooster', '0', s), 0);
 });
 
 test('a type switch replaces the sheet but carries every pinned value across (#64 AC 7)', () => {

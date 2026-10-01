@@ -54,6 +54,7 @@ import {
   pinsWithout,
   reachFor,
   reservedDisplaysAfter,
+  typedValueAfter,
 } from './controls.mjs';
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
@@ -464,7 +465,8 @@ export function planApp(seam = SEAM) {
       this._writeAddress(url);
     },
 
-    /** The counter's ±, moving by one inside the same bounds the slider has. */
+    /** The counter's `−` and `+`: one step inside the control's ends, written
+     *  and pinned at once (#113) — a press is the handling. */
     step(key, delta) {
       this.setSlider(key, Number(this.value(key)) + delta);
     },
@@ -475,28 +477,50 @@ export function planApp(seam = SEAM) {
       return next >= bounds.min && next <= bounds.max;
     },
 
+    /* ── The typed field (#113) ───────────────────────────────────────── */
+
     /**
-     * The four hot sliders, kept under their own names because the fixed rail
-     * under `Plan` (`views/controls-hot.php`) calls them. They are plain
-     * `setSlider()` calls now: the rail and the sheet change the same stand in
-     * the same way, because both call exactly these handlers and so cannot
-     * drift in what they *do* (head comment of `views/controls-hot.php`; #61,
-     * which names the rail literally the same content as `Details` — "die
-     * Schiene **ist** `Details` und war nie ein eigener Inhalt").
-     *
-     * What tells the two forms apart is what they *show*, not what they do:
-     * the sheet carries an explanation under every title and a counter, the
-     * rail neither (#64 AC 9 for the explanation text, which is the criterion
-     * that says it appears only on `Details`).
+     * What is typed into a field and not yet committed, by key — session state
+     * like the open bubble, never in `Settings` and never in the `SetupLink`.
+     * It is kept apart from the value on purpose: a commit at every keystroke
+     * would drive the field through wrong intermediate stands (typing `128`
+     * passes a two-player tournament on the way), and every one of them would
+     * raise a notice over the whole surface (#113). So the plan stands still
+     * until the commit, and this record is the only thing that moves.
      */
-    setPlayers(value) {
-      this.setSlider('players', value);
+    drafts: {},
+
+    /** A keystroke in the field: remembered, not written. */
+    draft(key, text) {
+      this.drafts[key] = String(text);
     },
-    setRankFloor(value) {
-      this.setSlider('rankFloor', value);
+
+    /**
+     * Whether the field is visibly "not yet valid" — it holds typed text that
+     * differs from the value standing. Read through a plain `get` on the
+     * record, which the reactivity tracks (see `isPinned()` in `controls.mjs`).
+     */
+    isDraft(key) {
+      const text = this.drafts[key];
+      return text !== undefined && text.trim() !== String(this.value(key));
     },
-    setDepth(value) {
-      this.setSlider('depth', value);
+
+    /** Escape: the typed text is dropped and the value standing shows again. */
+    discardDraft(key) {
+      delete this.drafts[key];
+    },
+
+    /**
+     * Enter, or leaving the field: the typed number counts — if it is a number
+     * and if it changes anything (`typedValueAfter()`). Otherwise nothing is
+     * written and nothing is pinned, and the field falls back to the value
+     * that stands. Either way the draft is gone.
+     */
+    commitTyped(key, text) {
+      delete this.drafts[key];
+      const next = typedValueAfter(key, text, this.stand);
+      if (next === null) return;
+      this.setSlider(key, next);
     },
 
     /* ── The tile as a grip (#66) ─────────────────────────────────────── */

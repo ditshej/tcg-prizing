@@ -241,6 +241,46 @@ export function clampToBounds(key, value, stand) {
   return Math.min(Math.max(number, bounds.min), bounds.max);
 }
 
+/* ── The typed field (#113) ─────────────────────────────────────────────── */
+
+/**
+ * What a typed field holds, as a whole number — or `null` where it holds
+ * none. Strict on purpose: `Number('')` is 0, so an emptied field read
+ * loosely would write a zero nobody typed; and a fraction or an exponent is
+ * no count a person types into a field for packs or players. `null` means
+ * what it means for `clampToBounds()`: write nothing rather than a value
+ * nobody chose, and let the field fall back to the value that stands.
+ */
+export function typedNumber(text) {
+  if (typeof text !== 'string' || !/^\s*[+-]?\d+\s*$/.test(text)) return null;
+  return Number(text);
+}
+
+/**
+ * What committing a typed field writes: the number, held at the control's
+ * ends exactly as a `−` or `+` would be, or `null` for "write nothing".
+ *
+ * **Unchanged writes nothing, and therefore pins nothing** (#113). The commit
+ * comes at Enter or whenever the field is left, and on a phone there is no
+ * gesture that leaves it *without* committing — so a tap into the field and
+ * away again is a commit of the number already standing. It is compared with
+ * what the control shows (`effectiveValue()`), not with `Settings`: a number
+ * typed back onto its `auto` value changes nothing, and a pin from it would be
+ * one nobody set. The same convention `reservedDisplaysAfter()` and
+ * `manualWinnerAfter()` already carry.
+ *
+ * It compares *after* holding at the ends, so a number typed past a wall the
+ * value already stands at writes nothing either — and a `pinned` value over a
+ * sunk wall, typed further out, stays what it is (ADR 0006).
+ */
+export function typedValueAfter(key, text, stand) {
+  const number = typedNumber(text);
+  if (number === null) return null;
+  const next = clampToBounds(key, number, stand);
+  if (next === null || next === Number(effectiveValue(key, stand))) return null;
+  return next;
+}
+
 /* ── The two that are set at the tile (#66) ─────────────────────────────── */
 
 /**
