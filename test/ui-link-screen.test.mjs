@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { planApp } from '../public/ui/plan.mjs';
-import { copyText, linkAddress } from '../public/ui/link-screen.mjs';
+import { copyText, linkAddress, reportView } from '../public/ui/link-screen.mjs';
 
 /**
  * The SetupLink on screen (#72): the `Copy link` button and the
@@ -160,4 +160,86 @@ test('without a clipboard the address opens in a field instead (#72 AC 4)', asyn
   assert.ok(!('linkCopied' in button.dataset), 'no success is claimed');
   app.closeLinkField();
   assert.equal(app.linkField, null);
+});
+
+/* ── What the report says (#72 AC 7, AC 8, AC 9) ───────────────────────── */
+
+const GAMES = [
+  { id: 'onepiece', title: 'One Piece', types: [{ id: 'weekly', title: 'Weekly' }, { id: 'weekend', title: 'Weekend' }] },
+];
+
+/** A line as one string, wire keys between backticks — the code type on screen. */
+function said(line) {
+  return line.map((part) => ('wire' in part ? `\`${part.wire}\`` : part.text)).join('');
+}
+
+function report(entries, extra = {}) {
+  return { from: 1, to: 1, migrated: false, resaveBookmark: true, entries, ...extra };
+}
+
+test('no report, no view', () => {
+  assert.equal(reportView(null, GAMES), null);
+});
+
+test('a control is named by its screen word', () => {
+  const view = reportView(report([{ kind: 'unreadableValue', key: 'rankFloor' }]), GAMES);
+  assert.deepEqual(view.lines.map(said), ['Min boosters per rank could not be read — it was left out.']);
+});
+
+test('a key with no screen word shows the wire key and invents no label (#72 AC 9)', () => {
+  const view = reportView(
+    report([
+      { kind: 'unknownKey', key: 'rankfloor' },
+      { kind: 'dropped', key: 'oldSlider' },
+      { kind: 'renamed', key: 'rankFloor', was: 'floor' },
+    ]),
+    GAMES,
+  );
+  assert.deepEqual(view.lines.map(said), [
+    '`rankfloor` is not a setting of this app — it was left out.',
+    '`oldSlider` no longer exists — its value was dropped.',
+    '`floor` is now Min boosters per rank.',
+  ]);
+});
+
+test('a replaced base names the type by its title, and the unknown name as it stood', () => {
+  const view = reportView(
+    report([
+      { kind: 'typeReplaced', was: 'weekender', now: 'weekly', by: 'fallback' },
+      { kind: 'gameReplaced', was: null, now: 'onepiece', by: 'fallback' },
+      { kind: 'typeReplaced', was: 'release2', now: 'weekend', by: 'migration' },
+      { kind: 'setByMigration', key: 'ranked', value: 4 },
+    ]),
+    GAMES,
+  );
+  assert.deepEqual(view.lines.map(said), [
+    'Type `weekender` is unknown — opened as Weekly.',
+    'No game was named — opened as One Piece.',
+    'Type `release2` is now Weekend.',
+    'Winner packs by rank was set to 4, so the plan stays the same.',
+  ]);
+});
+
+test('the bookmark prompt stands when the address bar was rewritten (#72 AC 7)', () => {
+  const view = reportView(report([{ kind: 'unreadableValue', key: 'curve' }]), GAMES);
+  assert.equal(view.resave, true);
+  assert.equal(view.bookmark, 'The address bar now holds this link as it was read. Save your bookmark again.');
+});
+
+test('the future case has its own sentence and no bookmark prompt (#72 AC 8)', () => {
+  const view = reportView(
+    report([{ kind: 'futureVersion', from: 4 }], { from: 4, resaveBookmark: false }),
+    GAMES,
+  );
+  assert.deepEqual(view.lines.map(said), ['This link is newer than this app. Only its game and type were read.']);
+  assert.equal(view.resave, false);
+  assert.equal(view.bookmark, null);
+});
+
+test('a link with no readable version is called damaged, not newer, and asks for the bookmark', () => {
+  const view = reportView(report([{ kind: 'unreadableVersion', was: '0' }], { from: null }), GAMES);
+  assert.deepEqual(view.lines.map(said), [
+    'This link is damaged: it names no version this app can read. Only its game and type were read.',
+  ]);
+  assert.equal(view.resave, true);
 });
