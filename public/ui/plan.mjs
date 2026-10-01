@@ -41,9 +41,16 @@ import { applyGeometry, attachMeasuring } from './measure.mjs';
 import { rankSegments } from './diagram.mjs';
 import {
   DEPTH_STEP_LABELS,
+  DROP_BUBBLE,
   clampToBounds,
+  dropConfirmation,
+  dropNoun,
   effectiveValue,
+  isPinned,
   manualWinnerAfter,
+  pinnedItems,
+  pinnedKeys,
+  pinsWithout,
   reachFor,
   reservedDisplaysAfter,
 } from './controls.mjs';
@@ -381,8 +388,14 @@ export function planApp(seam = SEAM) {
      * one Game set up there is nothing yet to look up.
      */
     resolve() {
-      this.settings = resolveSettings({ game: GAME, type: this.currentType, pins: this.pins });
+      this.settings = this.resolvedFor(this.pins);
       this.syncAddress();
+    },
+
+    /** The sheet under the chosen type with a given pin record laid over it —
+     *  the one place both `resolve()` and the drop's announcement get it. */
+    resolvedFor(pins) {
+      return resolveSettings({ game: GAME, type: this.currentType, pins });
     },
 
     /** One ⓘ per level, each with its own sentence — the same handle closes it. */
@@ -634,6 +647,192 @@ export function planApp(seam = SEAM) {
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
+    },
+
+    /* ── `pinned` against `auto`, and the three reaches back (#67) ─────── */
+
+    /**
+     * Whether a control is marked. Read off the **stored** record and never
+     * off a comparison with the sheet (ADR 0006): whoever drags a slider and
+     * drags it back has decided, and the marking says "follows the
+     * calculation no longer", never "deviates".
+     */
+    isPinned(key) {
+      return isPinned(key, this.pins);
+    },
+
+    /** The word at the control. Both stand on screen as they are written
+     *  here — `pinned` and `auto` are the glossary's own (CONTEXT.md,
+     *  `Pinned`: "Beide Wörter stehen so auch am Schirm"). */
+    stateWord(key) {
+      return this.isPinned(key) ? 'pinned' : 'auto';
+    },
+
+    /** What stands pinned, in sheet order — the list the counter is the
+     *  length of and the question reads out, so the two cannot disagree. */
+    get pinnedKeys() {
+      return pinnedKeys(this.pins);
+    },
+
+    get pinnedItems() {
+      return pinnedItems(this.pins);
+    },
+
+    /** The counter beside the type row. It counts `displays` and
+     *  `manualWinner` as **one** item each, however many `Rank`s carry one
+     *  (#61, #67) — by being the same list the question enumerates. */
+    get pinCount() {
+      return this.pinnedKeys.length;
+    },
+
+    /** The counter chip's spoken label, in the question's own word. */
+    get dropAllLabel() {
+      return `Drop ${this.pinCount} hand-set ${dropNoun(this.pinCount)}`;
+    },
+
+    /**
+     * The **first** reach: one control back onto the chosen TournamentType,
+     * and it asks nothing. There is a visible value there and one grip sets
+     * it again, so a question would be friction without a counterpart (#33).
+     *
+     * One control is one item: the reset at `Served ranks` takes its step
+     * with it (`PIN_MEMBERS`), or the control would go on saying `pinned`
+     * after its own way back.
+     */
+    resetSlider(key) {
+      if (!this.isPinned(key)) return;
+      this.dropPins([key]);
+    },
+
+    /**
+     * The open question, or `null`. It carries the **set of pins** and the
+     * **anchor** rather than a reach's name, which is the whole seam #103 is
+     * owed: its Entscheid 4 puts this same handling at a second trigger, with
+     * two pins and another button, and calls it "keine neue Mechanik".
+     * Nothing here knows "everything but Game and TournamentType" — the type
+     * row's chip passes `pinnedKeys`, and a caller with a shorter list gets a
+     * shorter question.
+     */
+    confirmDrop: null,
+
+    askDrop({ keys, anchor, reach = 'all', bubble = DROP_BUBBLE, done = null }) {
+      const list = (keys ?? []).filter((key) => this.isPinned(key));
+      if (!list.length) return;
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = { keys: list, anchor, reach, bubble, done, type: this.typeId, game: this.gameId };
+    },
+
+    /**
+     * The question as text, and `null` once it no longer applies.
+     *
+     * A Set switch **withdraws** it: the question was asked of the old sheet,
+     * it names the type the pins would go back to, and under a new one it
+     * would name the wrong one (prototype, `switchType()`: "eine offene Frage
+     * gilt dem alten Blatt"). Derived here rather than cleared in `setType()`,
+     * so that every way the base can move is covered by the one rule.
+     */
+    get dropQuestion() {
+      const ask = this.confirmDrop;
+      if (!ask) return null;
+      if (ask.type !== this.typeId || ask.game !== this.gameId) return null;
+      const after = this.afterDrop(ask.keys);
+      return dropConfirmation({
+        keys: ask.keys,
+        typeTitle: this.typeTitle,
+        reach: ask.reach,
+        after: { settings: after.settings, plan: distribute(after.settings, after.pins) },
+      });
+    },
+
+    /** Declining has a named place beside confirming, which is why this is a
+     *  bubble and not a button that turns into a question (#33). */
+    cancelDrop() {
+      this.confirmDrop = null;
+    },
+
+    /** Confirming. The pins of the question fall — no more and no fewer — and
+     *  whoever asked runs its own errand afterwards: #103's message closes
+     *  itself with the answer, the type row's chip has nothing to close. */
+    applyDrop() {
+      const ask = this.dropQuestion;
+      const done = this.confirmDrop?.done;
+      this.confirmDrop = null;
+      if (!ask) return;
+      this.dropPins(ask.keys);
+      if (done) done();
+    },
+
+    /**
+     * The drop itself, over any set of keys. `Game` and `TournamentType` are
+     * out of reach here by construction rather than by an exception: they are
+     * no pins and stand in `gameId`/`typeId`, so this resets the screen to the
+     * chosen type and never chooses a new one (ADR 0006, addendum #26).
+     *
+     * A new record rather than a deletion in place: `plan.settings` is a
+     * snapshot of what was computed, and `afterDrop()` lays the survivors back
+     * over the sheet the way `resolve()` does; the address bar is written
+     * exactly as setting a pin writes it (#89).
+     */
+    dropPins(keys) {
+      const after = this.afterDrop(keys);
+      this.pins = after.pins;
+      this.settings = after.settings;
+      this.syncAddress();
+    },
+
+    /**
+     * What a drop installs, without installing it: the pin record without the
+     * named items and the sheet resolved over it. `dropPins()` installs exactly
+     * this, and the question reads its target values off exactly this — one
+     * computation for the announcement and the effect, so the bubble cannot
+     * promise a value the handling then does not set (#67, run 11, K3).
+     */
+    afterDrop(keys) {
+      const pins = pinsWithout(this.pins, keys);
+      return { pins, settings: this.resolvedFor(pins) };
+    },
+
+    /**
+     * The measuring rind of the question's bubble — the same two lines the
+     * tile's bubble has, and the same arithmetic behind them (`bubble.mjs`),
+     * because it is the same bubble form: it hangs off the button that was
+     * pressed, flips up where there is no room, stays in the frame, and
+     * **closes when its anchor is no longer visible**. One rule for all its
+     * inhabitants (#66).
+     *
+     * Two things differ from `placeBubble()`, both because this bubble's
+     * trigger is not inside `Plan`'s stage and #103's will be somewhere else
+     * again:
+     *
+     * - The **anchor is found by selector**, handed in with the question. A
+     *   second trigger site is then a second selector and not a second
+     *   handler.
+     * - The **frame is the viewport**, and the bubble is placed in it. The
+     *   scrolling box the anchor can leave is its own `[data-bubble-frame]`,
+     *   which is what the visibility is judged against — `Details` scrolls
+     *   itself, so an absolutely placed bubble inside it would scroll away
+     *   from the button it hangs on.
+     */
+    placeConfirm() {
+      if (!this.confirmDrop || typeof document === 'undefined') return;
+      const bubbleEl = document.querySelector(this.confirmDrop.bubble);
+      if (!bubbleEl) return;
+      const anchorEl = document.querySelector(this.confirmDrop.anchor);
+      const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
+      const viewport = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, frameEl ? frameEl.getBoundingClientRect() : viewport)) {
+        this.confirmDrop = null;
+        return;
+      }
+      const at = bubblePosition({
+        anchor,
+        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        stage: viewport,
+      });
+      bubbleEl.style.left = `${at.left}px`;
+      bubbleEl.style.top = `${at.top}px`;
     },
 
     /* ── The PreparationList (#65) ────────────────────────────────────── */

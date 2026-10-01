@@ -33,7 +33,7 @@
  */
 
 import { distribute } from '../core/distribute.mjs';
-import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
+import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
 
 /** The four hot ones, in the order #61 names them. They carry no group title:
  *  the page head is their title (#64). */
@@ -348,4 +348,305 @@ export function manualWinnerAfter(rank, count, { settings, plan }) {
 /** Whether the tile offers that handling — what the `Winner packs` ± is drawn from. */
 export function canPlaceWinner(rank, count, stand) {
   return manualWinnerAfter(rank, count, stand) !== null;
+}
+
+/* ── `pinned` against `auto`, and what a reach drops (#67) ──────────────── */
+
+/**
+ * The screen word of every item that can be `pinned`. It is what the question
+ * of the full reach **enumerates** — #61 and #67 ask for *which* sliders fall,
+ * not only how many — so a key without a word here would list itself in code
+ * type, and #52 settled for the `LinkMigration` report that a wire key is only
+ * ever shown where no screen word exists at all.
+ *
+ * The words are the sheet's own (`views/controls-sheet.php`), and
+ * `test/ui-pins.test.mjs` holds the two lists against each other rather than
+ * trusting them: they are two files, and a question that names a slider the
+ * sheet calls something else names nothing.
+ *
+ * Two of them are not `sheet_control()` calls and are therefore written out
+ * here by hand: **`displays` and `manualWinner`** are set at the tile and have
+ * no control on the sheet (#66). The words are the prototype's, which wrote
+ * them for this list and no other use (`cockpit.prototype.html`, `LABEL`) —
+ * `Displays` alone would not say, in a list of things being destroyed, that a
+ * reservation is meant.
+ *
+ * **`depthStep` has no word here, and that is the point.** It is the step grid
+ * *inside* `Served ranks` (`views/controls-sheet.php`: "part of this control,
+ * not a control beside it"), so it is no item of its own: it is a member of
+ * the item `depth`, see `PIN_MEMBERS`. What a step is called on screen —
+ * `top 8`, `top quarter` — is a **value** of that item and stands in
+ * `DEPTH_STEP_LABELS`, never a label (maintainer decision on #67, run 11, K3).
+ */
+export const PIN_LABELS = {
+  players: 'Players',
+  depth: 'Served ranks',
+  curve: 'Curve',
+  rankFloor: 'Min boosters per rank',
+  boosterRate: 'Boosters per player (pool)',
+  displaySize: 'Boosters per display',
+  tournamentPacks: 'Tournament packs available',
+  envelopeSize: 'Tournament Packs per Promo-Envelope',
+  envelopeYield: 'Winner packs per Promo-Envelope',
+  participationBooster: 'Participation boosters',
+  participationPack: 'Participation packs',
+  judgeBooster: 'Judge boosters',
+  judgeWinner: 'Judge winner packs',
+  combinedHandout: 'Handout',
+  winnerPacks: 'Winner packs available',
+  ranked: 'Winner packs by rank',
+  displays: 'Reserved displays',
+  manualWinner: 'Winner packs by hand',
+};
+
+/**
+ * The items that are made of more than one stored pin. An item is what the
+ * screen has **one control** for, and the counter, the marking, the question
+ * and the drop all go by items: `Served ranks` is one control whose slider is
+ * `depth` and whose step grid is `depthStep`, so it is one item `depth` with
+ * two members (maintainer decision on #67, run 11, K3: "Tiefe und Stufe sind
+ * ein Posten `Served ranks`, im Zähler genauso").
+ *
+ * It is the same device `displays` and `manualWinner` already use, one level
+ * up: there one pin carries many `Rank`s and counts as one, here one item
+ * carries two pins and counts as one. The record itself stays per key — the
+ * `SetupLink` carries `depth` and `depthStep` as two keys (#86) — so the
+ * grouping lives here and nowhere in `pins`.
+ */
+export const PIN_MEMBERS = {
+  depth: ['depth', 'depthStep'],
+};
+
+const ITEM_OF = Object.fromEntries(
+  Object.entries(PIN_MEMBERS).flatMap(([item, keys]) => keys.map((key) => [key, item])),
+);
+
+/** The item a stored key belongs to — itself, unless it is a member of one. */
+export function pinItem(key) {
+  return ITEM_OF[key] ?? key;
+}
+
+/** The stored keys an item is made of — itself, unless it has members. */
+export function pinMembers(item) {
+  return PIN_MEMBERS[item] ?? [item];
+}
+
+/** The order the question enumerates in: the sheet's own, then the two that
+ *  are set at the tile. A pin record has the order its pins were *set* in (or,
+ *  out of a `SetupLink`, the register's), and a list that reorders itself
+ *  between two readings cannot be compared by eye. */
+export const PIN_ORDER = [...SHEET_KEYS, 'displays', 'manualWinner'];
+
+/** The selector of the bubble the question is drawn in. A name rather than a
+ *  literal in two files, because #103 brings a second trigger site and the
+ *  bubble is what the two share. */
+export const DROP_BUBBLE = '[data-drop-bubble]';
+
+/**
+ * Whether a key stands `pinned` in a given pin record — the whole of the
+ * marking, and it never looks at the sheet. The pin is set by the handling
+ * (ADR 0006), so what is asked here is only whether the record carries
+ * something, never whether it deviates.
+ *
+ * The two composite pins are the one subtlety, and it is not a special case in
+ * disguise: a vector of zeroes and an empty map are *no* reservation and *no*
+ * hand-placed pack — `withDisplay()` above drops trailing zeroes for the same
+ * reason, and `manualWinnerAfter()` deletes a `Rank` that falls to zero. A
+ * record that still carries the emptied container is a record of a handling
+ * that has been taken all the way back.
+ *
+ * Written over the shape of the value rather than over a list of key names:
+ * #65 pins `winnerPacks`, #69 writes into `manualWinner`, #103 will drop
+ * `rankFloor` and `depth`, and a hand-typed list would have to learn about
+ * each of them.
+ *
+ * **It reads the value, and it may not ask whether the key is there.** The
+ * record it is handed at the surface is an Alpine proxy, and the reactivity
+ * behind it (`@vue/reactivity`) tracks a *read* and a `key in pins`, but not
+ * `hasOwnProperty` — that lands on the `getOwnPropertyDescriptor` trap, which
+ * is tracked by nothing. Written that way, the marking was right in
+ * `node --test` and dead on screen: a pinned slider kept reading `auto` until
+ * something else happened to redraw it. Measured at the picture on
+ * 2026-09-30, which is exactly the class of fault #61 says a test will not
+ * find. An absent key and one holding `undefined` say the same thing here
+ * anyway.
+ *
+ * Asked of an item with members (`PIN_MEMBERS`), it answers for the item:
+ * `Served ranks` stands `pinned` when its slider or its step grid carries a
+ * pin, because the counter counts it then, and a counter that says 1 over a
+ * sheet on which every control says `auto` would count something nobody can
+ * find.
+ */
+export function isPinned(key, pins) {
+  return pinMembers(key).some((member) => holdsPin(pins == null ? undefined : pins[member]));
+}
+
+function holdsPin(value) {
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.some((entry) => Number(entry) > 0);
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
+function pinRank(key) {
+  const at = PIN_ORDER.indexOf(key);
+  return at === -1 ? PIN_ORDER.length : at;
+}
+
+/**
+ * What stands `pinned`, in sheet order. `displays` and `manualWinner` are
+ * **one** entry each however many `Rank`s carry one (#61, #67): the question
+ * lists what falls, and what falls is the reservation as a whole. The counter
+ * is the length of this list and not a second count, which is the whole reason
+ * it is a list and not a number (prototype, Runde 23: "der Zähler addierte
+ * bisher jede manual-Zuteilung einzeln, die Meldung zählte sie als einen
+ * Posten — zwei Zahlen für dieselbe Sache").
+ *
+ * It lists **items**, not stored keys: `depth` and `depthStep` come out as the
+ * one entry `depth`, whichever of the two carries the pin (`PIN_MEMBERS`).
+ */
+export function pinnedKeys(pins) {
+  const items = new Set(Object.keys(pins ?? {}).map(pinItem));
+  return [...items]
+    .filter((item) => isPinned(item, pins))
+    .sort((a, b) => pinRank(a) - pinRank(b));
+}
+
+/** The screen word, or the key itself where a future pin has none yet. */
+export function pinLabel(key) {
+  return PIN_LABELS[key] ?? key;
+}
+
+/** The same list with the words the question reads out. */
+export function pinnedItems(pins) {
+  return pinnedKeys(pins).map((key) => ({ key, label: pinLabel(key) }));
+}
+
+/** The record without the named items — a new one, because the old one is
+ *  what the plan on screen was computed from. An item falls with all its
+ *  members: dropping `Served ranks` drops its slider and its step. */
+export function pinsWithout(pins, keys) {
+  const drop = new Set((keys ?? []).flatMap(pinMembers));
+  const next = {};
+  for (const [key, value] of Object.entries(pins ?? {})) if (!drop.has(key)) next[key] = value;
+  return next;
+}
+
+/**
+ * The middle sentence of the question, per reach. It is a table and not an
+ * `if`, and that is the seam #103 is owed: its Entscheid 4 puts the same third
+ * reach at a second trigger — switching `CombinedHandout` back off lists
+ * `rankFloor` and `depth` and carries the button that drops them, "keine neue
+ * Mechanik: dieselbe dritte Reichweite des Rückwegs an neuer Stelle". What it
+ * adds here is one entry; what it adds elsewhere is one `askDrop()` call.
+ *
+ * The wording is the prototype's (`confirmPop()`), including that `carry`
+ * differs from `all` in the middle sentence alone: the two reaches are the
+ * same handling, so a question that looked different would say they are not.
+ */
+export const DROP_NOTES = {
+  all: ({ many, typeTitle }) =>
+    `${many ? 'Each one goes' : 'It goes'} back to what ${typeTitle} says.`,
+  carry: ({ many, typeTitle }) =>
+    `${many ? 'They' : 'It'} stayed behind when you switched. Following ${typeTitle} now means ` +
+    `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
+};
+
+/** The one sentence no reach may drop: there is no undo, and it is said
+ *  because #33 withdrew the session-wide undo that would have made the
+ *  question dispensable (ADR 0006, second addendum). */
+export const NO_UNDO = 'There is no undo.';
+
+/**
+ * Whether a step's name already says how many ranks it serves: an absolute
+ * step of the RaffleRange (`abs` in `RANGES` — `top 8`, `top 16`) that the
+ * player count has not capped. A fractional step and `all` name a share, so
+ * the number has to be written beside them; so does an absolute step capped
+ * below its own number, whose name then says something the counter does not.
+ */
+function stepCarriesNumber(stepId, ranks) {
+  const step = RANGES.find((range) => range.id === stepId);
+  return step?.abs !== undefined && step.abs === ranks;
+}
+
+/**
+ * What an item will **show** once it has fallen — the value the reset sets it
+ * to, read off the stand *after* the drop and in the form the control itself
+ * shows it. It computes nothing of its own: the stand handed in is the one the
+ * drop is about to install (`planApp().afterDrop()`), so the question and the
+ * handling cannot drift apart (maintainer decision on #67, run 11, K3: "Der
+ * Zielwert wird nachgeschlagen, nicht hergeleitet").
+ *
+ * The forms are the controls' own:
+ *
+ * - **`Served ranks`** shows a step and a number — the chip that is pressed
+ *   and the counter beside it. A step's screen word is a *value* here and
+ *   comes out of `DEPTH_STEP_LABELS`; the number is the one the counter will
+ *   show, read off the plan like the counter reads it. The number stands in
+ *   brackets only where the step's name does not already carry it (maintainer
+ *   decision on #67, run 11, Phase G): `top 8`, but `top quarter (10)`. Where
+ *   the slider stays pinned no chip follows it, and the number alone is what
+ *   stands.
+ * - **`Curve`** shows its step by name, as the sheet's foot line does.
+ * - **`Handout`** is a checkbox: `on` or `off`.
+ * - **`Reserved displays`** and **`Winner packs by hand`** are the tiles'
+ *   counts summed, and `none` where nothing is left — a reach drops a
+ *   reservation as a whole, so it says what is left as a whole.
+ * - Every other control shows its number.
+ */
+export function pinTarget(item, stand) {
+  const { settings } = stand;
+  if (item === 'depth') {
+    const ranks = effectiveValue('depth', stand);
+    if (settings.depth != null) return String(ranks);
+    const word = DEPTH_STEP_LABELS[settings.depthStep] ?? settings.depthStep;
+    return stepCarriesNumber(settings.depthStep, ranks) ? word : `${word} (${ranks})`;
+  }
+  if (item === 'curve') return String(settings.curve);
+  if (item === 'combinedHandout') return settings.combinedHandout ? 'on' : 'off';
+  if (item === 'displays' || item === 'manualWinner') {
+    const counts = Object.values(settings[item] ?? {}).map(Number);
+    const total = counts.reduce((sum, count) => sum + (count > 0 ? count : 0), 0);
+    return total > 0 ? String(total) : 'none';
+  }
+  return String(effectiveValue(item, stand));
+}
+
+/**
+ * The one word the question calls an item by — in the bubble's head line and
+ * in the counter chip's spoken label. It stands here once so that #113, which
+ * replaces the sliders with counters and the word with another (comment on
+ * #67, "Aus #113 nachgetragen"), changes it in one place.
+ */
+export const DROP_NOUN = 'slider';
+
+/** The word with its count's number: `1 slider`, `2 sliders`. */
+export function dropNoun(count) {
+  return count === 1 ? DROP_NOUN : `${DROP_NOUN}s`;
+}
+
+/**
+ * The question itself, as text: `{ keys, typeTitle, reach, after }` → what the
+ * bubble shows. No DOM and no state — where it lands is the shell's measuring
+ * rind and is judged at the picture (#61, "Anker und Schichtung").
+ *
+ * It names, **per item, the control's screen title and the value the reset
+ * sets it to** (#67, run 11, K3: "Players auf …, Served ranks auf top 8").
+ * `after` is the stand the drop installs; without one — a caller that only
+ * wants the count — every `to` is `null`.
+ */
+export function dropConfirmation({ keys, typeTitle, reach = 'all', after = null }) {
+  const list = [...(keys ?? [])];
+  const count = list.length;
+  const many = count > 1;
+  const note = (DROP_NOTES[reach] ?? DROP_NOTES.all)({ many, typeTitle, count });
+  return {
+    keys: list,
+    count,
+    items: list.map((key) => ({ key, label: pinLabel(key), to: after ? pinTarget(key, after) : null })),
+    headline: `${count} ${dropNoun(count)} back to ${typeTitle}?`,
+    note: `${note} ${NO_UNDO}`,
+    confirm: `Drop ${count}`,
+    cancel: 'Keep them',
+  };
 }
