@@ -24,7 +24,23 @@
  */
 
 import { unfit } from '../core/distribute.mjs';
+import { offerFor, waysOut } from '../core/suggest.mjs';
 import { pinLabel } from './controls.mjs';
+
+/**
+ * The ways out and the Offer of a plan, computed once per stand. Both are
+ * re-runs of the core — up to a few hundred `distribute()` calls each — and
+ * the surface reads them several times per drawing, while Alpine caches no
+ * getter. The plan carries the Settings it was computed from (ADR 0009), and
+ * nothing else enters either search, so they are the key.
+ */
+let memo = { key: null, ways: [], offer: null };
+
+export function searchesFor(plan) {
+  const key = JSON.stringify(plan.settings);
+  if (memo.key !== key) memo = { key, ways: waysOut(plan), offer: offerFor(plan) };
+  return { ways: memo.ways, offer: memo.offer };
+}
 
 /** The four sources the core reports, in the order `CONTEXT.md` lists them. */
 const SOURCES = ['conflict', 'overtake', 'orphanedReservation', 'unclaimedRemainder'];

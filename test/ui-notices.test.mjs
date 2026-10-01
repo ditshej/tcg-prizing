@@ -262,3 +262,154 @@ test('the open stack is in the order of what it talks about: the plan above, the
   const stack = stackFor(floorConflict(3), freshFold(), { to: 'Release', keys: ['players'] });
   assert.deepEqual(ids(stack.open), ['conflict', 'carryOver']);
 });
+
+/* ── The wiring in planApp() (#68) ──────────────────────────────────────── */
+
+import { planApp } from '../public/ui/plan.mjs';
+
+/**
+ * The app as a test opens it: a cold start, and an address bar that remembers.
+ * Alpine is not there, so the effect that runs `refreshNotices()` after every
+ * change in the browser (`views/notices.php`) is called by hand here — the
+ * same one call, at the same moments.
+ */
+function app() {
+  const written = [];
+  const a = planApp({ read: () => '', write: (url) => written.push(url) });
+  a.refreshNotices();
+  return { a, written };
+}
+
+/** Drives the app into the two-fact stand of `combinedWayOut()`'s test, by
+ *  the controls the CommunityLead has — sliders and tiles, nothing written
+ *  past them. */
+function intoTwoFacts(a) {
+  for (const [key, value] of Object.entries({ players: 8, boosterRate: 1, participationBooster: 0, judgeBooster: 0, displaySize: 2, curve: 'steep', rankFloor: 0, depth: 3 })) {
+    a.setSlider(key, value);
+  }
+  a.setDisplays(1, 1);
+  a.setDisplays(2, 1);
+  a.setDisplays(3, 1);
+  a.setSlider('rankFloor', 3);
+  a.setSlider('depth', 2);
+  a.refreshNotices();
+}
+
+test('the app reaches the two-fact stand by its own controls, and offers the one combined way', () => {
+  const { a } = app();
+  intoTwoFacts(a);
+  assert.deepEqual(a.settings.displays, [1, 1, 1]);
+  assert.equal(unfit(a.plan), true);
+  const conflict = a.notices.open.find((n) => n.id === 'conflict');
+  assert.equal(conflict.actions.length, 1);
+  assert.equal(conflict.actions[0].way.changes.length, 2);
+});
+
+test('the combined way is taken with one click, pins what it moves, and the core finds the plan fit', () => {
+  const { a } = app();
+  intoTwoFacts(a);
+  delete a.pins.rankFloor;
+  const [action] = a.notices.open.find((n) => n.id === 'conflict').actions;
+  a.applyWayOut(action.way);
+  a.refreshNotices();
+  assert.equal(unfit(distribute(a.settings)), false);
+  assert.equal(a.isPinned('rankFloor'), true);
+  assert.equal(a.isPinned('displays'), true);
+  assert.deepEqual(a.notices.open.map((n) => n.id), []);
+});
+
+test('a single way out is taken with one click and pins its slider', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 8);
+  a.setSlider('depth', 32);
+  a.refreshNotices();
+  assert.equal(unfit(a.plan), true);
+  const ways = a.notices.open.find((n) => n.id === 'conflict').actions;
+  assert.ok(ways.length > 0);
+  const curvePinned = a.isPinned('curve');
+  const { way } = ways[ways.length - 1];
+  a.applyWayOut(way);
+  assert.equal(unfit(distribute(a.settings)), false);
+  assert.equal(a.isPinned(way.key), true);
+  if (way.key !== 'curve') assert.equal(a.isPinned('curve'), curvePinned);
+});
+
+test('the way back to auto unpins instead of pinning', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 3);
+  assert.equal(a.isPinned('rankFloor'), true);
+  a.applyWayOut({ key: 'rankFloor', auto: true, label: 'Floor back to auto' });
+  assert.equal(a.isPinned('rankFloor'), false);
+});
+
+test('a reload opens everything, and nothing of the fold reaches the address bar', () => {
+  const { a, written } = app();
+  a.setSlider('rankFloor', 8);
+  a.setSlider('depth', 32);
+  a.refreshNotices();
+  const before = written.length;
+  a.minimizeNotice('conflict');
+  a.refreshNotices();
+  assert.equal(a.noticeFold.conflict.open, false);
+  assert.equal(written.length, before, 'minimizing wrote the address bar');
+  assert.doesNotMatch(written[written.length - 1], /fold|notice|open/i);
+  const reloaded = planApp({ read: () => written[written.length - 1].replace(/^[^?]*/, ''), write: () => {} });
+  reloaded.refreshNotices();
+  assert.equal(unfit(reloaded.plan), true);
+  assert.equal(reloaded.noticeFold.conflict.open, true);
+});
+
+test('a chip survives the page switch', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 8);
+  a.setSlider('depth', 32);
+  a.refreshNotices();
+  a.minimizeNotice('conflict');
+  a.setPage('details');
+  a.refreshNotices();
+  assert.deepEqual(a.notices.chips.map((c) => c.id), ['conflict']);
+  a.expandNotice('conflict');
+  assert.deepEqual(a.notices.open.map((n) => n.id), ['conflict']);
+});
+
+test('a Set switch raises the CarryOverNotice with what stayed pinned, and opens the standing notices', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 8);
+  a.setSlider('depth', 32);
+  a.refreshNotices();
+  a.minimizeNotice('conflict');
+  a.setType('weekend');
+  a.refreshNotices();
+  const carried = a.notices.open.find((n) => n.id === 'carryOver');
+  assert.ok(carried, 'the CarryOverNotice stands');
+  assert.equal(carried.chip.word, '2 kept');
+  assert.equal(carried.actions[0].label, 'Drop all 2 and follow Weekend');
+  assert.equal(a.noticeFold.conflict.open, true);
+});
+
+test('the CarryOverNotice asks the same question as the type title, and closes with the answer', () => {
+  const { a } = app();
+  a.setSlider('rankFloor', 3);
+  a.setType('weekend');
+  a.refreshNotices();
+  a.dropCarried('[data-notice-carry]');
+  assert.equal(a.confirmDrop.reach, 'carry');
+  assert.deepEqual(a.confirmDrop.keys, ['rankFloor']);
+  a.applyDrop();
+  a.refreshNotices();
+  assert.equal(a.isPinned('rankFloor'), false);
+  assert.deepEqual(a.notices.open.map((n) => n.id).filter((id) => id === 'carryOver'), []);
+});
+
+test('the Offer is taken with one click and pins the reservation', () => {
+  const { a } = app();
+  a.setType('weekend');
+  a.setSlider('depth', 8);
+  a.setSlider('curve', 'steep');
+  a.refreshNotices();
+  const offer = a.notices.open.find((n) => n.id === 'offer');
+  assert.ok(offer, 'an Offer stands');
+  a.acceptOffer(offer.actions[0].offer);
+  assert.equal(a.settings.displays[offer.actions[0].offer.rank - 1], offer.actions[0].offer.value);
+  assert.equal(a.isPinned('displays'), true);
+});

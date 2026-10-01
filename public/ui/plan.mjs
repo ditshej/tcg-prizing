@@ -58,6 +58,7 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
+import { dismiss, expand, foldStep, freshFold, minimize, noticeStack, searchesFor } from './notices.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -1018,6 +1019,132 @@ export function planApp(seam = SEAM) {
      */
     takeOffer(offer) {
       this.setSlider(offer.key, offer.value);
+    },
+
+    // NoticeStack (#68)
+
+    /**
+     * The fold record: which notice stands open and which as a chip, and the
+     * Offer that was turned down. Session state, like the page and the open
+     * bubble — in the `SetupLink` as little as they are, and a reload starts
+     * from a fresh record with everything open (#61, "Session state"). The
+     * rule that moves it is `foldStep()` (`notices.mjs`), on the proven side.
+     */
+    noticeFold: freshFold(),
+
+    /**
+     * The last Set switch, `{ to, keys }`: the type it went to and the pinned
+     * items that stayed behind. `null` before the first switch. It is an
+     * **event**, so it is recorded at the moment of the switch and not
+     * re-derived — the pins can change afterwards, the report of what the
+     * switch kept does not (CONTEXT.md, `CarryOverNotice`).
+     */
+    carryOver: null,
+
+    /** The count of Set switches so far, and the base the last one left. */
+    noticeEvent: 0,
+    noticeBase: null,
+
+    /**
+     * One step of the fold, after every change: the effect in
+     * `views/notices.php` runs it whenever the plan or the base moves, which
+     * is Alpine's equivalent of the prototype's `render()` reading the keys
+     * on every drawing. It writes only when something changed, so the effect
+     * that read the record settles rather than loops.
+     *
+     * The Set switch is told apart here, by the base moving, rather than in
+     * `setType()`: that handler is not this section's to touch, and every way
+     * the base can move — the type chips, the Game row — is then the one event.
+     */
+    refreshNotices() {
+      const base = `${this.gameId}/${this.typeId}`;
+      if (this.noticeBase !== null && base !== this.noticeBase) {
+        this.noticeEvent += 1;
+        this.carryOver = { to: this.typeTitle, keys: this.pinnedKeys };
+      }
+      this.noticeBase = base;
+      const plan = this.plan;
+      const next = foldStep(this.noticeFold, { plan, offer: searchesFor(plan).offer, event: this.noticeEvent });
+      if (JSON.stringify(next) !== JSON.stringify(this.noticeFold)) this.noticeFold = next;
+    },
+
+    /** The ways out of the plan on screen: the single ones, or the one way
+     *  over several sliders where no single slider clears (ADR 0002, K1). */
+    get noticeWays() {
+      return searchesFor(this.plan).ways;
+    },
+
+    /** The stack as it stands — `{ open, chips }`, the plan's notice first. */
+    get notices() {
+      const plan = this.plan;
+      const { ways, offer } = searchesFor(plan);
+      return noticeStack({
+        plan,
+        ways,
+        offer,
+        carry: this.carryOver,
+        fold: this.noticeFold,
+      });
+    },
+
+    minimizeNotice(id) {
+      this.noticeFold = minimize(this.noticeFold, id);
+    },
+
+    /** The chip's one action. It accepts nothing and triggers nothing. */
+    expandNotice(id) {
+      this.noticeFold = expand(this.noticeFold, id);
+    },
+
+    /** The ✕ of the Offer and of the CarryOverNotice; the ConflictNotice has none. */
+    dismissNotice(id) {
+      this.noticeFold = dismiss(this.noticeFold, id, id === 'offer' ? searchesFor(this.plan).offer : null);
+    },
+
+    /**
+     * A way out taken with one click. Every change goes through the handler
+     * a control has, so it pins what it moves (ADR 0006) and writes the
+     * address bar — except the way back to `auto`, which *is* the reset at the
+     * control and drops the pin instead (ADR 0002, addendum).
+     *
+     * A combined way changes several things at once, and the reservation is
+     * changed Rank by Rank at the tile's own handler: falling Ranks from the
+     * bottom up, rising ones from the top down, so that every single step
+     * keeps `d₁ ≥ d₂ ≥ …` and none is refused on the way.
+     */
+    applyWayOut(way) {
+      if (way.auto) {
+        this.resetSlider(way.key);
+        return;
+      }
+      const changes = way.changes ?? [way];
+      const ranks = changes.filter((change) => change.key === 'displays');
+      const now = (change) => Number(this.settings.displays?.[change.rank - 1] ?? 0);
+      const falling = ranks.filter((change) => change.value < now(change)).sort((x, y) => y.rank - x.rank);
+      const rising = ranks.filter((change) => change.value > now(change)).sort((x, y) => x.rank - y.rank);
+      for (const change of changes) if (change.key !== 'displays') this.setSlider(change.key, change.value);
+      for (const change of [...falling, ...rising]) this.setDisplays(change.rank, change.value);
+    },
+
+    /** The Offer's button: the reservation it names, set at the tile's handler. */
+    acceptOffer(offer) {
+      this.setDisplays(offer.rank, offer.value);
+    },
+
+    /**
+     * *Drop all N and follow <Type>* — the third reach of the way back, and
+     * the same question in the same bubble as at the type title (#33, #67):
+     * anchored at the button that was pressed. Confirmed, it drops exactly the
+     * pins the notice lists and the notice closes with the answer.
+     */
+    dropCarried(anchor) {
+      if (!this.carryOver) return;
+      this.askDrop({
+        keys: this.carryOver.keys,
+        anchor,
+        reach: 'carry',
+        done: () => this.dismissNotice('carryOver'),
+      });
     },
   };
 }
