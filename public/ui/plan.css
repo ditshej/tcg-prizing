@@ -473,6 +473,11 @@ body {
   font-size: 0.75rem;
 }
 
+.controls-hot .counter-value {
+  padding: 1px 2px;
+  font-size: 0.8rem;
+}
+
 /*
  * The Details sheet (#64): the Set block and the seventeen controls.
  *
@@ -620,9 +625,18 @@ body {
    on the title line of `Served ranks` (#104, #113). */
 .sheet-control-title {
   display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
   align-items: baseline;
   gap: 6px;
   white-space: nowrap;
+}
+
+/* …except a label too long for its column, which wraps inside itself rather
+   than pushing the counter off the edge. `Served ranks` is short, so its
+   line — title, word, `cap N` — stays one. */
+.sheet-control-title .sheet-control-label {
+  white-space: normal;
 }
 
 .sheet-control-note {
@@ -644,7 +658,11 @@ body {
   white-space: nowrap;
 }
 
+/* `flex: none`: a long title ("Tournament Packs per Promo-Envelope") may
+   wrap, the counter may not shrink — squeezed, the field went to zero width
+   and the number vanished (measured at 393 px, #113). */
 .counter {
+  flex: none;
   margin-left: auto;
   display: flex;
   align-items: stretch;
