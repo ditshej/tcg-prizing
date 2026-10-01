@@ -73,6 +73,11 @@ export const RAFFLE_CLEARANCE = 10;
  * runs to the bottom edge, it is the bar's whole height. Without it the last
  * ranks are unreachable in exactly the moment a throw lands on one of them.
  *
+ * The tile bubble (#66) hangs on this padding too: `placeBubble()` judges against
+ * the stage and the grid and knows nothing of the bar, so the bubble stays clear
+ * of it solely because no tile can be scrolled under the bar to anchor one.
+ * Shrink this, and the bubble (z-index 38) opens beneath the bar (40).
+ *
  * `barRect` is `null` while the bar is closed.
  */
 export function raffleScrollPadding(windowRect, barRect) {
