@@ -44,22 +44,43 @@ test('one pinned control makes exactly one deviation in the copied link (K5, not
 });
 
 /*
- * OPEN — red by the register, not by this file. `depthStep` is pinnable at the
- * screen (`setSlider('depthStep', …)`, the step chips of `Served ranks`, #64,
- * #67 K3), and `plan.pinned` reports it. But the v1 wire has no key for it
- * (`link/keys.mjs`, #47 "depthStep steht nicht im Link"), so `encode()` drops
- * it: measured at 48 players, sender `top quarter` → depth 12, receiver gets
- * `top 8` → depth 8. #47's reason ("reproducible from the base") holds only
- * for an unpinned step. Fixing it means a wire decision (`public/link/*`,
- * not this ticket's to write). The assertion stays as it was asked for.
+ * Every pin travels, the step pin included (run 12, K1 on #72). Before that
+ * the v1 register had no `depthStep` key and `encode()` dropped it: measured
+ * at 48 players, sender `top quarter` → 12 ranks, receiver `top 8` → 8.
  */
-test('a pinned depthStep still reaches the copied link (K5: G3 measured it lost silently)', {
-  todo: 'the v1 register has no depthStep key — a decision for #47/keys.mjs, see the comment above',
-}, () => {
+test('a pinned depthStep still reaches the copied link (K5: G3 measured it lost silently)', () => {
   const { app } = opened();
   app.setSlider('depthStep', 'topQuarter');
   assert.deepEqual(app.plan.pinned, { depthStep: 'topQuarter' }, 'the plan reports the step as set by hand');
   assert.equal(paramsOf(app.linkQuery).get('depthStep'), 'topQuarter');
+});
+
+test('the receiver of a top-quarter link at 48 players sees the 12 ranks the sender saw, and 16 at 64', () => {
+  const { app: sender } = opened();
+  sender.setSlider('players', 48);
+  sender.setSlider('depthStep', 'topQuarter');
+  assert.equal(sender.plan.depth, 12);
+
+  const { app: receiver } = opened(sender.linkQuery);
+  assert.equal(receiver.linkReport, null);
+  assert.equal(receiver.plan.depth, 12, 'the step travelled, not the number it made');
+  receiver.setSlider('players', 64);
+  assert.equal(receiver.plan.depth, 16);
+});
+
+test('a pure step pin after a cold start writes the address bar, base along (N2; #89)', () => {
+  const { app, written } = opened();
+  app.setSlider('depthStep', 'topQuarter');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekly&depthStep=topQuarter']);
+});
+
+test('the pin counter beside Copy link names the same items the link carries (N2)', () => {
+  const { app } = opened();
+  app.setSlider('depthStep', 'topQuarter');
+  assert.equal(app.pinCount, 1);
+  assert.deepEqual(app.pinnedItems.map((item) => item.key), ['depth'], 'the step is the item Served ranks');
+  const carried = [...paramsOf(app.linkQuery).keys()].filter((key) => !['v', 'game', 'type'].includes(key));
+  assert.deepEqual(carried, ['depthStep'], 'and the link carries that item, by its step');
 });
 
 test('a pinned Served ranks number reaches the copied link as the one deviation', () => {

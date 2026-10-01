@@ -5,11 +5,12 @@
  * carries a second idea of the key list (docs/agents/setup-link.md).
  */
 
-import { CURRENT_VERSION, KEYS } from './keys.mjs';
+import { CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
 
 /**
- * `{ game, type, pins }` → the **copy form**: a complete query string, the
- * base first, then every pinned slider in the register's order.
+ * `{ game, type, pins, choices }` → the **copy form**: a complete query
+ * string, the base first, then every pinned slider in the register's order,
+ * then every hand-set choice that differs from its term constant.
  *
  * The base — `v`, `game`, `type` — is written in every case, pinned sliders
  * or none. That is exactly the link #44 means: "Weekend, nothing touched". An
@@ -19,19 +20,24 @@ import { CURRENT_VERSION, KEYS } from './keys.mjs';
  *
  * **`pins` is the pinned sliders, not a settings object.** Only the pins and
  * the base go on the wire; the receiver rebuilds the stand from the DefaultSet
- * plus those deviations (K5, at #86/#89/#72). A key the register does not name
- * is dropped here — `depthStep` above all, which a settings object carries and
- * which is not a slider (`keys.mjs`). What this function *cannot* catch is a
- * full settings object: eighteen settings and eighteen pins are the same shape,
- * so handing it one turns a single pin into a whole link, silently. That is a
- * rule for the caller to keep (#89), and no test down here can hold it.
+ * plus those deviations (K5, at #86/#89/#72). Every pin travels, the step pin
+ * `depthStep` included (run 12, K1 on #72); a key the register does not name
+ * is dropped here. What this function *cannot* catch is a full settings
+ * object: nineteen settings and nineteen pins are the same shape, so handing
+ * it one turns a single pin into a whole link, silently. That is a rule for
+ * the caller to keep (#89), and no test down here can hold it.
+ *
+ * **`choices` is what is set by hand without being a slider** — the
+ * `RaffleRange` (`CHOICE_KEYS`; run 12, K1b on #72). It is not a pin and is
+ * kept apart from `pins` for that reason, and it is written only where it
+ * differs from its term constant (`all`): only deviations.
  *
  * **The order is the register's, never the one the pins arrived in.** The same
  * stand therefore always yields the same string: a link is compared by eye,
  * and `replaceState` must not re-sort the address on every drag (#47, "Die
  * Reihenfolge ist fest").
  */
-export function encode({ game, type, pins = {} } = {}) {
+export function encode({ game, type, pins = {}, choices = {} } = {}) {
   const parts = [`v=${CURRENT_VERSION}`, `game=${field(game)}`, `type=${field(type)}`];
   for (const { key, type: valueType } of KEYS) {
     const value = pins[key];
@@ -41,11 +47,16 @@ export function encode({ game, type, pins = {} } = {}) {
     const written = writeValue(valueType, value);
     if (written !== ABSENT) parts.push(`${key}=${field(written)}`);
   }
+  for (const { key, term } of CHOICE_KEYS) {
+    const value = choices[key];
+    if (value === undefined || value === null || value === term) continue;
+    parts.push(`${key}=${field(String(value))}`);
+  }
   return `?${parts.join('&')}`;
 }
 
 /**
- * `{ game, type, pins }` → what the address bar should become, or `null` for
+ * `{ game, type, pins, choices }` → what the address bar should become, or `null` for
  * **leave it alone**.
  *
  * Two rules draw a line between the address bar and the copy form, and the
@@ -55,8 +66,8 @@ export function encode({ game, type, pins = {} } = {}) {
  * first paint. "A link names its base always" protects a link **in
  * circulation**; an app merely opened has none, and changing the address
  * because someone opened the page is a movement without a counterpart (#47,
- * "Writing the address bar"). The **first pin** then writes `v`, `game`,
- * `type` and that pin in one go.
+ * "Writing the address bar"). The **first pin** — or the first `RaffleRange`
+ * off `all` — then writes `v`, `game`, `type` and that deviation in one go.
  *
  * **Why the rule lives here** and not one layer down or one layer up. Not in
  * `location.mjs`: that file is the unproven rim of the seam and carries no
@@ -68,13 +79,13 @@ export function encode({ game, type, pins = {} } = {}) {
  * one thing it cannot delegate: `null` means it calls nothing (the wiring is
  * #89).
  *
- * A pin set whose every value encodes as absent counts as no pin at all — its
- * copy form is the bare base, so writing it would be exactly the movement
- * without a counterpart.
+ * A setup whose every pin and choice encodes as absent counts as no deviation
+ * at all — its copy form is the bare base, so writing it would be exactly the
+ * movement without a counterpart.
  */
 export function addressFor(setup) {
   const query = encode(setup);
-  return query === encode({ ...setup, pins: {} }) ? null : query;
+  return query === encode({ ...setup, pins: {}, choices: {} }) ? null : query;
 }
 
 /** What a pinned value that says nothing writes as: nothing at all. */

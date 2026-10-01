@@ -132,11 +132,11 @@ const SEAM = { read: readLocation, write: writeLocation };
  */
 function openingRead(query) {
   const empty = String(query ?? '').replace(/^[?#]/, '') === '';
-  if (empty) return { game: GAME.id, type: TOURNAMENT_TYPES[0].id, pins: {}, report: null, write: false };
+  if (empty) return { game: GAME.id, type: TOURNAMENT_TYPES[0].id, pins: {}, choices: {}, report: null, write: false };
 
   const lifted = migrate(decode(query, GAMES));
   const fromTheFuture = (lifted.report?.entries ?? []).some((entry) => entry.kind === 'futureVersion');
-  return { ...lifted, report: lifted.report ?? null, write: !fromTheFuture };
+  return { ...lifted, choices: lifted.choices ?? {}, report: lifted.report ?? null, write: !fromTheFuture };
 }
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
@@ -151,7 +151,9 @@ export function planApp(seam = SEAM) {
   const openedType = TOURNAMENT_TYPES.find((entry) => entry.id === opened.type) ?? TOURNAMENT_TYPES[0];
   // K6, before the first paint: what came in has been read, so what holds is
   // what the address bar says from here on.
-  if (opened.write) seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins }));
+  if (opened.write) {
+    seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins, choices: opened.choices }));
+  }
 
   return {
     /**
@@ -446,8 +448,9 @@ export function planApp(seam = SEAM) {
      * The address bar after a change the SetupLink carries — a pin, or the
      * base beneath it. It takes the **pins**, never the resolved stand: the
      * stand names every slider, so `encode(this.settings)` would turn one pin
-     * into twelve decisions nobody made and lose `depthStep` on the way
-     * (Befund G3, `## Nachtrag (#86)` in ADR 0009).
+     * into twelve decisions nobody made (Befund G3, `## Nachtrag (#86)` in
+     * ADR 0009). Beside the pins it carries the `RaffleRange`, the one hand-set
+     * choice that is no pin (run 12, K1b on #72) — see `linkChoices`.
      *
      * Which of the two forms is written hangs on whether a link is in
      * circulation, not on how many pins stand. Before the first pin of a cold
@@ -458,7 +461,7 @@ export function planApp(seam = SEAM) {
      * naming the type the sender chose.
      */
     syncAddress() {
-      const setup = { game: this.gameId, type: this.typeId, pins: this.pins };
+      const setup = { game: this.gameId, type: this.typeId, pins: this.pins, choices: this.linkChoices };
       const url = this.linkInCirculation ? encode(setup) : addressFor(setup);
       if (url === null) return;
       this.linkInCirculation = true;
@@ -669,17 +672,25 @@ export function planApp(seam = SEAM) {
     raffleOpen: false,
 
     /**
-     * The `RaffleRange`, and it is **no `Regler`** but session state of this
-     * operating step (#69, #61): no pin, no reset button, not counted in
-     * `Drop all N`, never in the `SetupLink`, and a Set switch leaves it
+     * The `RaffleRange`, and it is **no `Regler`** (#69, #61): no pin, no
+     * reset button, not counted in `Drop all N`, and a Set switch leaves it
      * standing. Its default `all` is a constant of the term, which is why it
      * sits here as a literal and in no `DefaultSet`.
      *
-     * That is also why `controls.mjs` has no entry for it and `link/keys.mjs`
-     * no key: with it absent from both, the sentence "`pinned` gilt für alle
-     * Regler gleich" stays true without an exception.
+     * It **travels in the `SetupLink`** all the same (run 12, K1b on #72: "Auch
+     * die RaffleRange reist im Link mit"), as a key beside the sliders —
+     * `CHOICE_KEYS` in `link/keys.mjs`, never `KEYS` — and a link that names
+     * one opens with it. `controls.mjs` still has no entry for it, so the
+     * sentence "`pinned` gilt für alle Regler gleich" stays true without an
+     * exception.
      */
-    raffleRange: DEFAULT_RANGE,
+    raffleRange: opened.choices.raffleRange ?? DEFAULT_RANGE,
+
+    /** What the link carries beside the pins: the hand-set choices that are
+     *  no pin. `encode()` leaves out whatever equals its term constant. */
+    get linkChoices() {
+      return { raffleRange: this.raffleRange };
+    },
 
     /**
      * The `Rank` the last throw hit — kept only so the announcement can name
@@ -717,9 +728,14 @@ export function planApp(seam = SEAM) {
       this.raffleOpen = false;
     },
 
-    /** Session state, so this writes no pin and no address (#69 AC 12). */
+    /**
+     * No `Regler`, so this writes no pin (#69 AC 12) — but the address, as a
+     * pin does (run 12, K1b on #72): otherwise `Copy link` would carry a range
+     * that a reload loses.
+     */
     setRaffleRange(id) {
       this.raffleRange = id;
+      this.syncAddress();
     },
 
     /**
@@ -1036,7 +1052,7 @@ export function planApp(seam = SEAM) {
      * start until the first pin (#50, narrowed by run 9 on #89).
      */
     get linkQuery() {
-      return encode({ game: this.gameId, type: this.typeId, pins: this.plan.pinned });
+      return encode({ game: this.gameId, type: this.typeId, pins: this.plan.pinned, choices: this.linkChoices });
     },
 
     /**

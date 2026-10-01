@@ -28,7 +28,9 @@
  * entries while the sheet draws sixteen boxes.
  *
  * `raffleRange` is not among them and is not a miscount: #61 says outright it
- * is no `Regler` but session state of the operating step. Its pointer on the
+ * is no `Regler`, so it has no pin, no reset and no entry here. It travels in
+ * the `SetupLink` all the same — as a key beside the sliders, not as one
+ * (run 12, K1b on #72; `CHOICE_KEYS` in `link/keys.mjs`). Its pointer on the
  * sheet belongs to #69.
  */
 

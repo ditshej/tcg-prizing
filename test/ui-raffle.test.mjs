@@ -8,6 +8,7 @@ import { RANGES } from '../public/core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { planApp } from '../public/ui/plan.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView, rangeName } from '../public/ui/raffle.mjs';
+import { CHOICE_KEYS } from '../public/link/keys.mjs';
 
 /**
  * The WinnerRaffle as an operating step (#69): the bar's model, the throw, and
@@ -176,19 +177,63 @@ test('the grip toggles the bar and nothing else closes it by itself', () => {
 });
 
 /**
- * The `RaffleRange` is **no `Regler`**: no pin, never in the `SetupLink`, not
- * counted among the pins, and a Set switch leaves it standing (#69, #61). The
- * address bar is the sharpest of those — it is the one that would be wrong in
- * public.
+ * The `RaffleRange` is **no `Regler`**: no pin, not counted among the pins,
+ * and a Set switch leaves it standing (#69, #61). It **travels in the
+ * `SetupLink`** all the same (run 12, K1b on #72), so a range change writes
+ * the address bar — or `Copy link` would carry a range a reload loses.
  */
-test('setting the RaffleRange writes no pin and no address', () => {
+test('setting the RaffleRange writes no pin, but the address bar carries it', () => {
   const { it, written } = app();
-  const before = written.length;
   it.setRaffleRange('bottomHalf');
   assert.equal(it.raffleRange, 'bottomHalf');
   assert.deepEqual(it.pins, {});
-  assert.equal(written.length, before, 'the address bar was written for a range change');
+  assert.equal(it.pinCount, 0, 'the pin counter is left as it is (open question to the maintainer)');
+  assert.equal(new URLSearchParams(written.at(-1).slice(1)).get('raffleRange'), 'bottomHalf');
   assert.equal('raffleRange' in it.settings, false);
+});
+
+test('the wire and the screen agree on the term constant an absent raffleRange means', () => {
+  const entry = CHOICE_KEYS.find((k) => k.key === 'raffleRange');
+  assert.equal(entry.term, DEFAULT_RANGE, 'two layers that may not import one another, held together here');
+});
+
+function coldStart(query = '') {
+  const written = [];
+  const it = planApp({ read: () => query, write: (url) => written.push(url) });
+  return { it, written };
+}
+
+test('after a cold start the first range off `all` writes the base along, and `all` is never written', () => {
+  const { it, written } = coldStart();
+  it.setRaffleRange('topHalf');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekly&raffleRange=topHalf']);
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekly&raffleRange=topHalf');
+  it.setRaffleRange(DEFAULT_RANGE);
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly', 'back on `all`, the key goes, the base stays');
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekly');
+});
+
+test('a link that names a RaffleRange opens with it, and Copy link carries it on', () => {
+  const { it, written } = coldStart('?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird');
+  assert.equal(it.raffleRange, 'bottomThird');
+  assert.equal(it.linkReport, null, 'a readable range is no loss');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird']);
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird');
+});
+
+test('an unknown range name is dropped with a report, and the bar opens on `all`', () => {
+  const { it, written } = coldStart('?v=1&game=onepiece&type=weekend&raffleRange=topFifth');
+  assert.equal(it.raffleRange, DEFAULT_RANGE);
+  assert.deepEqual(it.linkReport.entries, [{ kind: 'unreadableValue', key: 'raffleRange' }]);
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend'], 'the address is cleaned up');
+});
+
+test('Drop all N leaves the RaffleRange standing, and it never counts as one of the N', () => {
+  const { it } = coldStart('?v=1&game=onepiece&type=weekend&players=40&raffleRange=top16');
+  assert.equal(it.pinCount, 1);
+  it.dropPins(it.pinnedKeys);
+  assert.equal(it.raffleRange, 'top16');
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekend&raffleRange=top16');
 });
 
 test('a Set switch leaves the RaffleRange standing', () => {

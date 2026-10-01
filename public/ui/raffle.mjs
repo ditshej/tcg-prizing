@@ -19,11 +19,13 @@
  *   allocation came from (CONTEXT.md, `WinnerRaffle`), which is also why a
  *   hit is marked only fleetingly.
  *
- * The `RaffleRange` is **no `Regler`** but session state of this operating
- * step: no pin, no reset, not counted in `Drop all N`, never in the
- * `SetupLink`, untouched by a Set switch. Its default `all` is a constant of
+ * The `RaffleRange` is **no `Regler`**: no pin, no reset, not counted in
+ * `Drop all N`, untouched by a Set switch. It travels in the `SetupLink`
+ * nonetheless (run 12, K1b on #72), as a key beside the sliders that is
+ * written only when it differs from `all`. Its default `all` is a constant of
  * the term and not a sheet entry, so it stands here as `DEFAULT_RANGE` and
- * not in `core/defaults.mjs`.
+ * not in `core/defaults.mjs` — and once more, as `term`, in `link/keys.mjs`,
+ * which may not import from the screen.
  */
 
 import { RANGES, rafflePot } from '../core/rules.mjs';

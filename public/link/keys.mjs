@@ -30,19 +30,20 @@ export const BASE_KEYS = [
 ];
 
 /**
- * The eighteen slider keys — the `Settings` field names from #46, 1:1 and
- * without short codes, in the order `encode()` writes them. Two things do
- * *not* live here, and neither is an oversight:
+ * The nineteen slider keys — the `Settings` field names from #46, 1:1 and
+ * without short codes, in the order `encode()` writes them. **Every pin
+ * travels** (run 12, K1 on #72; ADR 0005, addendum run 12): the link carries
+ * everything set by hand.
  *
- * - `depthStep` is not a slider, it is a DefaultSet entry: "the slider itself
- *   stays absolute, the step only supplies the starting value" (CONTEXT.md,
- *   RankPoolDepth). Were it in the link, two keys would talk about depth and
- *   could disagree — ADR 0005 rejected exactly that shape. The link already
- *   names its TournamentType, so the step is reproducible from the base.
- * - `RaffleRange` never reaches `distribute()` — it only bounds a raffle
- *   draw's input, and what the draw produces already lands in the link via
- *   `manualWinner`. Cost, named: whoever set a range and then shared the link
- *   loses that one choice; it is one slider drag to set again.
+ * - `depthStep` sits right after `depth`. It is the step grid inside `Served
+ *   ranks`, and since #67 a step chip pins it. An unpinned step is
+ *   reproducible from the base, a pinned one is not: before run 12 the key
+ *   was missing and `Weekly`, 48 players, `top quarter` sent 12 ranks and
+ *   showed the receiver 8. Two pins over depth do not disagree — the receiver
+ *   resolves them with the same core as the sender, a pinned `depth` first.
+ *   Its value is a step name out of `DEPTH_STEPS`, read like `curve`.
+ * - The `RaffleRange` is not here: it is no `Settings` field and no slider.
+ *   It travels all the same, as a key of `CHOICE_KEYS` below.
  *
  * `absent` says what a missing key means — the half of the format that a key
  * list alone does not capture:
@@ -68,6 +69,7 @@ export const KEYS = [
   { key: 'judgeWinner', type: 'int', absent: 'leaf' },
   { key: 'rankFloor', type: 'int', absent: 'leaf' },
   { key: 'depth', type: 'int', absent: 'null' },
+  { key: 'depthStep', type: 'stepId', absent: 'leaf' },
   { key: 'curve', type: 'curveId', absent: 'leaf' },
   { key: 'ranked', type: 'int', absent: 'null' },
   { key: 'winnerPacks', type: 'int', absent: 'null' },
@@ -85,3 +87,19 @@ export const KEYS = [
   },
   { key: 'combinedHandout', type: 'bit', absent: 'leaf' },
 ];
+
+/**
+ * What is set by hand without being a slider — the keys that travel beside
+ * `KEYS` and are written after them. The one so far is the `RaffleRange`
+ * (run 12, K1b on #72): "Auch die RaffleRange reist im Link mit." It stays
+ * **no `Regler`** — no `Settings` field, no input to `distribute()`, no pin,
+ * no reset, not in `Drop all N`, untouched by a Set switch — so it is not
+ * mixed into the slider list, where every reader would take it for one.
+ *
+ * `term` is what a missing key means: the term's own constant, never a
+ * `DefaultSet` leaf. The key is written only when the value differs from it —
+ * "only deviations" — so every v1 link without the key reads as it always
+ * did, and adding it needed no version bump (docs/agents/setup-link.md). Its
+ * value is a range id out of `RANGES`.
+ */
+export const CHOICE_KEYS = [{ key: 'raffleRange', type: 'rangeId', term: 'all' }];
