@@ -97,10 +97,15 @@ angefasst-Bit", sondern zwei Pins, die der Empfänger mit demselben Kern auflös
 wie der Absender. Kein Versionssprung: ein neuer Schlüssel ist nach
 `docs/agents/setup-link.md` keine brechende Änderung, und die Regel hat ihr
 Startdatum noch nicht erreicht (ADR 0007, `## Nachtrag (#89)`, Grund 1).
-Nicht berührt ist der Sitzungszustand — Seite, Faltung, offene Blase (#61,
-„Session state"). Offen ist allein der `RaffleRange`: #61 und #69 legen ihn als
-Sitzungszustand ab, „nie im Link"; ob der Grundsatz ihn mitmeint, ist dem
-Maintainer vorgelegt (Kommentar K1 an #72) und bis dahin gilt #61.
+Der Grundsatz reicht über die Pins hinaus bis zur `RaffleRange` (Entscheid K1b
+an #72, wörtlich: „Auch die RaffleRange reist im Link mit"). Sie bleibt **kein
+`Regler`** — kein `Settings`-Feld, keine Eingabe in `distribute()`, kein Pin,
+kein Reset, nicht in `Drop all N`, ein Set-Wechsel lässt sie stehen —, reist
+aber als eigener Schlüssel `raffleRange` neben den Reglern, geschrieben nur, wo
+sie von `all` abweicht; ein fehlender Schlüssel heisst `all`, wie es jeder
+v1-Link ohne ihn schon bedeutet hat. Überholt ist damit allein das „nie im Link"
+in #61 („Session state") und #69. Nicht berührt bleibt der übrige
+Sitzungszustand — Seite, Vollbild, Faltung, offene Blase, Verlosungsleiste.
 
 Kein eigener ADR-Eintrag und kein Stempel: die Absicht dieses Dokuments ändert
 sich nicht, eine Lücke in ihrer Umsetzung wird geschlossen — Präzedenz sind die
