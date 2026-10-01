@@ -392,6 +392,19 @@
         </section>
 
         <section>
+          <h2>RafflePot (#69)</h2>
+          <p class="note">
+            <code>rafflePot()</code> from <code>../public/core/rules.mjs</code>: the
+            <code>RaffleRange</code> minus every Rank that already holds a <code>WinnerPack</code>,
+            <code>ranked</code> and <code>manual</code> alike. The range is session state, not a
+            Settings field &mdash; it is held beside the Settings, never pinned, and no stand resets
+            it. No throw here: the core has none.
+          </p>
+          <select id="raffleRange"></select>
+          <div id="rafflePot"></div>
+        </section>
+
+        <section>
           <h2>Rank rows</h2>
           <p class="barlegend">
             Only the <code>Booster</code> gets a bar &mdash; it is the axis the
