@@ -168,6 +168,28 @@ test('a minimized Offer stays minimized when its content changes', () => {
   assert.deepEqual(ids(stack.chips), ['offer']);
 });
 
+/**
+ * N1 (run 12): a dismissal remembers one Offer, not "an Offer was dismissed".
+ * A later Offer, minimized and then displaced by a conflict, comes back
+ * **open** — gone and back is a change of kind, whatever was dismissed before.
+ */
+test('an Offer displaced by a conflict returns open, even after an earlier Offer was dismissed', () => {
+  const first = distribute(offerAt(2));
+  let fold = foldStep(freshFold(), { plan: first, offer: offerFor(first) });
+  fold = dismiss(fold, 'offer', offerFor(first));
+  const second = distribute(offerAt(3));
+  fold = foldStep(fold, { plan: second, offer: offerFor(second) });
+  fold = minimize(fold, 'offer');
+  assert.deepEqual(ids(noticeStack({ plan: second, ways: [], offer: offerFor(second), fold }).chips), ['offer']);
+  const conflict = distribute(floorConflict(3));
+  fold = foldStep(fold, { plan: conflict, offer: offerFor(conflict) });
+  assert.equal(fold.offer.key, null, 'the conflict displaces the Offer');
+  fold = foldStep(fold, { plan: second, offer: offerFor(second) });
+  const stack = noticeStack({ plan: second, ways: [], offer: offerFor(second), fold });
+  assert.deepEqual(ids(stack.open), ['offer']);
+  assert.deepEqual(ids(stack.chips), []);
+});
+
 /* ── What the stack shows (AC 3, 4, 7, 10) ──────────────────────────────── */
 
 test('ConflictNotice and Offer never stand together, even if an Offer were handed in', () => {
