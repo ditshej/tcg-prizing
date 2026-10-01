@@ -109,67 +109,88 @@ const FROM_PLAN = {
 };
 
 /**
- * The ends of #46 (`## Slider ranges`), looked up there and not recomputed
- * from what the core happens to read today (`AGENTS.md`). The spec makes two
- * classes and **only the first is domain**, which is the distinction this
- * table used to blur:
+ * The two ends of the fourteen numbers, as #113 decided them when the sliders
+ * fell (grilling comment of 2026-10-01). The stops of #46 existed "damit ein
+ * Regler zwei Enden hat"; a counter with a typed field needs no second end, so
+ * the reason went with the slider.
  *
- * - **Search ranges** — the sliders `suggestions()` sweeps. They enter a
- *   statement about the result, so their ends are decided and may not drift:
- *   `curve` the seven steps, `rankFloor` 0…8, `depth` 1…player count,
- *   `displays[i]` 0…4, `participationBooster` 0…`boosterRate`. A way out the
- *   core offers past one of these ends would be an offer the control cannot
- *   take, which is why `test/ui-controls.test.mjs` holds the two against each
- *   other by running the search rather than by copying its numbers.
- * - **Stops** — everything else. Guards, so a slider has two ends, and #46
- *   says outright they may rise at any time without a decision falling:
- *   `players` 2…128, `boosterRate` 0…12, `participationPack` 0…4,
- *   `tournamentPacks` 0…512, `winnerPacks` 0…64, `displaySize` 1…60,
- *   `envelopeSize` 1…64, `envelopeYield` 1…8. Eight, and `rankFloor` is not
- *   among them: its 0…8 is a search range and carries the weight of one.
+ * - **No roof**, `players` included. Eight numbers are open upward:
+ *   `players`, `boosterRate`, `tournamentPacks`, `winnerPacks`,
+ *   `displaySize`, `envelopeSize`, `envelopeYield`, and `rankFloor` — whose
+ *   0…8 is the *search range* of `suggestions()` (`suggest.mjs`), an argument
+ *   of the search and never a cap at the control.
+ * - **The minima stay**: `players` ≥ 2, `displaySize` / `envelopeSize` /
+ *   `envelopeYield` ≥ 1, `depth` ≥ 1, everything else ≥ 0 — the floors the
+ *   core enforces itself (`distribute.mjs`, `derivePool()` and `distribute()`).
+ * - **A wall stands where the core cuts silently, and it is the same size as
+ *   in the core.** A field that took a number past that cut would show a value
+ *   the plan does not compute with — "du tippst, und es passiert nichts"
+ *   (#113) and "zwei Anzeigen, und eine davon stimmt nicht" (#104) in one.
+ *   See `WALLS`.
  *
- * `rankFloor` sits in this constant all the same, because 0…8 is a pair of
- * numbers either way and a second lookup table would not make it a different
- * one. `depth` and `participationBooster` cannot, their ends being quantities
- * of the stand.
- *
- * `judgeBooster` and `judgeWinner` are the pair #46 leaves without either —
- * "ihre Obergrenze ist der jeweilige Rest, und das ist keine Zahl, sondern die
- * Summenregel." A range input still needs two ends, so the end drawn here is
- * that rest at its widest: the whole respective `Pool`. It prevents nothing
- * ADR 0002 wants reported — handing the judge everything leaves the ranks
- * empty, and an empty plan is a plan the app shows and explains.
- *
- * `ranked` is in neither class: #46 does not range it at all, and its end —
- * the winner packs the ranks hold, capped at the player count — is #61's.
+ * The rule of #61 still holds and is why nothing else is capped: "Ein
+ * Anschlag darf keinen Zustand verhindern, den ADR 0002 gemeldet haben will."
  */
-const FIXED_BOUNDS = {
-  players: { min: 2, max: 128 },
-  boosterRate: { min: 0, max: 12 },
-  participationPack: { min: 0, max: 4 },
-  tournamentPacks: { min: 0, max: 512 },
-  winnerPacks: { min: 0, max: 64 },
-  displaySize: { min: 1, max: 60 },
-  envelopeSize: { min: 1, max: 64 },
-  envelopeYield: { min: 1, max: 8 },
-  rankFloor: { min: 0, max: 8 },
+const MINIMA = {
+  players: 2,
+  boosterRate: 0,
+  tournamentPacks: 0,
+  winnerPacks: 0,
+  displaySize: 1,
+  envelopeSize: 1,
+  envelopeYield: 1,
+  rankFloor: 0,
 };
 
 /**
+ * The six numbers the core cuts silently, each with the plan field in which
+ * the core reports what it took. #113 names five; `participationPack` is the
+ * sixth, by the same rule and the same clamp as `participationBooster` — the
+ * core takes at most `⌊TournamentPacks / players⌋` per player, and the old
+ * 0…4 stop offered numbers above that the plan never computed with.
+ *
+ * The wall is not written out here as a second copy of the core's clamp. It
+ * is **asked of the core**: `wallOf()` hands it a number past any wall and
+ * reads back what it took. The shell never reaches past the seam into the
+ * calculation (ADR 0004), and asking it a question is not reaching past it —
+ * the device `reservedDisplaysAfter()` already uses for the reservation
+ * condition. So the wall cannot drift from the core: it *is* the core's cut.
+ *
+ * That this matters is measured. The `judgeBooster` end used to be the whole
+ * Booster pool, defended with "handing the judge everything leaves the ranks
+ * empty" — which is not what the core does: it cuts at the rest after the
+ * ParticipationPool. One Piece at 128 players, `boosterRate` 9,
+ * `participationBooster` 6: the control offered 0…1152, the core takes
+ * 0…384, and two thirds of the scale were dead (#113).
+ */
+const WALLS = {
+  depth: { min: 1, took: (plan) => plan.depth },
+  ranked: { min: 0, took: (plan) => plan.allocation.ranked },
+  participationBooster: { min: 0, took: (plan) => plan.participation.rate.booster },
+  participationPack: { min: 0, took: (plan) => plan.participation.rate.packs },
+  judgeBooster: { min: 0, took: (plan) => plan.judge.booster },
+  judgeWinner: { min: 0, took: (plan) => plan.judge.winners },
+};
+
+/** A number past every wall the core has, and still a safe integer. */
+const PAST_ANY_WALL = Number.MAX_SAFE_INTEGER;
+
+/** The core's own cut for a wall key at this stand: what it takes of a number past it. */
+function wallOf(key, { settings, plan }) {
+  return WALLS[key].took(distribute({ ...settings, [key]: PAST_ANY_WALL }, plan.pinned));
+}
+
+/**
  * `key`, and the stand it is read against, → `{ min, max }`, or `null` where
- * the control is not a number at all.
+ * the control is not a number at all. `max` is `Infinity` for an open number.
  *
  * It never looks at the current value, and that is the point: a `pinned`
- * value over its cap is never cut (ADR 0006). The cap says what a *handling*
+ * value over a wall is never cut (ADR 0006). The wall says what a *handling*
  * may reach, `effectiveValue()` says what stands.
  */
-export function boundsFor(key, { settings, plan }) {
-  if (key in FIXED_BOUNDS) return { ...FIXED_BOUNDS[key] };
-  if (key === 'depth') return { min: 1, max: plan.players };
-  if (key === 'ranked') return { min: 0, max: Math.min(plan.rank.winners, plan.players) };
-  if (key === 'participationBooster') return { min: 0, max: Math.max(0, Number(settings.boosterRate) || 0) };
-  if (key === 'judgeBooster') return { min: 0, max: plan.pool.booster };
-  if (key === 'judgeWinner') return { min: 0, max: plan.pool.winners };
+export function boundsFor(key, stand) {
+  if (key in MINIMA) return { min: MINIMA[key], max: Infinity };
+  if (key in WALLS) return { min: WALLS[key].min, max: wallOf(key, stand) };
   return null;
 }
 
