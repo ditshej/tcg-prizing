@@ -1349,6 +1349,11 @@ export function planApp(seam = SEAM) {
      * changed Rank by Rank at the tile's own handler: falling Ranks from the
      * bottom up, rising ones from the top down, so that every single step
      * keeps `d₁ ≥ d₂ ≥ …` and none is refused on the way.
+     *
+     * The take-back out of the `WinnerPack` overhang (#70) is a list of
+     * `manualWinner` changes, one per Rank it names, and each goes through
+     * the tile's own handler — the same one the WinnerRaffle's take-back uses
+     * (#69). Every change there lowers a count, so none is refused.
      */
     applyWayOut(way) {
       if (way.auto) {
@@ -1356,12 +1361,16 @@ export function planApp(seam = SEAM) {
         return;
       }
       const changes = way.changes ?? [way];
-      const ranks = changes.filter((change) => change.key === 'displays');
+      const byRank = (key) => (change) => change.key === key;
+      const ranks = changes.filter(byRank('displays'));
       const now = (change) => Number(this.settings.displays?.[change.rank - 1] ?? 0);
       const falling = ranks.filter((change) => change.value < now(change)).sort((x, y) => y.rank - x.rank);
       const rising = ranks.filter((change) => change.value > now(change)).sort((x, y) => x.rank - y.rank);
-      for (const change of changes) if (change.key !== 'displays') this.setSlider(change.key, change.value);
+      for (const change of changes) {
+        if (change.key !== 'displays' && change.key !== 'manualWinner') this.setSlider(change.key, change.value);
+      }
       for (const change of [...falling, ...rising]) this.setDisplays(change.rank, change.value);
+      for (const change of changes.filter(byRank('manualWinner'))) this.setManualWinner(change.rank, change.value);
     },
 
     /** The Offer's button: the reservation it names, set at the tile's handler. */

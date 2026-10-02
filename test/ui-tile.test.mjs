@@ -177,3 +177,33 @@ test('the grip is nothing at all on a Rank the plan does not have', () => {
   assert.equal(tileGrip(9, s), null);
   assert.equal(tileGrip(0, s), null);
 });
+
+/* ── The `WinnerPack` overhang marks its tiles (#70) ────────────────────── */
+
+const typeOf = (id) => TOURNAMENT_TYPES.find((t) => t.id === id);
+const markedTiles = (plan) => plan.rows.filter((row) => tileView(row, plan).classes.includes('tile-flagged')).map((row) => row.rank);
+
+test('while the overhang stands, every tile with a hand-placed pack is marked, not only the take-back ranks (K-B2)', () => {
+  // The decided example on #70 (Lauf 13, K-B2): Weekly, `winnerPacks` 10, one
+  // pack by hand on each of Ranks 29, 30, 31 and 32, then `judgeWinner` 4 —
+  // two over. Marked are 29, 30, 31 and 32; the take-back still names only
+  // 31 and 32. The Ranks holding their pack through `ranked` stay unmarked.
+  const s = stand({ winnerPacks: 10, manualWinner: { 29: 1, 30: 1, 31: 1, 32: 1 }, judgeWinner: 4 }, typeOf('weekly'));
+  assert.equal(s.plan.flagged.length, 0);
+  assert.ok(s.plan.allocation.ranked > 0, 'the stand has ranks carrying a pack through ranked');
+  assert.deepEqual(markedTiles(s.plan), [29, 30, 31, 32]);
+  for (const rank of [29, 30, 31, 32]) assert.equal(tileGrip(rank, s).flagged, true, `rank ${rank}`);
+  assert.equal(tileGrip(1, s).flagged, false);
+});
+
+test('Release with manualWinner=20:1 marks tile 20 and no other (K-B2)', () => {
+  const s = stand({ manualWinner: { 20: 1 } }, typeOf('release'));
+  assert.deepEqual(markedTiles(s.plan), [20]);
+});
+
+test('the mark goes as soon as the stock suffices again, and the hand-set packs are where they were', () => {
+  const s = stand({ manualWinner: { 10: 1, 20: 1 }, winnerPacks: 5 });
+  assert.equal(tileView(s.plan.rows[19], s.plan).classes.includes('tile-flagged'), false);
+  assert.equal(s.plan.rows[19].winners, 1);
+  assert.equal(s.plan.rows[9].winners, 1);
+});
