@@ -191,3 +191,33 @@ export function drawFrom(pot, roll = Math.random) {
   const at = Math.floor(roll() * pot.length);
   return pot[Math.min(pot.length - 1, Math.max(0, at))];
 }
+
+/**
+ * The retraction list's pages on the flat stage (#129): the list does not
+ * grow the bar there, it pages inside it. A page is **one row** — as many
+ * chips, in rank order, as the measured row width holds — so the bar, once
+ * it carries a list at all, never gets taller with it, and the one tile row
+ * with the hit stays free above it.
+ *
+ * Nothing about the page size is set: `widths` are the chips as the rind
+ * measured them (a `×2` makes one wider), `rowWidth` the list's own width and
+ * `gap` its gap. Returns `[from, to)` index pairs over the list; a chip wider
+ * than the row still gets a page of its own, so no rank can go missing.
+ */
+export function takeBackPages(widths, rowWidth, gap = 0) {
+  const pages = [];
+  let from = 0;
+  let used = 0;
+  widths.forEach((width, i) => {
+    const need = i === from ? width : used + gap + width;
+    if (i > from && need > rowWidth) {
+      pages.push([from, i]);
+      from = i;
+      used = width;
+    } else {
+      used = need;
+    }
+  });
+  if (widths.length) pages.push([from, widths.length]);
+  return pages;
+}

@@ -215,7 +215,7 @@ test('the diagram pays for the cover, so two full rows stand above the bar', () 
   assert.equal(diagramCap(leftover, undefined, 0), diagramCap(leftover));
 });
 
-test('the diagram never yields under its floor — flat, that is not enough (K1, open there)', () => {
+test('the diagram never yields under its floor — flat, where that is not enough, it goes away instead (#129)', () => {
   // 812 × 375 at the acceptance: diagram 86 over two rows, the bar 119 high.
   const leftover = 86 + rowsHeight(MIN_ROWS);
   assert.equal(diagramCap(leftover, undefined, 79), 60);

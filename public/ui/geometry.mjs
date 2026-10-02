@@ -87,6 +87,11 @@ export function tileColumnsFor(width) {
  * **above** the bar (#73, run 14, K1 `diagramm-weicht`). The diagram is the
  * one elastic size of the column, and the sentence "the bar covers no tile"
  * (#69, #61) now rests on it rather than on an overlap of zero.
+ *
+ * On the flat stage the floor is not enough (812 × 375: a 60 px diagram left
+ * less than one row above the bar). There the diagram does not yield at all —
+ * it is gone while the bar is open (#129, `diagramShown` in `plan.mjs`), and
+ * this cap only matters again once the bar closes.
  */
 export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0) {
   return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS) - covered);

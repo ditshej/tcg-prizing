@@ -115,6 +115,41 @@ export function applyRaffleLift(layerEl, barEl) {
 }
 
 /**
+ * The retraction list as the flat stage pages it (#129): every chip's width,
+ * the row's width and the gap between chips — `takeBackPages()` in
+ * `raffle.mjs` makes the pages out of them, under `node --test`.
+ *
+ * The chips not on the page in front are hidden (`x-show`), and a hidden
+ * chip has no box. So, like the rail's probe, a copy of the list is measured:
+ * stripped of every Alpine attribute, every chip shown, laid out invisibly in
+ * one unwrapped row at the list's own width (`.takeback-probe` in
+ * `plan.css`), and removed again. `null` where there is no list.
+ *
+ * Reads boxes and the computed gap; writes and removes one invisible element.
+ */
+export function measureTakeBack(listEl) {
+  if (!listEl || listEl.getClientRects().length === 0) return null;
+  const probe = listEl.cloneNode(true);
+  for (const el of [probe, ...probe.querySelectorAll('*')]) {
+    for (const { name } of Array.from(el.attributes)) {
+      if (name.startsWith('x-') || name.startsWith('@') || name.startsWith(':')) el.removeAttribute(name);
+    }
+    el.removeAttribute('style');
+    el.removeAttribute('id');
+  }
+  for (const template of probe.querySelectorAll('template')) template.remove();
+  probe.setAttribute('x-ignore', '');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.classList.add('takeback-probe');
+  probe.style.width = `${listEl.clientWidth}px`;
+  listEl.parentElement.appendChild(probe);
+  const widths = Array.from(probe.children).map((chip) => chip.getBoundingClientRect().width);
+  const gap = parseFloat(getComputedStyle(probe).columnGap) || 0;
+  probe.remove();
+  return { widths, rowWidth: listEl.clientWidth, gap };
+}
+
+/**
  * Shows a hit over the two fleeting channels (#69 AC 10): the grid scrolls to
  * the tile — into the middle of the free strip, and not at all when it is
  * already in it — and the tile lifts out briefly.

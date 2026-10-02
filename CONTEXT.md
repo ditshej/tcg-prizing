@@ -340,8 +340,13 @@ Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbil
 und deckt keine Kachel zu: solange sie offen ist, gibt das Diagramm um ihre
 gemessene Überlappung mit dem Kachelfenster nach (nie unter seinen Boden), so dass
 die zwei Reihen und der gezogene Treffer über ihr frei bleiben, auch wenn sie mit
-der Rücknahmeliste wächst (#73, K1). Auf der flachen Bühne reicht das allein nicht;
-was dort zusätzlich nachgibt, ist offen. Ein Treffer wird **flüchtig** markiert — das Raster
+der Rücknahmeliste wächst (#73, K1). Auf der flachen Bühne (`fold().flat`, keine
+Breite) reicht das nicht, und dort gilt eine Ausnahme (#129): solange die Leiste offen
+ist, fällt das Diagramm ganz weg — es gibt unter seinen Boden nach, bis 0 — und kommt
+zurück, sobald sie zu ist; und die Leiste wächst dort nicht mit der Rücknahmeliste,
+die Liste blättert in ihr, eine Zeile je Seite, so dass die eine Kachelreihe mit dem
+Treffer auch nach dem Wurf frei bleibt. Überall sonst wächst die Leiste mit der Liste
+(#69). Ein Treffer wird **flüchtig** markiert — das Raster
 scrollt zu ihm, die Kachel hebt sich kurz heraus —, nie bleibend: eine bleibende
 Marke wäre die Herkunft, die das Modell bewusst nicht führt. Die Ansage nennt
 den `Rank` und trägt **keinen** Rückweg; zurückgenommen wird in der Liste oder an

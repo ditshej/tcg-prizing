@@ -58,8 +58,11 @@
       Kacheln, nicht das Diagramm." Keeping it here is what made fullscreen show
       *fewer* ranks than the page it opened from, because the diagram takes
       every pixel the controls rail and the foot give up.
+
+      On the flat stage it is gone, too, while the raffle bar is open (#129):
+      the tiles come first there, and it comes back when the bar closes.
     -->
-    <div class="plan-diagram" aria-hidden="true" x-show="!fullscreen">
+    <div class="plan-diagram" aria-hidden="true" x-show="diagramShown">
       <template x-for="row in plan.rows" :key="row.rank">
         <div class="bar" :class="{ 'bar-unserved': !row.served }">
           <div class="seg-reservation" :style="`height:${segments(row).reservation}%`"></div>
@@ -293,12 +296,30 @@
       </p>
     </template>
 
+    <!--
+      On the flat stage the list **pages** instead of growing the bar (#129,
+      an exception to #69 for flat only): one row per page, as many chips as
+      the measured row holds (`takeBackPages()`), and the pager sits in the
+      head line, so paging costs no height of its own. Every chip is drawn and
+      the ones off the page are hidden, so the rind can measure them all.
+      Not flat, there is one page and no pager, and the list wraps as before.
+    -->
     <template x-if="raffle.takeBack.length">
       <div class="raffle-takeback">
-        <p class="raffle-takeback-head">Placed by hand — tap to take back:</p>
+        <div class="raffle-takeback-head">
+          <span>Placed by hand — tap to take back:</span>
+          <span class="raffle-pager" x-show="takeBackPageCount > 1">
+            <button type="button" aria-label="Previous ranks" :disabled="takeBackPage === 0"
+                    @click="pageTakeBack(-1)">‹</button>
+            <span x-text="`${takeBackPage + 1}/${takeBackPageCount}`"></span>
+            <button type="button" aria-label="Next ranks" :disabled="takeBackPage >= takeBackPageCount - 1"
+                    @click="pageTakeBack(1)">›</button>
+          </span>
+        </div>
         <div class="raffle-takeback-list">
-          <template x-for="entry in raffle.takeBack" :key="entry.rank">
+          <template x-for="(entry, index) in raffle.takeBack" :key="entry.rank">
             <button type="button" class="raffle-chip" @click="takeBackWinner(entry.rank)"
+                    x-show="takeBackOn(index)"
                     :aria-label="`Take back ${entry.label}`">
               <span x-text="entry.label"></span>
               <span x-show="entry.count > 1" x-text="`×${entry.count}`"></span>
