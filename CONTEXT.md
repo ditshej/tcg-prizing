@@ -289,7 +289,27 @@ auch bei n = 0, wo die Staffel damit selbst auf 0 fällt), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch dieselbe Zahl
 gedeckelt. Die Staffel rechnet nie auf Stücken, die beiseite liegen: ein
 Judge-Pack verkürzt das automatische Präfix, statt den `open`-Rest aufzuzehren,
-der der `WinnerRaffle` gehört. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
+der der `WinnerRaffle` gehört.
+Der Deckel „Summe höchstens n" gilt **beim Setzen** — das ± der Kachel braucht
+einen `open` `WinnerPack` —, aber er hält den Zustand nicht: sinkt danach ein
+zweiter Wert, liegen mehr `WinnerPack`s auf den Kacheln, als der `RankPool`
+hält. Das ist der **`WinnerPack`-Überhang** (#70), `ranked + manualCount −
+rank.winners` über null. Er entsteht durch einen Set-Wechsel auf weniger
+`WinnerPack`s, einen `SetupLink` mit anderer Spielerzahl, einen gesenkten
+`winnerPacks` oder einen gehobenen `judgeWinner` — und **nur über den
+`manual`-Anteil**: der Kern klemmt `ranked` auf `min(n, Spielerzahl)` und lässt
+`manualCount` durch, darum ist der Überhang nie grösser als `manualCount`, und
+ein Prüfstand, der ihn über `ranked` herbeiführen will, bekommt keinen. Er wird
+als `ConflictNotice` **gemeldet und nie geklemmt** (ADR 0006): die
+gespeicherten Zähler bleiben, wie der Lead sie gesetzt hat, und stehen wieder
+gültig da, sobald der Bestand reicht. Markiert sind die Kacheln der `Rank`s,
+deren Handzuteilungen über dem Bestand liegen — die untersten zuerst, dieselben,
+die der Rücknahme-Weg benennt. Solange er steht, schweigt das `Offer`.
+Wo `ranked` seiner Staffel folgt, räumt ein um den Überhang gesenkter
+`judgeWinner` **nicht**: jeder zurückgegebene Pack hebt n um eins und
+`⌊n/2⌋ + 1` bei jedem zweiten Schritt mit. Der Weg nennt darum den
+nächstliegenden Wert, der räumt (Weekly mit 10 `WinnerPack`s, 4 davon beim
+`Judge`, 4 von Hand: zwei über, und der Weg heisst `judgeWinner` 1, nicht 2). `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
 aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
 `WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
 `JudgePool`.
@@ -530,16 +550,34 @@ ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
 - `unclaimedRemainder` — die randabdeckende Reservation: ein gedeckter
   Überschuss ohne Empfänger.
 
-Zwei weitere sind entschieden und noch nicht gebaut:
-- `WinnerPack` overhang (#70) — `ranked + manualCount` über dem Bestand. Der
-  einzige Zustand, den der Kern nicht selbst meldet; seine Wege sind gerechnet,
-  nicht gesucht. #61 überschreibt ihn mit „overplaced winner packs".
+Eine ist gebaut und kommt nicht aus dem Kern:
+- `WinnerPack` overhang (#70) — `ranked + manualCount` über dem Bestand
+  (`rank.winners`). Der einzige Zustand, den der Kern nicht selbst meldet: kein
+  Feld des `DistributionPlan` und **nicht** in `unfit(plan)`, sondern aus dem
+  Plan abgeleitet von `winnerPackOverhang(plan)` (`public/ui/overhang.mjs`);
+  im Code heisst die Quelle `winnerPackOverhang`. Der `NoticeStack` fragt
+  beides zusammen (`conflictStands()`). In `unfit()` gehört er nicht, weil
+  `unfit()` auch der Test jeder Probe der Suche ist: ein stehender Überhang
+  liesse jede Probe eines Bodenkonflikts durchfallen, und dessen Wege
+  verschwänden. Seine Wege sind gerechnet, nicht gesucht
+  (`overhangWaysOut(plan)`). #61 überschreibt ihn mit „overplaced winner packs".
+
+Eine weitere ist entschieden und noch nicht gebaut:
 - `CombinedHandout` depth (#103) — `CombinedHandout` an und die `RankPoolDepth`
   unter der Spielerzahl, sodass die Ränge unter der Tiefe null bekommen. Der Weg
   heraus kommt aus `suggestions()` und setzt `rankFloor` und `depth` als `pinned` Werte.
 
 Eine neue Quelle bekommt ihren Namen hier, im selben Zug wie das Ticket, das sie
 baut.
+**Ihre Wege kommen aus zwei Herkünften**, und das ist keine Zählung der Quellen:
+die der Kernquellen **sucht** `suggestions(plan)` (ein Regler über seinen
+Bereich, oder der mehrgliedrige Weg, wo keiner räumt), die des
+`WinnerPack`-Überhangs werden **gerechnet** — `judgeWinner` hinunter,
+`ranked` um den Überhang hinunter, die Handzuteilungen der untersten `Rank`s
+zurück, in dieser Ordnung. Stehen beide Sorten Quelle zugleich, stehen beide
+Sorten Weg in derselben Meldung nebeneinander; sie laufen über verschiedene
+Regler und räumen einander nichts weg. `winnerPacks` hoch ist nie ein Weg —
+die Zahl vorhandener `WinnerPack`s ist eine **Tatsache über den Abend**.
 **Woraus die Wege gewählt werden**, sagt ADR 0002 nicht — das Verfahren schon
 (einen Regler über seinen Bereich variieren, nie zwei zugleich, den
 nächstliegenden Wert nehmen, der räumt). Durchsucht wird ein Regler genau dann,
