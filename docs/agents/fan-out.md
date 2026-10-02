@@ -870,3 +870,48 @@ alone. **Merge probe, every intermediate state measured:** 362 → +#119 398 →
 (#113), #118 (#68), #117 (#72). Merge order: **#119, then #118, then #117.**
 #117 last resolves one real comment conflict over `syncAddress`: keep #72's text,
 with *control* for *slider*. Run 13 starts with #114 on top of #113.
+
+### Run 13 · 2026-10-02 · #114, #70, #71 · `/round`, four agents, no cards, no deaths
+
+**The conductor's context: 66k at its peak, measured** from the session
+transcript (input plus cache tokens of the last call), in one session segment.
+The base before the first phase was 35k: system prompt, `AGENTS.md` and the
+skill text. So the round itself cost about 31k. The conductor first wrote
+„roughly 40k, estimated". That was 26k too low. The estimate went to the log
+and the measurement only came after the maintainer asked for it. **From now
+on the number is read from the transcript, not estimated.** The earlier
+„estimated" entries (runs 10–12) are not comparable to this one. Phase E did
+not happen.
+
+**The disjointness check ran first and deferred nothing.** The maintainer
+suspected that #70 and #71 overlap at the `NoticeStack` and that #114 overlaps
+#113's number row. Phase A checked at the source and found them disjoint: #70
+changes what the notice says, #71 where it sits, and #114 only the step chip and
+a new method beside `setSlider()`. All three were built in parallel. So a
+suspicion is something to measure, and it can come back negative. Run 12's
+check on the same kind of overlap deferred a ticket.
+
+**The gates dropped a finding the counter-check had sharpened.** B1 (way 1
+searches instead of computing) came out of Phase B as „zu entscheiden". Gate 1
+dissolved it as a lookup with a repair, because `CONTEXT.md` and ADR 0002's
+Nachtrag already ask for the nearest value that clears the conflict. Only the
+texts that said otherwise had to change. Phase F did that repair from the
+dropped list. The dropped list carries work as well as reasons.
+
+**Two of five answers overturned the build, and one moved numbers that were
+not asked about.** K-B9 set the controls column to 286 instead of 352. Every
+breakpoint derived from that width moved with it: side by side from 674
+instead of 740, three columns from 1030 instead of 1096, K-B10's hot column
+from 722 instead of 787/788, and the deck at 1597. Phase F was told to
+re-derive these rather than keep the old literals, and it did. Two derived
+values had no decision behind them: the deck at 1597, and a `TournamentType`
+line in `CONTEXT.md` changed from 352 to 286. Phase F reported both instead of
+leaving them unmentioned. They are for review at G.
+
+**Counts.** 15 findings from A, 2 more from B, 0 refuted, 2 sharpened. Gates:
+17 in, 5 candidates, 12 dropped. Phase D: 5 answered in the terminal, 0 cards.
+Suites after Phase F: 497 (#114) · 515 (#70) · 521 (#71) alone. **Merge probe,
+every intermediate state measured:** 489 → +#123 497 → +#124 523 → +#125 555,
+conflict-free. Decisions filed to #70, #71, #61 and #121, and the prototype
+corrections to `prototype/rank-distribution` (`f72145d`). No ADR. PRs: #123
+(#114), #124 (#70), #125 (#71). Merge order: **#123, then #124, then #125.**
