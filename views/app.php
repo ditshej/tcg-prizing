@@ -19,7 +19,7 @@
 ?>
 <div class="app" x-data="planApp()" x-init="init()" x-ref="app"
      :data-columns="fold.columns" :data-flat="fold.flat ? 'true' : null"
-     :data-rail="fold.rail" :data-fullscreen="fullscreen ? 'true' : null" :style="foldStyle">
+     :data-rail="fold.rail" :data-cramped="fold.cramped ? 'true' : null" :data-fullscreen="fullscreen ? 'true' : null" :style="foldStyle">
   <div class="fold">
     <?php require __DIR__ . '/prepare.php'; ?>
     <?php require __DIR__ . '/plan.php'; ?>

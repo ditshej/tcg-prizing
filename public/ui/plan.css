@@ -254,7 +254,7 @@ body {
 }
 
 .plan-grid-wrap {
-  position: relative; /* anchors .grid-fullscreen-toggle over the grid's own scroll */
+  position: relative;
   flex: 1 1 auto;
   min-height: 113px; /* the two-row master floor, MIN_ROWS in geometry.mjs */
   display: flex;
@@ -264,7 +264,10 @@ body {
   flex: 1 1 auto;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(var(--plan-columns, 6), 54px);
+  /* Up to 54 px a column, and narrower where six do not fit: under 365 px
+     (6 × 54 + 5 × 5 + 16) the tiles give way in width, never the six-column
+     floor (#73, run 14, K3). The rows stay 54, so every height sum stands. */
+  grid-template-columns: repeat(var(--plan-columns, 6), minmax(0, 54px));
   /* Rows are the same 54 px as the columns, written out because a reserved
      tile spans two of them and an `auto` row would size itself off the taller
      tile's own content instead (#66). */
@@ -275,12 +278,15 @@ body {
   padding-bottom: 4px;
 }
 
+/* At the end of the legend row (prototype `slotBlock()`, #73 B5), and no
+   taller than the row: the legend enters `PLAN_FIXED` 178 at 21.9 px. */
 .grid-fullscreen-toggle {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+  margin-left: auto;
   width: 28px;
-  height: 28px;
+  height: 20px;
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +303,7 @@ body {
    opens the bubble, and the same square closes it. */
 .tile {
   position: relative;
-  width: 54px;
+  width: 100%; /* the column's, at most 54 px (K3) */
   height: 54px;
   border-radius: 6px;
   background: light-dark(#ffffff, #232019);
@@ -1668,7 +1674,11 @@ body {
  * #68, run 12, K3 `prototyp-gilt`). It stands on the strip under the columns
  * (`--strip-bottom`: the 56px foot, the 48px strip, or nothing on the flat
  * stage and in fullscreen), and the chips sit where `--chip-right` and
- * `--chip-bottom` put them — all of it out of `foldProperties()`.
+ * `--chip-bottom` put them — all of it out of `foldProperties()`. While the
+ * raffle bar is open, the stack rises above it by `--raffle-lift` (measured
+ * by the rind), and so do the chips wherever they share its corner
+ * (`--chip-raffle`): a ConflictNotice under the bar is not present (ADR 0002;
+ * the prototype's `--raffleh`, Runde 16; found at the acceptance by image, #73).
  *
  * Told apart by colour and ways out only, never by form or by how they start
  * (#61). The three tones are the prototype's: warn red, the reserve violet,
@@ -1685,13 +1695,13 @@ body {
   position: fixed;
   left: calc(var(--deck-margin, 0px) + var(--plan-left, 0px));
   right: calc(var(--deck-margin, 0px) + var(--plan-right, 0px));
-  bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px));
+  bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px) + var(--raffle-lift, 0px));
   z-index: 36;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 8px;
-  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px));
+  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px) - var(--raffle-lift, 0px));
   overflow-y: auto;
   pointer-events: none;
 }
@@ -1775,7 +1785,8 @@ body {
 .notice-chips {
   position: fixed;
   right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px));
-  bottom: var(--chip-bottom, 64px);
+  /* Above an open raffle bar wherever the chips share its corner (#73). */
+  bottom: calc(var(--chip-bottom, 64px) + var(--raffle-lift, 0px) * var(--chip-raffle, 1));
   z-index: 37;
   display: flex;
   justify-content: flex-end;
@@ -1952,4 +1963,50 @@ body {
 
 .app[data-flat] .page-prepare > .prep-note {
   max-width: none;
+}
+
+/*
+ * The cramped stage (#73, run 14, K4 `seite-scrollt`): under 436 wide and under
+ * the one-column threshold no fold holds two rows in view. Nothing lies on top
+ * of anything there — the `Plan` keeps its floor (the diagram at its floor,
+ * two tile rows), the rail stands under it, and the `Plan` page scrolls
+ * between head and foot. The sizes come from `foldProperties()`.
+ */
+.app[data-cramped] .page-plan {
+  overflow-y: auto;
+}
+
+.app[data-cramped] .plan-stage,
+.app[data-cramped] .plan-controls {
+  flex: 0 0 auto;
+}
+
+.app[data-cramped] .plan-diagram {
+  height: var(--diagram-floor);
+}
+
+.app[data-cramped] .plan-grid-wrap {
+  flex: 0 0 var(--two-rows);
+}
+
+/*
+ * The rail probe (`measureRail()` in `measure.mjs`, #73 K2): a copy of the
+ * rail laid out invisibly in its bar form at the stage width, measured and
+ * removed in the same task. Whatever form the real rail has now — a column on
+ * the flat stage, or hidden — the probe is the bar.
+ */
+.app .plan-controls.rail-probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: visible;
+  border-left: none;
+  border-top: 1px solid transparent;
+}
+
+.app .rail-probe .controls-hot {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }

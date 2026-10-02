@@ -143,6 +143,13 @@ Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/
 
 Where we depart from the vendored `/domain-modeling` skill: when a later ADR touches an earlier one, the earlier one gets a stamp line under its title — `Ergänzt durch ADR-NNNN.` if the later one only extends it, `Teilweise`/`Vollständig überholt durch ADR-NNNN.` if it overturns it. Sharpening your own text while writing needs no stamp; it belongs in that same ADR's body. The extension case is the one that gets forgotten, because nothing at the earlier ADR becomes wrong — it only becomes incomplete. Table and examples in `docs/agents/domain.md`.
 
+### Acceptance protocols
+
+An acceptance by image is recorded in `docs/acceptance/<ticket>-<slug>.md` — measured
+numbers beside the decided target values, per canvas, in German like review notes
+(#73, run 14, K5). A later change to a surface that such a protocol measured
+updates the protocol in the same PR.
+
 ### Prototypes
 
 Form per case, mockups marked as reference-only, one throwaway branch per map. See `docs/agents/prototyping.md`.

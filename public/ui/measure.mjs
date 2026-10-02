@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
+import { diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleCover, raffleLift, raffleScrollPadding, tileColumnsFor } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -29,7 +29,7 @@ import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDel
  * computed `gap`/`padding`. Writes: `style.setProperty`. Nothing else — no
  * plan logic, no state.
  */
-export function applyGeometry(stageEl, fixedEls = []) {
+export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   if (!stageEl) return;
   const width = stageEl.clientWidth;
   const height = stageEl.clientHeight;
@@ -52,8 +52,14 @@ export function applyGeometry(stageEl, fixedEls = []) {
      column (412px on the flat 812 × 375 stage) the grid got seven columns for
      a box that holds six, and its first tile was cut at the left edge (#71). */
   const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
-  stageEl.style.setProperty('--plan-columns', String(columnsFor(width - sides)));
-  stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead))}px`);
+  stageEl.style.setProperty('--plan-columns', String(tileColumnsFor(width - sides)));
+  /* An open raffle bar over the tile window takes its overlap off the
+     diagram (#73, K1). A bar whose page is hidden has no box and covers
+     nothing. */
+  const gridEl = stageEl.querySelector('.plan-grid');
+  const bar = barEl && barEl.getClientRects().length > 0 ? barEl.getBoundingClientRect() : null;
+  const covered = gridEl ? raffleCover(gridEl.getBoundingClientRect(), bar) : 0;
+  stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead), undefined, covered)}px`);
 }
 
 /**
@@ -61,9 +67,9 @@ export function applyGeometry(stageEl, fixedEls = []) {
  * `stageEl`, via `ResizeObserver` — the browser's own measuring loop, not a
  * poll this module would have to own.
  */
-export function attachMeasuring(stageEl, fixedEls = []) {
+export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null) {
   if (!stageEl || typeof ResizeObserver === 'undefined') return () => {};
-  const run = () => applyGeometry(stageEl, fixedEls);
+  const run = () => applyGeometry(stageEl, fixedEls, barOf());
   run();
   const observer = new ResizeObserver(run);
   observer.observe(stageEl);
@@ -88,6 +94,24 @@ export function applyRafflePadding(gridEl, barEl) {
     barEl ? barEl.getBoundingClientRect() : null,
   );
   gridEl.style.paddingBottom = pad ? `${pad}px` : '';
+}
+
+/**
+ * Lifts the `NoticeStack` — and the chips where they share the bar's corner —
+ * above the open raffle bar, so the bar never lies over a ConflictNotice that
+ * has to be present (ADR 0002; the prototype's `--raffleh`). `barEl` is `null`
+ * while the bar is closed; a bar whose page is hidden measures 0 high and
+ * lifts nothing.
+ *
+ * Reads one box, writes one length on the notice layer — not on the app root,
+ * whose `style` attribute Alpine rewrites with the fold's sizes.
+ * How much is `raffleLift()` in `geometry.mjs`; which chips follow is
+ * `--chip-raffle` out of `foldProperties()` — both under `node --test`.
+ */
+export function applyRaffleLift(layerEl, barEl) {
+  if (!layerEl) return;
+  const lift = raffleLift(barEl ? barEl.getBoundingClientRect().height : 0);
+  layerEl.style.setProperty('--raffle-lift', `${lift}px`);
 }
 
 /**
@@ -129,13 +153,61 @@ export function showRaffleHit(gridEl, barEl, rank) {
  * stops growing (`max-width`), and the fold has to see what the app is, not
  * what the window is. The arithmetic is `fold()` in `fold.mjs`.
  */
-export function attachStage(appEl, onSize) {
+export function attachStage(appEl, onSize, railEl = null) {
   if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
-  const run = () => onSize({ width: appEl.clientWidth, height: appEl.clientHeight });
+  const run = () => {
+    const width = appEl.clientWidth;
+    onSize({ width, height: appEl.clientHeight, railHeight: measureRail(appEl, railEl, width) });
+  };
   run();
   const observer = new ResizeObserver(run);
   observer.observe(appEl);
+  /* The rail's own height changes with what it says (a state word, `cap N`)
+     without the app's box moving. A hidden rail reports no change, which is
+     right: the probe below measures it then. */
+  if (railEl) observer.observe(railEl);
   return () => observer.disconnect();
+}
+
+/**
+ * The rail's height in its **bar** form at the stage width `width` — what the
+ * one-column threshold reckons with (#73, run 14, K2 `schiene-gemessen`; the
+ * arithmetic is `firstHeightOneColumn()` in `fold.mjs`).
+ *
+ * Standing as the bar, the rail is read directly. Anywhere else — the stage is
+ * flat, the rail stands as a column, another page is in front, fullscreen —
+ * it has no bar box to read, and the fold still has to know whether the bar
+ * *would* fit. So a probe is measured: a copy of the rail as it is drawn now,
+ * stripped of every Alpine attribute and marked `x-ignore`, laid out
+ * invisibly at the stage width in the bar form (`.rail-probe` in `plan.css`)
+ * and removed again. Remembering the last bar height instead would be stale
+ * exactly when it matters: a stage folded flat at one width keeps the height
+ * of that width while it is pulled wider.
+ *
+ * Reads boxes; writes and removes one invisible element. `undefined` where
+ * there is no rail, so `fold()` keeps its boot value.
+ */
+export function measureRail(appEl, railEl, width) {
+  if (!railEl) return undefined;
+  if (appEl.dataset.rail === 'bar' && !appEl.dataset.fullscreen && railEl.getClientRects().length > 0) {
+    return railEl.getBoundingClientRect().height;
+  }
+  const probe = railEl.cloneNode(true);
+  for (const el of [probe, ...probe.querySelectorAll('*')]) {
+    for (const { name } of Array.from(el.attributes)) {
+      if (name.startsWith('x-') || name.startsWith('@') || name.startsWith(':')) el.removeAttribute(name);
+    }
+    el.removeAttribute('id');
+  }
+  probe.removeAttribute('style');
+  probe.setAttribute('x-ignore', '');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.classList.add('rail-probe');
+  probe.style.width = `${width}px`;
+  appEl.appendChild(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height;
 }
 
 /**

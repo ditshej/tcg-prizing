@@ -38,7 +38,7 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRafflePadding, attachFades, attachMeasuring, attachStage, showRaffleHit } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, showRaffleHit } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -759,13 +759,17 @@ export function planApp(seam = SEAM) {
         this.$refs.ranktotal,
         this.$refs.rest,
       ].filter(Boolean);
-      this._detachMeasuring = attachMeasuring(this.$refs.stage, fixed);
+      this._fixed = fixed;
+      /* The open raffle bar takes its overlap with the tile window off the
+         diagram (#73, K1), so every measuring pass asks for it. */
+      const bar = () => (this.raffleOpen ? this.$refs.raffle : null);
+      this._detachMeasuring = attachMeasuring(this.$refs.stage, fixed, bar);
       /* Entering fullscreen changes which fixed parts render, not always the
          stage's own box, and `ResizeObserver` only sees the box. Measure again
          after Alpine has applied the `x-show`s, or the grid would keep the
          column count and diagram height of the layout it just left. */
       this.$watch('fullscreen', () => {
-        requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed));
+        requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed, bar()));
       });
       /*
          The bubble is placed — and closed — after **every drawing**, not at
@@ -806,7 +810,7 @@ export function planApp(seam = SEAM) {
       /* The fold (#71): the app's own box is the stage, read by the rind and
          written here once per resize; every page, the foot and the insets
          follow from `fold` reactively. */
-      this._detachStage = attachStage(this.$root, (size) => this.setStage(size));
+      this._detachStage = attachStage(this.$root, (size) => this.setStage(size), this.$refs.rail);
       /* One fade band per surface that really scrolls (#71 AC 10). Painted
          after every drawing that can change what overflows — the plan, the
          fold, the page in front — and on every scroll and resize by the rind
@@ -972,16 +976,23 @@ export function planApp(seam = SEAM) {
      * Called from `x-effect` on the grid's wrap rather than from `init()`,
      * which is #66's and #62's. The reads on the first line are what the
      * effect subscribes to — the bar's height grows with the retraction list
-     * and with the empty-pot sentence, and fullscreen moves the grid's own
-     * bottom edge. `$nextTick` waits for Alpine to have drawn the bar the
-     * measurement is about.
+     * and with the empty-pot sentence, fullscreen moves the grid's own
+     * bottom edge, and the fold changes the bar's width and so its wrapping.
+     * `$nextTick` waits for Alpine to have drawn the bar the measurement is
+     * about. The same measurement lifts the `NoticeStack` above the bar
+     * (`applyRaffleLift()`, #73).
      */
     measureRaffle() {
       const view = this.raffle;
-      void [this.raffleOpen, this.fullscreen, this.activePage, view.takeBack.length, view.hit, view.potEmptyNote];
-      this.$nextTick?.(() =>
-        applyRafflePadding(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null),
-      );
+      void [this.raffleOpen, this.fullscreen, this.activePage, this.fold, view.takeBack.length, view.hit, view.potEmptyNote];
+      this.$nextTick?.(() => {
+        const bar = this.raffleOpen ? this.$refs?.raffle : null;
+        /* First the diagram yields to the bar (K1) — that moves the grid's
+           top, never its bottom, so the padding below reads the same box. */
+        if (this._fixed) applyGeometry(this.$refs?.stage, this._fixed, bar);
+        applyRafflePadding(this.$refs?.grid, bar);
+        applyRaffleLift(this.$refs?.notices, bar);
+      });
     },
 
     /* ── `pinned` against `auto`, and the three reaches back (#67) ─────── */

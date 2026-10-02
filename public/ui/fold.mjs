@@ -86,12 +86,20 @@ export const STRIP_HEIGHT = 48;
 export const STRIP_WIDTH = 48;
 
 /**
- * The fixed rail of the four hot controls under the `Plan`, while there is one
- * column: measured 87 px at the master, two rows of two (`.controls-hot`).
- * Wider stages fit them into one row; the two-row height is the one the fold
- * reckons with, so it never promises room the narrow rail does not leave.
+ * The rail of the four hot controls under the `Plan`, while there is one
+ * column: its height is **measured**, not assumed (#73, run 14, K2
+ * `schiene-gemessen`). The rail wraps with the width — two rows of two, three
+ * cells over two rows, one row from 664 — and its height went 62 to 117 px at
+ * the acceptance by image; the 87 that #71's K-B10a reckoned with held at the
+ * master only. The measuring rind (`measureRail()` in `measure.mjs`) reads the
+ * rail in its bar form at the stage's width and hands it in as `railHeight`.
+ *
+ * This value is no rule — it is what `fold()` uses **until the first
+ * reading** and under `node --test`, where nothing is measured: the rail at
+ * the boot stage, the 393 × 830 master, measured 87 on 2026-10-02 (Chromium,
+ * `.plan-controls` with its border and padding).
  */
-export const RAIL_HEIGHT = 87;
+export const RAIL_AT_MASTER = 87;
 
 /**
  * What the `Plan` column needs to show its fixed part, the diagram at its
@@ -111,13 +119,16 @@ export const FIRST_HEIGHT = PLAN_FLOOR + STRIP_HEIGHT;
 
 /**
  * The same sum for the one-column form, which stands on the 56 px foot and
- * carries the rail: 351 + 56 + 87 = **494**, decided at #71 (run 13, K-B10a).
+ * carries the rail: 351 + 56 + the rail as measured at this width (#73, run
+ * 14, K2 — it replaces K-B10a's fixed 494, whose 87 held at the master only).
  * Carried over with the column form's 399, a stage under the first breakpoint
- * and between the two would keep the master and lose its second tile row —
- * 600 × 450, say. So the one rule is asked in the form the stage would
- * actually take.
+ * would keep the master and lose its second tile row — 600 × 450, say. So the
+ * one rule is asked in the form the stage would actually take, with the rail
+ * that form actually has.
  */
-export const FIRST_HEIGHT_ONE_COLUMN = PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT;
+export function firstHeightOneColumn(railHeight) {
+  return PLAN_FLOOR + FOOT_HEIGHT + railHeight;
+}
 
 /**
  * The fold of a stage `{ width, height, fullscreen }`. Everything between the
@@ -139,16 +150,20 @@ export const FIRST_HEIGHT_ONE_COLUMN = PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT;
  * side. Phone, two columns, three columns, flat and fullscreen all come out
  * of them with no `if` on the surface; the fullscreen sets both to zero.
  */
-export function fold({ width, height = Infinity, fullscreen = false }) {
+export function fold({ width, height = Infinity, fullscreen = false, railHeight = RAIL_AT_MASTER }) {
   const stage = Math.min(width, DECK);
   const wide = stage >= THREE_COLUMNS ? 3 : stage >= TWO_COLUMNS ? 2 : 1;
-  const low = height < (wide === 1 ? FIRST_HEIGHT_ONE_COLUMN : FIRST_HEIGHT);
+  const low = height < (wide === 1 ? firstHeightOneColumn(railHeight) : FIRST_HEIGHT);
   // Flat means too little height for columns but width enough that it has to
   // go somewhere: the turned strip takes 48 px off the side, and the `Plan`
   // must keep its first width beside it. From 436 on, not only from the
   // two-column step as in the prototype's `isFlat()` (#71, K-B10b).
   const flat = low && stage - STRIP_WIDTH >= FIRST_WIDTH.plan;
   const columns = flat ? 1 : wide;
+  // Too low for its form and too narrow to turn the strip aside: the master's
+  // exception (#71, B14). Nothing lies on top of anything there — the `Plan`
+  // keeps its floor, the rail stands under it, and the page scrolls (#73, K4).
+  const cramped = low && !flat && !fullscreen;
 
   const detailsWidth = columns >= 2 ? FIRST_WIDTH.details : 0;
   const prepareWidth = columns === 3 ? FIRST_WIDTH.prepare : 0;
@@ -160,11 +175,12 @@ export function fold({ width, height = Infinity, fullscreen = false }) {
   const planRight = fullscreen ? 0 : detailsWidth + stripWidth;
   const stripBottom = fullscreen || flat ? 0 : columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT;
   const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
-  const planHeight = height - stripBottom - (rail === 'bar' ? RAIL_HEIGHT : 0);
+  const planHeight = cramped ? PLAN_FLOOR : height - stripBottom - (rail === 'bar' ? railHeight : 0);
 
   return {
     columns,
     flat,
+    cramped,
     fullscreen,
     rail,
     planLeft,
@@ -214,7 +230,8 @@ export const CHIP_AIR = 8;
  * place on the right (vertically centred in its 48 px); on the flat stage
  * beside the turned strip, not into it; in fullscreen at the bottom edge. One
  * rule, and the open stack lifts above the chip row exactly where the chips
- * do not sit in a band of their own (`--chip-lift`).
+ * do not sit in a band of their own (`--chip-lift`). Where they do not, they
+ * also rise above an open raffle bar with the stack (`--chip-raffle`).
  */
 export function foldProperties(f) {
   const chipsInStrip = f.stripBottom === STRIP_HEIGHT;
@@ -224,11 +241,19 @@ export function foldProperties(f) {
     '--col-details': px(FIRST_WIDTH.details),
     '--col-prepare': px(FIRST_WIDTH.prepare),
     '--strip-width': px(STRIP_WIDTH),
+    // The `Plan`'s floor as the cramped stage draws it (#73, K4): the diagram
+    // at its floor and two tile rows, the page scrolling under them.
+    '--diagram-floor': px(MIN_DIAGRAM_HEIGHT),
+    '--two-rows': px(rowsHeight(MIN_ROWS)),
     '--plan-left': px(f.planLeft),
     '--plan-right': px(f.planRight),
     '--strip-bottom': px(f.stripBottom),
     '--chip-right': px(f.stripWidth),
     '--chip-bottom': px(chipsInStrip ? (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
     '--chip-lift': px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
+    // Whether the chips share the open raffle bar's corner and rise above it
+    // with the stack (`--raffle-lift`, measured by the rind): everywhere but
+    // in the strip, which lies under the bar (#73; the prototype's `#badges`).
+    '--chip-raffle': chipsInStrip ? '0' : '1',
   };
 }

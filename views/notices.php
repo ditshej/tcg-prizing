@@ -24,7 +24,7 @@
  * corner costs nothing.
  */
 ?>
-<div class="notice-layer" x-effect="refreshNotices()"
+<div class="notice-layer" x-ref="notices" x-effect="refreshNotices()"
      :class="{ 'notice-layer-chips': notices.chips.length }">
   <div class="notice-stack">
     <template x-for="notice in notices.open" :key="notice.id">

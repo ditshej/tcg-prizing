@@ -11,7 +11,12 @@ import {
   columnsFor,
   diagramCap,
   hitScrollDelta,
+  raffleCover,
   raffleScrollPadding,
+  raffleLift,
+  tileColumnsFor,
+  MAX_COLUMNS,
+  RAFFLE_AIR,
   fadeShown,
   fadeHeight,
 } from '../public/ui/geometry.mjs';
@@ -94,6 +99,35 @@ test('a bar that does not reach the grid window costs no padding at all', () => 
 });
 
 /**
+ * The open raffle bar lies over the foot of the `Plan` column, and a
+ * ConflictNotice that has to be present (ADR 0002) must not lie under it: the
+ * stack — and the chips where they share the bar's corner — rise by the bar's
+ * measured height and the air it keeps to the strip (the prototype's
+ * `--raffleh`, Runde 16; found at the acceptance by image, #73).
+ */
+test('the raffle lift is the bar\'s height plus its air, and nothing while the bar is closed', () => {
+  assert.equal(raffleLift(119), 119 + RAFFLE_AIR);
+  assert.equal(raffleLift(0), 0);
+  assert.equal(raffleLift(null), 0);
+  assert.equal(RAFFLE_AIR, 8);
+});
+
+/**
+ * The tile grid stops at sixteen columns at every width, fullscreen included:
+ * the prototype caps `.slots` at `--gridmax` (16 tiles) in the page and in
+ * `fsContent()` alike, and `fold()` already reports `tileColumns` capped. The
+ * grid itself took `columnsFor()` uncapped and showed 21 columns in
+ * fullscreen at 1280 and 26 at 1597 (#73).
+ */
+test('tileColumnsFor keeps the master floor and the sixteen-column deck', () => {
+  assert.equal(tileColumnsFor(200), 6);
+  assert.equal(tileColumnsFor(10 * 59 - 5), 10);
+  assert.equal(tileColumnsFor(1597 - 16), MAX_COLUMNS);
+  assert.equal(tileColumnsFor(1264), MAX_COLUMNS);
+});
+
+
+/**
  * "Sichtbar" measures against the **top edge of the bar**, not the bottom of
  * the scroll window (#69, #61): the bar stands still while the retraction list
  * under it grows, so the boundary stands still too.
@@ -152,4 +186,37 @@ test('the scroller\'s own bottom padding is not "something below"', () => {
 test('the band never takes more than a quarter of a short window', () => {
   assert.equal(fadeHeight(682), 60);
   assert.equal(fadeHeight(113), 28); // the two-row tile window keeps its second row readable
+});
+
+/* ── The diagram yields to the open raffle bar (#73, run 14, K1) ─────────── */
+
+/**
+ * The numbers are the ones measured at the acceptance by image, 674 × 760
+ * (protocol A3): tile window 541–654, the bar from 585 (closed list) and from
+ * 514 after the first throw. Measured, not derived — the test only states that
+ * the cover is what the bar takes off the window down to its top edge.
+ */
+test('the bar covers the window from its top edge less the clearance down, and nothing above it', () => {
+  const window = { top: 541, bottom: 654 };
+  assert.equal(raffleCover(window, { top: 585 }), 654 - (585 - RAFFLE_CLEARANCE));
+  assert.equal(raffleCover(window, { top: 514 }), 654 - (514 - RAFFLE_CLEARANCE));
+  // The master: the rail lies under the bar, the window ends at 629, the bar starts at 647.
+  assert.equal(raffleCover({ top: 516, bottom: 629 }, { top: 647 }), 0);
+  assert.equal(raffleCover(window, null), 0);
+});
+
+test('the diagram pays for the cover, so two full rows stand above the bar', () => {
+  const leftover = 600;
+  const covered = 79;
+  const diagram = diagramCap(leftover, undefined, covered);
+  assert.equal(diagram, leftover - rowsHeight(MIN_ROWS) - covered);
+  // What is left of the window above the bar is exactly the two rows.
+  assert.equal(leftover - diagram - covered, rowsHeight(MIN_ROWS));
+  assert.equal(diagramCap(leftover, undefined, 0), diagramCap(leftover));
+});
+
+test('the diagram never yields under its floor — flat, that is not enough (K1, open there)', () => {
+  // 812 × 375 at the acceptance: diagram 86 over two rows, the bar 119 high.
+  const leftover = 86 + rowsHeight(MIN_ROWS);
+  assert.equal(diagramCap(leftover, undefined, 79), 60);
 });

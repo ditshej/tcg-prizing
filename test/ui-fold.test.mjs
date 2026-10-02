@@ -5,16 +5,16 @@ import { readFileSync } from 'node:fs';
 import {
   DECK,
   FIRST_HEIGHT,
-  FIRST_HEIGHT_ONE_COLUMN,
   FIRST_WIDTH,
   FOOT_HEIGHT,
   PLAN_FLOOR,
   PLAN_PADDING,
-  RAIL_HEIGHT,
+  RAIL_AT_MASTER,
   STRIP_HEIGHT,
   STRIP_WIDTH,
   TWO_COLUMNS,
   THREE_COLUMNS,
+  firstHeightOneColumn,
   fold,
   foldPage,
   foldProperties,
@@ -65,7 +65,7 @@ test('at the decided first widths the breakpoints are 674 and 1030 (#71, K-B9)',
  */
 test('the breakpoints, the deck and the first heights are written as sums, not literals', () => {
   const source = readFileSync(new URL('../public/ui/fold.mjs', import.meta.url), 'utf8');
-  for (const name of ['TWO_COLUMNS', 'THREE_COLUMNS', 'DECK', 'PLAN_FLOOR', 'FIRST_HEIGHT', 'FIRST_HEIGHT_ONE_COLUMN']) {
+  for (const name of ['TWO_COLUMNS', 'THREE_COLUMNS', 'DECK', 'PLAN_FLOOR', 'FIRST_HEIGHT']) {
     const match = source.match(new RegExp(`export const ${name}\\s*=\\s*([^;]+);`));
     assert.ok(match, `${name} is still defined in fold.mjs`);
     assert.doesNotMatch(match[1], /\d/, `${name} = ${match[1].trim()} carries a literal`);
@@ -147,16 +147,14 @@ const DECIDED = Object.freeze({ fixed: 178, diagramFloor: 60, twoRows: 113, stri
  * bar, and the bar enters as its floor — whoever drops the floor term is back
  * at #40's 158-based 337 and loses the second tile row.
  */
-test('the first height of the Plan is 399, the one-column threshold 494, the floor 351 (#71, K-B8, K-B10a)', () => {
+test('the first height of the Plan is 399, the floor 351 (#71, K-B8)', () => {
   assert.equal(DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows, 351);
   assert.equal(PLAN_FLOOR, 351);
   assert.equal(FIRST_HEIGHT, 399);
-  assert.equal(FIRST_HEIGHT_ONE_COLUMN, 494);
   assert.equal(MIN_DIAGRAM_HEIGHT, DECIDED.diagramFloor);
   assert.equal(2 * TILE_SIZE + TILE_GAP, DECIDED.twoRows);
   assert.equal(STRIP_HEIGHT, DECIDED.strip);
   assert.equal(FIRST_HEIGHT, PLAN_FLOOR + STRIP_HEIGHT);
-  assert.equal(FIRST_HEIGHT_ONE_COLUMN, PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT);
 });
 
 test('398 is flat, 399 is not — at two and three columns (#71, K-B8)', () => {
@@ -166,11 +164,53 @@ test('398 is flat, 399 is not — at two and three columns (#71, K-B8)', () => {
   }
 });
 
-test('under the two-column step the threshold is 494: 493 is flat, 494 is not (#71, K-B10a)', () => {
-  assert.equal(fold({ width: 600, height: 493 }).flat, true);
-  const enough = fold({ width: 600, height: 494 });
-  assert.equal(enough.flat, false);
-  assert.equal(enough.rail, 'bar');
+/**
+ * K2 of run 14 at #73 (`schiene-gemessen`): the one-column threshold is the
+ * floor, the foot and the rail **as measured** — no fixed 494. The rail
+ * heights below are the ones measured at the acceptance by image (2026-10-02,
+ * Chromium): 87 at the master and at 600, 101 at 360/540, 115 at 500, 117 at
+ * 320. Each must move the threshold by itself.
+ */
+const MEASURED_RAIL = Object.freeze({ 320: 117, 360: 101, 393: 87, 500: 115, 540: 101, 600: 87 });
+
+test('the one-column threshold is the floor, the foot and the measured rail — no fixed number (#73, K2)', () => {
+  assert.equal(firstHeightOneColumn(87), PLAN_FLOOR + FOOT_HEIGHT + 87);
+  for (const [w, rail] of Object.entries(MEASURED_RAIL)) {
+    const width = Number(w);
+    const threshold = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows + FOOT_HEIGHT + rail;
+    const under = fold({ width, height: threshold - 1, railHeight: rail });
+    const at = fold({ width, height: threshold, railHeight: rail });
+    assert.equal(at.flat || at.cramped, false, `${width} × ${threshold} stands as the master`);
+    assert.equal(at.rail, 'bar');
+    assert.equal(at.planHeight, PLAN_FLOOR, `${width} × ${threshold}: exactly the floor above foot and rail`);
+    assert.equal(under.flat || under.cramped, true, `${width} × ${threshold - 1} is flat or cramped`);
+  }
+  // 500 wide and 500 high: under the old 494 the master, with its measured rail of 115 flat.
+  assert.equal(fold({ width: 500, height: 500, railHeight: 115 }).flat, true);
+});
+
+test('until the first reading the fold reckons with the rail measured at the master', () => {
+  assert.equal(RAIL_AT_MASTER, 87);
+  assert.deepEqual(fold({ width: 600, height: 500 }), fold({ width: 600, height: 500, railHeight: RAIL_AT_MASTER }));
+});
+
+/**
+ * K4 of run 14 at #73 (`seite-scrollt`): under 436 wide and under the
+ * one-column threshold the stage is **cramped** — not flat, the master with
+ * its foot, and the `Plan` keeps its floor while the page scrolls.
+ */
+test('under 436 and under the threshold the stage is cramped: the Plan keeps its floor and the page scrolls (#73, K4)', () => {
+  const f = fold({ width: 360, height: 300, railHeight: 101 });
+  assert.equal(f.flat, false);
+  assert.equal(f.cramped, true);
+  assert.equal(f.rail, 'bar');
+  assert.equal(f.planHeight, PLAN_FLOOR);
+  assert.equal(fold({ width: 436, height: 300 }).cramped, false, '436 turns flat instead');
+  assert.equal(fold({ width: 360, height: 300, fullscreen: true }).cramped, false, 'fullscreen has no rail and no foot');
+  assert.equal(fold({ width: 393, height: 830 }).cramped, false);
+  const props = foldProperties(f);
+  assert.equal(props['--diagram-floor'], `${DECIDED.diagramFloor}px`);
+  assert.equal(props['--two-rows'], `${DECIDED.twoRows}px`);
 });
 
 test('the stage folds flat from 436 wide: 435 keeps the master, 436 turns the strip (#71, K-B10b)', () => {
@@ -237,23 +277,23 @@ test('in the flat mode two full tile rows are visible, not cut', () => {
  *
  * The sweep starts where the floor can hold at all: a stage narrower than six
  * tiles plus the column's padding, or lower than the Plan's fixed part plus
- * the diagram floor and two rows, cannot show the master in any fold. Nor can
- * a stage too narrow to turn the strip aside (the Plan's first width plus the
- * strip) and too low for the one-column form with its foot and rail — a
- * portrait screen under 436 px wide and under that first height, which no
- * phone is.
+ * the diagram floor and two rows, cannot show the master in any fold. A stage
+ * too narrow to turn the strip aside and too low for the one-column form is in
+ * the sweep since K4 of run 14: it is cramped, the `Plan` keeps its floor and
+ * the page scrolls (#73). The sweep runs at the smallest, the master's and the
+ * largest rail measured (K2), because the threshold moves with it.
  */
 test('the master is the floor: never fewer than six tile columns and two tile rows', () => {
   const minWidth = 6 * TILE_SIZE + 5 * TILE_GAP + PLAN_PADDING;
   const failures = [];
   for (let width = minWidth; width <= 2000; width += 3) {
-    const lowest = width < 436 ? 494 : DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
-    for (let height = lowest; height <= 1400; height += 5) {
-      const f = fold({ width, height });
+    const lowest = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
+    for (let height = lowest; height <= 1400; height += 5) for (const railHeight of [62, 87, 117]) {
+      const f = fold({ width, height, railHeight });
       const columns = columnsFitting(f.planWidth - PLAN_PADDING);
       const window = f.planHeight - DECIDED.fixed - diagramCap(f.planHeight - DECIDED.fixed);
       const rows = Math.floor((window + TILE_GAP) / (TILE_SIZE + TILE_GAP));
-      if (columns < 6 || rows < 2) failures.push(`${width}×${height}: ${columns} columns, ${rows} rows`);
+      if (columns < 6 || rows < 2) failures.push(`${width}×${height} (rail ${railHeight}): ${columns} columns, ${rows} rows`);
     }
   }
   assert.deepEqual(failures.slice(0, 5), []);
@@ -292,4 +332,21 @@ test('the chip sits in the lowest free corner on the right', () => {
   // Fullscreen: no foot at any width, the bottom edge.
   assert.equal(props(1280, 760, true)['--strip-bottom'], '0px');
   assert.equal(props(1280, 760, true)['--chip-bottom'], '8px');
+});
+
+/**
+ * The open raffle bar is a surface over the `Plan` column, so the corner under
+ * it is no longer free: where the chips stand in the `Plan`'s corner — one row
+ * above the foot, beside the turned strip, at the fullscreen's bottom edge —
+ * they rise above the bar; in the strip they lie under the bar and stay put.
+ * The prototype's `#badges` rule, `bottom: calc(var(--foot) + var(--raffleh))`
+ * (Runde 16, Runde 21); found at the acceptance by image (#73).
+ */
+test('the chips rise above an open raffle bar exactly where they sit in the Plan\'s corner', () => {
+  const props = (w, h, fs = false) => foldProperties(fold({ width: w, height: h, fullscreen: fs }));
+  assert.equal(props(393, 830)['--chip-raffle'], '1');
+  assert.equal(props(812, 375)['--chip-raffle'], '1');
+  assert.equal(props(1280, 760, true)['--chip-raffle'], '1');
+  assert.equal(props(393, 830, true)['--chip-raffle'], '1');
+  for (const w of [674, 1030, 1597]) assert.equal(props(w, 800)['--chip-raffle'], '0', `strip at ${w}`);
 });
