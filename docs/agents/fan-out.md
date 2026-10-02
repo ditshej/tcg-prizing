@@ -915,3 +915,8 @@ every intermediate state measured:** 489 → +#123 497 → +#124 523 → +#125 5
 conflict-free. Decisions filed to #70, #71, #61 and #121, and the prototype
 corrections to `prototype/rank-distribution` (`f72145d`). No ADR. PRs: #123
 (#114), #124 (#70), #125 (#71). Merge order: **#123, then #124, then #125.**
+All three merged in that order on 2026-10-02, `main` at 555/555, and #114, #70
+and #71 closed by their PRs. The `dev/` follow-up came after the merge. The
+bench now imports `winnerPackOverhang()` instead of keeping its own copy of the
+formula, and three sentences that still said the ways out are „computed, not
+searched" (B1) were rewritten.
