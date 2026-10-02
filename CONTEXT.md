@@ -289,7 +289,10 @@ auch bei n = 0, wo die Staffel damit selbst auf 0 fällt), die nachzieht,
 bis der Lead sie anfasst; ihre Summe ist nach oben durch dieselbe Zahl
 gedeckelt. Die Staffel rechnet nie auf Stücken, die beiseite liegen: ein
 Judge-Pack verkürzt das automatische Präfix, statt den `open`-Rest aufzuzehren,
-der der `WinnerRaffle` gehört.
+der der `WinnerRaffle` gehört. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
+aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
+`WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
+`JudgePool`.
 Der Deckel „Summe höchstens n" gilt **beim Setzen** — das ± der Kachel braucht
 einen `open` `WinnerPack` —, aber er hält den Zustand nicht: sinkt danach ein
 zweiter Wert, liegen mehr `WinnerPack`s auf den Kacheln, als der `RankPool`
@@ -302,17 +305,18 @@ rank.winners` über null. Er entsteht durch einen Set-Wechsel auf weniger
 ein Prüfstand, der ihn über `ranked` herbeiführen will, bekommt keinen. Er wird
 als `ConflictNotice` **gemeldet und nie geklemmt** (ADR 0006): die
 gespeicherten Zähler bleiben, wie der Lead sie gesetzt hat, und stehen wieder
-gültig da, sobald der Bestand reicht. Markiert sind die Kacheln der `Rank`s,
-deren Handzuteilungen über dem Bestand liegen — die untersten zuerst, dieselben,
-die der Rücknahme-Weg benennt. Solange er steht, schweigt das `Offer`.
+gültig da, sobald der Bestand reicht. Markiert ist, solange er steht, **jede**
+Kachel, deren `Rank` einen `manual` `WinnerPack` hält — nicht nur die, die der
+Rücknahme-Weg benennt (K-B2, Lauf 13): ist die Meldung minimiert, zeigen nur
+noch die roten Kacheln, wo das Problem liegt, und Ursache ist jede
+Handzuteilung. Kacheln, die ihren `WinnerPack` nur über `ranked` tragen,
+bleiben unmarkiert; der Rücknahme-Weg nennt weiterhin nur die untersten, die
+nötig sind. Solange er steht, schweigt das `Offer`.
 Wo `ranked` seiner Staffel folgt, räumt ein um den Überhang gesenkter
 `judgeWinner` **nicht**: jeder zurückgegebene Pack hebt n um eins und
 `⌊n/2⌋ + 1` bei jedem zweiten Schritt mit. Der Weg nennt darum den
 nächstliegenden Wert, der räumt (Weekly mit 10 `WinnerPack`s, 4 davon beim
-`Judge`, 4 von Hand: zwei über, und der Weg heisst `judgeWinner` 1, nicht 2). `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
-aussparen will, dreht `ranked` auf 0 und setzt alles `manual`. Ein geplanter
-`WinnerPack` für einen `Judge` läuft nicht hierüber, sondern über den
-`JudgePool`.
+`Judge`, 4 von Hand: zwei über, und der Weg heisst `judgeWinner` 1, nicht 2).
 _Avoid_: fix (heisst auf Englisch „reparieren"), WinnerAssignment, ManualPool (es ist kein `Pool`)
 
 **WinnerRaffle**:
@@ -539,9 +543,10 @@ Plan voraus, das andere einen gültigen.
 Bedingung, unter der die Meldung steht. Jede wird mit ihrem Namen genannt — in
 Tickets, Code, Kommentaren und Proben —, und kein Text zählt sie: #103 sagte
 „dritte Quelle", #70 „zweite", #61 „the fourth", und das waren zwei verschiedene
-Quellen nach drei verschiedenen Zählungen. Die ersten vier sind die
-Konfliktfelder des `DistributionPlan`; ihr Name ist der Feldname, `unfit(plan)`
-ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
+Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
+`DistributionPlan` sind `conflict`, `overtake`, `orphanedReservation` und
+`unclaimedRemainder`; ihr Name ist der Feldname, `unfit(plan)` ist ihre
+Disjunktion, und ihre Wege sucht `suggestions(plan)`:
 - `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
   die den `RankPool` allein schon übersteigt.
 - `overtake` — die Überholung ohne Verlierer.
@@ -559,8 +564,9 @@ Eine ist gebaut und kommt nicht aus dem Kern:
   beides zusammen (`conflictStands()`). In `unfit()` gehört er nicht, weil
   `unfit()` auch der Test jeder Probe der Suche ist: ein stehender Überhang
   liesse jede Probe eines Bodenkonflikts durchfallen, und dessen Wege
-  verschwänden. Seine Wege sind gerechnet, nicht gesucht
-  (`overhangWaysOut(plan)`). #61 überschreibt ihn mit „overplaced winner packs".
+  verschwänden. Seine Wege kommen aus `overhangWaysOut(plan)`: der über
+  `judgeWinner` ist gesucht, die beiden anderen sind gerechnet. #61
+  überschreibt ihn mit „overplaced winner packs".
 
 Eine weitere ist entschieden und noch nicht gebaut:
 - `CombinedHandout` depth (#103) — `CombinedHandout` an und die `RankPoolDepth`
@@ -572,12 +578,20 @@ baut.
 **Ihre Wege kommen aus zwei Herkünften**, und das ist keine Zählung der Quellen:
 die der Kernquellen **sucht** `suggestions(plan)` (ein Regler über seinen
 Bereich, oder der mehrgliedrige Weg, wo keiner räumt), die des
-`WinnerPack`-Überhangs werden **gerechnet** — `judgeWinner` hinunter,
-`ranked` um den Überhang hinunter, die Handzuteilungen der untersten `Rank`s
-zurück, in dieser Ordnung. Stehen beide Sorten Quelle zugleich, stehen beide
+`WinnerPack`-Überhangs kommen aus `overhangWaysOut(plan)`, in dieser Ordnung:
+`judgeWinner` hinunter ist **gesucht** — der nächstliegende Wert, der räumt,
+ab `judge.winners −` Überhang abwärts, weil jeder zurückgegebene Pack
+`rank.winners` hebt (B1, Lauf 13; siehe `WinnerPackAllocation`); `ranked` um
+den Überhang hinunter und die Rücknahme der Handzuteilungen der untersten
+`Rank`s sind **gerechnet**, weil sie `rank.winners` nicht ändern und darum
+genau räumen. Stehen beide Sorten Quelle zugleich, stehen beide
 Sorten Weg in derselben Meldung nebeneinander; sie laufen über verschiedene
-Regler und räumen einander nichts weg. `winnerPacks` hoch ist nie ein Weg —
-die Zahl vorhandener `WinnerPack`s ist eine **Tatsache über den Abend**.
+Regler und räumen einander nichts weg. Der Chip zählt dann, **was anklickbar
+ist** (K-B3, Lauf 13): steht ein Kernkonflikt ohne Weg (`boosterRate` 0) neben
+dem Überhang mit seinen drei Wegen, heisst er „⚠ 3 ways out"; „No boosters"
+steht nur, wo es gar keinen Weg gibt. Dass die Meldung nach jedem dieser Wege
+stehen bleibt, weil nur der Überhang räumt, ist bewusst genommen.
+`winnerPacks` hoch ist nie ein Weg — die Zahl vorhandener `WinnerPack`s ist eine **Tatsache über den Abend**.
 **Woraus die Wege gewählt werden**, sagt ADR 0002 nicht — das Verfahren schon
 (einen Regler über seinen Bereich variieren, nie zwei zugleich, den
 nächstliegenden Wert nehmen, der räumt). Durchsucht wird ein Regler genau dann,
