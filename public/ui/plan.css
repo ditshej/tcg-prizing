@@ -1431,3 +1431,191 @@ body {
   font-size: 0.7rem;
   opacity: 0.6;
 }
+
+/*
+ * The NoticeStack (#68). A layer over the whole app that covers and pushes
+ * nothing: both halves are `position: fixed`, so a standing notice takes no
+ * height from the tile grid — it lies over it (#61: measured, a notice in the
+ * flow left 11 of 114px of grid, on the maintainer's device none).
+ *
+ * The open notices stand on the foot, the plan's notice at the top of the
+ * stack and the input's at the bottom, beside the controls (#31). The chips
+ * have their own anchor one row above the foot: the corner is the lowest free
+ * one on the right, and a pill in its own band covers nothing, so it goes to
+ * the edge (CONTEXT.md, `NoticeStack`). In fullscreen there is no foot, and
+ * the same rule puts both on the bottom edge.
+ *
+ * `--notice-right` is the indent the open surface keeps from the controls
+ * column once the controls stand beside the plan as a column (from 740px,
+ * #71): there it ends before them and leaves their pin markings free. On a
+ * narrow screen the open notice covers the controls, `pinned` and reset
+ * included, on purpose — the lighter loss, since the ways out are clickable in
+ * the notice itself (the prototype's comment over `.stack > *`; maintainer
+ * decision on #68, run 12, K3 `prototyp-gilt`, which overrides the ticket's
+ * "must not cover the pin markings"). The app folds into one page at every
+ * width until #71 builds the columns, so it is 0 and the notice covers
+ * everywhere; the fold sets it once there are columns.
+ * `--notice-foot` is the foot's measured 56px (`.foot`: 20 + 3 + 12 + 2 × 10
+ * + 1).
+ *
+ * Told apart by colour and ways out only, never by form or by how they start
+ * (#61). The three tones are the prototype's: warn red, the reserve violet,
+ * and the bronze accent of what was just switched — not the pin violet, which
+ * sits next to the Offer's and cannot be told apart from it.
+ */
+.notice-layer {
+  --notice-foot: 56px;
+  --notice-right: 0px;
+}
+
+.notice-layer-bare {
+  --notice-foot: 0px;
+}
+
+/* A chip row standing lifts the open stack above it by its own height. */
+.notice-layer-chips {
+  --notice-chiprow: 42px;
+}
+
+.notice-stack {
+  position: fixed;
+  left: 0;
+  right: var(--notice-right);
+  bottom: calc(var(--notice-foot) + var(--notice-chiprow, 0px));
+  z-index: 36;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 12px 8px;
+  max-height: calc(100dvh - var(--notice-foot) - var(--notice-chiprow, 0px));
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.notice {
+  pointer-events: auto;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  box-shadow: 0 8px 24px light-dark(rgba(58, 42, 22, 0.18), rgba(0, 0, 0, 0.62));
+}
+
+.notice-conflict {
+  background: light-dark(#ffe1dd, #3d1b18);
+  color: light-dark(#96140f, #ff9f90);
+}
+
+.notice-offer {
+  background: light-dark(#f3ecf6, #2a2338);
+  color: light-dark(#6b3f80, #c8aee4);
+}
+
+.notice-carryOver {
+  background: light-dark(#f0e4d1, #2a2620);
+  color: light-dark(#241c12, #f2ece0);
+}
+
+.notice-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.notice-text {
+  flex: 1 1 auto;
+}
+
+.notice-line {
+  margin: 0;
+}
+
+.notice-line + .notice-line {
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.notice-lead {
+  font-weight: 700;
+}
+
+.notice-fold,
+.notice-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 2px 5px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.notice-action {
+  font: inherit;
+  font-size: 0.75rem;
+  border: 1px solid currentColor;
+  background: light-dark(#fffdf8, #1e1b16);
+  color: inherit;
+  border-radius: 999px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.notice-chips {
+  position: fixed;
+  right: 0;
+  bottom: var(--notice-foot);
+  z-index: 37;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0 12px 8px;
+  pointer-events: none;
+}
+
+/*
+ * The chip carries its colour as a ring, not as a fill, on the raised paper
+ * of both modes — on the dark paper a soft tint was not to be seen
+ * (prototype, `.chip`). Word and number, never a glyph alone; the ⚠ stands
+ * beside the ConflictNotice's word and is the corner's one sign.
+ */
+.notice-chip {
+  pointer-events: auto;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: light-dark(#fffdf8, #1e1b16);
+  font: 600 0.78rem/1 system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px currentColor, 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.notice-chip-conflict {
+  color: light-dark(#96140f, #ff9f90);
+}
+
+.notice-chip-offer {
+  color: light-dark(#8a5f9c, #a888c8);
+}
+
+.notice-chip-carryOver {
+  color: light-dark(#8c5a2b, #c9992e);
+}
+
+.notice-glyph {
+  font-size: 13px;
+}

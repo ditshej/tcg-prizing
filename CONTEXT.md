@@ -439,9 +439,16 @@ ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
 Schicht: der Stapel liegt über jeder Seite und gehört keiner. Seine *Fläche*
 ist so breit wie der Platz, den der `DistributionPlan` gerade einnimmt — am
 schmalen Schirm der ganze, klappt die Breite die Regler daneben, endet er vor
-ihnen. Der Grund ist derselbe wie eh: die Reglerfläche trägt die
-Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
-ihre eigenen Belege zudeckt, ist keine Meldung.
+ihnen. **Am schmalen Schirm deckt die offene Meldung die Regler zu**, samt
+`pinned` und Reset, und das ist gewollt: dort ist das Zudecken der leichtere
+Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind (Prototyp,
+Kommentar über `.stack > *`; Entscheid an #68, Lauf 12, K3 `prototyp-gilt`).
+Frei bleiben die Regler erst ab 740 Pixeln, wenn sie als Spalte daneben stehen
+(#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
+die Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
+dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Bis
+#71 die Spalten baut, faltet die App auf jeder Breite auf eine Seite, und die
+Meldung deckt überall zu.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
 Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
@@ -458,7 +465,7 @@ fällt hinein. Eine Regel, zwei Ergebnisse — und keiner der beiden Orte gehör
 einer Seite, weshalb die Schicht dabei nicht verlassen wird.
 Damit trennen sich Chip und offene Meldung in der **Fläche**: die offene folgt
 dem `DistributionPlan`, der Chip nicht. Der Einzug oben hat genau einen Grund,
-nämlich die Pin-Markierungen nicht zuzudecken — und eine Pille in einem
+nämlich in der breiten Faltung die Pin-Markierungen nicht zuzudecken — und eine Pille in einem
 reservierten Band deckt nichts zu, also geht sie bis an die Kante.
 Der Chip trägt ein **Wort und nach Möglichkeit eine Zahl** (`3 ways out`,
 `2 kept`), kein Zeichen: ein Glyph beschreibt die Meldung und muss gedeutet
