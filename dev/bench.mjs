@@ -24,7 +24,7 @@
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS, RANGES, rafflePot } from '../public/core/rules.mjs';
-import { offerFor, suggestions } from '../public/core/suggest.mjs';
+import { combinedWayOut, offerFor, waysOut as coreWaysOut } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 
 /**
@@ -202,7 +202,8 @@ const CONTROLS = [
 ];
 
 /**
- * The four measured stands of #53, plus the two conflict stands #56 owns.
+ * The four measured stands of #53, plus the two conflict stands #56 owns, the
+ * WinnerPack overhang of #70 and the two-fact stand of #68.
  *
  * Every expected value below is looked up where it was decided — never
  * re-derived from what the core happens to read today, which would only
@@ -326,6 +327,34 @@ const PRESETS = [
       value: '3·2 · orphaned Rank 3',
       read: (plan) =>
         `${seriesOf(plan)} · orphaned ${plan.orphanedReservation ? plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ') : 'none'}`,
+    },
+  },
+  {
+    // The stand on which no single slider clears and the one combined way out
+    // of #68 is the answer. Stand and label are the ones
+    // test/suggest.test.mjs:640/683 fixes: two facts at once — a shortfall
+    // (floor 3 at depth 2 needs more than the RankPool holds after the
+    // reservation) and Rank 3's Display orphaned at depth 2. The floor clears
+    // the first and leaves the second, dropping Rank 3 the reverse, so only
+    // both together clear. `participationBooster` and `judgeBooster` are 0 on
+    // the bench sheet already and named here only because the test names them.
+    id: 'twoFacts',
+    label: '8 Players, rate 1, floor 3, depth 2, a Display on Ranks 1–3 — no single slider clears (#68)',
+    settings: {
+      players: 8,
+      boosterRate: 1,
+      participationBooster: 0,
+      judgeBooster: 0,
+      displaySize: 2,
+      displays: [1, 1, 1],
+      depth: 2,
+      rankFloor: 3,
+      curve: 'steep',
+    },
+    expect: {
+      what: 'combinedWayOut',
+      value: "Floor down to 1 and drop rank 3's display",
+      read: (plan) => combinedWayOut(plan)?.label ?? 'null',
     },
   },
 ];
@@ -614,6 +643,18 @@ const DERIVED = [
   ],
   ['flagged', (p) => (p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(', ') : 'none')],
   ['unfit', (p) => String(unfit(p))],
+  // The one way over several sliders (#68), computed on every unfit stand and
+  // shown raw — also where single ways exist and `waysOut()` therefore
+  // withholds it, so the bench shows what the ranking leaves out.
+  [
+    'combinedWayOut (#68)',
+    (p) => {
+      const way = combinedWayOut(p);
+      if (!way) return 'null';
+      const used = waysOut(p)[0]?.key === 'combined';
+      return `${way.label} — ${way.changes.length} change(s), ${used ? 'offered' : 'withheld: a single way stands alone'}`;
+    },
+  ],
   // The provenance half of the input (#86): which sliders were set by hand.
   // Only the keys — a value here is the one the row above it already shows,
   // and the whole information of a pin is that the key is present at all.
@@ -634,9 +675,15 @@ const DERIVED = [
  * from (`plan.settings`, ADR 0009), so the slider values and the violated facts
  * arrive together and cannot disagree. The seam stayed a function of its own
  * exactly so that turn would be this one call and nothing else in the bench.
+ *
+ * Since #68 it calls the core's own `waysOut()` rather than `suggestions()`:
+ * the single ways where any slider clears alone, and only where none does the
+ * one `combinedWayOut()` over several sliders at once (ADR 0002, addendum
+ * "Wenn kein einzelner Regler räumt"). The ranking is the core's; the bench
+ * does not rebuild it — again this one call.
  */
 function waysOut(plan) {
-  return suggestions(plan);
+  return coreWaysOut(plan);
 }
 
 /**
@@ -940,10 +987,12 @@ function renderRafflePot(plan) {
  * The ways out, beside the invariant line: when the line stops being green,
  * what the core would offer is exactly what one wants to see next — and being
  * able to take one by hand is what a bench is for. `suggestions()` searches
- * one slider at a time (#59), so an entry is one slider's value and applying
- * it is one assignment.
+ * one slider at a time (#59), so a single entry is one slider's value and
+ * applying it is one assignment; the combined entry of #68 (`key: 'combined'`)
+ * carries its `changes` in the single ways' own shape, and applying it is
+ * those assignments in a row.
  *
- * It computes only where `unfit` holds, the same gate `suggestions()` itself
+ * It computes only where `unfit` holds, the same gate `waysOut()` itself
  * carries; the WinnerPack overhang of #70 is not one of the four facts and
  * therefore has no entries here — #70's ways out are computed, not searched,
  * and are not in this function.
@@ -953,7 +1002,7 @@ function renderWaysOut(plan) {
   if (!unfit(plan)) {
     const note = document.createElement('p');
     note.className = 'note';
-    note.textContent = 'the plan is fit — suggestions() returns nothing to show';
+    note.textContent = 'the plan is fit — waysOut() returns nothing to show';
     el.waysOut.append(note);
     return;
   }
@@ -962,7 +1011,7 @@ function renderWaysOut(plan) {
     const note = document.createElement('p');
     note.className = 'note';
     note.textContent =
-      'unfit, and no single slider clears it — the multi-slider way out is decision K1 at #68/#70 and is not built yet';
+      'unfit, and no slider the search may move clears it, alone or together — combinedWayOut() is null; only a fact about the evening would (#68, run 12 K2 satz-zur-tatsache)';
     el.waysOut.append(note);
     return;
   }
@@ -973,7 +1022,9 @@ function renderWaysOut(plan) {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = entry.label;
-      button.title = `${entry.key}${entry.rank ? ` · Rank ${entry.rank}` : ''} = ${entry.value}`;
+      button.title = (entry.changes ?? [entry])
+        .map((change) => `${change.key}${change.rank ? ` · Rank ${change.rank}` : ''} = ${change.value}`)
+        .join('; ');
       button.addEventListener('click', () => {
         applyWayOut(entry);
         render();
@@ -1040,13 +1091,19 @@ function renderOffer(plan) {
 }
 
 /**
- * One way out, taken. A `displays` entry names the Rank it changes.
+ * One way out, taken. A `displays` entry names the Rank it changes; the
+ * combined way of #68 is its `changes` taken one after the other, each pinned
+ * like a single one.
  *
  * Taking one is a hand gesture like dragging the slider would be, so it pins
  * the same key — the stand that comes out of a way out is one a CommunityLead
  * could have reached by hand, and a SetupLink written from it must say so.
  */
 function applyWayOut(entry) {
+  if (entry.key === 'combined') {
+    for (const change of entry.changes) applyWayOut(change);
+    return;
+  }
   if (entry.key !== 'displays') {
     settings[entry.key] = entry.value;
     pin(entry.key, entry.value);

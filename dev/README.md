@@ -433,3 +433,37 @@ Gefahren über `python3 -m http.server` und Playwright: am neutralen Start
 `all` → 31 `Rank`s (2–32), Rang 1 hält den `WinnerPack`; am `overhang`-Knopf
 `all` und `top8` → `4·5·6·7·8`, `bottomHalf` → `5·6·7·8`, die Ränge 1–3 halten
 je einen und fehlen. Kein Fehler auf der Konsole ausser dem Favicon.
+
+## Nachgezogen nach Lauf 12 — #68 · #113 · #72 (Stand `main` `a294db2`, 2026-10-02)
+
+Lauf 12 hat im Kern genau eine Datei berührt: `public/core/suggest.mjs` bekam
+mit #68 `waysOut(plan)` und `combinedWayOut(plan)`. #113 (Zahlenfelder) und
+#72 (`SetupLink` am Schirm) sind Oberfläche bzw. `public/link/`; die Bank
+importiert aus keinem der beiden, und kein Name, den sie liest, ist
+weggefallen.
+
+- **Die Naht `waysOut()` ruft jetzt den Kern-`waysOut()`** statt
+  `suggestions()`. Die Rangfolge ist die des Kerns (ADR 0002, Nachtrag „Wenn
+  kein einzelner Regler räumt"): die Einzelwege, wo einer allein räumt, und nur
+  sonst der eine kombinierte Weg. Der kombinierte Eintrag (`key: 'combined'`)
+  ist ein Knopf wie die anderen; nehmen heisst, seine `changes` nacheinander
+  zuweisen, und jede pinnt wie ein Einzelweg.
+- **`combinedWayOut (#68)` in den abgeleiteten Grössen**, roh auf jedem
+  `unfit`-Stand — auch dort, wo Einzelwege stehen und `waysOut()` ihn deshalb
+  zurückhält. Dann steht `withheld: a single way stands alone` dabei.
+- **Ein achter Knopf, der Zwei-Fakten-Stand** aus
+  `test/suggest.test.mjs:640/683`: 8 `Player`, Rate 1, `rankFloor` 3, Tiefe 2,
+  je ein `Display` auf den Rängen 1–3. Kein einzelner Regler räumt ihn; die
+  erwartete Beschriftung `Floor down to 1 and drop rank 3's display` ist dort
+  nachgeschlagen, nicht aus dem Plan zurückgelesen.
+- **Der Hinweis am `conflict`-Knopf ist umgeschrieben.** Er sagte, der
+  mehrgliedrige Weg sei noch nicht gebaut. Er ist gebaut und liefert dort
+  `null`, weil bei `boosterRate` 0 nur eine Tatsache des Abends räumen würde
+  (Lauf 12, K2 `satz-zur-tatsache` an #68).
+
+Gefahren über `python3 -m http.server` und Playwright: alle acht Knöpfe ✓. Am
+Zwei-Fakten-Stand ein Weg (`rankFloor = 1; displays · Rank 3 = 0`), ein Klick
+darauf macht den Plan `fit` und pinnt beide Regler. Am `orphaned`-Knopf
+weiterhin der eine Einzelweg, `combinedWayOut` zurückgehalten. Am
+`conflict`-Knopf keiner, `combinedWayOut` `null`. Kein Fehler auf der Konsole
+ausser dem Favicon.

@@ -326,7 +326,7 @@
     <main>
       <div>
         <section>
-          <h2>Measured stands (#53) and the conflict stands (#56)</h2>
+          <h2>Measured stands (#53), the conflict stands (#56), the overhang (#70) and two facts (#68)</h2>
           <div id="presets"></div>
         </section>
 
@@ -368,11 +368,12 @@
         </section>
 
         <section>
-          <h2>Ways out (#59)</h2>
+          <h2>Ways out (#59, #68)</h2>
           <p class="note">
-            <code>suggestions()</code> from <code>../public/core/suggest.mjs</code>, computed live
-            whenever the core calls the plan <code>unfit</code>. One slider per entry (#59); click one
-            to take it. The <code>WinnerPack</code> overhang is not one of the four facts and has no
+            <code>waysOut()</code> from <code>../public/core/suggest.mjs</code>, computed live
+            whenever the core calls the plan <code>unfit</code>. One slider per entry (#59) where any
+            slider clears alone; only where none does, the one <code>combinedWayOut()</code> over
+            several sliders instead (#68). Click one to take it. The <code>WinnerPack</code> overhang is not one of the four facts and has no
             entries here &mdash; its ways out are computed, not searched (#70).
           </p>
           <div id="waysOut"></div>
