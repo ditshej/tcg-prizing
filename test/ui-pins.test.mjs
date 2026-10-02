@@ -961,3 +961,25 @@ test('an unconfirmed Served ranks draft: the first press on a step only confirms
   assert.equal(app.pins.depthStep, 'top8');
   assert.equal(app.value('depth'), 8);
 });
+
+/**
+ * Every probe above holds `setStep()`, none holds the grip that calls it: a
+ * chip of the step grid turned back to `setSlider('depthStep', …)` — the bug
+ * of #114 itself — would leave them all green. So the sheet's markup is read
+ * the way `test/views-controls-hot.test.mjs` reads the rail.
+ */
+test('the step grid in the sheet calls setStep, not setSlider on depthStep (#114 AC 1)', () => {
+  const start = SHEET.indexOf('<div class="step-grid">');
+  assert.ok(start >= 0, 'the sheet still has the step grid');
+  const end = SHEET.indexOf('</div>', start);
+  assert.ok(end > start, 'the step grid is closed');
+  const grid = SHEET.slice(start, end);
+
+  assert.doesNotMatch(
+    grid,
+    /setSlider\(\s*'depthStep'/,
+    'setSlider leaves the pin on depth standing — the number would not follow the step',
+  );
+  const clicks = [...grid.matchAll(/@click="([^"]*)"/g)].map((match) => match[1]);
+  assert.deepEqual(clicks, ['setStep(step.id)'], 'the chip goes through setStep(), the one way that unpins the number');
+});
