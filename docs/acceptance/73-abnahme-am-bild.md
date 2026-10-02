@@ -31,4 +31,9 @@ des Maintainers — Lauf 13" an #71; `CONTEXT.md` › `Fold`; letzter Kommentar 
 Leinwände (aus den Entscheiden abgeleitet): 393 × 830 (Master), 812 × 375
 (flach), 673/674 (Übergang), 900 × 700, 1280 × 760, 1597 (Deckel).
 
-_Wird fortgeschrieben._
+## Zwischenstand (wird fortgeschrieben)
+
+- Alle sechs Leinwände plus 673/674 in beiden Modi gefahren; Layout hell und dunkel identisch.
+- Behoben: (F1) Verlosungsleiste lag über offener `ConflictNotice` und Chip → Stapel und Chips steigen über die Leiste (`21be064`). (F2) Vollbild zeigte 21/26 Kachelspalten → 16er-Deckel auch im Vollbild (`6f8c316`).
+- Offen, zu entscheiden: Verlosungsleiste deckt ab 674 und auf der flachen Bühne die zwei garantierten Kachelreihen zu (sichtbares Fenster 44 px); Vollbild-Griff verdeckt die `WinnerPack`-Marke der letzten Kachel der ersten Reihe; Rangmeldung rutscht bei umbrechender Schiene (101–117 px statt 87) unter die Schiene; flache Bühne unter 349 px Höhe.
+
