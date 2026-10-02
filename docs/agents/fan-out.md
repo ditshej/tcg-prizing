@@ -920,3 +920,53 @@ and #71 closed by their PRs. The `dev/` follow-up came after the merge. The
 bench now imports `winnerPackOverhang()` instead of keeping its own copy of the
 formula, and three sentences that still said the ways out are „computed, not
 searched" (B1) were rewritten.
+
+### Run 14 · 2026-10-02 · #73 · `/round`, four agents, no cards, no deaths
+
+**The conductor's context: 59k at its peak, measured** from the session
+transcript (input plus cache tokens of the last call, read before this entry
+was written), in one session segment. The base before the first phase was 36k,
+so the round itself cost about 23k, against run 13's 31k. Phase E did not
+happen.
+
+**PHP was checked before anything else.** K4 from run 10 says the images are
+made on 8.3. `php -v` showed 8.3.33 in the conductor, and again in A and F
+before each built. The stop the prompt asked for did not fire.
+
+**The prompt carried the moved breakpoints, and the body was flagged, not
+followed.** #73's canvas table still said 739/740 and 1674. A built against
+run 13's numbers (674, 1030, 1597, 436, 494, 722, 399), and every boundary was
+checked on both sides. Phase F posted a correction comment at #73 (B4) and a
+pointer at #71, because #71 is where the next session would look up 494.
+
+**Two of five answers were delegated back to the conductor.** For K2 (the
+height threshold 494) and K4 (the exception under 436 × 494) the maintainer
+said „entscheide du". The conductor chose `schiene-gemessen` and
+`seite-scrollt`. Both are marked as delegated in `…-sofort.json` and in the
+filing at #73, so a later reader can tell a conductor's choice from the
+maintainer's own. With K2, 494 is no longer a fixed number: the threshold is
+351 + 56 + the measured rail.
+
+**One answer left a hole, and Phase F named it instead of filling it.** K1
+(`diagramm-weicht`) keeps the drawn tile visible from 673 wide and on the
+master. On the flat stage the diagram stops at its 60 px floor, and the answer
+does not say what else gives way. That question is filed at #73 for the next
+round. A10 is new and has no decision: at 320–340 wide the Plan header wraps
+to two lines, `PLAN_FIXED` is about 18 px short, and the rank message sits up
+to 15.9 px under the rail. It is in the protocol and at #121.
+
+**The known raffle-over-chip case was found, not discovered.** It came in as
+B9, and the gates dropped it as a lookup, because the prototype puts the chip
+above the bar. B17 is new in #127: the lifted notice now covers the drawn tile
+on the master. That is the prototype form too, and `CONTEXT.md` › NoticeStack
+now says so.
+
+**Counts.** 13 findings from A, 4 more from B, 2 refuted, 3 sharpened,
+1 weakened. Gates: 18 in, 5 candidates, 13 dropped. Phase D: 5 answered in the
+terminal (2 delegated), 0 cards. Suite: 555 on main, 558 after A, 563 after F.
+Decisions filed to #73, #71, `CONTEXT.md` and `AGENTS.md` (`docs/acceptance/`).
+Device items went to #121 as one comment. No ADR. PR: #127 (#73), head
+`037be2a`, the only branch, with no merge order to get wrong. Merged on
+2026-10-02, `main` at 563/563, #73 closed by its PR. No `dev/` follow-up: the
+bench imports none of the changed modules, and no stale `RAIL_HEIGHT` or 494
+remains outside the history lines.
