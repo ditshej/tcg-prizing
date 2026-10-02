@@ -814,3 +814,59 @@ Merge order: **#110, then #112, then #111, then #115.** #113 needs #112 first.
 After the merge: `dev/` picks up `rafflePot()`, and #65's pin read gets its row
 in `READ_SITES`. That row needs its own key list, because only `winnerPacks`
 changes what it reads.
+
+### Run 12 · 2026-10-01 · #68, #72, #113 · `/round`, three quota deaths, #114 deferred
+
+**The conductor's context: roughly 55k, estimated** over three session segments
+(two account switches after quota deaths). That is back near run 10's 35k and
+well under run 11's 90k for the `/round` part. Phase E did not happen.
+
+**The disjointness check came before the build, and it deferred a ticket.** The
+maintainer suspected overlap; Phase A confirmed it from the source: #114's step
+grab sits in the very `Served ranks` row #113 tears down, on the same write path.
+#114 moved to run 13 with a comment on the ticket. #72 and #113 share
+`views/controls-sheet.php` but no region, and a region table for the three shared
+files kept „keep both sides" mechanical. Both were built in parallel.
+
+**Three quota deaths, and the artefact rule carried each restart.** Phase A died
+after the disjointness decision but before any build; it had written the
+findings file early (the run 11 lesson, now tested), so the restart reused the
+decision, the table and the three empty worktrees instead of redoing them.
+Phase F died mid-filing; its `…-ablage.md` log let the restart skip the K1
+lookups and the comment already posted. **Writing early works; it is now the
+default instruction to every phase agent and every builder („commit early").**
+
+**Two Phase D answers were free text, and one of them was a principle.** K1 asked
+whether a link carries the step or the number. The maintainer answered that the
+question should not exist: the link carries everything one has set. Phase F
+applied the principle beyond the finding and found the one value it had not
+covered, the `RaffleRange`. A spec decision said „never in the link", so F asked
+rather than overriding it. The conductor put it to the maintainer in one line
+(„reist mit") and restarted F. Worth keeping as a shape: **a principle answer
+widens the scope of the filing, and whatever it overturns goes back to the
+maintainer, not into the build.** K4 („nothing else should be clickable while a
+number is unconfirmed") was a third way that neither option had named.
+
+**Phase G was not just review: four more questions came out of it.** Asked at G,
+in the terminal, each answered in a line: the folded chip of the no-boosters
+notice (`⚠ No boosters`, because tournament and winner packs still go out), the
+unknown-key line of the link report (kept), and whether a chosen `RaffleRange`
+counts in the pin chip beside `Copy link` (it does, and drop-all resets it). The
+fourth arose from his own answer. He said the drawn winners should not travel.
+The follow-up agent measured that a draw writes the same `manualWinner` counter
+as the tile's ±, which has always travelled, and asked back rather than
+building. The answer was „bleibt so". **The conductor's first wording of the
+pin-chip question failed:** he could not tell the pin chip from the winner count.
+The second wording named where the button sits and what it shows, and that one
+was answered. A question about a surface names the place on screen, not the
+identifier.
+
+**Counts.** 9 findings from A, 3 more from B, 0 refuted, 1 sharpened, 1 weakened.
+Gates: 12 in, 4 candidates, 8 dropped. Phase D: 4 answered in the terminal plus
+1 follow-up, 0 cards. Suites after Phase F: 398 (#113) · 412 (#68) · 398 (#72)
+alone. **Merge probe, every intermediate state measured:** 362 → +#119 398 →
++#118 448 → +#117 484 (488 after Phase G), no `rerere`, both marker greps 0. Decisions filed to #68,
+#71, #72, #113, #61, #69, ADR 0002 and `docs/agents/setup-link.md`. PRs: #119
+(#113), #118 (#68), #117 (#72). Merge order: **#119, then #118, then #117.**
+#117 last resolves one real comment conflict over `syncAddress`: keep #72's text,
+with *control* for *slider*. Run 13 starts with #114 on top of #113.
