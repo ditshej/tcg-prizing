@@ -449,6 +449,17 @@ Seite (die *flache Bühne*), die Breite geht nach innen, und der Fuss dreht sich
 an die rechte Kante. Wo der `Plan` seitlich aufhört, sind die zwei **Einzüge**;
 an ihnen hängen `NoticeStack` und Verlosungsleiste, und das Vollbild setzt beide
 auf null.
+Entschieden an #71 (Lauf 13, K-B8 bis K-B10), nachzuschlagen und nicht
+herzuleiten: die Erstbreiten sind `Plan` 388 · `Details` 286 · `Prepare` 356 —
+für `Details` die kleinste Breite ohne Überlauf, weil eine Spalte ohne Schieber
+keine eindeutige Breite hat. Daraus die Bruchstellen 674 und 1030 und der Deckel
+1597, alle drei als Summen. Die Ersthöhe ist 399 (178 fester Teil + 60 Boden des
+Diagramms + 113 für zwei Kachelreihen + 48 Streifen): das Diagramm geht mit
+seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
+Die einspaltige Form hat eine eigene Schwelle, 494 (351 + 56 Fuss + 87 Schiene).
+Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
+unter der Zwei-Spalten-Stufe; die vier heissen Regler stehen dort erst ab 722
+(388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
 _Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
 
 **NoticeStack**:
@@ -466,8 +477,8 @@ ihnen. **Am schmalen Schirm deckt die offene Meldung die Regler zu**, samt
 `pinned` und Reset, und das ist gewollt: dort ist das Zudecken der leichtere
 Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind (Prototyp,
 Kommentar über `.stack > *`; Entscheid an #68, Lauf 12, K3 `prototyp-gilt`).
-Frei bleiben die Regler erst ab 740 Pixeln, wenn sie als Spalte daneben stehen
-(#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
+Frei bleiben die Regler erst ab der Zwei-Spalten-Stufe (674 Pixel), wenn sie
+als Spalte daneben stehen (#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
 die Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
 dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Die
 Fläche hängt dafür an den zwei Einzügen des `Fold` (#71) — derselben Grösse, an
@@ -788,7 +799,7 @@ Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
 anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
 Das Etikett der Reihe steht *neben* den Knöpfen und lautet dort `Type` — sonst
 kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
-352 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
+286 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
 wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
 weiter im ⓘ der Ebene.
