@@ -8,10 +8,11 @@
  *
  * The tile size, gap and the six-column/two-row master floor are the
  * `DistributionPlan` assurance from `CONTEXT.md` ("Hochformat-Master ist der
- * Boden auf beiden Achsen") — an assurance, not an arrangement: the floor
- * still applies even where a measured width or height could not actually fit
- * it, because #62 does not build the folding that would make the assurance
- * bite on a narrower stage.
+ * Boden auf beiden Achsen") — an assurance, not an arrangement: `columnsFor()`
+ * raises a measured width to the floor rather than shrinking the tiles. That
+ * the floor actually *fits* on every stage is the fold's business (#71,
+ * `fold.mjs`), and it is checked there with `columnsFitting()`, which has no
+ * floor under it.
  *
  * `diagramCap` deliberately does not reuse the spec's 158/245/406px figures
  * (docs from #61, "The three pages and the fold"): those were measured

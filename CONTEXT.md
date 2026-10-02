@@ -435,6 +435,22 @@ einzige elastische Grösse für die zweite Kachelreihe zahlt. Wer die zwei Reihe
 antastet, verschiebt keine Pixelzahl, sondern nimmt die Zusicherung zurück.
 _Avoid_: Payout
 
+**Fold**:
+Die Faltung der drei Seiten `Prepare · Plan · Details`: aus Breite und Höhe der
+Bühne fällt, wie viele davon als Spalten nebeneinander stehen. Eine reine
+Ableitung (`fold()` in `public/ui/fold.mjs`, #71), keine Fläche und kein Zustand.
+Die Breitenachse trägt eine Regel — **keine Spalte fällt je unter ihre
+Erstbreite**, die Breite, die sie bei ihrem eigenen ersten Erscheinen hatte —, und
+daraus fallen die Bruchstellen als **Summen** von Erstbreiten, nie als gewählte
+Zahlen; alles zwischen ihnen geht an den `Plan`. Die Höhenachse trägt die
+**Ersthöhe** des `Plan`s: sein fester Teil, der Boden des Diagramms, zwei
+Kachelreihen und der Streifen darunter. Ist die Bühne flacher, steht nur eine
+Seite (die *flache Bühne*), die Breite geht nach innen, und der Fuss dreht sich
+an die rechte Kante. Wo der `Plan` seitlich aufhört, sind die zwei **Einzüge**;
+an ihnen hängen `NoticeStack` und Verlosungsleiste, und das Vollbild setzt beide
+auf null.
+_Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
+
 **NoticeStack**:
 Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
 `CarryOverNotice`. Sie schwebt **über der ganzen App**, nicht über dem
@@ -453,9 +469,10 @@ Kommentar über `.stack > *`; Entscheid an #68, Lauf 12, K3 `prototyp-gilt`).
 Frei bleiben die Regler erst ab 740 Pixeln, wenn sie als Spalte daneben stehen
 (#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
 die Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
-dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Bis
-#71 die Spalten baut, faltet die App auf jeder Breite auf eine Seite, und die
-Meldung deckt überall zu.
+dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Die
+Fläche hängt dafür an den zwei Einzügen des `Fold` (#71) — derselben Grösse, an
+der die Verlosungsleiste hängt; auf der flachen Bühne ist nur eine Seite vorne,
+und die Meldung deckt dort zu wie am Handy.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
 Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.

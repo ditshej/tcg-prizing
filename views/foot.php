@@ -10,6 +10,15 @@
  * Hidden entirely in fullscreen, at every width (#63 AC 5): fullscreen is a
  * state of `Plan`, not a fourth page, and the foot belongs to page
  * navigation, which fullscreen has none of.
+ *
+ * With the fold (#71) an entry **vanishes** once its page stands as a column
+ * (`footEntry()`), while the strip itself stays at every width from the
+ * breakpoint on: its inhabitants are not the pages — on the left the
+ * switcher, on the right the notice chips, the middle empty. At two columns
+ * that leaves exactly one entry, and it is always the folded column: `Prepare`
+ * while the `Plan` stands, `Plan` while `Prepare` has taken its place. At
+ * three columns none is left. On the flat stage the strip turns to the right
+ * edge and carries all three again, because only one page is in front.
  */
 ?>
 <footer class="foot" x-show="!fullscreen">
