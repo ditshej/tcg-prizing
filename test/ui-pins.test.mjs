@@ -180,7 +180,8 @@ const READ_SITES = {
   'isPinned(key) — the is-pinned frame and the idle reset': (app, key) => app.isPinned(pinItem(key)),
   'stateWord(key) — the word at the control and on the rail': (app, key) => app.stateWord(pinItem(key)),
   'pinCount — the counter on the type row': (app) => app.pinCount,
-  'pinnedKeys — what the counter hands the question': (app) => app.pinnedKeys,
+  'pinnedKeys — what a Set switch carries over': (app) => app.pinnedKeys,
+  'handSetKeys — what the counter hands the question (run 12)': (app) => app.handSetKeys,
   'pinnedItems — the list with its words': (app) => app.pinnedItems,
   'preparation — the WinnerPack item of Prepare (#65)': {
     read: (app) => app.preparation.winners,
