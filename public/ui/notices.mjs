@@ -296,8 +296,10 @@ const NO_WAY_OUT = {
  * talks about — the plan's notice first, the input's last (#31).
  *
  * - `plan` — the DistributionPlan on screen.
- * - `ways` — its ways out, `waysOut(plan)`: the single ones, or the one
- *   combined way where no single slider clears, or none — then `NO_WAY_OUT`.
+ * - `ways` — its ways out, as `searchesFor(plan)` hands them: the core's
+ *   (`waysOut(plan)` — the single ones, or the one combined way where no
+ *   single slider clears, or none — then `NO_WAY_OUT`), followed by the
+ *   `WinnerPack` overhang's, each of which carries its `source`.
  * - `offer` — `offerFor(plan)`, or `null`.
  * - `carry` — the last Set switch, `{ to, keys }`: the type it went to and the
  *   pinned items that stayed behind; `null` before the first switch.

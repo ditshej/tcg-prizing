@@ -152,3 +152,105 @@ test('winnerPacks appears in no way out', () => {
 test('a fit plan has no overhang ways', () => {
   assert.deepEqual(overhangWaysOut(distribute(resolved('weekly', {}))), []);
 });
+
+/* ── In the app: both paths in, every way out with one click (#70) ─────── */
+
+import { planApp } from '../public/ui/plan.mjs';
+import { encode } from '../public/link/encode.mjs';
+
+/** The app as a test opens it — Alpine's effect that runs `refreshNotices()`
+ *  after every change is called by hand, as in `ui-notices.test.mjs`. */
+function app(link = '') {
+  const a = planApp({ read: () => link, write: () => {} });
+  a.refreshNotices();
+  return a;
+}
+
+const conflictOf = (a) => {
+  a.refreshNotices();
+  return a.notices.open.find((n) => n.id === 'conflict') ?? null;
+};
+
+/** What a notice says and offers — the part that has to be the same, whichever
+ *  way the stand was reached. */
+const said = (notice) => ({ lines: notice.lines, ways: notice.actions.map((x) => x.way), chip: notice.chip });
+
+/** By the Set switch: a pack placed by hand on Rank 20 at Weekly, then Release. */
+function bySwitch() {
+  const a = app();
+  a.setManualWinner(20, 1);
+  assert.deepEqual(a.settings.manualWinner, { 20: 1 }, 'the tile placed the pack');
+  assert.equal(conflictOf(a), null);
+  a.setType('release');
+  return a;
+}
+
+/** By the player count: a pack placed by hand on Rank 16 at 32 players, then 16. */
+function byPlayers() {
+  const a = app();
+  a.setManualWinner(16, 1);
+  assert.equal(conflictOf(a), null);
+  a.setSlider('players', 16);
+  return a;
+}
+
+test('the overhang is reached by a Set switch, and by a SetupLink naming the same stand, alike', () => {
+  const switched = conflictOf(bySwitch());
+  assert.ok(switched, 'the Set switch raises the ConflictNotice');
+  const linked = conflictOf(app(encode({ game: 'onepiece', type: 'release', pins: { manualWinner: { 20: 1 } } })));
+  assert.ok(linked, 'the SetupLink raises the ConflictNotice');
+  assert.deepEqual(said(linked), said(switched));
+  assert.match(switched.lines.join(' '), /rank 20/);
+});
+
+test('the overhang is reached by a lower player count, and by a SetupLink with that count, alike', () => {
+  const lowered = conflictOf(byPlayers());
+  assert.ok(lowered);
+  const linked = conflictOf(app(encode({ game: 'onepiece', type: 'weekly', pins: { players: 16, manualWinner: { 16: 1 } } })));
+  assert.ok(linked);
+  assert.deepEqual(said(linked), said(lowered));
+});
+
+test('no counter is clamped: the stored pack stays, and stands again once the stock suffices', () => {
+  const a = bySwitch();
+  assert.deepEqual(a.settings.manualWinner, { 20: 1 });
+  assert.deepEqual(a.pins.manualWinner, { 20: 1 });
+  assert.equal(a.plan.rows[19].winners, 1, 'the tile still shows it');
+  a.setType('weekly');
+  assert.equal(conflictOf(a), null);
+  assert.equal(a.plan.rows[19].winners, 1);
+});
+
+test('every way out is taken with one click and clears the overhang', () => {
+  for (const make of [bySwitch, byPlayers]) {
+    const count = conflictOf(make()).actions.length;
+    assert.ok(count >= 2);
+    for (let i = 0; i < count; i++) {
+      const a = make();
+      const { way } = conflictOf(a).actions[i];
+      a.applyWayOut(way);
+      assert.equal(winnerPackOverhang(a.plan), null, `${way.label} leaves an overhang`);
+      assert.equal(conflictOf(a), null);
+      if (way.key === 'manualWinner') {
+        // The counts are the tile's own; a Rank that falls to zero leaves the
+        // map, and an empty map is no pin (`manualWinnerAfter()`).
+        for (const change of way.changes) {
+          assert.equal(a.settings.manualWinner[change.rank] ?? 0, change.value);
+        }
+      } else assert.equal(a.isPinned(way.key), true, `${way.label} pins ${way.key}`);
+    }
+  }
+});
+
+test('the take-back clicked in the app removes exactly the named packs', () => {
+  const a = app();
+  a.setSlider('winnerPacks', 5);
+  a.setManualWinner(10, 1);
+  a.setManualWinner(20, 1);
+  a.setSlider('winnerPacks', 3);
+  // 3 for the ranks, `ranked` auto 2, two by hand: one over — Rank 20 goes.
+  const back = conflictOf(a).actions.find((x) => x.way.key === 'manualWinner').way;
+  assert.equal(back.label, "Drop rank 20's winner pack");
+  a.applyWayOut(back);
+  assert.deepEqual(a.settings.manualWinner, { 10: 1 });
+});
