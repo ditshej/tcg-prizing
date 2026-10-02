@@ -3014,6 +3014,13 @@ function winnerBlock(plan) {
    Das ist der Fall, der die naive Regel („klapp auf, was hineinpasst")
    kaputtmacht: ein 900er Schirm hätte dann drei Spalten und *weniger* Kacheln
    zu sehen als derselbe hochkant mit einer. */
+/* ÜBERHOLT durch #71 (Lauf 13, K-B9): die Erstbreite von `Details` ist 286,
+   nicht 352 — die kleinste Breite ohne Überlauf, seit #113 die Schieber
+   genommen hat (ein Zählwerk dehnt sich nicht). Die Bruchstellen bleiben
+   Summen und werden 388 + 286 = 674 und 674 + 356 = 1030, der Deckel
+   dieselbe Summe mit dem Rand der App, 939 + 16 + 286 + 356 = 1597.
+   Nicht nachgezogen: wer an der Faltung baut, nimmt die Zahlen aus dem
+   Kommentar an #71, nicht aus diesen Zeilen. */
 const COLW = { plan: 388, det: 352, prep: 356 };
 /* Runde 21 senkt BP2 von 774 auf 740, und zwar *gerechnet*, nicht gewählt: der
    34-px-Griff war die einzige Breite, die die eingefaltete Prepare-Spalte bei
@@ -3040,6 +3047,12 @@ const BP3 = COLW.plan + COLW.det + COLW.prep;   // 1096
    der Hochformat-Master zeigt **zwei** Kachelreihen. Was er zeigt, ist die
    Ersthöhe — genau wie die Erstbreite die Breite war, die eine Spalte beim
    ersten Erscheinen hatte. */
+/* ÜBERHOLT durch #71 (Lauf 13, K-B8): die Ersthöhe ist 399, nicht 406. Sie
+   rechnet das Diagramm mit seinem Boden (60 px), nicht mit der Höhe, die es
+   am Master hat — auf niedrigen Schirmen gibt das Diagramm nach, die zwei
+   Kachelreihen halten: 178 fester Teil ohne Diagramm (nach #113 gemessen)
+   + 60 + 113 + 48 = 399. Der Satz oben „Was er zeigt, ist die Ersthöhe"
+   gilt damit nicht mehr; 245 ist mit Schiebern gemessen. */
 const PLANCHROME = 245;                          // gemessen, ohne Kachelfenster
 const ROWS0 = 2;                                 // Kachelreihen des Masters
 const BPH = PLANCHROME + ROWS0 * 54 + (ROWS0 - 1) * 5 + 48;   // 406
@@ -3051,6 +3064,13 @@ function colCount() {
 /* Flach heisst: zu wenig Höhe für Spalten, aber genug Breite, dass sie
    irgendwohin soll. Unter BP2 ist es der Hochformat-Master, und der wird von
    diesem Ticket nicht angefasst. */
+/* ÜBERHOLT durch #71 (Lauf 13, K-B10): flach wird die Bühne schon ab
+   388 + 48 = 436 Breite, nicht erst ab BP2 — der Hochformat-Master wird also
+   doch angefasst. Die einspaltige Form hat eine eigene Höhenschwelle, 494
+   (351 Boden des Plans + 56 Fuss + 87 Schiene). Und nicht jede flache Bühne
+   hat `hotCol`: die vier heissen Regler stehen als Spalte erst ab
+   388 + 286 + 48 = 722; zwischen 436 und 721 steht der Plan ohne sie, sie
+   stehen dann nur auf Details. Verbindlich ist der Kommentar an #71. */
 function isFlat() {
   return stage.clientHeight < BPH && stage.clientWidth >= BP2;
 }
