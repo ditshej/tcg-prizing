@@ -312,7 +312,11 @@ jetzt:
 - `no WinnerPack over-assignment: ranked + manual ≤ RankPool · WinnerPacks`
 
 Die Formel ist die aus #70, wörtlich: `allocation.ranked +
-allocation.manualCount − rank.winners`, positiv heisst überzugeteilt. Nicht
+allocation.manualCount − rank.winners`, positiv heisst überzugeteilt. Seit dem
+Merge von #70 rechnet die Bank sie nicht mehr selbst, sondern importiert
+`winnerPackOverhang()` aus `public/ui/overhang.mjs` — dieselbe Zahl, die die
+ConflictNotice zeigt. Ohne Überhang steht in den abgeleiteten Grössen darum
+`0`, nicht mehr ein negativer Rest. Nicht
 umformuliert zu „Zeilen > `rank.winners`" — die Gegenprobe (Befund B2, abgelegt
 an #70) fand die beiden Stand für Stand deckungsgleich, 318 von 318, und hier
 noch einmal über 1 800 Stände der `WinnerPack`-Achse ohne eine Abweichung.
@@ -328,8 +332,9 @@ dieser Bank bisher: der Kern meldet den Zustand selbst, die Zeile holt ihn sich
 nur (`overtake`, `unclaimedRemainder`, `conflict.have`). Hier gibt es nichts zu
 holen — #70 nennt den Überhang „den einzigen Zustand dieser Spec, den der
 Rechenkern nicht selbst meldet", und `unfit` bleibt `false`. Ein Stand, der
-`WinnerPack`s verspricht, die es nicht gibt, darf nicht sauber aussehen. Wer
-#70 baut, darf das umdrehen; dann ist es ein Entscheid und steht an #70.
+`WinnerPack`s verspricht, die es nicht gibt, darf nicht sauber aussehen. #70 ist
+gebaut und hat es stehen lassen (Kommentar an #70, Lauf 13): der Kern meldet
+den Überhang weiterhin nicht, die Shell leitet ihn ab.
 
 Dazu ein **siebter Knopf** für den Überhang und eine Zeile
 `WinnerPackAllocation · overhang (#70)` in den abgeleiteten Grössen. `ranked`

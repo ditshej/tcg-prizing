@@ -26,6 +26,7 @@ import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES, DEPTH_STEPS, RANGES, rafflePot } from '../public/core/rules.mjs';
 import { combinedWayOut, offerFor, waysOut as coreWaysOut } from '../public/core/suggest.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
+import { winnerPackOverhang } from '../public/ui/overhang.mjs';
 
 /**
  * The bench's own neutral sheet: the presettable Settings fields only, with
@@ -457,8 +458,9 @@ const INVARIANTS = [
     // itself and the line only fetches it (`overtake`, `unclaimedRemainder`,
     // `conflict.have`). Here there is no report to fetch — `unfit` is false —
     // and a stand that promises WinnerPacks that do not exist may not leave
-    // looking clean. That reading is the bench's, not a decision of #70's, and
-    // #70 may overturn it when it builds the notice.
+    // looking clean. That reading is the bench's, not a decision of #70's.
+    // #70 built the notice and left it standing: the overhang is derived on the
+    // shell's side (`public/ui/overhang.mjs`) and `unfit` still says nothing.
     //
     // The formula is used as #70 writes it and not as "rows > rank.winners";
     // the counter-check found the two agree stand for stand (318 of 318,
@@ -471,7 +473,7 @@ const INVARIANTS = [
       if (over <= 0) return { state: 'ok', detail: terms };
       return {
         state: 'fail',
-        detail: `${terms} — ${over} WinnerPack(s) over-assigned; the core does not report this (unfit stays ${unfit(plan)}), #70 turns it into a ConflictNotice`,
+        detail: `${terms} — ${over} WinnerPack(s) over-assigned; the core does not report this (unfit stays ${unfit(plan)}), the shell's ConflictNotice reports it (#70)`,
       };
     },
   },
@@ -553,11 +555,11 @@ const INVARIANTS = [
 const sumOf = (plan, key) => plan.rows.reduce((a, row) => a + row[key], 0);
 
 /**
- * The WinnerPack overhang, the formula of #70 verbatim: the WinnerPacks the
- * Settings hand out, minus the ones the RankPool holds. Positive is the
- * over-assignment; zero or less is none.
+ * The WinnerPack overhang as the shell derives it for the ConflictNotice
+ * (`winnerPackOverhang()`, #70) — imported, not restated, so the bench reads
+ * the very number the notice shows. Zero where the RankPool suffices.
  */
-const overhang = (plan) => plan.allocation.ranked + plan.allocation.manualCount - plan.rank.winners;
+const overhang = (plan) => winnerPackOverhang(plan)?.by ?? 0;
 
 /** One side of the WinnerPack sum rule, with the overhang as its reported case. */
 function winnerSumRule(plan, sum, expected) {
@@ -994,8 +996,8 @@ function renderRafflePot(plan) {
  *
  * It computes only where `unfit` holds, the same gate `waysOut()` itself
  * carries; the WinnerPack overhang of #70 is not one of the four facts and
- * therefore has no entries here — #70's ways out are computed, not searched,
- * and are not in this function.
+ * therefore has no entries here — its ways out live on the shell's side
+ * (`public/ui/overhang.mjs`), not in this function.
  */
 function renderWaysOut(plan) {
   el.waysOut.replaceChildren();
