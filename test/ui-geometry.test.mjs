@@ -39,8 +39,8 @@ test('columnsFor never drops below the six-column master floor, even on a tiny s
   assert.equal(columnsFor(100), MIN_COLUMNS);
 });
 
-test('columnsFor grows past the floor once the stage is wide enough for a 16-column deck (spec: the Deckel at 1674)', () => {
-  // 16 columns need 16*54 + 15*5 = 939px, comfortably under the 1674 stage.
+test('columnsFor grows past the floor once the stage is wide enough for a 16-column deck (the deck at 1597, #71 K-B9)', () => {
+  // 16 columns need 16*54 + 15*5 = 939px, the tile part of the 1597 deck.
   assert.equal(columnsFor(939), 16);
 });
 

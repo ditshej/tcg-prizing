@@ -1905,7 +1905,8 @@ body {
  * On the flat stage the four hot controls stand upright beside the `Plan` —
  * no new content and no second arrangement: the width goes inward instead of
  * opening a second page (prototype, `hotCol`). `fold()` only puts them there
- * where both first widths fit beside the strip.
+ * where both first widths fit beside the strip — from 722 (#71, K-B10c);
+ * between 436 and 721 they stand on `Details` only.
  */
 .app[data-rail='column'] .page-plan {
   flex-direction: row;

@@ -23,19 +23,21 @@ import {
 } from './geometry.mjs';
 
 /**
- * The first widths, as decided in the prototype's round 19 (`--planmin`,
- * `--det`, `--prep`) and carried into #61 and #71. `Prepare`'s is measured at
- * its widest line, the Release hint with its button. `Details`' was measured
- * with sliders; after #113 the column holds at 352 without overflow (its
- * min-content is 286 px), but there is no single re-measured number to put in
- * its place — see the PR of #71 for the measurements.
+ * The first widths. `Plan`'s and `Prepare`'s are the prototype's round 19
+ * (`--planmin`, `--prep`), carried into #61 and #71; `Prepare`'s is measured
+ * at its widest line, the Release hint with its button. `Details`' is **286**,
+ * decided at #71 (run 13, K-B9): since #113 the column holds counters instead
+ * of sliders, and a column without sliders has no single natural width, so
+ * its first width is the smallest one without overflow (min-content), with
+ * the heads allowed to wrap. The prototype's 352 was measured with sliders
+ * and no longer holds.
  */
-export const FIRST_WIDTH = Object.freeze({ plan: 388, details: 352, prepare: 356 });
+export const FIRST_WIDTH = Object.freeze({ plan: 388, details: 286, prepare: 356 });
 
-/** `Plan | Details` from here on. */
+/** `Plan | Details` from here on — 674 at the decided first widths (#71, K-B9). */
 export const TWO_COLUMNS = FIRST_WIDTH.plan + FIRST_WIDTH.details;
 
-/** `Prepare | Plan | Details` from here on. */
+/** `Prepare | Plan | Details` from here on — 1030 at the decided first widths. */
 export const THREE_COLUMNS = TWO_COLUMNS + FIRST_WIDTH.prepare;
 
 /**
@@ -47,9 +49,10 @@ export const PLAN_PADDING = 16;
 /**
  * The deck: the width at which the `Plan` has its sixteen tile columns with
  * both other columns beside it. Above it the app stops growing and gets
- * margins instead (#61, "Deckel 1674"). A sum like the breakpoints — 939 +
- * 16 + 352 + 356 = 1663; the prototype's 1674 is the same sum with its own
- * 24 px of padding and two frame lines.
+ * margins instead (#61). A sum like the breakpoints, decided as such at #71
+ * (K-B9): 939 + 16 + 286 + 356 = 1597, so it moves with `Details`' first
+ * width by the same 66 px as both breakpoints. The prototype's 1674 is the
+ * same sum with the old 352, its own 24 px of padding and two frame lines.
  */
 export const DECK = columnsWidth(MAX_COLUMNS) + PLAN_PADDING + FIRST_WIDTH.details + FIRST_WIDTH.prepare;
 
@@ -90,23 +93,29 @@ export const STRIP_WIDTH = 48;
  */
 export const RAIL_HEIGHT = 87;
 
-/** What the `Plan` column needs to show its fixed part and the master's two tile rows. */
+/**
+ * What the `Plan` column needs to show its fixed part, the diagram at its
+ * floor and the master's two tile rows: 178 + 60 + 113 = 351 (#71, K-B10).
+ */
 export const PLAN_FLOOR = PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS);
 
 /**
  * The **first height of the `Plan`** (#71, #40): its floor plus the strip it
- * stands on once the pages are columns. Below it nothing opens side by side —
- * the stage is flat. The body of #71 writes `245 + 2 tile rows + 48 = 406`;
- * the same sum, measured again after #113, is this.
+ * stands on once the pages are columns — 178 + 60 + 113 + 48 = **399**,
+ * decided at #71 (run 13, K-B8). Below it nothing opens side by side — the
+ * stage is flat. The diagram enters at its floor, not at its height on the
+ * portrait master: on a low screen the diagram gives way and the two tile
+ * rows hold. The body's `245 + 2 tile rows + 48 = 406` is overruled.
  */
 export const FIRST_HEIGHT = PLAN_FLOOR + STRIP_HEIGHT;
 
 /**
  * The same sum for the one-column form, which stands on the 56 px foot and
- * carries the rail. The ticket's rule names only the column form; carried
- * over unchanged, a stage under the first breakpoint and above 406 px but
- * below this would keep the master and lose its second tile row — 700 × 480,
- * say. So the one rule is asked in the form the stage would actually take.
+ * carries the rail: 351 + 56 + 87 = **494**, decided at #71 (run 13, K-B10a).
+ * Carried over with the column form's 399, a stage under the first breakpoint
+ * and between the two would keep the master and lose its second tile row —
+ * 600 × 450, say. So the one rule is asked in the form the stage would
+ * actually take.
  */
 export const FIRST_HEIGHT_ONE_COLUMN = PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT;
 
@@ -117,10 +126,14 @@ export const FIRST_HEIGHT_ONE_COLUMN = PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT;
  * The **height is the second axis**: is the stage lower than the first height
  * of the form it would take, nothing opens side by side. One page stays, the
  * width goes inward (`Details` and `Prepare` two columns inside, row flow),
- * and the foot turns to the right edge. The four hot controls then stand as a
- * column beside the `Plan` where both first widths fit next to the strip, and
- * nowhere on the `Plan` page where they do not — on `Details` they stand
- * anyway, and under the `Plan` they would cost the second tile row.
+ * and the foot turns to the right edge. Flat begins at 388 + 48 = **436**
+ * wide, under the two-column step too (#71, run 13, K-B10b). The four hot
+ * controls then stand as a column beside the `Plan` where both first widths
+ * fit next to the strip — from 388 + 286 + 48 = **722** (K-B10c) — and
+ * between 436 and 721 nowhere on the `Plan` page: on `Details` they stand
+ * anyway, and under the `Plan` they would cost the second tile row. The cliff
+ * at 722 (the `Plan` drops to 6 tile columns as the column opens) is
+ * taken on purpose, the same class as any column opening.
  *
  * Three cases collapse into **two insets**: where the `Plan` stops on either
  * side. Phone, two columns, three columns, flat and fullscreen all come out
@@ -131,8 +144,9 @@ export function fold({ width, height = Infinity, fullscreen = false }) {
   const wide = stage >= THREE_COLUMNS ? 3 : stage >= TWO_COLUMNS ? 2 : 1;
   const low = height < (wide === 1 ? FIRST_HEIGHT_ONE_COLUMN : FIRST_HEIGHT);
   // Flat means too little height for columns but width enough that it has to
-  // go somewhere (prototype, `isFlat()`): the turned strip takes 48 px off the
-  // side, and the `Plan` must keep its first width beside it.
+  // go somewhere: the turned strip takes 48 px off the side, and the `Plan`
+  // must keep its first width beside it. From 436 on, not only from the
+  // two-column step as in the prototype's `isFlat()` (#71, K-B10b).
   const flat = low && stage - STRIP_WIDTH >= FIRST_WIDTH.plan;
   const columns = flat ? 1 : wide;
 
