@@ -1129,15 +1129,59 @@ body {
 }
 
 .raffle-takeback-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   margin: 9px 0 4px;
   font-size: 0.75rem;
+}
+
+.raffle-takeback-head > span:first-child {
   opacity: 0.7;
+}
+
+/* The pager of the flat stage's paged list (#129). It sits in the head line
+   and is no taller than that line, so paging adds no height to the bar. */
+.raffle-pager {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.raffle-pager button {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.raffle-pager button:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .raffle-takeback-list {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+/* The rind's probe of the list (`measureTakeBack()`): every chip in one
+   unwrapped row at the list's width, invisible and out of the flow. */
+.takeback-probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  flex-wrap: nowrap;
+  left: 0;
+  top: 0;
 }
 
 .raffle-chip {

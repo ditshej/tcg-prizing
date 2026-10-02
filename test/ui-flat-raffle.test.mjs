@@ -18,8 +18,9 @@ import { planApp } from '../public/ui/plan.mjs';
  * by the measured overlap, never under 60, and the bar grows.
  */
 
+/** Weekly with 16 winner packs, so seven are open to throw (Weekly's own leaves one). */
 function app() {
-  const query = `?v=1&g=${GAME.id}&t=${TOURNAMENT_TYPES[0].id}`;
+  const query = `?v=1&g=${GAME.id}&t=${TOURNAMENT_TYPES[0].id}&winnerPacks=16`;
   return planApp({ read: () => query, write: () => {} });
 }
 
@@ -94,4 +95,117 @@ test('the diagram in the markup stands on diagramShown, not on a width or a medi
   const plan = readFileSync(new URL('../views/plan.php', import.meta.url), 'utf8');
   const diagram = plan.slice(plan.indexOf('<div class="plan-diagram"'));
   assert.match(diagram.slice(0, diagram.indexOf('>')), /x-show="diagramShown"/);
+});
+
+/* ── The retraction list pages inside the bar, flat only (#129, 2) ─────── */
+
+import { takeBackPages } from '../public/ui/raffle.mjs';
+
+test('a page is as many chips as one row of the measured width holds, in rank order', () => {
+  // Chips of 60, 60, 70, 60 px, 4 px apart, in a row 200 wide: 60+4+60+4+70 = 198 fits, the fourth does not.
+  assert.deepEqual(takeBackPages([60, 60, 70, 60], 200, 4), [[0, 3], [3, 4]]);
+});
+
+test('a list that fits one row is one page, and an empty list has none', () => {
+  assert.deepEqual(takeBackPages([60, 60], 200, 4), [[0, 2]]);
+  assert.deepEqual(takeBackPages([], 200, 4), []);
+});
+
+test('a chip wider than the row still gets a page of its own, so no rank goes missing', () => {
+  assert.deepEqual(takeBackPages([60, 250, 60], 200, 4), [[0, 1], [1, 2], [2, 3]]);
+});
+
+test('the pages cover every chip once, in order, with no gap and no overlap', () => {
+  const widths = [61, 58, 72, 66, 59, 80, 61, 64, 70, 58, 63];
+  const pages = takeBackPages(widths, 230, 4);
+  assert.equal(pages[0][0], 0);
+  assert.equal(pages.at(-1)[1], widths.length);
+  for (let i = 1; i < pages.length; i++) assert.equal(pages[i][0], pages[i - 1][1]);
+  for (const [from, to] of pages) {
+    const row = widths.slice(from, to);
+    assert.ok(row.length === 1 || row.reduce((a, b) => a + b, 0) + 4 * (row.length - 1) <= 230);
+  }
+});
+
+/** A component with a die that walks the pot from its top, so throws are known. */
+function thrower(stage) {
+  const it = app();
+  it.setStage(stage);
+  let at = 0;
+  it._roll = () => [0, 0, 0, 0, 0, 0][at++] ?? 0;
+  it.toggleRaffle();
+  return it;
+}
+
+/** Every chip 60 wide, 4 apart, in a row that holds two of them. */
+const twoPerRow = (n) => ({ widths: Array(n).fill(60), rowWidth: 130, gap: 4 });
+
+test('flat, the list pages: only the chips of the current page stand', () => {
+  const it = thrower({ width: 812, height: 375 });
+  for (let i = 0; i < 3; i++) it.throwRaffle();
+  assert.equal(it.raffle.takeBack.length, 3);
+  it.applyTakeBackMeasure(twoPerRow(3));
+  assert.equal(it.takeBackPageCount, 2);
+  assert.deepEqual(it.takeBackShown.map((e) => e.rank), it.raffle.takeBack.slice(it.takeBackRange[0], it.takeBackRange[1]).map((e) => e.rank));
+  assert.equal(it.takeBackShown.length < it.raffle.takeBack.length, true);
+});
+
+test('flat, the page steps forward and back and stops at both ends', () => {
+  const it = thrower({ width: 812, height: 375 });
+  for (let i = 0; i < 5; i++) it.throwRaffle();
+  it.applyTakeBackMeasure(twoPerRow(5));
+  assert.equal(it.takeBackPageCount, 3);
+  it.takeBackPage = 0;
+  it.pageTakeBack(-1);
+  assert.equal(it.takeBackPage, 0);
+  it.pageTakeBack(1);
+  it.pageTakeBack(1);
+  it.pageTakeBack(1);
+  assert.equal(it.takeBackPage, 2);
+  assert.equal(it.takeBackShown.length, 1);
+});
+
+test('flat, a throw turns to the page that holds its hit, so the list shows what was just drawn', () => {
+  const it = thrower({ width: 812, height: 375 });
+  for (let i = 0; i < 4; i++) it.throwRaffle();
+  it.applyTakeBackMeasure(twoPerRow(4));
+  const hit = it.lastDraw;
+  assert.ok(it.takeBackShown.some((e) => e.rank === hit), `rank ${hit} on the page shown`);
+  // Paging away by hand is not undone by the next measuring pass (a resize, say).
+  const away = it.takeBackPage === 0 ? 1 : -1;
+  it.pageTakeBack(away);
+  const page = it.takeBackPage;
+  it.applyTakeBackMeasure(twoPerRow(4));
+  assert.equal(it.takeBackPage, page);
+});
+
+test('flat, taking back the last chip of the last page falls back to the page before', () => {
+  const it = thrower({ width: 812, height: 375 });
+  for (let i = 0; i < 3; i++) it.throwRaffle();
+  it.applyTakeBackMeasure(twoPerRow(3));
+  it.takeBackPage = 1;
+  it.takeBackWinner(it.takeBackShown[0].rank);
+  it.applyTakeBackMeasure(twoPerRow(2));
+  assert.equal(it.takeBackPageCount, 1);
+  assert.equal(it.takeBackPage, 0);
+  assert.equal(it.takeBackShown.length, 2);
+});
+
+test('not flat, the list does not page: every chip stands and the bar grows with it (#69)', () => {
+  for (const stage of STAGES.filter((s) => !s.flat)) {
+    const it = thrower(stage);
+    for (let i = 0; i < 3; i++) it.throwRaffle();
+    it.applyTakeBackMeasure(twoPerRow(3));
+    assert.equal(it.takeBackPageCount, 0, `${stage.width} × ${stage.height}`);
+    assert.equal(it.takeBackShown.length, 3);
+  }
+});
+
+test('the list in the markup stands on takeBackShown, and its pager only where there is more than one page', () => {
+  const plan = readFileSync(new URL('../views/plan.php', import.meta.url), 'utf8');
+  const list = plan.slice(plan.indexOf('class="raffle-takeback"'), plan.indexOf('class="raffle-takeback-list"') + 400);
+  assert.match(list, /takeBackPageCount > 1/);
+  assert.match(list, /pageTakeBack\(-1\)/);
+  assert.match(list, /pageTakeBack\(1\)/);
+  assert.match(list, /takeBackShown|takeBackOn\(/);
 });
