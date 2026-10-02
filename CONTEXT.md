@@ -459,6 +459,33 @@ einzige elastische Grösse für die zweite Kachelreihe zahlt. Wer die zwei Reihe
 antastet, verschiebt keine Pixelzahl, sondern nimmt die Zusicherung zurück.
 _Avoid_: Payout
 
+**Fold**:
+Die Faltung der drei Seiten `Prepare · Plan · Details`: aus Breite und Höhe der
+Bühne fällt, wie viele davon als Spalten nebeneinander stehen. Eine reine
+Ableitung (`fold()` in `public/ui/fold.mjs`, #71), keine Fläche und kein Zustand.
+Die Breitenachse trägt eine Regel — **keine Spalte fällt je unter ihre
+Erstbreite**, die Breite, die sie bei ihrem eigenen ersten Erscheinen hatte —, und
+daraus fallen die Bruchstellen als **Summen** von Erstbreiten, nie als gewählte
+Zahlen; alles zwischen ihnen geht an den `Plan`. Die Höhenachse trägt die
+**Ersthöhe** des `Plan`s: sein fester Teil, der Boden des Diagramms, zwei
+Kachelreihen und der Streifen darunter. Ist die Bühne flacher, steht nur eine
+Seite (die *flache Bühne*), die Breite geht nach innen, und der Fuss dreht sich
+an die rechte Kante. Wo der `Plan` seitlich aufhört, sind die zwei **Einzüge**;
+an ihnen hängen `NoticeStack` und Verlosungsleiste, und das Vollbild setzt beide
+auf null.
+Entschieden an #71 (Lauf 13, K-B8 bis K-B10), nachzuschlagen und nicht
+herzuleiten: die Erstbreiten sind `Plan` 388 · `Details` 286 · `Prepare` 356 —
+für `Details` die kleinste Breite ohne Überlauf, weil eine Spalte ohne Schieber
+keine eindeutige Breite hat. Daraus die Bruchstellen 674 und 1030 und der Deckel
+1597, alle drei als Summen. Die Ersthöhe ist 399 (178 fester Teil + 60 Boden des
+Diagramms + 113 für zwei Kachelreihen + 48 Streifen): das Diagramm geht mit
+seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
+Die einspaltige Form hat eine eigene Schwelle, 494 (351 + 56 Fuss + 87 Schiene).
+Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
+unter der Zwei-Spalten-Stufe; die vier heissen Regler stehen dort erst ab 722
+(388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
+_Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
+
 **NoticeStack**:
 Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
 `CarryOverNotice`. Sie schwebt **über der ganzen App**, nicht über dem
@@ -474,12 +501,13 @@ ihnen. **Am schmalen Schirm deckt die offene Meldung die Regler zu**, samt
 `pinned` und Reset, und das ist gewollt: dort ist das Zudecken der leichtere
 Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind (Prototyp,
 Kommentar über `.stack > *`; Entscheid an #68, Lauf 12, K3 `prototyp-gilt`).
-Frei bleiben die Regler erst ab 740 Pixeln, wenn sie als Spalte daneben stehen
-(#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
+Frei bleiben die Regler erst ab der Zwei-Spalten-Stufe (674 Pixel), wenn sie
+als Spalte daneben stehen (#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
 die Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
-dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Bis
-#71 die Spalten baut, faltet die App auf jeder Breite auf eine Seite, und die
-Meldung deckt überall zu.
+dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Die
+Fläche hängt dafür an den zwei Einzügen des `Fold` (#71) — derselben Grösse, an
+der die Verlosungsleiste hängt; auf der flachen Bühne ist nur eine Seite vorne,
+und die Meldung deckt dort zu wie am Handy.
 Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
 Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
@@ -823,7 +851,7 @@ Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
 anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
 Das Etikett der Reihe steht *neben* den Knöpfen und lautet dort `Type` — sonst
 kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
-352 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
+286 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
 wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
 weiter im ⓘ der Ebene.

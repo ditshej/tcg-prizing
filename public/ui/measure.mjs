@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
+import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -47,7 +47,12 @@ export function applyGeometry(stageEl, fixedEls = []) {
   const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
-  stageEl.style.setProperty('--plan-columns', String(columnsFor(width)));
+  /* The tiles get the content box, not the client box: `clientWidth` counts
+     the stage's side padding, and at a width where that padding decides a
+     column (412px on the flat 812 × 375 stage) the grid got seven columns for
+     a box that holds six, and its first tile was cut at the left edge (#71). */
+  const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
+  stageEl.style.setProperty('--plan-columns', String(columnsFor(width - sides)));
   stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead))}px`);
 }
 
@@ -114,4 +119,93 @@ export function showRaffleHit(gridEl, barEl, rank) {
   void tileEl.offsetWidth;
   tileEl.classList.add('tile-hit');
   tileEl.addEventListener('animationend', () => tileEl.classList.remove('tile-hit'), { once: true });
+}
+
+/* ── The fold (#71) ──────────────────────────────────────────────────────── */
+
+/**
+ * Reads the app's own box and hands it to `onSize` — once now, and again on
+ * every resize. The stage is the app, not the window: above the deck the app
+ * stops growing (`max-width`), and the fold has to see what the app is, not
+ * what the window is. The arithmetic is `fold()` in `fold.mjs`.
+ */
+export function attachStage(appEl, onSize) {
+  if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
+  const run = () => onSize({ width: appEl.clientWidth, height: appEl.clientHeight });
+  run();
+  const observer = new ResizeObserver(run);
+  observer.observe(appEl);
+  return () => observer.disconnect();
+}
+
+/**
+ * The scroll fade band (#71 AC 10), one per surface that really scrolls. A
+ * band belongs to the surface, not to the stage — a surface cannot say where
+ * another one ends — so each scroller gets its own band, laid on its own
+ * bottom edge, in its **own** colour looked up off the surface (or, where it
+ * is transparent, off its ancestors), and only while there is something
+ * below: none where nothing overflows, none once the bottom is reached
+ * (`fadeShown()` in `geometry.mjs`).
+ *
+ * Reads boxes and computed colours; writes the band's position, width and
+ * background. `selectors` are looked up afresh on every paint, so a surface
+ * that is hidden (`x-show`) simply has no box and no band.
+ */
+export function attachFades(rootEl, selectors) {
+  if (!rootEl) return { paint: () => {}, detach: () => {} };
+  const bands = new Map();
+  const paint = () => {
+    for (const selector of selectors) {
+      const box = rootEl.querySelector(selector);
+      let band = bands.get(selector);
+      if (!band) {
+        band = document.createElement('div');
+        band.className = 'fade';
+        band.setAttribute('aria-hidden', 'true');
+        rootEl.appendChild(band);
+        bands.set(selector, band);
+      }
+      const visible = box && box.getClientRects().length > 0;
+      const paddingBottom = visible ? parseFloat(getComputedStyle(box).paddingBottom) || 0 : 0;
+      if (!visible || !fadeLeft({
+        scrollHeight: box.scrollHeight, clientHeight: box.clientHeight, scrollTop: box.scrollTop, paddingBottom,
+      })) { band.style.display = 'none'; continue; }
+      const root = rootEl.getBoundingClientRect();
+      const r = box.getBoundingClientRect();
+      const height = fadeHeight(box.clientHeight);
+      band.style.display = 'block';
+      band.style.left = `${r.left - root.left + box.clientLeft}px`;
+      band.style.width = `${box.clientWidth}px`;
+      band.style.height = `${height}px`;
+      band.style.top = `${r.top - root.top + box.clientTop + box.clientHeight - height}px`;
+      band.style.background = `linear-gradient(to bottom, transparent, ${backgroundOf(box)} 62%)`;
+    }
+  };
+  // Scrolling does not bubble, so it is caught on the way down.
+  rootEl.addEventListener('scroll', paint, true);
+  /* A resize is painted a frame later: the tile grid's column count is
+     written by another observer in the same round (`applyGeometry`), and a
+     band painted in that round measures the layout the grid is just leaving. */
+  let frame = 0;
+  const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(paint); };
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+  if (observer) observer.observe(rootEl);
+  return {
+    paint: later,
+    detach() {
+      rootEl.removeEventListener('scroll', paint, true);
+      if (observer) observer.disconnect();
+      cancelAnimationFrame(frame);
+      for (const band of bands.values()) band.remove();
+    },
+  };
+}
+
+/** The first opaque background colour on the way up from `el`. */
+function backgroundOf(el) {
+  for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+    const colour = getComputedStyle(node).backgroundColor;
+    if (colour && colour !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(colour)) return colour;
+  }
+  return 'transparent';
 }

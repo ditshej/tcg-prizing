@@ -8,10 +8,11 @@
  *
  * The tile size, gap and the six-column/two-row master floor are the
  * `DistributionPlan` assurance from `CONTEXT.md` ("Hochformat-Master ist der
- * Boden auf beiden Achsen") — an assurance, not an arrangement: the floor
- * still applies even where a measured width or height could not actually fit
- * it, because #62 does not build the folding that would make the assurance
- * bite on a narrower stage.
+ * Boden auf beiden Achsen") — an assurance, not an arrangement: `columnsFor()`
+ * raises a measured width to the floor rather than shrinking the tiles. That
+ * the floor actually *fits* on every stage is the fold's business (#71,
+ * `fold.mjs`), and it is checked there with `columnsFitting()`, which has no
+ * floor under it.
  *
  * `diagramCap` deliberately does not reuse the spec's 158/245/406px figures
  * (docs from #61, "The three pages and the fold"): those were measured
@@ -40,9 +41,26 @@ export function rowsHeight(rows = MIN_ROWS) {
  * honour, e.g. by scrolling rather than shrinking the tiles (#62, AC 3).
  */
 export function columnsFor(stageWidth) {
-  const fits = Math.floor((stageWidth + TILE_GAP) / (TILE_SIZE + TILE_GAP));
-  return Math.max(MIN_COLUMNS, fits);
+  return Math.max(MIN_COLUMNS, columnsFitting(stageWidth));
 }
+
+/**
+ * How many tile columns a width really holds, with no floor under it. The
+ * fold's master-floor sweep (#71) asks this and not `columnsFor()`: an
+ * assurance that is raised by construction cannot be broken, so it cannot be
+ * checked either.
+ */
+export function columnsFitting(width) {
+  return Math.max(0, Math.floor((width + TILE_GAP) / (TILE_SIZE + TILE_GAP)));
+}
+
+/** The pixel width of `columns` tiles side by side with the gap between them. */
+export function columnsWidth(columns) {
+  return columns * TILE_SIZE + (columns - 1) * TILE_GAP;
+}
+
+/** The deck of the tile grid: 16 columns, and the app stops growing there (#61). */
+export const MAX_COLUMNS = 16;
 
 /**
  * What the diagram gets of `leftoverHeight` — the height already measured as
@@ -114,4 +132,34 @@ export function hitScrollDelta(windowRect, tileRect, barTop = Infinity) {
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
   return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
+}
+
+/* ── The scroll fade band (#71) ──────────────────────────────────────────── */
+
+/** How tall the band is that says "there is more below" (prototype, `.fade`). */
+export const FADE_HEIGHT = 60;
+
+/**
+ * Whether a scrolling surface gets its fade band: only while something really
+ * lies below its edge. A band over a surface that does not overflow claims
+ * that it goes on, and one that stays at the bottom stop claims it once too
+ * often (#61: "ein Band gehört der Fläche, die wirklich scrollt … und geht am
+ * Anschlag aus"). Two pixels of slack, because a scroll position lands on
+ * fractions and a stop reached is not always a stop to the pixel.
+ */
+export function fadeShown({ scrollHeight, clientHeight, scrollTop, paddingBottom = 0 }) {
+  // The scroller's own padding under its content is no content: the tile grid
+  // keeps a few pixels under its last row, and they claimed a band at every
+  // count of ranks.
+  return scrollHeight - paddingBottom - clientHeight - scrollTop > 2;
+}
+
+/**
+ * How tall a surface's band is: the prototype's 60 px, but never more than a
+ * quarter of the window it lies on. The tile window is two rows high next to
+ * an elastic diagram (`diagramCap()`), and a 60 px band there covered half of
+ * the second row — the row the first height exists for.
+ */
+export function fadeHeight(clientHeight) {
+  return Math.min(FADE_HEIGHT, Math.round(clientHeight / 4));
 }

@@ -8,6 +8,8 @@
 
 :root {
   color-scheme: light dark;
+  /* The raised paper the two scrolling columns stand on (prototype, `--paper`). */
+  --paper: light-dark(#fffdf8, #1e1b16);
 }
 
 * {
@@ -23,10 +25,60 @@ body {
   color: light-dark(#14120f, #f0ece2);
 }
 
+/*
+ * The fold (#71). The app is the stage: a column of the folded pages over the
+ * foot, or — on the flat stage — a row of them beside a foot turned to the
+ * right edge. Above the deck it stops growing and gets margins (`--deck`).
+ * Every size below comes from `fold()` in `fold.mjs` as a custom property on
+ * this element (`foldProperties()`), so the numbers have one home.
+ */
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  max-width: var(--deck, none);
+  margin: 0 auto;
+  /* What the window has beside the deck, on either side. The layer is fixed
+     to the viewport, so its insets are counted from the window's edge and
+     the deck's margin has to be added to them. */
+  --deck-margin: max(0px, (100vw - var(--deck, 100vw)) / 2);
+}
+
+.app[data-flat] {
+  flex-direction: row;
+}
+
+.fold {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* The columns keep their first widths; everything between the breakpoints
+   goes to the `Plan`. At two columns `Prepare` takes the `Plan`'s place, so
+   it is the left slot's width there, and its own first width only at three. */
+.fold > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.app[data-columns='2'] .page-details,
+.app[data-columns='3'] .page-details {
+  flex: 0 0 var(--col-details);
+  box-shadow: 0 0 18px light-dark(rgba(58, 42, 22, 0.14), rgba(0, 0, 0, 0.55));
+}
+
+.app[data-columns='3'] .page-prepare {
+  flex: 0 0 var(--col-prepare);
+  box-shadow: 0 0 18px light-dark(rgba(58, 42, 22, 0.14), rgba(0, 0, 0, 0.55));
+}
+
+/* The fullscreen is the fold the other way: the `Plan` alone, and it takes
+   everything — the shadows of the columns go with them. */
+.app[data-fullscreen] .fold > * {
+  flex: 1 1 0;
 }
 
 /*
@@ -60,17 +112,62 @@ body {
   min-height: 0;
   overflow-y: auto;
   padding: 8px;
+  background: var(--paper);
 }
 
-.page-head h1 {
+/*
+ * The column head (#71): one form, used three times. A title line — the word
+ * at 17px and beside it the column's facts, small and still — and for the
+ * `Plan` alone a second line (`.col-sub`), because its output line is a fact
+ * and not a caption (#61, "The Plan page"). The common measure of the three is
+ * the title line, which is why it carries a fixed height: the word stands in
+ * the foot while the page is a page and here once it is a column, and the
+ * head keeps its shape in both.
+ *
+ * The two scrolling columns hold their head inside the scroller and stick it
+ * to the top; the `Plan`'s stands outside its scroller anyway. Same form, same
+ * behaviour (prototype, `.colhead`).
+ */
+.col-head {
+  flex: 0 0 auto;
+}
+
+.col-titleline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 22px;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.col-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.01em;
 }
 
-.page-lede {
-  margin: 2px 0 0;
-  font-size: 0.85rem;
+.col-facts {
+  font-size: 0.8rem;
   opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-sub {
+  margin: 0;
+}
+
+.page-details > .col-head,
+.page-prepare > .col-head {
+  position: sticky;
+  top: -8px; /* the page's own top padding, so the head sits flush at the edge */
+  z-index: 2;
+  margin: -8px -8px 0;
+  padding: 8px 8px 6px;
+  background: var(--paper);
 }
 
 .plan-stage {
@@ -94,20 +191,14 @@ body {
   flex: 0 0 auto; /* the fixed parts never shrink; only .plan-grid may */
 }
 
-.plan-head h1 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.plan-type {
-  margin: 2px 0 0;
-  font-size: 0.85rem;
-  opacity: 0.75;
-}
-
 .plan-output {
-  margin: 2px 0 0;
+  font-size: 0.8rem;
+  line-height: 18px;
   font-weight: 600;
+  /* One line at the Plan's first width (388 − 16 = 372px) for the usual
+     numbers: the first height counts this line once (`PLAN_FIXED`). At 16px
+     it wrapped there, and the fixed part grew by a line exactly at the width
+     the first height is measured at. */
 }
 
 .plan-participation {
@@ -855,15 +946,12 @@ body {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /*
- * The bar is anchored to the `Plan` page, not to the app: that puts it
- * directly over the foot navigation while `Plan` is a page, and over the
- * whole screen's bottom edge in fullscreen, where the foot is gone — one
- * rule, two results, no `if` on the surface.
+ * The bar hangs on the fold's two insets and on the strip under the columns
+ * (#71), the same three sizes the NoticeStack reads: directly over the foot
+ * while `Plan` is a page, inside the `Plan` column from two columns on, and
+ * over the whole bottom edge in fullscreen, where the insets and the strip
+ * are zero — one rule, every result, no `if` on the surface.
  */
-.page-plan {
-  position: relative;
-}
-
 /*
  * The grip on the legend's `winner` entry. It reads as a pill, because it is
  * the one thing in that row that can be pressed — and it is never disabled,
@@ -913,9 +1001,9 @@ body {
  */
 .raffle-bar {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  left: calc(var(--plan-left, 0px) + 8px);
+  right: calc(var(--plan-right, 0px) + 8px);
+  bottom: calc(var(--strip-bottom, 56px) + 8px);
   z-index: 40;
   padding: 10px 12px 12px;
   border-radius: 8px;
@@ -1571,49 +1659,39 @@ body {
  * the edge (CONTEXT.md, `NoticeStack`). In fullscreen there is no foot, and
  * the same rule puts both on the bottom edge.
  *
- * `--notice-right` is the indent the open surface keeps from the controls
- * column once the controls stand beside the plan as a column (from 740px,
- * #71): there it ends before them and leaves their pin markings free. On a
- * narrow screen the open notice covers the controls, `pinned` and reset
- * included, on purpose — the lighter loss, since the ways out are clickable in
- * the notice itself (the prototype's comment over `.stack > *`; maintainer
- * decision on #68, run 12, K3 `prototyp-gilt`, which overrides the ticket's
- * "must not cover the pin markings"). The app folds into one page at every
- * width until #71 builds the columns, so it is 0 and the notice covers
- * everywhere; the fold sets it once there are columns.
- * `--notice-foot` is the foot's measured 56px (`.foot`: 20 + 3 + 12 + 2 × 10
- * + 1).
+ * The open surface hangs on the fold's two insets, `--plan-left` and
+ * `--plan-right` (#71): from two columns on it ends before the controls
+ * column and leaves their pin markings free. On one page the insets are 0 and
+ * the open notice covers the controls, `pinned` and reset included, on
+ * purpose — the lighter loss, since the ways out are clickable in the notice
+ * itself (the prototype's comment over `.stack > *`; maintainer decision on
+ * #68, run 12, K3 `prototyp-gilt`). It stands on the strip under the columns
+ * (`--strip-bottom`: the 56px foot, the 48px strip, or nothing on the flat
+ * stage and in fullscreen), and the chips sit where `--chip-right` and
+ * `--chip-bottom` put them — all of it out of `foldProperties()`.
  *
  * Told apart by colour and ways out only, never by form or by how they start
  * (#61). The three tones are the prototype's: warn red, the reserve violet,
  * and the bronze accent of what was just switched — not the pin violet, which
  * sits next to the Offer's and cannot be told apart from it.
  */
-.notice-layer {
-  --notice-foot: 56px;
-  --notice-right: 0px;
-}
-
-.notice-layer-bare {
-  --notice-foot: 0px;
-}
-
-/* A chip row standing lifts the open stack above it by its own height. */
+/* A chip row standing lifts the open stack above it — where the chips are not
+   in a band of their own. */
 .notice-layer-chips {
-  --notice-chiprow: 42px;
+  --notice-chiprow: var(--chip-lift, 42px);
 }
 
 .notice-stack {
   position: fixed;
-  left: 0;
-  right: var(--notice-right);
-  bottom: calc(var(--notice-foot) + var(--notice-chiprow, 0px));
+  left: calc(var(--deck-margin, 0px) + var(--plan-left, 0px));
+  right: calc(var(--deck-margin, 0px) + var(--plan-right, 0px));
+  bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px));
   z-index: 36;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 8px;
-  max-height: calc(100dvh - var(--notice-foot) - var(--notice-chiprow, 0px));
+  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px));
   overflow-y: auto;
   pointer-events: none;
 }
@@ -1696,15 +1774,15 @@ body {
 
 .notice-chips {
   position: fixed;
-  right: 0;
-  bottom: var(--notice-foot);
+  right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px));
+  bottom: var(--chip-bottom, 64px);
   z-index: 37;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  max-width: 100%;
+  max-width: calc(100% - var(--chip-right, 0px));
   overflow-x: auto;
-  padding: 0 12px 8px;
+  padding: 0 12px;
   pointer-events: none;
 }
 
@@ -1744,4 +1822,134 @@ body {
 
 .notice-glyph {
   font-size: 13px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The fold (#71) — the foot in its three forms, the rail, the flat stage
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * The scroll fade band (#71 AC 10): laid by the rind (`attachFades()`) on the
+ * bottom edge of the surface that really scrolls, in that surface's own
+ * colour. Under the NoticeStack (36), the bubble (38) and the raffle bar (40).
+ */
+.fade {
+  position: absolute;
+  z-index: 28;
+  height: 60px;
+  pointer-events: none;
+}
+
+/*
+ * From two columns on the foot is a flat strip, and it is **the place where
+ * the page division does not hold**: on the left the switcher, on the right
+ * the notice chips, the middle empty. It is 48px — icon beside word — and it
+ * stands at every width from the breakpoint on, at three columns too, with
+ * its left place empty: a corner that is there or not depending on the width
+ * is no corner (#61, "The foot").
+ */
+.app[data-columns='2'] .foot,
+.app[data-columns='3'] .foot {
+  height: 48px;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.app[data-columns='2'] .foot-item,
+.app[data-columns='3'] .foot-item {
+  flex: 0 0 auto;
+  flex-direction: row;
+  gap: 6px;
+  padding: 6px 12px;
+}
+
+.app[data-columns='2'] .foot-label,
+.app[data-columns='3'] .foot-label {
+  font-size: 13px;
+  line-height: 20px;
+  opacity: 1;
+}
+
+/*
+ * The flat stage: below the first height nothing opens side by side. The foot
+ * turns to the right edge — the same organism as the strip, only upright — and
+ * **takes room rather than lying on top**, so no page reads its right column
+ * behind the navigation. Its three entries spread over the whole height.
+ */
+.app[data-flat] .foot {
+  flex: 0 0 var(--strip-width);
+  flex-direction: column;
+  justify-content: space-evenly;
+  border-top: none;
+  border-left: 1px solid light-dark(#ddd6c8, #37322a);
+}
+
+.app[data-flat] .foot-item {
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.app[data-flat] .foot-icon {
+  font-size: 16px;
+  line-height: 18px;
+}
+
+.app[data-flat] .foot-label {
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * On the flat stage the four hot controls stand upright beside the `Plan` —
+ * no new content and no second arrangement: the width goes inward instead of
+ * opening a second page (prototype, `hotCol`). `fold()` only puts them there
+ * where both first widths fit beside the strip — from 722 (#71, K-B10c);
+ * between 436 and 721 they stand on `Details` only.
+ */
+.app[data-rail='column'] .page-plan {
+  flex-direction: row;
+}
+
+/* Basis 0 and no minimum: the tile grid's column count is measured off this
+   box, and a box that sized itself off the grid would never shrink again. */
+.app[data-rail='column'] .plan-stage {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.app[data-rail='column'] .plan-controls {
+  flex: 0 0 var(--col-details);
+  overflow-y: auto;
+  border-top: none;
+  border-left: 1px solid light-dark(#ddd6c8, #37322a);
+}
+
+.app[data-rail='column'] .controls-hot {
+  grid-template-columns: 1fr;
+}
+
+/*
+ * …and `Details` and `Prepare` turn two-column inside, with **row flow**,
+ * never column flow: every group heading spans both columns and the group
+ * stays together under it (#71 AC 7). Column flow would tear a group at the
+ * column break and put its second half beside its own heading.
+ */
+.app[data-flat] .sheet-block,
+.app[data-flat] .sheet-group,
+.app[data-flat] .prep-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  align-items: start;
+}
+
+.app[data-flat] .sheet-group > .sheet-group-head,
+.app[data-flat] .sheet-group > .sheet-desc {
+  grid-column: 1 / -1;
+}
+
+.app[data-flat] .page-prepare > .prep-note {
+  max-width: none;
 }

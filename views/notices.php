@@ -8,9 +8,9 @@
  *
  * Layer and surface are two statements. The layer is everything here; the
  * surface of an open notice is as wide as the room the DistributionPlan takes
- * (`--notice-right`, 0 while the app folds into one page, which is all it does
- * today), and the chips sit in the lowest free corner on the right — on the
- * phone one row above the foot.
+ * — the fold's two insets, `--plan-left` and `--plan-right` (#71) — and the
+ * chips sit in the lowest free corner on the right: on the phone one row above
+ * the foot, from two columns on in the strip.
  *
  * Every word and every number comes out of `notices.mjs` through `notices`;
  * nothing here decides what a notice says, only where it lies. The effect is
@@ -25,7 +25,7 @@
  */
 ?>
 <div class="notice-layer" x-effect="refreshNotices()"
-     :class="{ 'notice-layer-bare': fullscreen, 'notice-layer-chips': notices.chips.length }">
+     :class="{ 'notice-layer-chips': notices.chips.length }">
   <div class="notice-stack">
     <template x-for="notice in notices.open" :key="notice.id">
       <section class="notice" :class="`notice-${notice.id}`" role="status">

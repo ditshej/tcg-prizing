@@ -38,7 +38,8 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRafflePadding, attachMeasuring, showRaffleHit } from './measure.mjs';
+import { applyGeometry, applyRafflePadding, attachFades, attachMeasuring, attachStage, showRaffleHit } from './measure.mjs';
+import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
 import {
@@ -261,6 +262,61 @@ export function planApp(seam = SEAM) {
       this.activePage = page;
       this.fullscreen = false;
       this.openTile = null;
+    },
+
+    /**
+     * The stage the fold is computed from — the app's own box, as the
+     * measuring rind last read it (`attachStage()` in `measure.mjs`). Until the
+     * first reading, and wherever there is no window at all (`node --test`),
+     * it is the portrait master, so the app boots as one page.
+     */
+    stage: { width: 393, height: 830 },
+
+    /**
+     * The fold of the current stage (#71): columns, the flat stage, the two
+     * insets. Pure, in `fold.mjs`; this getter only hands it the stage and the
+     * fullscreen, which is the fold in the opposite direction.
+     */
+    get fold() {
+      return foldOf({ ...this.stage, fullscreen: this.fullscreen });
+    },
+
+    /**
+     * The rind's one write. A page that now stands as a column is no longer
+     * the active page — whoever stands on `Details` at a narrow window and
+     * pulls it wider lands on `Plan` and sees the controls beside it (#61,
+     * "Session state"). Written back rather than read through, as in the
+     * prototype's `render()`: narrowing the window again then shows `Plan`, not
+     * a page the CommunityLead had already left by widening.
+     */
+    setStage(size) {
+      this.stage = size;
+      this.activePage = foldPage(this.fold, this.activePage);
+    },
+
+    /** Whether `page` is on screen — as the active page or as a column. */
+    shows(page) {
+      return pageShown(this.fold, this.activePage, page);
+    },
+
+    /**
+     * Whether `page` has an entry in the foot. An entry **vanishes** once its
+     * page stands as a column (#71 AC 3); with one column all three stand.
+     * At two columns this leaves exactly one, and it is the folded one — the
+     * grip (#71 AC 4).
+     */
+    footEntry(page) {
+      return this.fold.columns === 1 || !this.shows(page);
+    },
+
+    /** The column head carries the word exactly when the foot does not. */
+    titled(page) {
+      return !this.fullscreen && !this.footEntry(page);
+    },
+
+    /** The fold's sizes as CSS custom properties on the app root. */
+    get foldStyle() {
+      return Object.entries(foldProperties(this.fold)).map(([k, v]) => `${k}:${v}`).join(';');
     },
 
     /** Grabbed at the tile grid, never from the (hidden, in fullscreen) foot. */
@@ -689,6 +745,13 @@ export function planApp(seam = SEAM) {
     },
 
     init() {
+      /* Alpine calls `init()` by itself *and* through `x-init="init()"` on the
+         root (`views/app.php`), so it ran twice: two ResizeObservers on the
+         stage, two resize listeners, two "erst bestätigen" listeners on the
+         document, two bubble effects (found by #71, whose fade bands came out
+         doubled). Everything here is attached once. */
+      if (this._initialised) return;
+      this._initialised = true;
       const fixed = [
         this.$refs.head,
         this.$refs.participation,
@@ -740,9 +803,25 @@ export function planApp(seam = SEAM) {
          document, so it covers every control there is and every one a later
          branch adds. */
       this._detachConfirmFirst = attachConfirmFirst(document, this);
+      /* The fold (#71): the app's own box is the stage, read by the rind and
+         written here once per resize; every page, the foot and the insets
+         follow from `fold` reactively. */
+      this._detachStage = attachStage(this.$root, (size) => this.setStage(size));
+      /* One fade band per surface that really scrolls (#71 AC 10). Painted
+         after every drawing that can change what overflows — the plan, the
+         fold, the page in front — and on every scroll and resize by the rind
+         itself. */
+      this._fades = attachFades(this.$root, ['.plan-grid', '.page-details', '.page-prepare']);
+      this._fading = window.Alpine.effect(() => {
+        void [this.fold, this.activePage, this.fullscreen, this.tiles.length, this.raffleOpen];
+        this.$nextTick(() => this._fades.paint());
+      });
     },
 
     destroy() {
+      if (this._detachStage) this._detachStage();
+      if (this._fades) this._fades.detach();
+      if (this._fading) window.Alpine.release(this._fading);
       if (this._detachConfirmFirst) this._detachConfirmFirst();
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
@@ -1397,14 +1476,17 @@ export function planApp(seam = SEAM) {
 
     /**
      * Where the question is drawn. The sheet's bubble (`DROP_BUBBLE`) is
-     * markup inside `Details`, so on any other page it sits under a hidden
-     * ancestor and cannot show — while the CarryOverNotice lies over every
-     * page. Away from `Details` the question is therefore drawn in the
-     * layer's own bubble of the same form (`views/notices.php`), the second
-     * trigger site `askDrop()`'s `bubble` argument was left open for.
+     * markup inside `Details`, so wherever `Details` is not on screen it sits
+     * under a hidden ancestor and cannot show — while the CarryOverNotice
+     * lies over every page. There the question is drawn in the layer's own
+     * bubble of the same form (`views/notices.php`), the second trigger site
+     * `askDrop()`'s `bubble` argument was left open for. Asked of the fold,
+     * not of `activePage` (#71, B13): from two columns on `Details` stands as
+     * a column while the active page is `Plan`, and the sheet's bubble is the
+     * one to use.
      */
     get carryBubble() {
-      return this.activePage === 'details' ? DROP_BUBBLE : '[data-notice-drop]';
+      return this.shows('details') ? DROP_BUBBLE : '[data-notice-drop]';
     },
   };
 }

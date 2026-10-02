@@ -10,20 +10,29 @@
  * Hidden entirely in fullscreen, at every width (#63 AC 5): fullscreen is a
  * state of `Plan`, not a fourth page, and the foot belongs to page
  * navigation, which fullscreen has none of.
+ *
+ * With the fold (#71) an entry **vanishes** once its page stands as a column
+ * (`footEntry()`), while the strip itself stays at every width from the
+ * breakpoint on: its inhabitants are not the pages — on the left the
+ * switcher, on the right the notice chips, the middle empty. At two columns
+ * that leaves exactly one entry, and it is always the folded column: `Prepare`
+ * while the `Plan` stands, `Plan` while `Prepare` has taken its place. At
+ * three columns none is left. On the flat stage the strip turns to the right
+ * edge and carries all three again, because only one page is in front.
  */
 ?>
 <footer class="foot" x-show="!fullscreen">
-  <button type="button" class="foot-item" :class="{ 'foot-active': activePage === 'prepare' }"
+  <button type="button" class="foot-item" x-show="footEntry('prepare')" :class="{ 'foot-active': activePage === 'prepare' }"
           @click="setPage('prepare')" :aria-current="activePage === 'prepare' ? 'page' : null">
     <span class="foot-icon" aria-hidden="true">🛒</span>
     <span class="foot-label">Prepare</span>
   </button>
-  <button type="button" class="foot-item" :class="{ 'foot-active': activePage === 'plan' }"
+  <button type="button" class="foot-item" x-show="footEntry('plan')" :class="{ 'foot-active': activePage === 'plan' }"
           @click="setPage('plan')" :aria-current="activePage === 'plan' ? 'page' : null">
     <span class="foot-icon" aria-hidden="true">⊞</span>
     <span class="foot-label">Plan</span>
   </button>
-  <button type="button" class="foot-item" :class="{ 'foot-active': activePage === 'details' }"
+  <button type="button" class="foot-item" x-show="footEntry('details')" :class="{ 'foot-active': activePage === 'details' }"
           @click="setPage('details')" :aria-current="activePage === 'details' ? 'page' : null">
     <span class="foot-icon" aria-hidden="true">☰</span>
     <span class="foot-label">Details</span>

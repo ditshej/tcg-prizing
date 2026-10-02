@@ -276,3 +276,62 @@ test('Prepare\'s "Set packs to 523" writes 523, past the former stop of 512 (#11
   assert.equal(app.settings.tournamentPacks, 523);
   assert.equal(app.plan.pool.packs, 523);
 });
+
+/**
+ * Alpine calls `init()` by itself *and* through `x-init="init()"` on the root
+ * (`views/app.php`), so the guard at its top is what keeps every observer and
+ * listener single (#71, B17). Driven here with the browser stubbed down to
+ * counters: `ResizeObserver` is absent, so the rind's two observers return at
+ * their first line, and what is left to count is the resize listener, the
+ * four "erst bestätigen" listeners on the document, the fade bands' scroll
+ * listener on the root, the two effects and the one fullscreen watch.
+ */
+test('init() attaches its listeners once, however often Alpine calls it', () => {
+  const counts = { window: 0, document: 0, root: 0, effects: 0, watches: 0 };
+  const saved = { window: globalThis.window, document: globalThis.document };
+  globalThis.window = {
+    addEventListener: () => { counts.window += 1; },
+    removeEventListener: () => {},
+    Alpine: { effect: () => { counts.effects += 1; return {}; }, release: () => {} },
+  };
+  globalThis.document = { addEventListener: () => { counts.document += 1; }, removeEventListener: () => {} };
+  try {
+    const { app } = opened('');
+    Object.assign(app, {
+      $refs: {},
+      $root: { addEventListener: () => { counts.root += 1; }, removeEventListener: () => {} },
+      $watch: () => { counts.watches += 1; },
+      $nextTick: () => {},
+    });
+    app.init();
+    const once = { ...counts };
+    app.init();
+    assert.deepEqual(counts, once);
+    assert.deepEqual(once, { window: 1, document: 4, root: 1, effects: 2, watches: 1 });
+  } finally {
+    for (const key of ['window', 'document']) {
+      if (saved[key] === undefined) delete globalThis[key];
+      else globalThis[key] = saved[key];
+    }
+  }
+});
+
+/**
+ * *Drop all N and follow* asks its question in the sheet's bubble wherever
+ * `Details` is on screen, and in the layer's own bubble wherever it is not
+ * (#71, B13). From two columns on `Details` stands as a column while the
+ * active page is `Plan` — `activePage` alone would send the question away
+ * from the sheet that is right there.
+ */
+test('the carry-over question goes to the sheet bubble wherever Details is shown', () => {
+  const { app } = opened('');
+  assert.equal(app.carryBubble, '[data-notice-drop]');
+  app.setPage('details');
+  assert.equal(app.carryBubble, '[data-drop-bubble]');
+  app.setPage('plan');
+  app.setStage({ width: 900, height: 700 });
+  assert.equal(app.activePage, 'plan');
+  assert.equal(app.carryBubble, '[data-drop-bubble]');
+  app.setStage({ width: 900, height: 375 });
+  assert.equal(app.carryBubble, '[data-notice-drop]', 'flat: one page, and it is the Plan');
+});
