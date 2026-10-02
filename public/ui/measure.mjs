@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleLift, raffleScrollPadding } from './geometry.mjs';
+import { diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleLift, raffleScrollPadding, tileColumnsFor } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -52,7 +52,7 @@ export function applyGeometry(stageEl, fixedEls = []) {
      column (412px on the flat 812 × 375 stage) the grid got seven columns for
      a box that holds six, and its first tile was cut at the left edge (#71). */
   const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
-  stageEl.style.setProperty('--plan-columns', String(columnsFor(width - sides)));
+  stageEl.style.setProperty('--plan-columns', String(tileColumnsFor(width - sides)));
   stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead))}px`);
 }
 

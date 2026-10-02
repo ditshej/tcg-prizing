@@ -13,6 +13,8 @@ import {
   hitScrollDelta,
   raffleScrollPadding,
   raffleLift,
+  tileColumnsFor,
+  MAX_COLUMNS,
   RAFFLE_AIR,
   fadeShown,
   fadeHeight,
@@ -107,6 +109,20 @@ test('the raffle lift is the bar\'s height plus its air, and nothing while the b
   assert.equal(raffleLift(0), 0);
   assert.equal(raffleLift(null), 0);
   assert.equal(RAFFLE_AIR, 8);
+});
+
+/**
+ * The tile grid stops at sixteen columns at every width, fullscreen included:
+ * the prototype caps `.slots` at `--gridmax` (16 tiles) in the page and in
+ * `fsContent()` alike, and `fold()` already reports `tileColumns` capped. The
+ * grid itself took `columnsFor()` uncapped and showed 21 columns in
+ * fullscreen at 1280 and 26 at 1597 (#73).
+ */
+test('tileColumnsFor keeps the master floor and the sixteen-column deck', () => {
+  assert.equal(tileColumnsFor(200), 6);
+  assert.equal(tileColumnsFor(10 * 59 - 5), 10);
+  assert.equal(tileColumnsFor(1597 - 16), MAX_COLUMNS);
+  assert.equal(tileColumnsFor(1264), MAX_COLUMNS);
 });
 
 

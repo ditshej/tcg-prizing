@@ -63,6 +63,18 @@ export function columnsWidth(columns) {
 export const MAX_COLUMNS = 16;
 
 /**
+ * How many tile columns the grid draws in a measured width: at least the
+ * master's six, at most the deck's sixteen. The deck holds at every width,
+ * fullscreen included — the prototype caps `.slots` at `--gridmax` in the page
+ * and in `fsContent()` alike, and `fold()` reports `tileColumns` the same way.
+ * Above the deck the app gets margins; in fullscreen, where the `Plan` is the
+ * whole stage, the grid simply stops at sixteen (#73).
+ */
+export function tileColumnsFor(width) {
+  return Math.min(MAX_COLUMNS, columnsFor(width));
+}
+
+/**
  * What the diagram gets of `leftoverHeight` — the height already measured as
  * available to (diagram + tile grid) once every other fixed part of the Plan
  * column has been subtracted by the rind. The two guaranteed tile rows come
