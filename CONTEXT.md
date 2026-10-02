@@ -337,7 +337,11 @@ Kacheln — dem Schlüssel zu genau der Marke, die sie erzeugt —, der eine fes
 Leiste über der Fussnavigation aufgehen lässt; die Leiste trägt Auslöser,
 `RaffleRange`, die Ansage des letzten Treffers und die nach `Rank` sortierte
 Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbild
-und deckt keine Kachel zu. Ein Treffer wird **flüchtig** markiert — das Raster
+und deckt keine Kachel zu: solange sie offen ist, gibt das Diagramm um ihre
+gemessene Überlappung mit dem Kachelfenster nach (nie unter seinen Boden), so dass
+die zwei Reihen und der gezogene Treffer über ihr frei bleiben, auch wenn sie mit
+der Rücknahmeliste wächst (#73, K1). Auf der flachen Bühne reicht das allein nicht;
+was dort zusätzlich nachgibt, ist offen. Ein Treffer wird **flüchtig** markiert — das Raster
 scrollt zu ihm, die Kachel hebt sich kurz heraus —, nie bleibend: eine bleibende
 Marke wäre die Herkunft, die das Modell bewusst nicht führt. Die Ansage nennt
 den `Rank` und trägt **keinen** Rückweg; zurückgenommen wird in der Liste oder an
@@ -449,7 +453,9 @@ dann nebeneinander statt einander zu verdrängen (Entscheid 3 im Kommentar
 volles Soll bekommen hat.
 Am Schirm ist das **Hochformat der Boden** (#40): das Kachelfenster zeigt in jeder
 Fassung mindestens so viel wie das Hochformat — **sechs Kachelspalten und zwei
-Kachelreihen**. Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
+Kachelreihen**. Unter 365 Breite (6 × 54 + 5 × 5 + 16 Polster) gibt die
+**Kachelbreite** nach, nicht die Spaltenzahl: die sechs Spalten werden schmaler als
+54 px und bleiben ganz sichtbar; Kachelhöhe und Reihen bleiben (#73, K3). Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
 der Blöcke sich mit der Breite ändern darf, darf dieser Boden es nicht. #37 hatte
 „Aufklappen nimmt nie etwas weg" beschlossen; im Querformat reicht das nicht, weil
 dort die Höhe fehlt und nicht die Breite — der Boden ist die Fassung dieses Satzes
@@ -480,10 +486,17 @@ keine eindeutige Breite hat. Daraus die Bruchstellen 674 und 1030 und der Deckel
 1597, alle drei als Summen. Die Ersthöhe ist 399 (178 fester Teil + 60 Boden des
 Diagramms + 113 für zwei Kachelreihen + 48 Streifen): das Diagramm geht mit
 seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
-Die einspaltige Form hat eine eigene Schwelle, 494 (351 + 56 Fuss + 87 Schiene).
+Die einspaltige Form hat eine eigene Schwelle: 351 + 56 Fuss + die **gemessene**
+Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung kippt je
+nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
+aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117).
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
 unter der Zwei-Spalten-Stufe; die vier heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
+Bühnen unter 436 Breite **und** unter der einspaltigen Schwelle bleiben die Ausnahme
+vom Masterboden: dort hält keine Faltung zwei Reihen im Bild — der `Plan` behält
+seinen Boden, die Schiene steht darunter, und die Plan-Seite **scrollt**; nichts
+liegt übereinander (#73, K4).
 _Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
 
 **NoticeStack**:
@@ -492,7 +505,11 @@ Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
 `DistributionPlan`: eine Meldung über die Herkunft der Eingabe passt in kein
 plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
 ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
-**deckt zu und schiebt nichts**.
+**deckt zu und schiebt nichts**. Über einer offenen Verlosungsleiste hebt sich der
+Stapel um deren Höhe — und der Chip, wo er in der Ecke des `Plan`s sitzt und nicht
+im Streifen —, damit die Leiste keine Meldung zudeckt, die nach ADR 0002 anwesend
+sein muss (Prototyp `.stack`/`#badges`, Runde 16 und 21; #73). Die gehobene Meldung
+deckt dann Kacheln zu; das ist dasselbe Zudecken, und Einklappen gibt sie frei.
 **Schicht und Fläche sind zwei Aussagen.** „Über der ganzen App" ist die
 Schicht: der Stapel liegt über jeder Seite und gehört keiner. Seine *Fläche*
 ist so breit wie der Platz, den der `DistributionPlan` gerade einnimmt — am
