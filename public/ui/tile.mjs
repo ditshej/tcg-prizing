@@ -42,6 +42,18 @@
  */
 
 import { canPlaceWinner, canReserveDisplays } from './controls.mjs';
+import { winnerPackOverhang } from './overhang.mjs';
+
+/**
+ * Whether the tile of `rank` carries the red mark: a `Rank` in the core's
+ * `flagged`, or one holding a hand-placed WinnerPack past the stock — the
+ * `WinnerPack` overhang, which the core does not report and so never puts
+ * into `flagged` (#70). Those are the Ranks the overhang's take-back names,
+ * the lowest first; the mark and the notice's prose point at the same tiles.
+ */
+function marked(rank, plan) {
+  return plan.flagged.includes(rank) || (winnerPackOverhang(plan)?.ranks.includes(rank) ?? false);
+}
 
 /** `1 display` / `2 displays` — the count stands in the tile because two tiles
  *  are otherwise the same size while one carries twice as much (#61). */
@@ -58,13 +70,14 @@ function sentence(parts) {
  * What the tile itself shows beyond its numbers: the states it carries as
  * form rather than as words.
  *
- * `tile-flagged` is load-bearing and not decoration — a minimised
+ * `tile-flagged` — the core's `flagged` and the `WinnerPack` overhang's
+ * Ranks alike, see `marked()` — is load-bearing and not decoration — a minimised
  * `ConflictNotice` would otherwise leave a conflicting plan looking valid,
  * which is the one thing ADR 0002 is written against. The tile says *where*
  * while the chip says *that*.
  */
 export function tileView(row, plan) {
-  const flagged = plan.flagged.includes(row.rank);
+  const flagged = marked(row.rank, plan);
   return {
     classes: [
       row.displays > 0 ? 'tile-reserved' : null,
@@ -102,7 +115,7 @@ export function tileGrip(rank, stand) {
     rank: r,
     served: row.served,
     settled: row.settled,
-    flagged: plan.flagged.includes(r),
+    flagged: marked(r, plan),
     winners: winnerCounter(r, row, stand),
     displays: row.served ? displayCounter(r, row, settings, stand) : null,
     wayIn: row.served ? null : wayInSentence(r, plan),

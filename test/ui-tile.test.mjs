@@ -177,3 +177,24 @@ test('the grip is nothing at all on a Rank the plan does not have', () => {
   assert.equal(tileGrip(9, s), null);
   assert.equal(tileGrip(0, s), null);
 });
+
+/* ── The `WinnerPack` overhang marks its tiles (#70) ────────────────────── */
+
+test('the Ranks holding the packs past the stock are marked, and only those', () => {
+  // Weekly at 32 with five WinnerPacks on hand: `ranked` takes 3, two go by
+  // hand on Ranks 10 and 20 — then `winnerPacks` down to 4: one over. The
+  // lowest of the hand-placed packs is the one past the stock.
+  const { plan } = stand({ manualWinner: { 10: 1, 20: 1 }, winnerPacks: 4 });
+  assert.equal(plan.flagged.length, 0);
+  assert.deepEqual(tileView(plan.rows[19], plan).classes.includes('tile-flagged'), true);
+  assert.deepEqual(tileView(plan.rows[9], plan).classes.includes('tile-flagged'), false);
+  assert.deepEqual(tileView(plan.rows[0], plan).classes.includes('tile-flagged'), false);
+  assert.equal(tileGrip(20, stand({ manualWinner: { 10: 1, 20: 1 }, winnerPacks: 4 })).flagged, true);
+});
+
+test('the mark goes as soon as the stock suffices again, and the hand-set packs are where they were', () => {
+  const s = stand({ manualWinner: { 10: 1, 20: 1 }, winnerPacks: 5 });
+  assert.equal(tileView(s.plan.rows[19], s.plan).classes.includes('tile-flagged'), false);
+  assert.equal(s.plan.rows[19].winners, 1);
+  assert.equal(s.plan.rows[9].winners, 1);
+});
