@@ -2539,6 +2539,13 @@ function slotLegend(plan) {
    geklickt" und „mir gefällt nicht, wen es getroffen hat" wieder einen Tipp
    voneinander entfernt, und genau diese Reibung hat #33 dem Ticket mitgegeben.
    Die Ansage *nennt* den Rang, die Liste lässt ihn *benennen*. */
+/* ÜBERHOLT durch #129 (Lauf 15): auf der flachen Bühne wächst die Leiste
+   nicht mit der Rücknahmeliste. Die Liste blättert dort in der Leiste, eine
+   Zeile je Seite, damit die eine Kachelreihe mit dem Treffer auch nach dem
+   Wurf frei bleibt — eine Ausnahme zu „wächst mit der Rücknahmeliste" (#69),
+   nur für flach. Nicht flach wächst die Leiste wie hier. Wie geblättert wird
+   (Seitengrösse, Bedienung), steht weder hier noch in #69 oder #61; der Bau
+   von #129 nimmt die einfachste Form. Verbindlich ist der Text von #129. */
 function raffleBar(plan) {
   const pot = rafflePot(plan);
   const open = plan.allocation.open;
@@ -2611,6 +2618,12 @@ function raffleBar(plan) {
    trifft. In der Planansicht ist die Überlappung null (das Fenster endet weit
    über der Leiste), dort passiert also von selbst nichts: eine Regel, zwei
    Ergebnisse, kein `if` auf die Fläche. */
+/* ÜBERHOLT durch #129 (Lauf 15), nur für die Begründung: „In der
+   Planansicht ist die Überlappung null" stimmt seit #71 ab 674 und auf der
+   flachen Bühne nicht mehr. Das Polster bleibt die Überlappung; dass dabei
+   keine Kachel zugedeckt wird, zahlt nicht flach das nachgebende Diagramm
+   (K1, Lauf 14, #73) und flach das ganz wegfallende Diagramm samt blätternder
+   Rücknahmeliste. Verbindlich ist der Text von #129. */
 function padBottom() {
   for (const box of [appEl.querySelector('.gridwin'), fsEl.querySelector('.body')]) {
     if (!box) continue;
@@ -3095,6 +3108,13 @@ function screen(plan, sugg, off) {
      Teil der Spalte (158 px: Kopf, Handout-Zeile, Legende, Rangmeldung) und
      den zwei Reihen übrig bleibt, und nie unter 60. */
   const CHROME0 = 158, GRID2 = ROWS0 * 54 + (ROWS0 - 1) * 5 + 18;
+  /* ÜBERHOLT durch #129 (Lauf 15): auf der flachen Bühne gilt `Math.max(60, …)`
+     nicht, solange die Verlosungsleiste offen ist. Dann fällt das Diagramm
+     ganz weg — es gibt unter seinen Boden nach, bis 0 — und kommt zurück,
+     sobald die Leiste zu ist; die Kacheln haben Vorrang. Mit Boden 60 blieb
+     bei 812 × 375 über der offenen Leiste keine Kachelreihe frei. Nicht
+     flach gilt K1 aus Lauf 14 (#73): das Diagramm gibt um die gemessene
+     Überlappung nach, nie unter 60. Verbindlich ist der Text von #129. */
   const stripMax = isFlat()
     ? Math.max(60, Math.min(96, h - CHROME0 - GRID2))
     : h < 460 ? 96 : cols >= 2 ? 190 : 280;
