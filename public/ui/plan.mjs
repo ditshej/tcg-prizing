@@ -494,6 +494,27 @@ export function planApp(seam = SEAM) {
       this._writeAddress(url);
     },
 
+    /**
+     * A grip on a step of `Served ranks` (#114): the number follows the sum
+     * again and the step supplies its starting value — the prototype's
+     * `delete st.pin.depth; delete st.val.depth; setVal('depthStep', …)`. Two
+     * deletions there because a pin and the value it shows are two things;
+     * here the shown value is `settings.depth`, resolved, so the pin is not
+     * merely deleted: the sheet is resolved again over the new record, the way
+     * a drop does it (`pinsWithout`, `resolvedFor`), or the old number would
+     * stay on screen. `Served ranks` is one item (`PIN_MEMBERS`), so it is
+     * counted once before and after: the step took the pin over from the
+     * number. Without a pin on the number this is what `setSlider()` did.
+     */
+    setStep(id) {
+      const step = clampToBounds('depthStep', id, this.stand);
+      if (step === null) return;
+      const pins = { ...pinsWithout(this.pins, ['depth']), depthStep: step };
+      this.pins = pins;
+      this.settings = this.resolvedFor(pins);
+      this.syncAddress();
+    },
+
     /** The counter's `−` and `+`: one step inside the control's ends, written
      *  and pinned at once (#113) — a press is the handling. */
     step(key, delta) {

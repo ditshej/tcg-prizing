@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
+import { confirmFirst } from '../public/ui/confirm-first.mjs';
 import {
   DEPTH_STEP_LABELS,
   DROP_BUBBLE,
@@ -838,4 +839,125 @@ test('the screen-text probe reads what a module composes, and not its comments',
   assert.ok(literals.some((text) => NOT_ON_SCREEN[0].test(text)), 'the #68 sentence would turn the probe red');
   assert.ok(literals.some((text) => NOT_ON_SCREEN[1].test(text)), 'the #72 sentence would turn the probe red');
   assert.ok(!NOT_ON_SCREEN[1].test('settings.curve'), 'a property read is code');
+});
+
+/* ── A step grip lets `Served ranks` follow the sum again (#114) ─────────── */
+
+/**
+ * The prototype's `setStep` is two deletions and a write: the pin on `depth`,
+ * the value it showed, and then `depthStep`. In the app the pin record is
+ * `pins` and the shown value is `settings.depth`, resolved — so removing the
+ * pin alone would go on showing the old number. The grip therefore goes the
+ * way a drop goes (`pinsWithout`, `resolvedFor`, `syncAddress`).
+ */
+
+test('a step pressed over a hand-set depth unpins the number, and the number shows what the step yields (#114 AC 1)', () => {
+  const { app, written } = opened();
+  app.setSlider('depth', 5);
+  assert.equal(app.value('depth'), 5);
+  const before = written.length;
+
+  app.setStep('top8');
+
+  assert.equal('depth' in app.pins, false, 'the pin on the number is gone');
+  assert.equal(app.pins.depthStep, 'top8', 'the step is the pin now');
+  assert.equal(app.settings.depthStep, 'top8');
+  assert.equal(app.value('depth'), 8, 'the number shows what top 8 gives at this stand, not the 5 it was');
+  assert.equal(app.plan.depth, 8);
+  assert.equal(written.length, before + 1, 'the address bar was written once');
+  assert.ok(!written.at(-1).includes('depth=5'), written.at(-1));
+  assert.ok(written.at(-1).includes('depthStep=top8'), written.at(-1));
+});
+
+test('the shown number is what a fresh start with that step yields, whatever else is pinned (#114 AC 1)', () => {
+  const { app } = opened();
+  app.setSlider('players', 64);
+  app.setSlider('depth', 3);
+  app.setStep('topQuarter');
+  const reference = opened('?v=1&game=onepiece&type=weekly&players=64&depthStep=topQuarter').app;
+  assert.equal(app.value('depth'), reference.value('depth'));
+  assert.equal(app.plan.depth, reference.plan.depth);
+  assert.equal(app.value('depth'), 16, 'a quarter of 64');
+});
+
+test('with no pin on depth a step grip does what it did: it pins the step (#114 AC 2)', () => {
+  const { app } = opened();
+  const control = opened().app;
+  app.setStep('top8');
+  control.setSlider('depthStep', 'top8');
+  assert.deepEqual(app.pins, control.pins);
+  assert.equal(app.value('depth'), control.value('depth'));
+  assert.equal(app.stateWord('depth'), 'pinned');
+});
+
+test('the counter and the word follow the grip: one item before and after (#114 AC 3)', () => {
+  const { app } = opened();
+  app.setSlider('rankFloor', 3);
+  app.setSlider('depth', 5);
+  assert.equal(app.pinCount, 2);
+  assert.equal(app.stateWord('depth'), 'pinned');
+
+  app.setStep('top8');
+
+  // `Served ranks` is one item (PIN_MEMBERS): its number gave the pin up and
+  // its step took it over, so it is counted once, as before.
+  assert.equal(app.pinCount, 2);
+  assert.equal(app.stateWord('depth'), 'pinned');
+  assert.deepEqual(app.handSetKeys, ['depth', 'rankFloor'].sort((a, b) => SHEET_KEYS.indexOf(a) - SHEET_KEYS.indexOf(b)));
+});
+
+test('the way back of Served ranks after a grip takes the step with it and shows auto again', () => {
+  const { app } = opened();
+  const auto = app.value('depth');
+  app.setSlider('depth', 5);
+  app.setStep('top8');
+  app.resetSlider('depth');
+  assert.deepEqual(app.pins, {});
+  assert.equal(app.stateWord('depth'), 'auto');
+  assert.equal(app.value('depth'), auto);
+});
+
+test('an unknown step writes nothing', () => {
+  const { app, written } = opened();
+  app.setSlider('depth', 5);
+  const before = written.length;
+  app.setStep('top3');
+  assert.equal(app.pins.depth, 5);
+  assert.equal(app.value('depth'), 5);
+  assert.equal(written.length, before);
+});
+
+test('an unconfirmed Served ranks draft: the first press on a step only confirms, the second unpins (#114, K4 of run 12)', () => {
+  const { app } = opened();
+  const guard = confirmFirst(app, { focused: () => field });
+  const field = { dataset: { numberField: 'depth' }, value: '', closest: (s) => (s === '[data-number-field]' ? field : null) };
+  const chip = { dataset: {}, closest: () => null };
+
+  // A hand-set number and a draft of another one, not yet confirmed.
+  app.setSlider('depth', 5);
+  app.draft('depth', '7');
+  assert.equal(app.pendingDraft, 'depth');
+
+  // The press, as a browser delivers it: capture first, the chip's own handler only if not stopped.
+  const press = () => {
+    let swallowed = false;
+    guard.pointerdown({ target: chip });
+    guard.click({
+      target: chip,
+      preventDefault() {},
+      stopPropagation() { swallowed = true; },
+      stopImmediatePropagation() { swallowed = true; },
+    });
+    if (!swallowed) app.setStep('top8');
+    return swallowed;
+  };
+
+  assert.equal(press(), true, 'the first press is swallowed');
+  assert.equal(app.pins.depth, 7, 'it confirmed the draft');
+  assert.equal(app.pins.depthStep, undefined, 'and set no step');
+
+  assert.equal(press(), false, 'the second press goes through');
+  assert.equal('depth' in app.pins, false, 'and unpins the number');
+  assert.equal(app.pins.depthStep, 'top8');
+  assert.equal(app.value('depth'), 8);
 });

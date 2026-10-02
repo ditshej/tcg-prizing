@@ -265,7 +265,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
     <div class="step-grid">
       <template x-for="step in depthSteps" :key="step.id">
         <button type="button" class="step-chip" :aria-pressed="settings.depthStep === step.id"
-                @click="setSlider('depthStep', step.id)" x-text="step.label"></button>
+                @click="setStep(step.id)" x-text="step.label"></button>
       </template>
     </div>
   </div>
