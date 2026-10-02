@@ -25,10 +25,12 @@
  * from `distribute()` in the browser (ADR 0004).
  */
 ?>
-<div class="page-prepare" x-cloak x-show="activePage === 'prepare'">
-  <header class="page-head">
-    <h1>Prepare</h1>
-    <p class="page-lede">everything the pool holds</p>
+<div class="page-prepare" x-cloak x-show="shows('prepare')">
+  <header class="col-head">
+    <div class="col-titleline">
+      <h1 class="col-title" x-show="titled('prepare')">Prepare</h1>
+      <span class="col-facts">everything the pool holds</span>
+    </div>
   </header>
 
   <!--

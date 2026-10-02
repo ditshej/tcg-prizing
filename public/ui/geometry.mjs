@@ -40,9 +40,26 @@ export function rowsHeight(rows = MIN_ROWS) {
  * honour, e.g. by scrolling rather than shrinking the tiles (#62, AC 3).
  */
 export function columnsFor(stageWidth) {
-  const fits = Math.floor((stageWidth + TILE_GAP) / (TILE_SIZE + TILE_GAP));
-  return Math.max(MIN_COLUMNS, fits);
+  return Math.max(MIN_COLUMNS, columnsFitting(stageWidth));
 }
+
+/**
+ * How many tile columns a width really holds, with no floor under it. The
+ * fold's master-floor sweep (#71) asks this and not `columnsFor()`: an
+ * assurance that is raised by construction cannot be broken, so it cannot be
+ * checked either.
+ */
+export function columnsFitting(width) {
+  return Math.max(0, Math.floor((width + TILE_GAP) / (TILE_SIZE + TILE_GAP)));
+}
+
+/** The pixel width of `columns` tiles side by side with the gap between them. */
+export function columnsWidth(columns) {
+  return columns * TILE_SIZE + (columns - 1) * TILE_GAP;
+}
+
+/** The deck of the tile grid: 16 columns, and the app stops growing there (#61). */
+export const MAX_COLUMNS = 16;
 
 /**
  * What the diagram gets of `leftoverHeight` — the height already measured as
@@ -114,4 +131,21 @@ export function hitScrollDelta(windowRect, tileRect, barTop = Infinity) {
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
   return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
+}
+
+/* ── The scroll fade band (#71) ──────────────────────────────────────────── */
+
+/** How tall the band is that says "there is more below" (prototype, `.fade`). */
+export const FADE_HEIGHT = 60;
+
+/**
+ * Whether a scrolling surface gets its fade band: only while something really
+ * lies below its edge. A band over a surface that does not overflow claims
+ * that it goes on, and one that stays at the bottom stop claims it once too
+ * often (#61: "ein Band gehört der Fläche, die wirklich scrollt … und geht am
+ * Anschlag aus"). Two pixels of slack, because a scroll position lands on
+ * fractions and a stop reached is not always a stop to the pixel.
+ */
+export function fadeShown({ scrollHeight, clientHeight, scrollTop }) {
+  return scrollHeight - clientHeight - scrollTop > 2;
 }

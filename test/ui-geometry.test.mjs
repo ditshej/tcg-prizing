@@ -12,6 +12,7 @@ import {
   diagramCap,
   hitScrollDelta,
   raffleScrollPadding,
+  fadeShown,
 } from '../public/ui/geometry.mjs';
 
 test('rowsHeight(2) is the master floor: two 54px tiles plus one 5px gap', () => {
@@ -122,4 +123,22 @@ test('with the bar closed the free strip is the whole scroll window', () => {
 test('the target is the middle of the free strip, not "just barely in"', () => {
   // A tile far above: free strip 100…400 (middle 250), tile centre 27 → −223.
   assert.equal(hitScrollDelta({ top: 100, bottom: 500 }, { top: 0, bottom: 54, height: 54 }, 410), -223);
+});
+
+/* ── The scroll fade band (#71) ──────────────────────────────────────────── */
+
+test('a surface that does not overflow gets no fade band', () => {
+  assert.equal(fadeShown({ scrollHeight: 542, clientHeight: 566, scrollTop: 0 }), false);
+  assert.equal(fadeShown({ scrollHeight: 566, clientHeight: 566, scrollTop: 0 }), false);
+});
+
+test('a surface with something below its edge gets the band', () => {
+  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 0 }), true);
+});
+
+test('the band goes out at the bottom stop', () => {
+  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2066 }), false);
+  // Sub-pixel scroll positions leave a pixel or two short of the stop.
+  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2064.5 }), false);
+  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2000 }), true);
 });

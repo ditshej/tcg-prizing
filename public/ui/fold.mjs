@@ -1,0 +1,220 @@
+/**
+ * The fold (#71): out of the stage's width and height fall how many of the
+ * three pages stand side by side, whether the stage is flat, how wide the
+ * `Plan` column is, and the two insets where the `Plan` column stops on either
+ * side. A pure derivation under `node --test` — the measuring rind
+ * (`measure.mjs`) reads the stage's box and hands the two numbers in; nothing
+ * here touches a DOM (ADR 0004, `## Nachtrag`).
+ *
+ * > Die Navigation ist das, was vom Layout übrig bleibt, wenn kein Platz mehr ist.
+ *
+ * One rule carries the width axis: **no column ever falls below the width it
+ * had when it first appeared.** The breakpoints follow from it as sums, not as
+ * choices (#71, #61 "The three pages and the fold").
+ */
+
+import {
+  MAX_COLUMNS,
+  MIN_DIAGRAM_HEIGHT,
+  MIN_ROWS,
+  columnsFor,
+  columnsWidth,
+  rowsHeight,
+} from './geometry.mjs';
+
+/**
+ * The first widths, as decided in the prototype's round 19 (`--planmin`,
+ * `--det`, `--prep`) and carried into #61 and #71. `Prepare`'s is measured at
+ * its widest line, the Release hint with its button. `Details`' was measured
+ * with sliders; after #113 the column holds at 352 without overflow (its
+ * min-content is 286 px), but there is no single re-measured number to put in
+ * its place — see the PR of #71 for the measurements.
+ */
+export const FIRST_WIDTH = Object.freeze({ plan: 388, details: 352, prepare: 356 });
+
+/** `Plan | Details` from here on. */
+export const TWO_COLUMNS = FIRST_WIDTH.plan + FIRST_WIDTH.details;
+
+/** `Prepare | Plan | Details` from here on. */
+export const THREE_COLUMNS = TWO_COLUMNS + FIRST_WIDTH.prepare;
+
+/**
+ * The `Plan` column's own side padding — `.plan-stage`'s `8px` on either side
+ * in `plan.css`. The tiles get the column's width less this.
+ */
+export const PLAN_PADDING = 16;
+
+/**
+ * The deck: the width at which the `Plan` has its sixteen tile columns with
+ * both other columns beside it. Above it the app stops growing and gets
+ * margins instead (#61, "Deckel 1674"). A sum like the breakpoints — 939 +
+ * 16 + 352 + 356 = 1663; the prototype's 1674 is the same sum with its own
+ * 24 px of padding and two frame lines.
+ */
+export const DECK = columnsWidth(MAX_COLUMNS) + PLAN_PADDING + FIRST_WIDTH.details + FIRST_WIDTH.prepare;
+
+/* ── The height axis ─────────────────────────────────────────────────────── */
+
+/**
+ * The fixed part of the `Plan` column — everything in it except the diagram
+ * and the tile window: head, participation line, legend, rank total and rank
+ * message, with the column's top padding and the gaps between them. Measured
+ * on the built app (#71, 2026-10-02, Chromium) at the `Plan`'s first width
+ * of 388 px with a rank message standing: 8 padding + 41.5 head + 16
+ * participation + 21.9 legend + 15 rank total + 27 rank message + 6 gaps × 8
+ * = 177.4, rounded up.
+ *
+ * **Not 158 and not 245.** #40 derives the first height with `158`, the fixed
+ * part *without* the bar, and #71's body with `245`, the fixed part *with* a
+ * bar of 87 px. Both were measured on the prototype with sliders (#113 took
+ * them away). Here the diagram has no fixed height at all — it is the one
+ * elastic size of the column (`diagramCap()`), never under its 60 px floor —
+ * so the bar enters the sum below as that floor, not as a measured height.
+ */
+export const PLAN_FIXED = 178;
+
+/** The foot on the phone: icon over word (#63, measured 56). */
+export const FOOT_HEIGHT = 56;
+
+/** The strip from two columns on: icon beside word (#61, 48). */
+export const STRIP_HEIGHT = 48;
+
+/** The strip turned to the right edge on the flat stage (prototype, `--footw`). */
+export const STRIP_WIDTH = 48;
+
+/**
+ * The fixed rail of the four hot controls under the `Plan`, while there is one
+ * column: measured 87 px at the master, two rows of two (`.controls-hot`).
+ * Wider stages fit them into one row; the two-row height is the one the fold
+ * reckons with, so it never promises room the narrow rail does not leave.
+ */
+export const RAIL_HEIGHT = 87;
+
+/** What the `Plan` column needs to show its fixed part and the master's two tile rows. */
+export const PLAN_FLOOR = PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS);
+
+/**
+ * The **first height of the `Plan`** (#71, #40): its floor plus the strip it
+ * stands on once the pages are columns. Below it nothing opens side by side —
+ * the stage is flat. The body of #71 writes `245 + 2 tile rows + 48 = 406`;
+ * the same sum, measured again after #113, is this.
+ */
+export const FIRST_HEIGHT = PLAN_FLOOR + STRIP_HEIGHT;
+
+/**
+ * The same sum for the one-column form, which stands on the 56 px foot and
+ * carries the rail. The ticket's rule names only the column form; carried
+ * over unchanged, a stage under the first breakpoint and above 406 px but
+ * below this would keep the master and lose its second tile row — 700 × 480,
+ * say. So the one rule is asked in the form the stage would actually take.
+ */
+export const FIRST_HEIGHT_ONE_COLUMN = PLAN_FLOOR + FOOT_HEIGHT + RAIL_HEIGHT;
+
+/**
+ * The fold of a stage `{ width, height, fullscreen }`. Everything between the
+ * breakpoints goes to the `Plan` — the one column that profits from width.
+ *
+ * The **height is the second axis**: is the stage lower than the first height
+ * of the form it would take, nothing opens side by side. One page stays, the
+ * width goes inward (`Details` and `Prepare` two columns inside, row flow),
+ * and the foot turns to the right edge. The four hot controls then stand as a
+ * column beside the `Plan` where both first widths fit next to the strip, and
+ * nowhere on the `Plan` page where they do not — on `Details` they stand
+ * anyway, and under the `Plan` they would cost the second tile row.
+ *
+ * Three cases collapse into **two insets**: where the `Plan` stops on either
+ * side. Phone, two columns, three columns, flat and fullscreen all come out
+ * of them with no `if` on the surface; the fullscreen sets both to zero.
+ */
+export function fold({ width, height = Infinity, fullscreen = false }) {
+  const stage = Math.min(width, DECK);
+  const wide = stage >= THREE_COLUMNS ? 3 : stage >= TWO_COLUMNS ? 2 : 1;
+  const low = height < (wide === 1 ? FIRST_HEIGHT_ONE_COLUMN : FIRST_HEIGHT);
+  // Flat means too little height for columns but width enough that it has to
+  // go somewhere (prototype, `isFlat()`): the turned strip takes 48 px off the
+  // side, and the `Plan` must keep its first width beside it.
+  const flat = low && stage - STRIP_WIDTH >= FIRST_WIDTH.plan;
+  const columns = flat ? 1 : wide;
+
+  const detailsWidth = columns >= 2 ? FIRST_WIDTH.details : 0;
+  const prepareWidth = columns === 3 ? FIRST_WIDTH.prepare : 0;
+  const stripWidth = flat && !fullscreen ? STRIP_WIDTH : 0;
+  const hotColumn = flat && stage - STRIP_WIDTH >= FIRST_WIDTH.plan + FIRST_WIDTH.details;
+  const rail = fullscreen ? 'none' : columns >= 2 ? 'none' : flat ? (hotColumn ? 'column' : 'none') : 'bar';
+
+  const planLeft = fullscreen ? 0 : prepareWidth;
+  const planRight = fullscreen ? 0 : detailsWidth + stripWidth;
+  const stripBottom = fullscreen || flat ? 0 : columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT;
+  const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
+  const planHeight = height - stripBottom - (rail === 'bar' ? RAIL_HEIGHT : 0);
+
+  return {
+    columns,
+    flat,
+    fullscreen,
+    rail,
+    planLeft,
+    planRight,
+    stripBottom,
+    stripWidth,
+    planWidth,
+    planHeight,
+    detailsWidth,
+    prepareWidth,
+    tileColumns: Math.min(MAX_COLUMNS, columnsFor(planWidth - PLAN_PADDING)),
+  };
+}
+
+/**
+ * Whether `page` stands on screen in fold `f` while `active` is the active
+ * page. One column: the active page alone. Two: `Details` as a column and in
+ * the left slot `Plan` or `Prepare` — `Prepare` takes the place of the `Plan`,
+ * not of the screen, because the controls are what one turns all the time
+ * (#61). Three: all of them. Fullscreen: the `Plan` alone.
+ */
+export function pageShown(f, active, page) {
+  if (f.fullscreen) return page === 'plan';
+  if (f.columns === 3) return true;
+  if (f.columns === 2) return page === 'details' || page === (active === 'prepare' ? 'prepare' : 'plan');
+  return page === active;
+}
+
+/** The active page once `f` is applied: a page that stands as a column is no longer one. */
+export function foldPage(f, active) {
+  if (f.columns >= 2 && active === 'details') return 'plan';
+  if (f.columns === 3 && active === 'prepare') return 'plan';
+  return active;
+}
+
+/** A notice chip's height and the air the chip row keeps below it (`.notice-chip`). */
+export const CHIP_HEIGHT = 34;
+export const CHIP_AIR = 8;
+
+/**
+ * The fold's sizes as the CSS custom properties `plan.css` hangs everything
+ * on. The `NoticeStack`, the raffle bar and the fade bands all read the two
+ * insets and nothing else about the fold — no `if` on the surface.
+ *
+ * The chip goes to **the lowest free corner on the right**: one row above the
+ * foot on the phone; from two columns on into the strip, which has a free
+ * place on the right (vertically centred in its 48 px); on the flat stage
+ * beside the turned strip, not into it; in fullscreen at the bottom edge. One
+ * rule, and the open stack lifts above the chip row exactly where the chips
+ * do not sit in a band of their own (`--chip-lift`).
+ */
+export function foldProperties(f) {
+  const chipsInStrip = f.stripBottom === STRIP_HEIGHT;
+  const px = (n) => `${n}px`;
+  return {
+    '--deck': px(DECK),
+    '--col-details': px(FIRST_WIDTH.details),
+    '--col-prepare': px(FIRST_WIDTH.prepare),
+    '--strip-width': px(STRIP_WIDTH),
+    '--plan-left': px(f.planLeft),
+    '--plan-right': px(f.planRight),
+    '--strip-bottom': px(f.stripBottom),
+    '--chip-right': px(f.stripWidth),
+    '--chip-bottom': px(chipsInStrip ? (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
+    '--chip-lift': px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
+  };
+}

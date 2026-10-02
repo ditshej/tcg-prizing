@@ -27,10 +27,12 @@
  */
 ?>
 <div class="page-details" data-bubble-frame @scroll="placeConfirm()"
-     x-cloak x-show="activePage === 'details'">
-  <header class="page-head">
-    <h1>Details</h1>
-    <p class="page-lede">everything you can turn</p>
+     x-cloak x-show="shows('details')">
+  <header class="col-head">
+    <div class="col-titleline">
+      <h1 class="col-title" x-show="titled('details')">Details</h1>
+      <span class="col-facts">everything you can turn</span>
+    </div>
   </header>
 
   <?php require __DIR__ . '/controls-sheet.php'; ?>

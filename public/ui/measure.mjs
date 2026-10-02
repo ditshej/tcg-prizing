@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
+import { FADE_HEIGHT, columnsFor, diagramCap, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -114,4 +114,81 @@ export function showRaffleHit(gridEl, barEl, rank) {
   void tileEl.offsetWidth;
   tileEl.classList.add('tile-hit');
   tileEl.addEventListener('animationend', () => tileEl.classList.remove('tile-hit'), { once: true });
+}
+
+/* ── The fold (#71) ──────────────────────────────────────────────────────── */
+
+/**
+ * Reads the app's own box and hands it to `onSize` — once now, and again on
+ * every resize. The stage is the app, not the window: above the deck the app
+ * stops growing (`max-width`), and the fold has to see what the app is, not
+ * what the window is. The arithmetic is `fold()` in `fold.mjs`.
+ */
+export function attachStage(appEl, onSize) {
+  if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
+  const run = () => onSize({ width: appEl.clientWidth, height: appEl.clientHeight });
+  run();
+  const observer = new ResizeObserver(run);
+  observer.observe(appEl);
+  return () => observer.disconnect();
+}
+
+/**
+ * The scroll fade band (#71 AC 10), one per surface that really scrolls. A
+ * band belongs to the surface, not to the stage — a surface cannot say where
+ * another one ends — so each scroller gets its own band, laid on its own
+ * bottom edge, in its **own** colour looked up off the surface (or, where it
+ * is transparent, off its ancestors), and only while there is something
+ * below: none where nothing overflows, none once the bottom is reached
+ * (`fadeShown()` in `geometry.mjs`).
+ *
+ * Reads boxes and computed colours; writes the band's position, width and
+ * background. `selectors` are looked up afresh on every paint, so a surface
+ * that is hidden (`x-show`) simply has no box and no band.
+ */
+export function attachFades(rootEl, selectors) {
+  if (!rootEl) return { paint: () => {}, detach: () => {} };
+  const bands = new Map();
+  const paint = () => {
+    for (const selector of selectors) {
+      const box = rootEl.querySelector(selector);
+      let band = bands.get(selector);
+      if (!band) {
+        band = document.createElement('div');
+        band.className = 'fade';
+        band.setAttribute('aria-hidden', 'true');
+        rootEl.appendChild(band);
+        bands.set(selector, band);
+      }
+      const visible = box && box.getClientRects().length > 0;
+      if (!visible || !fadeLeft(box)) { band.style.display = 'none'; continue; }
+      const root = rootEl.getBoundingClientRect();
+      const r = box.getBoundingClientRect();
+      band.style.display = 'block';
+      band.style.left = `${r.left - root.left}px`;
+      band.style.width = `${box.clientWidth}px`;
+      band.style.top = `${r.bottom - root.top - FADE_HEIGHT}px`;
+      band.style.background = `linear-gradient(to bottom, transparent, ${backgroundOf(box)} 62%)`;
+    }
+  };
+  // Scrolling does not bubble, so it is caught on the way down.
+  rootEl.addEventListener('scroll', paint, true);
+  window.addEventListener('resize', paint);
+  return {
+    paint,
+    detach() {
+      rootEl.removeEventListener('scroll', paint, true);
+      window.removeEventListener('resize', paint);
+      for (const band of bands.values()) band.remove();
+    },
+  };
+}
+
+/** The first opaque background colour on the way up from `el`. */
+function backgroundOf(el) {
+  for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+    const colour = getComputedStyle(node).backgroundColor;
+    if (colour && colour !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(colour)) return colour;
+  }
+  return 'transparent';
 }

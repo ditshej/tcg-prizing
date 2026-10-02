@@ -12,10 +12,14 @@
  * itself live (ADR 0004).
  */
 ?>
-<div class="app" x-data="planApp()" x-init="init()">
-  <?php require __DIR__ . '/prepare.php'; ?>
-  <?php require __DIR__ . '/plan.php'; ?>
-  <?php require __DIR__ . '/details.php'; ?>
+<div class="app" x-data="planApp()" x-init="init()" x-ref="app"
+     :data-columns="fold.columns" :data-flat="fold.flat ? 'true' : null"
+     :data-rail="fold.rail" :data-fullscreen="fullscreen ? 'true' : null" :style="foldStyle">
+  <div class="fold">
+    <?php require __DIR__ . '/prepare.php'; ?>
+    <?php require __DIR__ . '/plan.php'; ?>
+    <?php require __DIR__ . '/details.php'; ?>
+  </div>
   <?php require __DIR__ . '/notices.php'; ?>
   <?php require __DIR__ . '/foot.php'; ?>
   <?php require __DIR__ . '/link-report.php'; ?>

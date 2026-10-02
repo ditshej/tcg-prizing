@@ -18,7 +18,7 @@
  * builds into.
  */
 ?>
-<div class="page-plan" x-show="activePage === 'plan'">
+<div class="page-plan" x-show="shows('plan')">
   <section class="plan-stage" x-ref="stage">
     <!--
       The fullscreen head is the prototype's `shead` (`fsContent()`): where you
@@ -27,10 +27,21 @@
       are the *page's* head and stay behind, because fullscreen is "alles weg
       ausser dem Plan" (#61) and they are not the tiles.
     -->
-    <header class="plan-head" x-ref="head">
-      <h1 x-show="!fullscreen">Plan</h1>
-      <p class="plan-type" x-text="`${typeTitle} · ${plan.players} players`"></p>
-      <p class="plan-output" x-show="!fullscreen"
+    <!--
+      The column head (#71), in the one form all three columns share: a title
+      line — the word, and beside it the column's facts, small and quiet — and,
+      for the `Plan` alone, a second line, because its output line is a fact
+      and not a caption. The word stands in exactly one of two places: in the
+      foot while the page is a page, here once it is a column (`titled()`).
+      The title line keeps its height either way, so the head is the same
+      shape whether the word is there or in the foot.
+    -->
+    <header class="col-head plan-head" x-ref="head">
+      <div class="col-titleline">
+        <h1 class="col-title" x-show="titled('plan')">Plan</h1>
+        <span class="col-facts plan-type" x-text="`${typeTitle} · ${plan.players} players`"></span>
+      </div>
+      <p class="col-sub plan-output" x-show="!fullscreen"
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} tournament packs · ${plan.pool.winners} winner packs`"></p>
     </header>
 
@@ -206,7 +217,7 @@
     </div>
   </section>
 
-  <section class="plan-controls" x-show="!fullscreen">
+  <section class="plan-controls" x-show="fold.rail !== 'none'">
     <?php require __DIR__ . '/controls-hot.php'; ?>
   </section>
 
