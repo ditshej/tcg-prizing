@@ -847,11 +847,25 @@ widens the scope of the filing, and whatever it overturns goes back to the
 maintainer, not into the build.** K4 („nothing else should be clickable while a
 number is unconfirmed") was a third way that neither option had named.
 
+**Phase G was not just review: four more questions came out of it.** Asked at G,
+in the terminal, each answered in a line: the folded chip of the no-boosters
+notice (`⚠ No boosters`, because tournament and winner packs still go out), the
+unknown-key line of the link report (kept), and whether a chosen `RaffleRange`
+counts in the pin chip beside `Copy link` (it does, and drop-all resets it). The
+fourth arose from his own answer. He said the drawn winners should not travel.
+The follow-up agent measured that a draw writes the same `manualWinner` counter
+as the tile's ±, which has always travelled, and asked back rather than
+building. The answer was „bleibt so". **The conductor's first wording of the
+pin-chip question failed:** he could not tell the pin chip from the winner count.
+The second wording named where the button sits and what it shows, and that one
+was answered. A question about a surface names the place on screen, not the
+identifier.
+
 **Counts.** 9 findings from A, 3 more from B, 0 refuted, 1 sharpened, 1 weakened.
 Gates: 12 in, 4 candidates, 8 dropped. Phase D: 4 answered in the terminal plus
 1 follow-up, 0 cards. Suites after Phase F: 398 (#113) · 412 (#68) · 398 (#72)
 alone. **Merge probe, every intermediate state measured:** 362 → +#119 398 →
-+#118 448 → +#117 484, no `rerere`, both marker greps 0. Decisions filed to #68,
++#118 448 → +#117 484 (488 after Phase G), no `rerere`, both marker greps 0. Decisions filed to #68,
 #71, #72, #113, #61, #69, ADR 0002 and `docs/agents/setup-link.md`. PRs: #119
 (#113), #118 (#68), #117 (#72). Merge order: **#119, then #118, then #117.**
 #117 last resolves one real comment conflict over `syncAddress`: keep #72's text,
