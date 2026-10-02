@@ -48,6 +48,7 @@ import {
   dropConfirmation,
   dropNoun,
   effectiveValue,
+  handSetKeys,
   isPinned,
   manualWinnerAfter,
   pinnedItems,
@@ -60,6 +61,7 @@ import {
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
+import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
 import { dismiss, expand, foldStep, freshFold, minimize, noticeStack, searchesFor } from './notices.mjs';
 import { attachConfirmFirst } from './confirm-first.mjs';
 
@@ -135,11 +137,11 @@ const SEAM = { read: readLocation, write: writeLocation };
  */
 function openingRead(query) {
   const empty = String(query ?? '').replace(/^[?#]/, '') === '';
-  if (empty) return { game: GAME.id, type: TOURNAMENT_TYPES[0].id, pins: {}, report: null, write: false };
+  if (empty) return { game: GAME.id, type: TOURNAMENT_TYPES[0].id, pins: {}, choices: {}, report: null, write: false };
 
   const lifted = migrate(decode(query, GAMES));
   const fromTheFuture = (lifted.report?.entries ?? []).some((entry) => entry.kind === 'futureVersion');
-  return { ...lifted, report: lifted.report ?? null, write: !fromTheFuture };
+  return { ...lifted, choices: lifted.choices ?? {}, report: lifted.report ?? null, write: !fromTheFuture };
 }
 
 /** Builds the `ranks N–M get nothing` sentence, or `null` if none are left out. */
@@ -154,7 +156,9 @@ export function planApp(seam = SEAM) {
   const openedType = TOURNAMENT_TYPES.find((entry) => entry.id === opened.type) ?? TOURNAMENT_TYPES[0];
   // K6, before the first paint: what came in has been read, so what holds is
   // what the address bar says from here on.
-  if (opened.write) seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins }));
+  if (opened.write) {
+    seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins, choices: opened.choices }));
+  }
 
   // The last plan and the stand it was computed from — see the `plan` getter.
   // Kept in this closure rather than on the component, so that remembering a
@@ -470,8 +474,9 @@ export function planApp(seam = SEAM) {
      * The address bar after a change the SetupLink carries — a pin, or the
      * base beneath it. It takes the **pins**, never the resolved stand: the
      * stand names every control, so `encode(this.settings)` would turn one pin
-     * into twelve decisions nobody made and lose `depthStep` on the way
-     * (Befund G3, `## Nachtrag (#86)` in ADR 0009).
+     * into twelve decisions nobody made (Befund G3, `## Nachtrag (#86)` in
+     * ADR 0009). Beside the pins it carries the `RaffleRange`, the one hand-set
+     * choice that is no pin (run 12, K1b on #72) — see `linkChoices`.
      *
      * Which of the two forms is written hangs on whether a link is in
      * circulation, not on how many pins stand. Before the first pin of a cold
@@ -482,7 +487,7 @@ export function planApp(seam = SEAM) {
      * naming the type the sender chose.
      */
     syncAddress() {
-      const setup = { game: this.gameId, type: this.typeId, pins: this.pins };
+      const setup = { game: this.gameId, type: this.typeId, pins: this.pins, choices: this.linkChoices };
       const url = this.linkInCirculation ? encode(setup) : addressFor(setup);
       if (url === null) return;
       this.linkInCirculation = true;
@@ -741,17 +746,26 @@ export function planApp(seam = SEAM) {
     raffleOpen: false,
 
     /**
-     * The `RaffleRange`, and it is **no `Regler`** but session state of this
-     * operating step (#69, #61): no pin, no reset button, not counted in
-     * `Drop all N`, never in the `SetupLink`, and a Set switch leaves it
-     * standing. Its default `all` is a constant of the term, which is why it
+     * The `RaffleRange`, and it is **no `Regler`** (#69, #61): no pin, no
+     * reset button, and a Set switch leaves it standing. The full reach at the
+     * pin chip counts it all the same and puts it back to `all` (run 12,
+     * Phase G on #72, `zaehlt-mit`) — `handSetKeys`, never `pinnedKeys`. Its default `all` is a constant of the term, which is why it
      * sits here as a literal and in no `DefaultSet`.
      *
-     * That is also why `controls.mjs` has no entry for it and `link/keys.mjs`
-     * no key: with it absent from both, the sentence "`pinned` gilt für alle
-     * Regler gleich" stays true without an exception.
+     * It **travels in the `SetupLink`** all the same (run 12, K1b on #72: "Auch
+     * die RaffleRange reist im Link mit"), as a key beside the sliders —
+     * `CHOICE_KEYS` in `link/keys.mjs`, never `KEYS` — and a link that names
+     * one opens with it. `controls.mjs` still has no entry for it, so the
+     * sentence "`pinned` gilt für alle Regler gleich" stays true without an
+     * exception.
      */
-    raffleRange: DEFAULT_RANGE,
+    raffleRange: opened.choices.raffleRange ?? DEFAULT_RANGE,
+
+    /** What the link carries beside the pins: the hand-set choices that are
+     *  no pin. `encode()` leaves out whatever equals its term constant. */
+    get linkChoices() {
+      return { raffleRange: this.raffleRange };
+    },
 
     /**
      * The `Rank` the last throw hit — kept only so the announcement can name
@@ -789,9 +803,14 @@ export function planApp(seam = SEAM) {
       this.raffleOpen = false;
     },
 
-    /** Session state, so this writes no pin and no address (#69 AC 12). */
+    /**
+     * No `Regler`, so this writes no pin (#69 AC 12) — but the address, as a
+     * pin does (run 12, K1b on #72): otherwise `Copy link` would carry a range
+     * that a reload loses.
+     */
     setRaffleRange(id) {
       this.raffleRange = id;
+      this.syncAddress();
     },
 
     /**
@@ -894,11 +913,26 @@ export function planApp(seam = SEAM) {
       return pinnedItems(this.pins);
     },
 
+    /** What the pin chip counts and hands its question: the pinned items
+     *  and the `RaffleRange` off `all` (run 12, Phase G on #72). */
+    get handSetKeys() {
+      return handSetKeys(this.pins, this.linkChoices);
+    },
+
+    /** Whether an item of the chip's list stands set by hand — a pin, or the
+     *  `RaffleRange` off `all`. `isPinned()` stays the marking's question. */
+    isHandSet(key) {
+      if (key === 'raffleRange') return this.raffleRange !== DEFAULT_RANGE;
+      return this.isPinned(key);
+    },
+
     /** The counter beside the type row. It counts `displays` and
      *  `manualWinner` as **one** item each, however many `Rank`s carry one
-     *  (#61, #67) — by being the same list the question enumerates. */
+     *  (#61, #67) — by being the same list the question enumerates — and the
+     *  `RaffleRange` as one where it is off `all`, so it names the items the
+     *  link carries (N2; run 12, Phase G on #72). */
     get pinCount() {
-      return this.pinnedKeys.length;
+      return this.handSetKeys.length;
     },
 
     /** The counter chip's spoken label, in the question's own word. */
@@ -926,13 +960,13 @@ export function planApp(seam = SEAM) {
      * owed: its Entscheid 4 puts this same handling at a second trigger, with
      * two pins and another button, and calls it "keine neue Mechanik".
      * Nothing here knows "everything but Game and TournamentType" — the type
-     * row's chip passes `pinnedKeys`, and a caller with a shorter list gets a
+     * row's chip passes `handSetKeys`, and a caller with a shorter list gets a
      * shorter question.
      */
     confirmDrop: null,
 
     askDrop({ keys, anchor, reach = 'all', bubble = DROP_BUBBLE, done = null }) {
-      const list = (keys ?? []).filter((key) => this.isPinned(key));
+      const list = (keys ?? []).filter((key) => this.isHandSet(key));
       if (!list.length) return;
       this.openTile = null;
       this.openInfo = null;
@@ -957,7 +991,7 @@ export function planApp(seam = SEAM) {
         keys: ask.keys,
         typeTitle: this.typeTitle,
         reach: ask.reach,
-        after: { settings: after.settings, plan: distribute(after.settings, after.pins) },
+        after: { settings: after.settings, choices: after.choices, plan: distribute(after.settings, after.pins) },
       });
     },
 
@@ -994,19 +1028,22 @@ export function planApp(seam = SEAM) {
       const after = this.afterDrop(keys);
       this.pins = after.pins;
       this.settings = after.settings;
+      this.raffleRange = after.choices.raffleRange;
       this.syncAddress();
     },
 
     /**
      * What a drop installs, without installing it: the pin record without the
-     * named items and the sheet resolved over it. `dropPins()` installs exactly
+     * named items, the sheet resolved over it, and the `RaffleRange` — back on
+     * `all` where the list names it (run 12, Phase G on #72), else as it stands. `dropPins()` installs exactly
      * this, and the question reads its target values off exactly this — one
      * computation for the announcement and the effect, so the bubble cannot
      * promise a value the handling then does not set (#67, run 11, K3).
      */
     afterDrop(keys) {
       const pins = pinsWithout(this.pins, keys);
-      return { pins, settings: this.resolvedFor(pins) };
+      const raffleRange = (keys ?? []).includes('raffleRange') ? DEFAULT_RANGE : this.raffleRange;
+      return { pins, settings: this.resolvedFor(pins), choices: { raffleRange } };
     },
 
     /**
@@ -1092,6 +1129,114 @@ export function planApp(seam = SEAM) {
     takeOffer(offer) {
       this.setSlider(offer.key, offer.value);
     },
+
+    // SetupLink on screen (#72)
+
+    /**
+     * The copy form: **base plus deviations**, read off what the plan reports
+     * as set by hand (`plan.pinned`, the addendum (#86) to ADR 0009) and never
+     * off the resolved stand. `encode(plan.settings)` is the line that must
+     * not be written (Befund G3; K5 on #72): it turns one pin into twelve and
+     * ships twelve decisions nobody made.
+     *
+     * "Complete" means the base is always there, with zero pins too (#47,
+     * "Die Kopierform ist immer vollständig") — not the whole resolved state.
+     * It may differ from the address bar, which stays empty after a cold
+     * start until the first pin (#50, narrowed by run 9 on #89).
+     */
+    get linkQuery() {
+      return encode({ game: this.gameId, type: this.typeId, pins: this.plan.pinned, choices: this.linkChoices });
+    },
+
+    /**
+     * The address, open in a preselected field, when the clipboard could not
+     * take it — or `null`. Session state like an open bubble, and in the
+     * `SetupLink` as little (#61, "Session state").
+     */
+    linkField: null,
+
+    /**
+     * The button's one handling. `env` is what a browser has — the clipboard,
+     * the page's own address, a timer — handed in so `node --test` can hand in
+     * its own; the defaults are read only here, at the rind.
+     */
+    async copyLink(button, env = this.linkEnv()) {
+      const address = linkAddress(this.linkQuery, env.page);
+      const outcome = await copyText(address, env.clipboard);
+      if (outcome === 'copied') {
+        this.linkField = null;
+        flashCopied(button, env);
+      } else {
+        this.linkField = address;
+      }
+      return outcome;
+    },
+
+    closeLinkField() {
+      this.linkField = null;
+    },
+
+    /**
+     * What the `Copy link` handling needs from a browser: the clipboard, if
+     * there is one, and the page's own address to resolve the copy form
+     * against. `document.baseURI` rather than the address bar's own object:
+     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page address
+     * is all that is needed here — its query is replaced anyway.
+     */
+    linkEnv() {
+      return {
+        clipboard: globalThis.navigator?.clipboard,
+        page: globalThis.document?.baseURI,
+        later: setTimeout,
+        cancel: clearTimeout,
+      };
+    },
+
+    /**
+     * Whether the `LinkMigration` report still stands. It starts true exactly
+     * when #51/#52 hand over a non-`null` report (`linkReport`) and turns
+     * false once, at the one exit, and nothing turns it back: no chip, no
+     * handling reopens it — it comments on the arrival, not on the screen, and
+     * is taken note of once per opening (#72; #61, "The LinkMigration report").
+     */
+    linkReportShown: opened.report !== null,
+
+    /** What the overlay says, or `null` once it is gone (`link-screen.mjs`). */
+    get linkReportView() {
+      return this.linkReportShown ? reportView(this.linkReport, this.games) : null;
+    },
+
+    /**
+     * Opens the overlay as a modal `<dialog>`: the top layer is what puts it
+     * over everything, the `NoticeStack` included, and makes the rest of the
+     * app inert while it stands. It takes the focus onto its one exit and
+     * remembers where the focus was, to give it back (#72 AC 10). Every bubble
+     * is shut first — "solange er steht, ist keine Blase offen" — which costs
+     * nothing at an opening, where nothing has been touched yet.
+     */
+    showLinkReport(dialog, exit, returnTo = globalThis.document?.activeElement ?? null) {
+      if (!this.linkReportShown || !dialog) return;
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = null;
+      this._linkDialog = dialog;
+      this._linkReturn = returnTo;
+      if (!dialog.open) dialog.showModal();
+      exit?.focus?.();
+    },
+
+    /** The one exit. The report is gone for this opening, and the focus goes back. */
+    closeLinkReport() {
+      this.linkReportShown = false;
+      if (this._linkDialog?.open) this._linkDialog.close();
+      this._linkDialog = null;
+      const back = this._linkReturn;
+      this._linkReturn = null;
+      back?.focus?.();
+    },
+
+    _linkDialog: null,
+    _linkReturn: null,
 
     // NoticeStack (#68)
 

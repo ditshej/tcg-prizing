@@ -1432,6 +1432,132 @@ body {
   opacity: 0.6;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   The SetupLink on screen (#72)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* `Copy link`, behind the reset chip. It takes the row's free space itself
+   only while the chip is gone — two `auto` margins would split it. */
+.link-copy {
+  display: inline-grid;
+  padding: 2px 9px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 999px;
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.link-copy-alone {
+  margin-left: auto;
+}
+
+/* Both words share one cell, so the button keeps its width while it says
+   `Copied` for a moment (`flashCopied()`). Fleeting: the attribute lives on
+   the element and nowhere in the component. */
+.link-copy-word,
+.link-copy-done {
+  grid-area: 1 / 1;
+}
+
+.link-copy-done {
+  visibility: hidden;
+}
+
+.link-copy[data-link-copied] {
+  border-color: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#3f7a5e, #5fae87);
+}
+
+.link-copy[data-link-copied] .link-copy-word {
+  visibility: hidden;
+}
+
+.link-copy[data-link-copied] .link-copy-done {
+  visibility: visible;
+}
+
+/* No clipboard: the address in a preselected field, on its own line. */
+.link-field {
+  flex: 1 0 100%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.link-field-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 6px;
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  font: 0.75rem ui-monospace, monospace;
+}
+
+.link-field-close {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The one overlay. The top layer puts it over everything; the backdrop says
+   that the app behind it is not reachable while it stands. */
+.link-report {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 16px 18px 14px;
+  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: 10px;
+  background: light-dark(#ffffff, #232019);
+  color: inherit;
+  box-shadow: 0 10px 28px light-dark(rgba(20, 18, 15, 0.25), rgba(0, 0, 0, 0.6));
+}
+
+.link-report::backdrop {
+  background: light-dark(rgba(20, 18, 15, 0.35), rgba(0, 0, 0, 0.55));
+}
+
+.link-report-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.link-report-lines {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.link-wire {
+  font-family: ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+.link-report-bookmark {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.link-report-exit {
+  display: block;
+  margin-left: auto;
+  padding: 5px 14px;
+  border: 1px solid light-dark(#3f7a5e, #5fae87);
+  border-radius: 999px;
+  background: light-dark(#3f7a5e, #5fae87);
+  color: light-dark(#ffffff, #14120f);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 /*
  * The NoticeStack (#68). A layer over the whole app that covers and pushes
  * nothing: both halves are `position: fixed`, so a standing notice takes no

@@ -37,6 +37,7 @@ const GAMES = SHEETS.map((sheet) => ({ ...sheet, types: TYPES[sheet.id] }));
 test('the read result is one object: the state and the log of the read together', () => {
   const read = decode('?v=1&game=onepiece&type=weekend&players=32&rankFloor=fuenf', GAMES);
   assert.deepEqual(Object.keys(read).sort(), [
+    'choices',
     'game',
     'pins',
     'report',

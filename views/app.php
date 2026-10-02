@@ -18,4 +18,5 @@
   <?php require __DIR__ . '/details.php'; ?>
   <?php require __DIR__ . '/notices.php'; ?>
   <?php require __DIR__ . '/foot.php'; ?>
+  <?php require __DIR__ . '/link-report.php'; ?>
 </div>

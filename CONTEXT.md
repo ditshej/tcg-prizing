@@ -336,13 +336,20 @@ acht beschränkt. Bemessungsgrundlage ist immer die Spielerzahl, nie
 `RankPoolDepth`. Die **Reihenfolge ist bedeutungstragend**: sie ist die des
 Reglers, die oberen acht steigen darum der Grösse nach und `all` steht am Ende.
 Sie ist deshalb nicht dasselbe wie der Default, und der ist `all`.
-Die `RaffleRange` ist **kein `Regler`, sondern Sitzungszustand** des
-Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor, geht in
-`distribute()` nicht ein und steht nie im `SetupLink`. Daraus folgt alles
-Einzelne — keine `pinned`/`auto`-Markierung, kein Rückweg am Element, nicht
-gezählt in `Drop all N`, und ein Set-Wechsel lässt sie stehen. Ihr Default
-`all` ist eine **Konstante des Begriffs** und kein Blatteintrag: kein
-`DefaultSet` trägt sie, ein Neuladen setzt sie auf `all` zurück. Damit bleibt
+Die `RaffleRange` ist **kein `Regler`**, sondern eine Einstellung des
+Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor und geht in
+`distribute()` nicht ein. Daraus folgt alles Einzelne — keine
+`pinned`/`auto`-Markierung, kein Rückweg am Element, und ein Set-Wechsel lässt
+sie stehen. Der Knopf neben dem `TournamentType`-Titel zählt sie trotzdem mit,
+wo sie von `all` abweicht, und sein Rückweg in voller Reichweite stellt sie auf
+`all` (Maintainer, Lauf 12, Phase G an #72) — als von Hand gesetzter Posten,
+nicht als Pin; *Drop all N and follow* im `CarryOverNotice` kennt sie nicht. Sie **steht im `SetupLink`**, als
+eigener Schlüssel `raffleRange` neben den Reglern und nie als einer von ihnen
+(Maintainer, Lauf 12, K1b an #72: „Auch die RaffleRange reist im Link mit"):
+geschrieben nur, wenn sie von `all` abweicht, und ein Link, der sie nennt,
+öffnet mit ihr. Ihr Default `all` ist eine **Konstante des Begriffs** und kein
+Blatteintrag: kein `DefaultSet` trägt sie, und ein Neuladen setzt sie nur dann
+auf `all`, wenn die Adresse keine nennt. Damit bleibt
 der Satz „`Pinned` gilt für alle `Regler` gleich" ausnahmslos wahr, statt eine
 Ausnahme zu bekommen. Eingestellt wird sie **in** der Verlosungsleiste, damit
 der Bereich zwischen zwei Würfen änderbar ist; im Reglerblatt steht nur ein
@@ -801,7 +808,9 @@ Handy: dort gibt es keine Abbruchgeste, jedes Verlassen des Felds ist ein Commit
 und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. `−`
 und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
-zurück, der Knopf neben dem `TournamentType`-Titel **alle**, und derselbe Weg in
+zurück, der Knopf neben dem `TournamentType`-Titel **alle** — und dazu die
+`RaffleRange` auf `all`, die kein Pin ist, aber mitgezählt wird (Lauf 12,
+Phase G an #72) —, und derselbe Weg in
 voller Reichweite steht momentan im `CarryOverNotice`. Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die beiden **vollen**
 Reichweiten fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
@@ -832,7 +841,7 @@ _Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), 
 Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
 `pinned` Regler trägt — die neutral startenden eingeschlossen, also auch die
 `DisplayReservation` und den `manual`-Anteil der `WinnerPackAllocation` (ADR
-0006). Dritte Ebene der Kette `Game` → `TournamentType` →
+0006) — und dazu die `RaffleRange`, wo sie von `all` abweicht. Dritte Ebene der Kette `Game` → `TournamentType` →
 `SetupLink`, und wie die zweite trägt sie **nur den Unterschied** — was sie nicht
 nennt, ist nicht `pinned` und zieht mit der Spielerzahl nach. Ein Bit je Regler
 genügt dafür, weil der Wert selbst die Aussage ist; dass die genannten Regler
@@ -852,16 +861,23 @@ stille Entscheidung (Nachtrag zu ADR 0007). Ein Wert aus dem Link ist ein `pinne
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
 `ConflictNotice` zeigt die Wege heraus. Die App führt nicht mit, dass er aus einer
 URL kam.
-**Drei Zahlen für „die Regler", und sie dürfen sich unterscheiden.** 19
-`Settings`-Felder (#46 `## Input: Settings`); der **Draht** lässt `depthStep` weg
-(18, `public/link/keys.mjs`), weil das kein Regler ist, sondern ein
-`DefaultSet`-Eintrag — der Link nennt seinen `TournamentType`, also ist die Stufe
-aus der Basis reproduzierbar, und zwei Schlüssel über dieselbe Tiefe könnten sich
-widersprechen; das **Blatt** lässt `displays` und `manualWinner` weg (17,
-`SHEET_KEYS` in `public/ui/controls.mjs`), weil beide einen `Rank` benennen und
-an der Kachel gesetzt werden. Keine Überschneidung — Draht und Blatt lassen
-verschiedene Felder weg —, und kein Schlüssel ausserhalb der `Settings`. Wer eine
-vierte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
+**Der Link trägt alles, was von Hand gesetzt ist** — jeden Pin, ohne Ausnahme,
+und die `RaffleRange`, die kein Pin ist (Maintainer, Lauf 12, K1 und K1b an #72;
+ADR 0005, Nachtrag Lauf 12). Darum **zwei**
+Zahlen für „die Regler", und sie dürfen sich unterscheiden: 19 `Settings`-Felder
+(#46 `## Input: Settings`), und der **Draht** trägt alle 19
+(`public/link/keys.mjs`), den Stufen-Pin `depthStep` eingeschlossen; das
+**Blatt** lässt `displays` und `manualWinner` weg (17, `SHEET_KEYS` in
+`public/ui/controls.mjs`), weil beide einen `Rank` benennen und an der Kachel
+gesetzt werden. Ein einziger Schlüssel steht ausserhalb der `Settings`:
+`raffleRange` (`CHOICE_KEYS` in `public/link/keys.mjs`), und er zählt zu keiner
+der zwei Zahlen, weil er kein Regler ist. Er ist von der `WinnerRaffle` der
+**einzige** Schlüssel im Link — kein Wurfzähler, keine Trefferliste (Lauf 12,
+Phase G an #72); ein gewürfelter Treffer reist nur als `manual`-Zuteilung, weil
+der Wurf in dieselben Zähler schreibt wie die Kachel (offener Befund dort). _Überholt:_ bis Lauf 12
+stand hier, der Draht lasse `depthStep` weg (18), weil die Stufe „aus der Basis
+reproduzierbar" sei — das trägt nur für eine ungepinnte Stufe, und seit #67 pinnt
+der Stufen-Chip sie. Wer eine dritte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
 sind **20**, weil das aufgelöste Objekt den `id` des Blattes mitträgt (`GAME` in
 `public/sets/onepiece.mjs` — „a name, not a field of #46"). Gemessen in Lauf 8
 (Befund B11) und nachgemessen beim Ablegen; nachschlagen, nicht herleiten.

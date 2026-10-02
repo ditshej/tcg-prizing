@@ -9,9 +9,11 @@ Decided in ADR 0007. This file is the working rule that follows from it.
 
 ## Not yet — the rule has a start date
 
-**There is no encoding yet, no version, and no `SetupLink` in circulation.** Until
-there is, renaming a slider key is free: there is no version to bump and no old link
-a migration could rewrite. Decided in
+**There is an encoding now (v1, `public/link/`), but no `SetupLink` in
+circulation:** the app is not deployed (#30 is open). Until it is, renaming a slider
+key is free: there is no old link a migration could rewrite. Look the deploy up
+before you lean on this — `gh issue view 30` — rather than assuming it is still
+open. Decided in
 [Etiketten weichen von den Identifiern ab](https://github.com/ditshej/tcg-prizing/issues/27),
 which set the deadline in those words — no code, no link out there — and applied it
 again in [WinnerPack-Zahl](https://github.com/ditshej/tcg-prizing/issues/29).
@@ -55,11 +57,12 @@ sample link.
 | Rename a slider key | **Yes** — rewrite old key to new |
 | Remove a slider | **Yes** — drop the value, and the report names it |
 | Change a slider's meaning or unit (count → fraction, absolute → rate) | **Yes** — this is the one a name-stability contract would miss |
-| Rename a named step (a `DistributionCurve` level) | **Yes** — rewrite old label to new |
+| Rename a named step (a `DistributionCurve` level, or a `RANGES` id — `depthStep` and `raffleRange` carry those since run 12) | **Yes** — rewrite old label to new |
 | Rename a `Game` or `TournamentType` identifier | **Yes** |
 | Remove a `Game` | **Yes** — name its successor |
 | Remove a `TournamentType` | **Yes** — name its successor; leaving it open is not an option |
 | Add a new slider | No — an absent key means "not `pinned`" |
+| Add a key that is not a slider (`CHOICE_KEYS`) | No — an absent key means its term constant (`all`) |
 | Insert or reorder `TournamentType`s | No — the link names them, not their position |
 | Change a default value in a `DefaultSet` | No — the link carries `pinned` sliders, not defaults |
 | Change a cap | No — see "Caps" below |
@@ -125,14 +128,42 @@ the same answer. And a read whose version was never established must not enter
 the chain — `steps.slice(version - 1)` on `version: null` slices at `NaN`, which
 is `0`, which is the whole chain over a link that never claimed to be v1.
 
-## Eighteen keys, and that is not the only count
+## Nineteen keys and one more: the link carries everything set by hand
 
-The wire carries **18** slider keys, `Settings` has **19** fields, and the
-`Details` sheet draws **17**. All three are right, and they are allowed to
-differ: the wire drops `depthStep`, the sheet drops `displays` and
-`manualWinner`. Do not reconcile them, and do not read a count off one of them
-to check another — `CONTEXT.md`, `SetupLink`, says which is which and why, and
-names the trap that makes a fourth number.
+**Every pin travels, without exception** — the maintainer's principle (run 12,
+K1 on #72; ADR 0005, addendum run 12): "der link soll alles tragen, was man
+eingestellt hat." The wire therefore carries all **19** `Settings` fields
+(`KEYS`), the step pin `depthStep` included, and the `Details` sheet draws
+**17** — it drops `displays` and `manualWinner`, which are set at the tile. Do
+not read a count off one of them to check the other — `CONTEXT.md`,
+`SetupLink`, says which is which and names the trap that makes a third number.
+
+**One key stands outside the nineteen: `raffleRange`** (`CHOICE_KEYS`; run 12,
+K1b on #72: "Auch die RaffleRange reist im Link mit"). It is set by hand but is
+**no `Regler`**: no `Settings` field, no pin, no reset at the element,
+untouched by a Set switch. So it is kept out of `KEYS` and out of `pins` —
+`encode()` and `decode()` carry it as `choices` — and it counts toward neither
+number above. It is written only when it differs from `all`, its term
+constant; an unknown range id drops with a report, like any unreadable
+value.
+
+_Overruled:_ until run 12 this section said the wire carries 18 and drops
+`depthStep` because "the step is reproducible from the base", and told you not
+to reconcile the counts. That held only for an **unpinned** step; since #67 the
+step chip pins it, and a link that lost the pin showed the receiver a different
+depth (`Weekly`, 48 players, `top quarter`: 12 ranks sent, 8 received). Adding
+the key needed no version bump — a new key is not a breaking change (table
+above), and the start date below the title had not been reached.
+
+What is not set by hand stays out: page, fullscreen, folding, an open bubble,
+the raffle bar (#61, "Session state" — overruled there only for the
+`RaffleRange`, by K1b). The pin chip beside `Copy link` counts the
+`RaffleRange` where it is off `all`, and its drop puts it back to `all` (run 12,
+Phase G on #72) — the screen's business; the wire still carries it as a choice,
+never as a pin. Of the WinnerRaffle, the `RaffleRange` is the **only** key that
+travels: no throw count, no hit list, no last draw (Phase G, `G-raffle-hits`).
+A thrown hit does reach the link — as a `manualWinner` pin, because a throw
+writes the tile's own counters (#69 AC 5); that collision is open on #72.
 
 ## Caps are not a migration concern
 

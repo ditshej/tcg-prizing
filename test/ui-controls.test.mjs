@@ -80,15 +80,9 @@ test('every group has a title and an explanation, and the groups partition what 
   assert.equal(new Set(grouped).size, grouped.length, 'no control sits in two groups');
 });
 
-test('every sheet control is a SetupLink key, except the one that is a DefaultSet entry', () => {
+test('every sheet control is a SetupLink key, the step grid depthStep included (run 12, K1 on #72)', () => {
   const wire = new Set(KEYS.map((k) => k.key));
-  for (const key of SHEET_KEYS) {
-    if (key === 'depthStep') {
-      assert.ok(!wire.has(key), 'depthStep stays out of the link (keys.mjs)');
-      continue;
-    }
-    assert.ok(wire.has(key), `${key} is a link key`);
-  }
+  for (const key of SHEET_KEYS) assert.ok(wire.has(key), `${key} is a link key`);
 });
 
 test('the two stepped controls pick a named rule, and neither they nor the flag have bounds', () => {

@@ -117,17 +117,42 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         offer.
 
         It **asks** rather than acting. The set of pins is handed in, not
-        looked up inside — `pinnedKeys` is everything stored, which is
-        everything but `Game` and `TournamentType` by construction, and the
-        second caller #103 brings hands in two of them instead.
+        looked up inside — `handSetKeys` is everything stored, which is
+        everything but `Game` and `TournamentType` by construction, plus the
+        RaffleRange where it is off `all`: no pin, but counted here and put
+        back to `all` by this drop (run 12, Phase G on #72). The second caller
+        #103 brings hands in two pins instead.
       -->
       <button type="button" class="pin-chip" data-drop-all x-cloak x-show="pinCount > 0"
               :aria-expanded="!!dropQuestion"
               :aria-label="dropAllLabel"
-              @click="askDrop({ keys: pinnedKeys, anchor: '[data-drop-all]' })">
+              @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })">
         <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
         <span aria-hidden="true">&#8634;</span>
       </button>
+
+      <!--
+        `Copy link` (#72), behind the reset chip: the Set block already shows
+        the base and the pin count, which is exactly what the link carries.
+        Not in the foot — that carries only what lies across the pages, and an
+        address is no destination. `link` shortens `SetupLink`, so no
+        `_Label_` line. It copies the copy form, base plus pins, never the
+        resolved stand (K5 on #72). The confirmation is fleeting and lives on
+        the button element alone (`flashCopied()`); without a clipboard the
+        address opens in a preselected field instead of claiming a success.
+      -->
+      <button type="button" class="link-copy" :class="{ 'link-copy-alone': pinCount === 0 }"
+              @click="copyLink($el)">
+        <span class="link-copy-word">Copy link</span>
+        <span class="link-copy-done" aria-hidden="true">Copied</span>
+      </button>
+      <div class="link-field" x-cloak x-show="linkField !== null">
+        <input class="link-field-input" type="text" readonly aria-label="Link to copy"
+               :value="linkField ?? ''"
+               x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
+        <button type="button" class="link-field-close" aria-label="Close the link field"
+                @click="closeLinkField()">&#10005;</button>
+      </div>
     </div>
 
     <!--
@@ -315,8 +340,10 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
 
   <!--
     The RaffleRange is **no control** but session state of the WinnerRaffle's
-    operating step (#69, #61): no pin mark, no reset button, not counted in
-    `Drop all N`, never in the SetupLink, and a Set switch leaves it standing.
+    operating step (#69, #61): no pin mark, no reset button, and a Set switch
+    leaves it standing. It travels in the SetupLink (run 12, K1b on #72), and
+    the pin chip above counts it and its drop puts it back to `all` (run 12,
+    Phase G on #72).
     So what stands here is a **pointer** — and above all the explanation text:
     the bar has no room for one, and without this line the RaffleRange would
     lose its only explanation in the whole program (prototype, `winnerBlock()`).

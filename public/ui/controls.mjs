@@ -32,12 +32,17 @@
  * entries while the sheet draws sixteen boxes.
  *
  * `raffleRange` is not among them and is not a miscount: #61 says outright it
- * is no `Regler` but session state of the operating step. Its pointer on the
- * sheet belongs to #69.
+ * is no `Regler`, so it has no pin, no reset and no entry here. It travels in
+ * the `SetupLink` all the same — as a key beside the sliders, not as one
+ * (run 12, K1b on #72; `CHOICE_KEYS` in `link/keys.mjs`). Its pointer on the
+ * sheet belongs to #69. The one place it joins the pins is the full reach at
+ * the pin chip — counted there and put back to `all` by its drop
+ * (`handSetKeys()` below; run 12, Phase G on #72) — still without being one.
  */
 
 import { distribute } from '../core/distribute.mjs';
 import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
+import { DEFAULT_RANGE, rangeName } from './raffle.mjs';
 
 /** The four hot ones, in the order #61 names them. They carry no group title:
  *  the page head is their title (#64). */
@@ -481,6 +486,7 @@ export const PIN_LABELS = {
   ranked: 'Winner packs by rank',
   displays: 'Reserved displays',
   manualWinner: 'Winner packs by hand',
+  raffleRange: 'Raffle range',
 };
 
 /**
@@ -519,7 +525,7 @@ export function pinMembers(item) {
  *  are set at the tile. A pin record has the order its pins were *set* in (or,
  *  out of a `SetupLink`, the register's), and a list that reorders itself
  *  between two readings cannot be compared by eye. */
-export const PIN_ORDER = [...SHEET_KEYS, 'displays', 'manualWinner'];
+export const PIN_ORDER = [...SHEET_KEYS, 'displays', 'manualWinner', 'raffleRange'];
 
 /** The selector of the bubble the question is drawn in. A name rather than a
  *  literal in two files, because #103 brings a second trigger site and the
@@ -594,6 +600,26 @@ export function pinnedKeys(pins) {
   return [...items]
     .filter((item) => isPinned(item, pins))
     .sort((a, b) => pinRank(a) - pinRank(b));
+}
+
+/**
+ * What the pin chip counts and its question lists: the pinned items, and
+ * after them the `RaffleRange` where it is off `all` (maintainer, run 12,
+ * Phase G on #72, `zaehlt-mit`: "Eine gewählte RaffleRange (≠ all) zählt im
+ * Pin-Knopf neben Copy link mit, und „alle zurücksetzen“ stellt sie wieder auf
+ * „all“"). The counter then names the same items the link carries (N2).
+ *
+ * It is **not a pin** for all that, and this is the one list that mixes the
+ * two: `pinnedKeys()` above stays pins only, so no marking, no reset at the
+ * element and no `CarryOverNotice` ever sees it — a Set switch leaves the
+ * range standing, so *Drop all N and follow* has nothing of it to drop.
+ * `choices` is the component's `linkChoices`, the same record `encode()` gets.
+ */
+export function handSetKeys(pins, choices) {
+  const keys = pinnedKeys(pins);
+  const range = choices?.raffleRange;
+  if (range != null && range !== DEFAULT_RANGE) keys.push('raffleRange');
+  return keys;
 }
 
 /** The screen word, or the key itself where a future pin has none yet. */
@@ -676,10 +702,13 @@ function stepCarriesNumber(stepId, ranks) {
  * - **`Reserved displays`** and **`Winner packs by hand`** are the tiles'
  *   counts summed, and `none` where nothing is left — a reach drops a
  *   reservation as a whole, so it says what is left as a whole.
+ * - **`Raffle range`** is no control, but the full reach drops it too: it
+ *   shows the step's name, `all ranks` once it has fallen (`rangeName()`).
  * - Every other control shows its number.
  */
 export function pinTarget(item, stand) {
   const { settings } = stand;
+  if (item === 'raffleRange') return rangeName(stand.choices?.raffleRange ?? DEFAULT_RANGE);
   if (item === 'depth') {
     const ranks = effectiveValue('depth', stand);
     if (settings.depth != null) return String(ranks);

@@ -80,3 +80,39 @@ später wieder geöffnet. Der Link ist damit ein zweiter, ungepflegter Ort für
 wiederkehrende Einstellungen, und das ist hingenommen, nicht wegdefiniert. Die
 Folge trägt ADR 0007: eine Version in der URL und eine `LinkMigration` je
 Erhöhung.
+
+Nachtrag (Lauf 12, Entscheid K1 an #72): **Der Link trägt alles, was von Hand
+gesetzt ist — jeden Pin, ohne Ausnahme.** Der Maintainer, wörtlich: „der link
+soll alles tragen, was man eingestellt hat." Bis hierher liess der Draht einen
+Pin weg: den Stufen-Pin `depthStep` (Stufen-Chips unter `Served ranks`), mit der
+Begründung, die Stufe sei kein Regler, sondern ein `DefaultSet`-Eintrag und darum
+aus der Basis reproduzierbar. Das stimmt nur für eine **ungepinnte** Stufe; seit
+#67 pinnt der Griff an den Chip sie, und ein Link, der diesen Pin verliert, zeigt
+beim Empfänger eine andere Tiefe (gemessen: `Weekly`, 48 Leute, `top quarter` —
+12 Ränge beim Absender, 8 beim Empfänger). Die Gleichung dieses Dokuments —
+der Link trägt die `pinned` Regler — gilt damit ohne Lücke: was gepinnt ist,
+reist. Zwei Pins über die Tiefe (`depth` und `depthStep`) sind keine zwei
+Angaben über denselben Regler im Sinn der verworfenen Option „Werte plus
+angefasst-Bit", sondern zwei Pins, die der Empfänger mit demselben Kern auflöst
+wie der Absender. Kein Versionssprung: ein neuer Schlüssel ist nach
+`docs/agents/setup-link.md` keine brechende Änderung, und die Regel hat ihr
+Startdatum noch nicht erreicht (ADR 0007, `## Nachtrag (#89)`, Grund 1).
+Der Grundsatz reicht über die Pins hinaus bis zur `RaffleRange` (Entscheid K1b
+an #72, wörtlich: „Auch die RaffleRange reist im Link mit"). Sie bleibt **kein
+`Regler`** — kein `Settings`-Feld, keine Eingabe in `distribute()`, kein Pin,
+kein Rückweg am Element, ein Set-Wechsel lässt sie stehen —, reist
+aber als eigener Schlüssel `raffleRange` neben den Reglern, geschrieben nur, wo
+sie von `all` abweicht; ein fehlender Schlüssel heisst `all`, wie es jeder
+v1-Link ohne ihn schon bedeutet hat. Überholt ist damit allein das „nie im Link"
+in #61 („Session state") und #69. Nicht berührt bleibt der übrige
+Sitzungszustand — Seite, Vollbild, Faltung, offene Blase, Verlosungsleiste.
+Der Pin-Knopf neben `Copy link` zählt sie mit, wo sie von `all` abweicht, und
+sein „alle zurücksetzen" stellt sie auf `all` zurück (Lauf 12, Phase G an #72,
+gewählt `zaehlt-mit`) — so nennt der Zähler dieselben Posten, die der Link
+trägt. Ein Pin wird sie dadurch nicht. Von der `WinnerRaffle` reist allein sie:
+kein weiterer Verlosungsschlüssel (Phase G, `G-raffle-hits`; dass gewürfelte
+Treffer als `manualWinner` mitreisen, ist dort als offener Befund abgelegt).
+
+Kein eigener ADR-Eintrag und kein Stempel: die Absicht dieses Dokuments ändert
+sich nicht, eine Lücke in ihrer Umsetzung wird geschlossen — Präzedenz sind die
+Nachträge oben und die in ADR 0007.
