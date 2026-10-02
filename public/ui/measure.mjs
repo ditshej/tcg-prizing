@@ -183,12 +183,19 @@ export function attachFades(rootEl, selectors) {
   };
   // Scrolling does not bubble, so it is caught on the way down.
   rootEl.addEventListener('scroll', paint, true);
-  window.addEventListener('resize', paint);
+  /* A resize is painted a frame later: the tile grid's column count is
+     written by another observer in the same round (`applyGeometry`), and a
+     band painted in that round measures the layout the grid is just leaving. */
+  let frame = 0;
+  const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(paint); };
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+  if (observer) observer.observe(rootEl);
   return {
-    paint,
+    paint: later,
     detach() {
       rootEl.removeEventListener('scroll', paint, true);
-      window.removeEventListener('resize', paint);
+      if (observer) observer.disconnect();
+      cancelAnimationFrame(frame);
       for (const band of bands.values()) band.remove();
     },
   };

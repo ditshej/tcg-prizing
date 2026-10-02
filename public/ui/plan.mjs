@@ -724,6 +724,13 @@ export function planApp(seam = SEAM) {
     },
 
     init() {
+      /* Alpine calls `init()` by itself *and* through `x-init="init()"` on the
+         root (`views/app.php`), so it ran twice: two ResizeObservers on the
+         stage, two resize listeners, two "erst bestätigen" listeners on the
+         document, two bubble effects (found by #71, whose fade bands came out
+         doubled). Everything here is attached once. */
+      if (this._initialised) return;
+      this._initialised = true;
       const fixed = [
         this.$refs.head,
         this.$refs.participation,
@@ -786,7 +793,7 @@ export function planApp(seam = SEAM) {
       this._fades = attachFades(this.$root, ['.plan-grid', '.page-details', '.page-prepare']);
       this._fading = window.Alpine.effect(() => {
         void [this.fold, this.activePage, this.fullscreen, this.tiles.length, this.raffleOpen];
-        this.$nextTick(() => requestAnimationFrame(() => this._fades.paint()));
+        this.$nextTick(() => this._fades.paint());
       });
     },
 
