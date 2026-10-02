@@ -46,10 +46,12 @@ import { winnerPackOverhang } from './overhang.mjs';
 
 /**
  * Whether the tile of `rank` carries the red mark: a `Rank` in the core's
- * `flagged`, or one holding a hand-placed WinnerPack past the stock — the
- * `WinnerPack` overhang, which the core does not report and so never puts
- * into `flagged` (#70). Those are the Ranks the overhang's take-back names,
- * the lowest first; the mark and the notice's prose point at the same tiles.
+ * `flagged`, or — while the `WinnerPack` overhang stands, which the core does
+ * not report and so never puts into `flagged` (#70) — a `Rank` holding a
+ * hand-placed (`manual`) WinnerPack. **Every** such Rank, not only the ones
+ * the take-back names (K-B2, Lauf 13 on #70): the take-back still names just
+ * the lowest it needs, so mark and prose no longer point at the same tiles,
+ * on purpose. A Rank carrying its pack only through `ranked` stays unmarked.
  */
 function marked(rank, plan) {
   return plan.flagged.includes(rank) || (winnerPackOverhang(plan)?.ranks.includes(rank) ?? false);

@@ -49,8 +49,12 @@ export const WINNER_PACK_OVERHANG = 'winnerPackOverhang';
  *   **lowest** Ranks first, as many as needed: `{ rank, holds, take }`, from
  *   the bottom up. The lowest, because a WinnerPack for Rank 1 is the louder
  *   promise (#61).
- * - `ranks` — the Ranks of `takeBack`, ascending. These are the tiles the
- *   grid marks: they hold the packs the stock does not cover.
+ * - `ranks` — **every** Rank holding a hand-placed (`manual`) WinnerPack,
+ *   ascending, not only those of `takeBack`. These are the tiles the grid
+ *   marks (K-B2, Lauf 13 on #70): once the notice is minimised, the red tiles
+ *   alone say where the problem lies, and its cause is every hand placement,
+ *   not just the one that happens to sit lowest. A Rank carrying its pack only
+ *   through `ranked` stays unmarked.
  */
 export function winnerPackOverhang(plan) {
   const { ranked, manualCount, manual } = plan.allocation;
@@ -71,7 +75,12 @@ export function winnerPackOverhang(plan) {
     left -= take;
   }
 
-  return { by, placed: ranked + manualCount, have, takeBack, ranks: takeBack.map((t) => t.rank).sort((a, b) => a - b) };
+  const ranks = Object.keys(manual)
+    .map(Number)
+    .filter((rank) => manual[rank] > 0)
+    .sort((a, b) => a - b);
+
+  return { by, placed: ranked + manualCount, have, takeBack, ranks };
 }
 
 const plural = (n, word) => `${word}${n === 1 ? '' : 's'}`;
@@ -88,9 +97,12 @@ function clears(settings) {
 }
 
 /**
- * The ways out of the overhang, or `[]` where there is none. They are
- * **computed, not searched** (#70), and they stand in the order *Zusage gegen
- * Formgebung* — first what takes back no promise to a player:
+ * The ways out of the overhang, or `[]` where there is none. Way 1 is
+ * **searched** — the nearest `judgeWinner` that clears, as ADR 0002 (Nachtrag)
+ * asks of every `WayOut`; ways 2 and 3 are **computed**, because they leave
+ * `rank.winners` alone and so clear exactly (B1, Lauf 13 on #70). They stand
+ * in the order *Zusage gegen Formgebung* — first what takes back no promise to
+ * a player:
  *
  * 1. **`judgeWinner` down.** Takes back no promise to the players: the
  *    WinnerPacks go back to the RankPool. Lowered from what the JudgePool
@@ -100,7 +112,7 @@ function clears(settings) {
  *    "By the overhang" is not enough while `ranked` follows its staffel: every
  *    WinnerPack the judge gives back raises `rank.winners` by one and
  *    `⌊n/2⌋ + 1` with it at every second step, so the overhang falls by less
- *    than the judge gives. The value is therefore worked out from the
+ *    than the judge gives. The value is therefore searched from the
  *    overhang towards 0 — `judge.winners − by` first, then one lower at a
  *    time — and the first that clears is the way. Where `ranked` is pinned,
  *    that first value is the one. Where none down to 0 clears, the way does

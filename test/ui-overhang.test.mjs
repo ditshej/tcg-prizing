@@ -118,6 +118,13 @@ test('the take-back names every Rank it touches and takes the lowest first', () 
   assert.equal(back.label, "Drop rank 31's winner pack and rank 32's winner pack");
 });
 
+test('ranks holds every Rank with a hand-placed pack, while the take-back keeps to the lowest (K-B2)', () => {
+  const { pins, settings } = judgeStand();
+  const overhang = winnerPackOverhang(distribute(settings, pins));
+  assert.deepEqual(overhang.ranks, [29, 30, 31, 32]);
+  assert.deepEqual(overhang.takeBack.map((t) => t.rank).sort((a, b) => a - b), [31, 32]);
+});
+
 test('a take-back that leaves part of a Rank says how many of how many', () => {
   // Three WinnerPacks, `ranked` pinned at 0, two by hand on Rank 2 and one on
   // Rank 5 — then `winnerPacks` down to 1: two over. Rank 5 goes whole, Rank 2

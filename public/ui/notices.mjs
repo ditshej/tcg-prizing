@@ -231,12 +231,15 @@ function conflictLines(plan) {
  * **correction to the prototype** of #61 and #70. The first sentence keeps
  * its numbers; the second names the Ranks the stock does not cover, the ones
  * the take-back touches, because the notice may open over the sheet and
- * cover the tiles (#61).
+ * cover the tiles (#61). These are fewer than the marked tiles: the mark goes
+ * on every Rank with a hand-placed pack (`overhang.ranks`, K-B2), the prose
+ * keeps to the lowest the take-back needs.
  */
 function overhangLines(plan) {
   const overhang = winnerPackOverhang(plan);
   if (!overhang) return [];
-  const { placed, by, have, ranks } = overhang;
+  const { placed, by, have, takeBack } = overhang;
+  const ranks = takeBack.map((t) => t.rank).sort((a, b) => a - b);
   return [
     `${placed} ${plural(placed, 'winner pack')} placed, ${by} over — the ranks hold ${have}.`,
     `${by === 1 ? 'The one' : 'The ones'} past the stock ${by === 1 ? 'is' : 'are'} placed by hand on ${rankList(ranks)}.`,
