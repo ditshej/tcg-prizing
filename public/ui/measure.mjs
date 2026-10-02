@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { FADE_HEIGHT, columnsFor, diagramCap, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
+import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -47,7 +47,12 @@ export function applyGeometry(stageEl, fixedEls = []) {
   const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
-  stageEl.style.setProperty('--plan-columns', String(columnsFor(width)));
+  /* The tiles get the content box, not the client box: `clientWidth` counts
+     the stage's side padding, and at a width where that padding decides a
+     column (412px on the flat 812 × 375 stage) the grid got seven columns for
+     a box that holds six, and its first tile was cut at the left edge (#71). */
+  const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
+  stageEl.style.setProperty('--plan-columns', String(columnsFor(width - sides)));
   stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead))}px`);
 }
 
@@ -161,13 +166,18 @@ export function attachFades(rootEl, selectors) {
         bands.set(selector, band);
       }
       const visible = box && box.getClientRects().length > 0;
-      if (!visible || !fadeLeft(box)) { band.style.display = 'none'; continue; }
+      const paddingBottom = visible ? parseFloat(getComputedStyle(box).paddingBottom) || 0 : 0;
+      if (!visible || !fadeLeft({
+        scrollHeight: box.scrollHeight, clientHeight: box.clientHeight, scrollTop: box.scrollTop, paddingBottom,
+      })) { band.style.display = 'none'; continue; }
       const root = rootEl.getBoundingClientRect();
       const r = box.getBoundingClientRect();
+      const height = fadeHeight(box.clientHeight);
       band.style.display = 'block';
-      band.style.left = `${r.left - root.left}px`;
+      band.style.left = `${r.left - root.left + box.clientLeft}px`;
       band.style.width = `${box.clientWidth}px`;
-      band.style.top = `${r.bottom - root.top - FADE_HEIGHT}px`;
+      band.style.height = `${height}px`;
+      band.style.top = `${r.top - root.top + box.clientTop + box.clientHeight - height}px`;
       band.style.background = `linear-gradient(to bottom, transparent, ${backgroundOf(box)} 62%)`;
     }
   };

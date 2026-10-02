@@ -146,6 +146,19 @@ export const FADE_HEIGHT = 60;
  * Anschlag aus"). Two pixels of slack, because a scroll position lands on
  * fractions and a stop reached is not always a stop to the pixel.
  */
-export function fadeShown({ scrollHeight, clientHeight, scrollTop }) {
-  return scrollHeight - clientHeight - scrollTop > 2;
+export function fadeShown({ scrollHeight, clientHeight, scrollTop, paddingBottom = 0 }) {
+  // The scroller's own padding under its content is no content: the tile grid
+  // keeps a few pixels under its last row, and they claimed a band at every
+  // count of ranks.
+  return scrollHeight - paddingBottom - clientHeight - scrollTop > 2;
+}
+
+/**
+ * How tall a surface's band is: the prototype's 60 px, but never more than a
+ * quarter of the window it lies on. The tile window is two rows high next to
+ * an elastic diagram (`diagramCap()`), and a 60 px band there covered half of
+ * the second row — the row the first height exists for.
+ */
+export function fadeHeight(clientHeight) {
+  return Math.min(FADE_HEIGHT, Math.round(clientHeight / 4));
 }

@@ -13,6 +13,7 @@ import {
   hitScrollDelta,
   raffleScrollPadding,
   fadeShown,
+  fadeHeight,
 } from '../public/ui/geometry.mjs';
 
 test('rowsHeight(2) is the master floor: two 54px tiles plus one 5px gap', () => {
@@ -141,4 +142,15 @@ test('the band goes out at the bottom stop', () => {
   // Sub-pixel scroll positions leave a pixel or two short of the stop.
   assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2064.5 }), false);
   assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2000 }), true);
+});
+
+test('the scroller\'s own bottom padding is not "something below"', () => {
+  // The tile grid keeps 4px of padding under its last row; that is no content.
+  assert.equal(fadeShown({ scrollHeight: 117, clientHeight: 113, scrollTop: 0, paddingBottom: 4 }), false);
+  assert.equal(fadeShown({ scrollHeight: 176, clientHeight: 113, scrollTop: 0, paddingBottom: 4 }), true);
+});
+
+test('the band never takes more than a quarter of a short window', () => {
+  assert.equal(fadeHeight(682), 60);
+  assert.equal(fadeHeight(113), 28); // the two-row tile window keeps its second row readable
 });

@@ -1911,6 +1911,13 @@ body {
   flex-direction: row;
 }
 
+/* Basis 0 and no minimum: the tile grid's column count is measured off this
+   box, and a box that sized itself off the grid would never shrink again. */
+.app[data-rail='column'] .plan-stage {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .app[data-rail='column'] .plan-controls {
   flex: 0 0 var(--col-details);
   overflow-y: auto;
