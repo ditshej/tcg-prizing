@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -24,11 +24,11 @@ des Maintainers — Lauf 13" an #71; `CONTEXT.md` › `Fold`; letzter Kommentar 
 | drei Spalten ab | 1030 | #71 K-B9 |
 | Deckel | 1597 | #71 K-B9 |
 | Ersthöhe (Spaltenform) | 399 | #71 K-B8 |
-| Höhenschwelle einspaltig | 494 | #71 K-B10a |
+| Höhenschwelle einspaltig | 351 + 56 + gemessene Schiene (keine feste Zahl; bis Lauf 14: 494) | #73 K2 (ersetzt #71 K-B10a) |
 | flach ab Breite | 436 | #71 K-B10b |
 | heisse Vier als Spalte auf der flachen Bühne ab | 722 | #71 K-B10c |
 | Fuss / Streifen | 56 (Handy, drei Einträge) · 48 (ab 674) | #61, `fold.mjs` |
-| Kachel, Lücke, Boden | 54 · 5 · 6 Spalten × 2 Reihen (113 px) | `CONTEXT.md` › `DistributionPlan` |
+| Kachel, Lücke, Boden | 54 · 5 · 6 Spalten × 2 Reihen (113 px); unter 365 Breite schmaler als 54 | `CONTEXT.md` › `DistributionPlan`; #73 K3 |
 
 Leinwände, aus den Entscheiden abgeleitet. Die Höhen der Zeilen, für die nur eine
 Breite entschieden ist, sind hier gewählt: **673 × 760 / 674 × 760** (hoch genug,
@@ -258,15 +258,21 @@ zwei. Gezählt wird darum über die Oberkanten der Kachelreihen, nicht über die
 |---|---|---|---|---|
 | A1 | Die offene Verlosungsleiste lag über der offenen `ConflictNotice` (alle Leinwände) und über dem Chip, wo er nicht im Streifen sitzt (Master, flach, Vollbild) | z. B. 393 × 830: Meldung 634–766 unter Leiste 647–766 | ADR 0002 (Anwesenheit); Prototyp `.stack`/`#badges` `bottom: calc(var(--foot) + var(--raffleh))`, Runde 16 und 21, nicht als überholt markiert | **behoben** (`21be064`) |
 | A2 | Im Vollbild mehr als 16 Kachelspalten | 1280: 21, 1597: 26 | Prototyp `.slots { max-width: var(--gridmax) }` (16) auch in `fsContent()`; `fold().tileColumns` war schon gedeckelt, der Messrand nicht | **behoben** (`6f8c316`) |
-| A3 | Die offene Verlosungsleiste deckt in der Planansicht ab 674 und auf der flachen Bühne die zwei garantierten Kachelreihen zu | frei 44 px (null volle Reihen) bei 674 × 760, 900 × 700, 1280 × 760, 1597 × 900, 812 × 375; bei 673 × 760 eine Reihe + 47 px | #69 AC 2 „deckt keine Kachel zu"; #61 „in der Planansicht ist die Überlappung null" | **offen, Entscheid** (siehe unten) |
-| A4 | Der Vollbild-Griff ⤢ liegt über der letzten Kachel der ersten Reihe und verdeckt deren `WinnerPack`-Marke | 393: Kachel 6, 18 × 28; 673: 11, 26 × 28; 674: 6, 21 × 28; 900: 10, 26 × 28; 1280: 10, 14 × 28; 1597: 16, 28 × 28 — Marke verdeckt in 7 von 14 Lagen | Prototyp: Griff in der Legendenzeile (`slotBlock()`, `data-fs="open"`), Ausgang in der Kopfzeile (`fsContent()`); AC „keine Fläche deckt eine Kachel zu" | **offen, Entscheid** |
-| A5 | Die Schiene ist bei 320–360 und 500–540 Breite höher als 87 und schiebt die Rangmeldung unter sich | Schiene 101–117; Rangmeldung bis 39,9 px verdeckt (s. o.) | `RAIL_HEIGHT` 87 in `fold.mjs` („the two-row height … never promises room the narrow rail does not leave"); Schwelle 494 (K-B10a) | **offen, Entscheid** |
+| A3 | Die offene Verlosungsleiste deckt in der Planansicht ab 674 und auf der flachen Bühne die zwei garantierten Kachelreihen zu | frei 44 px (null volle Reihen) bei 674 × 760, 900 × 700, 1280 × 760, 1597 × 900, 812 × 375; bei 673 × 760 eine Reihe + 47 px | #69 AC 2 „deckt keine Kachel zu"; #61 „in der Planansicht ist die Überlappung null" | **behoben** ausser flach (K1, Lauf 14; s. „Lauf 14") — flach **offen** |
+| A4 | Der Vollbild-Griff ⤢ liegt über der letzten Kachel der ersten Reihe und verdeckt deren `WinnerPack`-Marke (**behoben** in Lauf 14, B5: Griff in der Legendenzeile) | 393: Kachel 6, 18 × 28; 673: 11, 26 × 28; 674: 6, 21 × 28; 900: 10, 26 × 28; 1280: 10, 14 × 28; 1597: 16, 28 × 28 — Marke verdeckt in 7 von 14 Lagen | Prototyp: Griff in der Legendenzeile (`slotBlock()`, `data-fs="open"`), Ausgang in der Kopfzeile (`fsContent()`); AC „keine Fläche deckt eine Kachel zu" | **offen, Entscheid** |
+| A5 | Die Schiene ist bei 320–360 und 500–540 Breite höher als 87 und schiebt die Rangmeldung unter sich | Schiene 101–117; Rangmeldung bis 39,9 px verdeckt (s. o.) | `RAIL_HEIGHT` 87 in `fold.mjs` („the two-row height … never promises room the narrow rail does not leave"); Schwelle 494 (K-B10a) | **behoben** (K2, Lauf 14) ab 350 Breite; Rest bei 320–340 s. A10 |
 | A6 | Flache Bühne unter 349 px Höhe: Rangmeldung bis 8,9 px ausserhalb | s. o. | keine Ausnahme benannt — B14 nennt nur < 436 × < 494 | **offen, Entscheid** |
-| A7 | Die Kurve heisst in der Schiene „DistributionCurve (mild)", im Blatt „Curve" | `views/controls-hot.php:35` gegen `controls-sheet.php:275` | #113 an #61: „Die Plan-Schiene ist dieselbe Zeile wie das Blatt" | **offen** — #113 behält zugleich die Form des Kurvenfelds (`<select>`); ob die Beschriftung zur Form gehört, sagt es nicht |
+| A7 | Die Kurve heisst in der Schiene „DistributionCurve (mild)", im Blatt „Curve" | `views/controls-hot.php:35` gegen `controls-sheet.php:275` | #113 an #61: „Die Plan-Schiene ist dieselbe Zeile wie das Blatt" | **behoben** (B8, Lauf 14): die Schiene sagt `Curve`, das `<select>` bleibt |
 | A8 | Nach F1 deckt der über die Leiste gehobene Chip am Master den unteren Rand der zweiten Kachelreihe | 393 × 830: Chip 605–639, Fenster bis 629 → bis 24 px von Kacheln 11–12 | Folge der Prototyp-Form (Chip steigt über die Leiste) | als **Preis** vorgeschlagen |
 | A9 | `favicon.ico` 404 in der Konsole | einmal je Laden | — | unerheblich, benannt |
 
+| A10 | Bei 320–340 Breite ist der feste Teil des `Plan`s höher als 178: der Kopf bricht zweizeilig um (58 statt 40), und an der Schwelle liegt die Rangmeldung 15,9 px unter der Schiene | 320 × 524, 330 × 524, 340 × 522 (je genau an der Schwelle): 15,9; ab 350: 0 | `PLAN_FIXED` 178, gemessen bei 388 Breite (K-B8) | **offen**, neu in Lauf 14 — kein Entscheid; Schriften am Gerät bei #121 |
+| A11 | Unter 365 Breite waren die äussersten Kacheln angeschnitten (B14) | 320: Kachel 1 ab −14 | — | **behoben** (K3, Lauf 14) |
+| A12 | In der Ausnahme unter 436 × Schwelle lag die Schiene im Kachelraster (B15) | 360 × 300: Schiene 150–238 über Raster 178–291 | — | **behoben** (K4, Lauf 14) |
+
 ### Vorschläge zu den offenen Punkten (Entscheid beim Maintainer)
+
+*Stand vor Lauf 14; entschieden sind A3 (ausser flach), A4, A5, A7 — siehe „Lauf 14".*
 
 - **A3.** Ursache ist das Diagramm: es nimmt seit #62 alles ausser zwei Reihen
   (#62 AC „Der Deckel des Diagramms ist **gerechnet**, nicht gesetzt"); der
@@ -288,6 +294,50 @@ zwei. Gezählt wird darum über die Oberkanten der Kachelreihen, nicht über die
 - **A6.** Benennen als zweite Ausnahme neben B14 oder bewusst offen lassen; am
   Gerät (Querformat mit Browserleisten) ist es der wahrscheinliche Fall (#121).
 - **A8.** Preis: der Chip deckt bei offener Leiste den Rand der Reihe über ihr; ein Chip unter der Leiste wäre unsichtbar.
+
+## Lauf 14 — Nachbau nach den Entscheiden K1–K5
+
+Entscheide: Kommentar „Entscheide des Maintainers — Lauf 14" an #73. Gleiche Messmittel,
+PHP 8.3.33, Server `php -S localhost:8774 -t public`. Bilder mit Präfix `fix3-…`.
+
+**K1 · das Diagramm gibt der offenen Leiste nach** (`?v=1&game=onepiece&type=weekly`, 🎲, dann ein Wurf):
+
+| Leinwand | zu: Fenster / Diagramm | offen: Fenster / Leiste / Diagramm / frei | nach dem Wurf: Fenster / Leiste / frei / Treffer |
+|---|---|---|---|
+| 393 × 830 | 516–629 / 398 | 516–629 / ab 647 / 398 / ganz (Leiste über der Schiene) | 453–629 / ab 576 / 113 / Rang 8 sichtbar |
+| 673 × 760 | 471–584 / 353 | 454–584 / ab 577 / 336 / 113 | 383–584 / ab 506 / 113 / Rang 31 sichtbar |
+| 674 × 760 | 541–654 / 422 | 462–654 / ab 585 / 343 / 113 | 391–654 / ab 514 / 113 / Rang 24 sichtbar (`fix3-674x760-light-raffleThrown.png`) |
+| 1280 × 760 | 541–654 / 422 | 462–654 / ab 585 / 343 / 113 | 391–654 / ab 514 / 113 / Rang 9 sichtbar |
+| 812 × 375 flach | 204–317 / 86 | 178–317 / ab 248 / **60 (Boden)** / 60 | 178–328 / ab 177 / **0** / Rang 14 **verdeckt** |
+
+„frei" = Fensteroberkante bis Oberkante Leiste − 10. Ab 673 und am Master nach dem Wurf
+genau zwei Reihen; **flach offen** (K1: was dort zusätzlich nachgibt, ist nicht entschieden).
+
+**K2 · die Schiene gemessen** (`?v=1&game=onepiece&type=weekly&players=64&depth=32`,
+`.plan-controls` in Leistenform; Probe des Messrands gegen die echte Schiene):
+
+| Breite | 320 | 340 | 360 | 393 | 500 | 540 | 600 | 664 |
+|---|---|---|---|---|---|---|---|---|
+| Schiene echt = Probe | 117 | 115 | 101 | 87 | 115 | 101 | 87 | 62 |
+
+Schwelle beidseitig: 500 × 521 flach / 500 × 522 Master (351 + 56 + 115); 600 × 493 flach /
+600 × 494 Master (87); 360 × 507 Master bei Release (Schiene dort 87 — inhaltsabhängig).
+Ziehen 500 × 500 (flach) → 600 × 500: Master mit Schiene, also kein veralteter Wert.
+Rangmeldung an der Schwelle über der Schiene: ab 350 Breite **0 px**; 320–340 **15,9 px** (A10).
+Keine Probe bleibt im DOM (0 nach jeder Stufe); Konsole ohne Fehler ausser `favicon.ico` (A9).
+
+**K3 · Kacheln unter 365** (`type=release`, × 700): 320 → 46,5 px, Kacheln 8–312 im Raster
+8–312; 340 → 49,8; 364 → 53,8; 365 → 54. Sechs Spalten ganz sichtbar, Höhe 54 (`fix3-320x700-light-plain.png`).
+
+**K4 · die Ausnahme scrollt** (`type=release`): 360 × 300 und 435 × 400 `data-cramped`,
+Raster 178–291, Schiene darunter ab 314 (vorher 150–238 **im** Raster), die Plan-Seite
+scrollt (401 Inhalt auf 244 bzw. 344), Fuss ab 244 bzw. 344 — nichts liegt übereinander (`fix3-360x300-light-plain.png`).
+
+**B5 · Vollbild-Griff in der Legendenzeile** (`type=release`): 393 × 830, 900 × 700, 1597 × 900 —
+Griff 20 hoch in der Legende (21,9, unverändert), **0** Kacheln unter dem Griff; im Vollbild
+derselbe Knopf an derselben Stelle der Legende, „Exit fullscreen", 6 / 15 / 16 Kachelspalten, zurück ✓.
+
+**B8 · `Curve`** in der Schiene wie im Blatt; das `<select>` zeigt den Stand.
 
 ## Abnahmekriterien von #73
 

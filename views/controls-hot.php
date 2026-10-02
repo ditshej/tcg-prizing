@@ -18,7 +18,9 @@
  * one of the hot four.
  *
  * The curve stays the `<select>` it was (#104), and that is #113's own line:
- * `curve`, `depthStep` and `combinedHandout` keep their form.
+ * `curve`, `depthStep` and `combinedHandout` keep their form. Its title is
+ * the sheet's, `Curve` — the row is the same row (#113; #73, B8) — and the
+ * select shows the step itself, so the title does not repeat it.
  *
  * Every `x-…` attribute is static markup composed once by PHP; the values and
  * handlers come from `planApp()` (ADR 0004).
@@ -32,7 +34,7 @@ require_once __DIR__ . '/control-row.php';
   <?php control_row('depth', 'Served ranks', '', '`cap ${plan.depthCap}`'); ?>
 
   <label class="plan-control">
-    <span>DistributionCurve (<span x-text="settings.curve"></span>)<span class="pin-state"
+    <span>Curve<span class="pin-state"
           :class="`is-${stateWord('curve')}`" x-text="stateWord('curve')"></span></span>
     <!--
       Not x-model/:value: the seven options come from an x-for on a child

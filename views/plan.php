@@ -91,6 +91,20 @@
         <span class="legend-dice" aria-hidden="true">🎲</span>
         <span class="legend-open" x-show="raffle.open > 0" x-text="raffle.open"></span>
       </button>
+      <!--
+        The fullscreen grip sits at the end of the legend row, as in the
+        prototype's `slotBlock()` (`data-fs="open"`, margin-left: auto) — not
+        floating over the grid, where it lay on the last tile of the first row
+        with its mark and its booster count (#73, B5). One button for both
+        ways, so it is left at the same spot it was grabbed at (#63 AC 4). It
+        is no taller than the legend row (≤ 22 px), so `PLAN_FIXED` 178 and
+        the first height 399 stand.
+      -->
+      <button type="button" class="grid-fullscreen-toggle"
+              @click="fullscreen ? closeFullscreen() : openFullscreen()"
+              :aria-label="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+        <span aria-hidden="true" x-text="fullscreen ? '⤡' : '⤢'"></span>
+      </button>
     </div>
 
     <!--
@@ -131,18 +145,6 @@
         </template>
       </div>
 
-      <!--
-        The tiles are the grip: #63 AC 4 grabs fullscreen at the tile grid and
-        leaves it at the same corner it was opened from — the same button,
-        same spot, only the icon and label swap. It sits over the grid's own
-        wrap (not the scrolling grid itself) so it never scrolls away with the
-        tiles.
-      -->
-      <button type="button" class="grid-fullscreen-toggle"
-              @click="fullscreen ? closeFullscreen() : openFullscreen()"
-              :aria-label="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
-        <span aria-hidden="true" x-text="fullscreen ? '⤡' : '⤢'"></span>
-      </button>
     </div>
 
     <!--
@@ -224,7 +226,7 @@
     and nowhere on the Plan page where they do not — under it they would cost
     the second tile row. `fold.rail` says which.
   -->
-  <section class="plan-controls" x-show="fold.rail !== 'none'">
+  <section class="plan-controls" x-ref="rail" x-show="fold.rail !== 'none'">
     <?php require __DIR__ . '/controls-hot.php'; ?>
   </section>
 

@@ -38,7 +38,9 @@ export function rowsHeight(rows = MIN_ROWS) {
 /**
  * How many tile columns fit a measured width, at least the six-column master
  * floor. Not a real fit below the floor — an assurance the caller must still
- * honour, e.g. by scrolling rather than shrinking the tiles (#62, AC 3).
+ * honour. Since K3 of run 14 (#73) it is honoured by **narrowing** the tiles
+ * under 365 px (`minmax(0, 54px)` columns in `plan.css`), not by scrolling;
+ * the rows keep their 54 px, so no height sum moves.
  */
 export function columnsFor(stageWidth) {
   return Math.max(MIN_COLUMNS, columnsFitting(stageWidth));
@@ -79,9 +81,15 @@ export function tileColumnsFor(width) {
  * available to (diagram + tile grid) once every other fixed part of the Plan
  * column has been subtracted by the rind. The two guaranteed tile rows come
  * off first; what remains goes to the diagram, never under `floor`.
+ *
+ * `covered` is how much of the tile window's bottom an open raffle bar lies
+ * over (`raffleCover()`): the diagram pays for it too, so the two rows stand
+ * **above** the bar (#73, run 14, K1 `diagramm-weicht`). The diagram is the
+ * one elastic size of the column, and the sentence "the bar covers no tile"
+ * (#69, #61) now rests on it rather than on an overlap of zero.
  */
-export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT) {
-  return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS));
+export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0) {
+  return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS) - covered);
 }
 
 /* ── The WinnerRaffle bar (#69) ──────────────────────────────────────────── */
@@ -92,6 +100,21 @@ export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT) {
  * uses them for the same thing: what counts as "behind the bar".
  */
 export const RAFFLE_CLEARANCE = 10;
+
+/**
+ * How much of the tile window an open raffle bar takes away from the top: the
+ * window's bottom edge down from the bar's top edge less the clearance, `0`
+ * where the window ends above the bar (the master, whose rail lies under the
+ * bar) and while the bar is closed (`barRect` `null`).
+ *
+ * The window's **bottom** is read, never its top: the diagram above the grid
+ * moves the top, the bottom stands at the column's foot. So the number the
+ * diagram yields by does not move as the diagram yields — no loop.
+ */
+export function raffleCover(windowRect, barRect) {
+  if (!barRect) return 0;
+  return Math.max(0, windowRect.bottom - (barRect.top - RAFFLE_CLEARANCE));
+}
 
 /**
  * How much bottom padding the scrolling tile grid needs so the tiles run
