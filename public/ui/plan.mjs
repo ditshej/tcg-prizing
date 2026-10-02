@@ -1,6 +1,6 @@
 /**
  * The Alpine component behind the Plan screen (#62): reads a DistributionPlan
- * off `distribute()` and shows it, plus the four hot sliders that change the
+ * off `distribute()` and shows it, plus the four hot controls that change the
  * Settings it was built from. It never reaches past the seam into the
  * calculation itself (ADR 0004) and never tracks where a value came from.
  *
@@ -17,7 +17,8 @@
  * a stored third level over it, and one handler for every control. The
  * numbers a control is drawn from — its two ends, what it shows while it is
  * `auto` — come from `controls.mjs`, which is on the proven side of the seam
- * so that a cap has exactly one home and slider and counter cannot disagree.
+ * so that a wall has exactly one home, and that home is the core's own cut
+ * (#113).
  *
  * #89 hangs the `SetupLink` on it at both ends — the link the app was opened
  * at is read here, and every pin writes the address bar from here. This is the
@@ -55,11 +56,14 @@ import {
   pinsWithout,
   reachFor,
   reservedDisplaysAfter,
+  typedValueAfter,
 } from './controls.mjs';
 import { anchorVisible, bubblePosition } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
 import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
+import { dismiss, expand, foldStep, freshFold, minimize, noticeStack, searchesFor } from './notices.mjs';
+import { attachConfirmFirst } from './confirm-first.mjs';
 
 /**
  * The catalogue, and it **falls out of the sheets**: Games in list order, each
@@ -112,12 +116,12 @@ const SEAM = { read: readLocation, write: writeLocation };
  * The one link that is **not** written back is the one from the future: its
  * base is all that was read, and writing our version over it would devalue a
  * link a newer app could still read in full (#47). Detected by the report's
- * own entry, the same way `migrate()` detects it — the first slider drag
+ * own entry, the same way `migrate()` detects it — the first handling of a control
  * overwrites it anyway.
  *
  * **"From the future" is read off the wire's own verdict, and it is narrower
- * than "no slider was read"** (Lauf 10, "Entscheid K1"). A link with no
- * readable `v` gets its sliders left unread just the same, but it is broken,
+ * than "no value was read"** (Lauf 10, "Entscheid K1"). A link with no
+ * readable `v` gets its values left unread just the same, but it is broken,
  * not newer than us, and it carries `unreadableVersion` rather than
  * `futureVersion` — so it falls into the cleanup branch above with no test of
  * its own here. That is the whole of the wiring this file owes the decision:
@@ -156,6 +160,12 @@ export function planApp(seam = SEAM) {
     seam.write(encode({ game: opened.game, type: openedType.id, pins: opened.pins, choices: opened.choices }));
   }
 
+  // The last plan and the stand it was computed from — see the `plan` getter.
+  // Kept in this closure rather than on the component, so that remembering a
+  // plan is never a write Alpine's reactivity would see.
+  let planStand = null;
+  let planMemo = null;
+
   return {
     /**
      * The chosen Set, as the two names the chain is built from (ADR 0003):
@@ -193,7 +203,7 @@ export function planApp(seam = SEAM) {
      * What the CommunityLead set by hand — the third level over Game and
      * TournamentType, and the record that makes a Set switch keep his work
      * (#64 AC 7). It is a *stored* state, not a comparison against the sheet
-     * (ADR 0006): a slider moved back onto its default value stays in here.
+     * (ADR 0006): a number stepped back onto its default value stays in here.
      *
      * A link's pins land here unchanged: a value out of a URL is a pinned
      * value like any other and the app never tracks that it came from one
@@ -269,14 +279,27 @@ export function planApp(seam = SEAM) {
      * The plan, built from the resolved stand **and** the pins beside it. The
      * second argument changes no number (`distribute()` reads it only to carry
      * it on), and it is the whole point: the addendum (#86) to ADR 0009 puts
-     * the hand-set sliders on the plan separately, so that whoever builds a
+     * the hand-set values on the plan separately, so that whoever builds a
      * `SetupLink` from it takes the deviations and never the resolved stand.
      * Handed one argument, `plan.pinned` is `{}` at the surface however many
-     * sliders the CommunityLead has moved — true of the object, false of the
+     * values the CommunityLead has set — true of the object, false of the
      * app (maintainer decision on #66, 2026-09-28).
+     *
+     * It is computed once per stand and not once per read. Every number on
+     * screen reads it several times per drawing (`value`, `bounds`, `canStep`
+     * at `−` and at `+`), and with no roof on `players` (#113) one
+     * `distribute()` at 5000 players takes a fifth of a second. The stand is
+     * recognised by content, because `settings` and `pins` are written in
+     * place; and reading the whole of both for the key is also what keeps
+     * Alpine's reactivity tracking every field the plan depends on.
      */
     get plan() {
-      return distribute(this.settings, this.pins);
+      const stand = JSON.stringify([this.settings, this.pins]);
+      if (stand !== planStand) {
+        planStand = stand;
+        planMemo = distribute(this.settings, this.pins);
+      }
+      return planMemo;
     },
 
     /** The last Rank that gets anything at all — booster, packs or winners. */
@@ -421,11 +444,11 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The one cap. The slider element and the counter's ± both draw from
-     * here, so neither can push past the other (#61, "Caps at the controls").
-     * `reachFor()` is the cap widened to take in a pinned value that a sunk
-     * cap left standing — it stops a handling from reaching further out and
-     * never from coming back (ADR 0006).
+     * A control's two ends. The counter's ± and the typed commit both hold at
+     * them, and a wall among them is the core's own cut (#113). `reachFor()`
+     * is the ends widened to take in a pinned value a sunk wall left standing
+     * — it stops a handling from reaching further out and never from coming
+     * back (ADR 0006). An open number's `max` is `Infinity`.
      */
     bounds(key) {
       return reachFor(key, this.stand) ?? { min: 0, max: 0 };
@@ -434,8 +457,10 @@ export function planApp(seam = SEAM) {
     /**
      * Every handling of a control, the four hot ones included. It writes the
      * pin as well as the value, because the pin is set by the handling and
-     * not by the value (ADR 0006) — a slider dragged back onto its default
-     * stays pinned, and a Set switch therefore keeps it.
+     * not by the value (ADR 0006) — a number stepped back onto its default
+     * stays pinned, and a Set switch therefore keeps it. The name stays
+     * `setSlider` although the sliders are gone (#113): other branches call
+     * it, and it is the one writer of a pin.
      */
     setSlider(key, value) {
       const next = clampToBounds(key, value, this.stand);
@@ -448,7 +473,7 @@ export function planApp(seam = SEAM) {
     /**
      * The address bar after a change the SetupLink carries — a pin, or the
      * base beneath it. It takes the **pins**, never the resolved stand: the
-     * stand names every slider, so `encode(this.settings)` would turn one pin
+     * stand names every control, so `encode(this.settings)` would turn one pin
      * into twelve decisions nobody made (Befund G3, `## Nachtrag (#86)` in
      * ADR 0009). Beside the pins it carries the `RaffleRange`, the one hand-set
      * choice that is no pin (run 12, K1b on #72) — see `linkChoices`.
@@ -469,7 +494,8 @@ export function planApp(seam = SEAM) {
       this._writeAddress(url);
     },
 
-    /** The counter's ±, moving by one inside the same bounds the slider has. */
+    /** The counter's `−` and `+`: one step inside the control's ends, written
+     *  and pinned at once (#113) — a press is the handling. */
     step(key, delta) {
       this.setSlider(key, Number(this.value(key)) + delta);
     },
@@ -480,28 +506,69 @@ export function planApp(seam = SEAM) {
       return next >= bounds.min && next <= bounds.max;
     },
 
+    /* ── The typed field (#113) ───────────────────────────────────────── */
+
     /**
-     * The four hot sliders, kept under their own names because the fixed rail
-     * under `Plan` (`views/controls-hot.php`) calls them. They are plain
-     * `setSlider()` calls now: the rail and the sheet change the same stand in
-     * the same way, because both call exactly these handlers and so cannot
-     * drift in what they *do* (head comment of `views/controls-hot.php`; #61,
-     * which names the rail literally the same content as `Details` — "die
-     * Schiene **ist** `Details` und war nie ein eigener Inhalt").
-     *
-     * What tells the two forms apart is what they *show*, not what they do:
-     * the sheet carries an explanation under every title and a counter, the
-     * rail neither (#64 AC 9 for the explanation text, which is the criterion
-     * that says it appears only on `Details`).
+     * What is typed into a field and not yet committed, by key — session state
+     * like the open bubble, never in `Settings` and never in the `SetupLink`.
+     * It is kept apart from the value on purpose: a commit at every keystroke
+     * would drive the field through wrong intermediate stands (typing `128`
+     * passes a two-player tournament on the way), and every one of them would
+     * raise a notice over the whole surface (#113). So the plan stands still
+     * until the commit, and this record is the only thing that moves.
      */
-    setPlayers(value) {
-      this.setSlider('players', value);
+    drafts: {},
+
+    /** A keystroke in the field: remembered, not written. */
+    draft(key, text) {
+      this.drafts[key] = String(text);
     },
-    setRankFloor(value) {
-      this.setSlider('rankFloor', value);
+
+    /**
+     * Whether the field is visibly "not yet valid" — it holds typed text that
+     * differs from the value standing. Read through a plain `get` on the
+     * record, which the reactivity tracks (see `isPinned()` in `controls.mjs`).
+     */
+    isDraft(key) {
+      const text = this.drafts[key];
+      return text !== undefined && text.trim() !== String(this.value(key));
     },
-    setDepth(value) {
-      this.setSlider('depth', value);
+
+    /** Escape: the typed text is dropped and the value standing shows again. */
+    discardDraft(key) {
+      delete this.drafts[key];
+    },
+
+    /**
+     * Enter, or leaving the field: the typed number counts — if it is a number
+     * and if it changes anything (`typedValueAfter()`). Otherwise nothing is
+     * written and nothing is pinned, and the field falls back to the value
+     * that stands. Either way the draft is gone.
+     */
+    commitTyped(key, text) {
+      delete this.drafts[key];
+      const next = typedValueAfter(key, text, this.stand);
+      if (next === null) return;
+      this.setSlider(key, next);
+    },
+
+    /**
+     * The field whose typed text is not yet confirmed, or `null` (K4 of run
+     * 12, "erst bestätigen"): while one stands, a press anywhere else only
+     * confirms it (`confirm-first.mjs`). Unconfirmed is `isDraft()` — text
+     * that differs from the value standing — so a field that only has the
+     * focus, or holds the number it shows, blocks nothing.
+     */
+    get pendingDraft() {
+      return Object.keys(this.drafts).find((key) => this.isDraft(key)) ?? null;
+    },
+
+    /** Confirms the pending field as Enter would; answers its key, or `null`. */
+    confirmDraft() {
+      const key = this.pendingDraft;
+      if (key === null) return null;
+      this.commitTyped(key, this.drafts[key]);
+      return key;
     },
 
     /* ── The tile as a grip (#66) ─────────────────────────────────────── */
@@ -530,7 +597,7 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The `DisplayReservation`, written where the sliders' values are written:
+     * The `DisplayReservation`, written where the controls' values are written:
      * into `settings` and into `pins` in the same handling, because the pin is
      * set by the handling and not by the value (ADR 0006). It counts as **one**
      * pinned item however many `Rank`s carry a reservation (#61, "The
@@ -627,7 +694,7 @@ export function planApp(seam = SEAM) {
 
          Tied to the three writing handlers instead, the rule misses every way
          a tile can leave the grid without the bubble being touched — the
-         `Players` slider pulled down under an open bubble is the measured one
+         `Players` count pulled down under an open bubble is the measured one
          (#66 AC 9), and `bubble.mjs` names "a shrinking player count" outright.
 
          Alpine has no single render pass, so its equivalent of that last line
@@ -647,9 +714,15 @@ export function planApp(seam = SEAM) {
          changing, and the same one rule is what it calls. */
       this._onResize = () => this.placeBubble();
       window.addEventListener('resize', this._onResize);
+      /* "Erst bestätigen" (K4 of run 12): a press outside a field with an
+         unconfirmed number confirms it and activates nothing else. On the
+         document, so it covers every control there is and every one a later
+         branch adds. */
+      this._detachConfirmFirst = attachConfirmFirst(document, this);
     },
 
     destroy() {
+      if (this._detachConfirmFirst) this._detachConfirmFirst();
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
@@ -815,8 +888,8 @@ export function planApp(seam = SEAM) {
 
     /**
      * Whether a control is marked. Read off the **stored** record and never
-     * off a comparison with the sheet (ADR 0006): whoever drags a slider and
-     * drags it back has decided, and the marking says "follows the
+     * off a comparison with the sheet (ADR 0006): whoever steps a number and
+     * steps it back has decided, and the marking says "follows the
      * calculation no longer", never "deviates".
      */
     isPinned(key) {
@@ -1049,7 +1122,7 @@ export function planApp(seam = SEAM) {
      *
      * It goes through `setSlider()` like every other control rather than
      * writing `settings` itself: taking the offer is an operating gesture, so
-     * it pins the slider (ADR 0006) and writes the address bar, and the
+     * it pins the value (ADR 0006) and writes the address bar, and the
      * `pinned` record the hint then falls silent on stays the one there
      * already is.
      */
@@ -1164,5 +1237,144 @@ export function planApp(seam = SEAM) {
 
     _linkDialog: null,
     _linkReturn: null,
+
+    // NoticeStack (#68)
+
+    /**
+     * The fold record: which notice stands open and which as a chip, and the
+     * Offer that was turned down. Session state, like the page and the open
+     * bubble — in the `SetupLink` as little as they are, and a reload starts
+     * from a fresh record with everything open (#61, "Session state"). The
+     * rule that moves it is `foldStep()` (`notices.mjs`), on the proven side.
+     */
+    noticeFold: freshFold(),
+
+    /**
+     * The last Set switch, `{ to, keys }`: the type it went to and the pinned
+     * items that stayed behind. `null` before the first switch. It is an
+     * **event**, so it is recorded at the moment of the switch and not
+     * re-derived — the pins can change afterwards, the report of what the
+     * switch kept does not (CONTEXT.md, `CarryOverNotice`).
+     */
+    carryOver: null,
+
+    /** The count of Set switches so far, and the base the last one left. */
+    noticeEvent: 0,
+    noticeBase: null,
+
+    /**
+     * One step of the fold, after every change: the effect in
+     * `views/notices.php` runs it whenever the plan or the base moves, which
+     * is Alpine's equivalent of the prototype's `render()` reading the keys
+     * on every drawing. It writes only when something changed, so the effect
+     * that read the record settles rather than loops.
+     *
+     * The Set switch is told apart here, by the base moving, rather than in
+     * `setType()`: that handler is not this section's to touch, and every way
+     * the base can move — the type chips, the Game row — is then the one event.
+     */
+    refreshNotices() {
+      const base = `${this.gameId}/${this.typeId}`;
+      if (this.noticeBase !== null && base !== this.noticeBase) {
+        this.noticeEvent += 1;
+        this.carryOver = { to: this.typeTitle, keys: this.pinnedKeys };
+      }
+      this.noticeBase = base;
+      const plan = this.plan;
+      const next = foldStep(this.noticeFold, { plan, offer: searchesFor(plan).offer, event: this.noticeEvent });
+      if (JSON.stringify(next) !== JSON.stringify(this.noticeFold)) this.noticeFold = next;
+    },
+
+    /** The ways out of the plan on screen: the single ones, or the one way
+     *  over several sliders where no single slider clears (ADR 0002, K1). */
+    get noticeWays() {
+      return searchesFor(this.plan).ways;
+    },
+
+    /** The stack as it stands — `{ open, chips }`, the plan's notice first. */
+    get notices() {
+      const plan = this.plan;
+      const { ways, offer } = searchesFor(plan);
+      return noticeStack({
+        plan,
+        ways,
+        offer,
+        carry: this.carryOver,
+        fold: this.noticeFold,
+      });
+    },
+
+    minimizeNotice(id) {
+      this.noticeFold = minimize(this.noticeFold, id);
+    },
+
+    /** The chip's one action. It accepts nothing and triggers nothing. */
+    expandNotice(id) {
+      this.noticeFold = expand(this.noticeFold, id);
+    },
+
+    /** The ✕ of the Offer and of the CarryOverNotice; the ConflictNotice has none. */
+    dismissNotice(id) {
+      this.noticeFold = dismiss(this.noticeFold, id, id === 'offer' ? searchesFor(this.plan).offer : null);
+    },
+
+    /**
+     * A way out taken with one click. Every change goes through the handler
+     * a control has, so it pins what it moves (ADR 0006) and writes the
+     * address bar — except the way back to `auto`, which *is* the reset at the
+     * control and drops the pin instead (ADR 0002, addendum).
+     *
+     * A combined way changes several things at once, and the reservation is
+     * changed Rank by Rank at the tile's own handler: falling Ranks from the
+     * bottom up, rising ones from the top down, so that every single step
+     * keeps `d₁ ≥ d₂ ≥ …` and none is refused on the way.
+     */
+    applyWayOut(way) {
+      if (way.auto) {
+        this.resetSlider(way.key);
+        return;
+      }
+      const changes = way.changes ?? [way];
+      const ranks = changes.filter((change) => change.key === 'displays');
+      const now = (change) => Number(this.settings.displays?.[change.rank - 1] ?? 0);
+      const falling = ranks.filter((change) => change.value < now(change)).sort((x, y) => y.rank - x.rank);
+      const rising = ranks.filter((change) => change.value > now(change)).sort((x, y) => x.rank - y.rank);
+      for (const change of changes) if (change.key !== 'displays') this.setSlider(change.key, change.value);
+      for (const change of [...falling, ...rising]) this.setDisplays(change.rank, change.value);
+    },
+
+    /** The Offer's button: the reservation it names, set at the tile's handler. */
+    acceptOffer(offer) {
+      this.setDisplays(offer.rank, offer.value);
+    },
+
+    /**
+     * *Drop all N and follow <Type>* — the third reach of the way back, and
+     * the same question in the same bubble as at the type title (#33, #67):
+     * anchored at the button that was pressed. Confirmed, it drops exactly the
+     * pins the notice lists and the notice closes with the answer.
+     */
+    dropCarried(anchor) {
+      if (!this.carryOver) return;
+      this.askDrop({
+        keys: this.carryOver.keys,
+        anchor,
+        reach: 'carry',
+        bubble: this.carryBubble,
+        done: () => this.dismissNotice('carryOver'),
+      });
+    },
+
+    /**
+     * Where the question is drawn. The sheet's bubble (`DROP_BUBBLE`) is
+     * markup inside `Details`, so on any other page it sits under a hidden
+     * ancestor and cannot show — while the CarryOverNotice lies over every
+     * page. Away from `Details` the question is therefore drawn in the
+     * layer's own bubble of the same form (`views/notices.php`), the second
+     * trigger site `askDrop()`'s `bubble` argument was left open for.
+     */
+    get carryBubble() {
+      return this.activePage === 'details' ? DROP_BUBBLE : '[data-notice-drop]';
+    },
   };
 }

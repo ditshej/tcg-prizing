@@ -333,3 +333,124 @@ export function offerFor(plan) {
   }
   return null;
 }
+
+/**
+ * waysOut(plan) — what the ConflictNotice offers, in the ranking of the
+ * addendum "Wenn kein einzelner Regler räumt" to ADR 0002 (#68, decision K1):
+ * where a single slider clears, the single ways stand **alone**; only where
+ * none does is the one way over several sliders at once offered instead. It
+ * is the case in which there would otherwise be nothing, which is why its
+ * poorer legibility weighs less there than an empty surface.
+ *
+ * An empty list is left for exactly one case: no slider the search may move
+ * clears the stand, alone or together — see `combinedWayOut()`.
+ */
+export function waysOut(plan) {
+  const single = suggestions(plan);
+  if (single.length) return single;
+  const combined = combinedWayOut(plan);
+  return combined ? [combined] : [];
+}
+
+/**
+ * combinedWayOut(plan) — one computed way out over several sliders at once,
+ * or `null` (#68; ADR 0002, addendum "Wenn kein einzelner Regler räumt").
+ *
+ * It is **computed, not searched**, in two passes, and it moves only the
+ * sliders `suggestions()` may move — never `players`, `boosterRate` or
+ * `displaySize`, a way out never asks the CommunityLead to lie about his
+ * tournament (CONTEXT.md, `ConflictNotice`):
+ *
+ * 1. **To the edge that clears.** No reservation, a RankFloor of 0, no
+ *    participation Booster. There the RankPool needs exactly one Booster —
+ *    the Rank 1 lead — and has its most; nothing is orphaned, nothing
+ *    settles the whole depth, and a curve over equal floors cannot overtake.
+ *    So this stand clears **if any stand of the searched sliders does**: a
+ *    fit plan always needs at least one Booster (the lead where nothing is
+ *    settled, a whole Display where something is), and no searched value
+ *    gives the RankPool more than this one. If even it stays unfit, there is
+ *    no way out short of a fact, and the answer is `null`.
+ * 2. **Back as far as the stand allows.** Each slider moved in pass 1 is
+ *    brought back, one after the other, to the value nearest to where it
+ *    stood that still clears — in the reverse of the order the ways out are
+ *    listed in, so the slider the list takes last is the one kept most:
+ *    the participation rate first, then the DisplayReservation, then the
+ *    RankFloor.
+ *
+ * The DisplayReservation comes back **whole and is taken from the bottom**:
+ * starting from the vector as it stood, one Display at a time comes off the
+ * lowest Rank that still holds one, until the stand clears. The lowest first,
+ * for the reason #61 gives for the WinnerPack overhang — a promise to Rank 1
+ * is the louder one. Taking from the bottom keeps `d₁ ≥ d₂ ≥ …` by itself;
+ * bringing Ranks back one by one from the top would not even be sound, since
+ * a prefix like `(1)` can overtake where the whole `(1,1)` does not.
+ *
+ * `RankPoolDepth` and the `DistributionCurve` are not moved: at the edge of
+ * pass 1 neither is needed, and a depth that stays keeps an overtaking Rank in
+ * the plan, which is the extra condition `clears()` puts on an overtake.
+ *
+ * What comes out is the list of what differs from the stand, in the order the
+ * single ways would list them, each entry in the single way's own shape and
+ * words — and their labels joined into the one the button carries.
+ */
+export function combinedWayOut(plan) {
+  if (!unfit(plan)) return null;
+  const settings = plan.settings;
+  const current = reservationVector(settings);
+  const rate = plan.participation.rate.booster;
+
+  const edge = { ...settings, displays: [], rankFloor: 0, participationBooster: 0 };
+  if (!clears(plan, edge)) return null;
+
+  const stand = { ...edge };
+  stand.participationBooster = backToward(plan, stand, 'participationBooster', rate, 0);
+
+  const kept = current.slice();
+  while (kept.some((v) => v > 0) && !clears(plan, { ...stand, displays: kept })) {
+    let last = kept.length - 1;
+    while (kept[last] === 0) last--;
+    kept[last] -= 1;
+  }
+  stand.displays = kept;
+  stand.rankFloor = backToward(plan, stand, 'rankFloor', plan.rankFloor, 0);
+
+  const changes = [];
+  if (stand.rankFloor !== plan.rankFloor) {
+    changes.push({ key: 'rankFloor', value: stand.rankFloor, label: floorLabel(stand.rankFloor, plan.rankFloor) });
+  }
+  current.forEach((now, i) => {
+    const v = kept[i];
+    if (v === now) return;
+    changes.push({
+      key: 'displays',
+      rank: i + 1,
+      value: v,
+      label:
+        v === 0
+          ? `Drop rank ${i + 1}'s ${plural(now, 'display')}`
+          : `Rank ${i + 1} ${direction(v, now)} to ${v} ${plural(v, 'display')}`,
+    });
+  });
+  if (stand.participationBooster !== rate) {
+    changes.push({
+      key: 'participationBooster',
+      value: stand.participationBooster,
+      label: participationLabel(stand.participationBooster, rate),
+    });
+  }
+
+  const label = changes
+    .map((change, i) => (i === 0 ? change.label : change.label[0].toLowerCase() + change.label.slice(1)))
+    .join(' and ');
+  return { key: 'combined', changes, label };
+}
+
+/** The value of one slider nearest to `from` on the way to `to` at which the
+ *  stand still clears — `to` itself, which pass 1 has shown to clear, at worst. */
+function backToward(plan, stand, key, from, to) {
+  const step = from > to ? -1 : 1;
+  for (let v = from; v !== to; v += step) {
+    if (clears(plan, { ...stand, [key]: v })) return v;
+  }
+  return to;
+}

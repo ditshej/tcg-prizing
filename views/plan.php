@@ -1,16 +1,17 @@
 <?php
 /**
  * The Plan screen's static skeleton (#62): the head, participation line, diagram,
- * legend, tile grid and rank notice, then the four hot sliders as a
+ * legend, tile grid and rank notice, then the four hot controls as a
  * fixed bar underneath. Every `x-…` attribute below is static markup PHP
  * composes once; the values behind it come from `distribute()` in the
  * browser and never touch PHP (ADR 0004).
  *
  * `Plan` is now one of three pages (#63): shown only while `activePage` is
  * `'plan'`, folded to a single column with `Prepare` and `Details` until #71
- * builds the width/height fold. The four hot sliders are `controls-hot.php`,
- * the same partial `details.php` shows in its own Grundform — not a second
- * copy (#61, "die Schiene ist Details und war nie ein eigener Inhalt").
+ * builds the width/height fold. The four hot controls are `controls-hot.php`,
+ * whose number rows are the same `control_row()` the sheet in `details.php`
+ * draws (#113) — not a second copy (#61, "die Schiene ist Details und war nie
+ * ein eigener Inhalt").
  *
  * Griffe an der Kachel, Meldungen und die Faltung folgen in
  * späteren Tickets (#62's own body) — this is the skeleton every one of them

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { distribute, unfit } from '../public/core/distribute.mjs';
 import { CURVES } from '../public/core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
-import { curveStepDistance, suggestions, offerFor } from '../public/core/suggest.mjs';
+import { combinedWayOut, curveStepDistance, suggestions, offerFor, waysOut as waysOutOf } from '../public/core/suggest.mjs';
 
 /**
  * A DefaultSet sheet read as Settings, the same way `test/onepiece.test.mjs`
@@ -625,4 +625,201 @@ test('over a sweep, every Offer clears, never rises the vector, and ignores Comb
   }
   assert.equal(stands, 752);
   assert.equal(offers, 516);
+});
+
+/* ── When no single slider clears (#68, ADR 0002 addendum, K1) ─────────── */
+
+/**
+ * The stand of K3 (comment on #68, 2026-09-28), with a floor too high for its
+ * pool on top: one Display each on Ranks 1–3, `Served ranks` pulled down to 2,
+ * so Rank 3's reservation is orphaned — and a floor of 3 the RankPool of 8
+ * cannot carry at depth 2 (`need 7, have 4`). Two facts, and every single
+ * slider clears at most one of them: the floor clears the shortfall and leaves
+ * the orphan, dropping Rank 3 clears the orphan and leaves the shortfall.
+ */
+const twoFacts = {
+  players: 8,
+  boosterRate: 1,
+  participationBooster: 0,
+  judgeBooster: 0,
+  displaySize: 2,
+  displays: [1, 1, 1],
+  depth: 2,
+  rankFloor: 3,
+  curve: 'steep',
+};
+
+/** A way out applied to the Settings it was computed from, the way the
+ *  surface applies it: every change at once, the reservation per Rank. */
+function applyWay(settings, way) {
+  const next = { ...settings, displays: [...(settings.displays ?? [])] };
+  for (const change of way.changes ?? [way]) {
+    if (change.key === 'displays') {
+      while (next.displays.length < change.rank) next.displays.push(0);
+      next.displays[change.rank - 1] = change.value;
+    } else {
+      next[change.key] = change.value;
+    }
+  }
+  return next;
+}
+
+test('the two-fact stand really has no single way out', () => {
+  const plan = distribute(twoFacts);
+  assert.deepEqual(plan.conflict, { need: 7, have: 4 });
+  assert.deepEqual(plan.orphanedReservation, { ranks: [3] });
+  assert.deepEqual(suggestions(plan), []);
+});
+
+/**
+ * Worked by hand from the rule in `combinedWayOut()`'s comment: everything the
+ * search may move goes to the edge that clears (no reservation, floor 0,
+ * participation 0), then each is brought back as close to where it stood as
+ * the stand allows — participation first, the reservation Rank by Rank from
+ * the top, the floor last. Ranks 1 and 2 come back at 1; Rank 3 cannot (it is
+ * orphaned at depth 2); the floor comes back to 1, since 3 needs 7 and 2
+ * needs 5 out of the 4 the RankPool has left after the reservation.
+ */
+test('where no single slider clears, one way over several sliders is computed', () => {
+  const way = combinedWayOut(distribute(twoFacts));
+  assert.deepEqual(way.changes, [
+    { key: 'rankFloor', value: 1, label: 'Floor down to 1' },
+    { key: 'displays', rank: 3, value: 0, label: "Drop rank 3's display" },
+  ]);
+  assert.equal(way.label, "Floor down to 1 and drop rank 3's display");
+});
+
+test('the combined way out, applied, leaves a fit plan — checked by running the core', () => {
+  const way = combinedWayOut(distribute(twoFacts));
+  assert.equal(unfit(distribute(applyWay(twoFacts, way))), false);
+});
+
+test('a single way out stands alone: the combined one is only the case with nothing else', () => {
+  const overtake = settingsFor('weekend', { players: 48, displays: [1], depth: 8, rankFloor: 2, curve: 'severe' });
+  const plan = distribute(overtake);
+  assert.ok(suggestions(plan).length > 0);
+  assert.deepEqual(waysOutOf(plan), suggestions(plan));
+});
+
+test('on the two-fact stand the ways out are the one combined way', () => {
+  const plan = distribute(twoFacts);
+  assert.deepEqual(waysOutOf(plan), [combinedWayOut(plan)]);
+});
+
+test('a fit plan has no ways out at all, combined or single', () => {
+  const plan = distribute(settingsFor('weekend'));
+  assert.equal(unfit(plan), false);
+  assert.equal(combinedWayOut(plan), null);
+  assert.deepEqual(waysOutOf(plan), []);
+});
+
+/**
+ * The bench of K1 (comment on #68, 2026-09-27 20:11): the `conflict` stand of
+ * #56 — `boosterRate` 0, `rankFloor` 2, `depth` 3. The comment and the brief
+ * this ticket was built from both expect a computed way over several sliders
+ * here that clears `unfit` when applied.
+ *
+ * **It does not come out, and the criterion was the side that was wrong.** At a
+ * `boosterRate` of 0 the PrizePool holds no Booster, so the RankPool holds
+ * none whatever the searched sliders say; a fit plan needs at least one —
+ * the Rank 1 lead when nothing is settled, or a whole Display when something
+ * is. Only `boosterRate` clears it, and that is a fact about the evening a way
+ * out may not ask the CommunityLead to change (CONTEXT.md, `ConflictNotice`).
+ * Reported on #68 and decided there (run 12, K2 `satz-zur-tatsache`): no way
+ * out is the answer, and the ConflictNotice names the fact instead
+ * (`test/ui-notices.test.mjs`). The test after it is the proof, by
+ * running the core over every searched slider.
+ */
+const bench = { players: 8, boosterRate: 0, rankFloor: 2, depth: 3, curve: 'steep' };
+
+test('K1 bench: there is no way out, combined or single — the evening has no boosters to give', () => {
+  const plan = distribute(bench);
+  assert.equal(unfit(plan), true);
+  assert.deepEqual(suggestions(plan), []);
+  assert.equal(combinedWayOut(plan), null);
+  assert.deepEqual(waysOutOf(plan), []);
+});
+
+test('K1 bench: no combination of the searched sliders clears it — only boosterRate, a fact, would', () => {
+  let probes = 0;
+  for (const curve of CURVES.map((c) => c.id)) {
+    for (let rankFloor = 0; rankFloor <= 8; rankFloor++) {
+      for (let depth = 1; depth <= bench.players; depth++) {
+        for (const displays of [[], [1], [1, 1], [2, 1], [4, 4, 4], [1, 1, 1, 1, 1, 1, 1, 1]]) {
+          probes++;
+          const plan = distribute({ ...bench, curve, rankFloor, depth, displays, participationBooster: 0 });
+          assert.equal(unfit(plan), true, `cleared at ${JSON.stringify({ curve, rankFloor, depth, displays })}`);
+        }
+      }
+    }
+  }
+  assert.equal(probes, 7 * 9 * 8 * 6);
+  assert.equal(unfit(distribute({ ...bench, boosterRate: 1 })), false);
+  assert.equal(combinedWayOut(distribute(bench)), null);
+});
+
+/**
+ * Over a sweep of stands with no single way out: the combined way, applied,
+ * always clears and keeps `d₁ ≥ d₂ ≥ …`, it never touches a fact about the
+ * evening, and it is `null` only where the brute force over the searched
+ * sliders together finds nothing either. The brute force runs the core over
+ * the product of the searched ranges (reservation vectors from a small family)
+ * and is the independent side here — it knows nothing of the two passes.
+ */
+test('over a sweep, the combined way clears, and is missing only where no combination clears', () => {
+  const FACTS = new Set(['players', 'boosterRate', 'displaySize']);
+  const vectors = [[], [1], [1, 1], [2, 1], [1, 1, 1], [2, 1, 1, 1]];
+  let stands = 0;
+  let found = 0;
+  let none = 0;
+  for (const players of [4, 8]) {
+    for (const boosterRate of [0, 1, 2]) {
+      for (const participationBooster of [0, 1]) {
+        for (const rankFloor of [1, 3, 6]) {
+          for (const depth of [1, 2, 3]) {
+            for (const displays of [[1, 1, 1], [2, 1, 1, 1], [3, 2], [1, 0, 0, 1]]) {
+              for (const displaySize of [1, 3]) {
+                const settings = { players, boosterRate, participationBooster, rankFloor, depth, displays, displaySize, curve: 'steep' };
+                const plan = distribute(settings);
+                if (!unfit(plan) || suggestions(plan).length) continue;
+                stands++;
+                const way = combinedWayOut(plan);
+                let anything = false;
+                for (const curve of CURVES.map((c) => c.id)) {
+                  for (let f = 0; f <= 8 && !anything; f++) {
+                    for (let t = 1; t <= players && !anything; t++) {
+                      for (let pb = 0; pb <= boosterRate && !anything; pb++) {
+                        for (const d of vectors) {
+                          const probe = distribute({ ...settings, curve, rankFloor: f, depth: t, participationBooster: pb, displays: d });
+                          if (!unfit(probe) && (!plan.overtake || probe.depth >= plan.overtake.over)) {
+                            anything = true;
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                const where = JSON.stringify(settings);
+                assert.equal(way !== null, anything, `combined way and brute force disagree at ${where}`);
+                if (!way) {
+                  none++;
+                  continue;
+                }
+                found++;
+                assert.ok(way.changes.length >= 1, `an empty way at ${where}`);
+                for (const change of way.changes) assert.ok(!FACTS.has(change.key), `a fact moved at ${where}`);
+                const applied = applyWay(settings, way);
+                const d = applied.displays;
+                for (let i = 1; i < d.length; i++) assert.ok(d[i] <= d[i - 1], `the vector rises at ${where}`);
+                assert.equal(unfit(distribute(applied)), false, `does not clear at ${where}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.equal(stands, found + none);
+  assert.ok(found > 0 && none > 0);
 });

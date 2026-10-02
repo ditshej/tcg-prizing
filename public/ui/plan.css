@@ -454,16 +454,28 @@ body {
 }
 
 /*
- * A note beside a rail control's counter — today only the `RankPoolDepth`
- * cap (#104). It is `.sheet-foot`'s job in the rail's dimensions: the sheet
- * can afford a line under the slider, this strip's height is counted by the
- * fold arithmetic, so the note sits inline after the counter and wraps only
- * where the column is too narrow for both.
+ * The rail's three numbers are the sheet's row (`control_row()`, #113), so
+ * their form is `.sheet-control-head` below; what is the rail's alone is the
+ * cell they sit in. A grid cell is narrower than the sheet's column, and
+ * where title and counter do not fit side by side the counter goes under the
+ * title as a whole, rather than the title breaking — `cap N` stays on the
+ * title line (K4 of run 11). The rail's height is counted by the fold
+ * arithmetic, so the row keeps the strip's small type.
  */
-.plan-control-note {
-  margin-left: 6px;
-  font-size: 0.7rem;
-  opacity: 0.6;
+.controls-hot .sheet-control-head {
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  min-height: 0;
+  font-size: 0.75rem;
+}
+
+.controls-hot .sheet-control-label {
+  font-size: 0.75rem;
+}
+
+.controls-hot .counter-value {
+  padding: 1px 2px;
+  font-size: 0.8rem;
 }
 
 /*
@@ -609,6 +621,29 @@ body {
   min-height: 26px;
 }
 
+/* Title, state word and note are one line and never break: `cap N` belongs
+   on the title line of `Served ranks` (#104, #113). */
+.sheet-control-title {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* …except a label too long for its column, which wraps inside itself rather
+   than pushing the counter off the edge. `Served ranks` is short, so its
+   line — title, word, `cap N` — stays one. */
+.sheet-control-title .sheet-control-label {
+  white-space: normal;
+}
+
+.sheet-control-note {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
 /* The number stands in the counter and nowhere else — twice the same number
    reads as two values (#64). The title therefore carries no figure. */
 .sheet-control-label {
@@ -623,7 +658,11 @@ body {
   white-space: nowrap;
 }
 
+/* `flex: none`: a long title ("Tournament Packs per Promo-Envelope") may
+   wrap, the counter may not shrink — squeezed, the field went to zero width
+   and the number vanished (measured at 393 px, #113). */
 .counter {
+  flex: none;
   margin-left: auto;
   display: flex;
   align-items: stretch;
@@ -642,25 +681,48 @@ body {
   cursor: pointer;
 }
 
-/* A ± that is out of reach says so, rather than moving nothing: slider and
-   counter share one cap (`boundsFor()` in controls.mjs). */
+/* A ± that is out of reach says so, rather than moving nothing. Only a wall
+   closes one — the core's own cut (`boundsFor()` in controls.mjs, #113) — or
+   a minimum; an open number's plus never closes. */
 .counter button:disabled {
   opacity: 0.3;
   cursor: default;
 }
 
+/* The number is a field one types into (#113). Wide enough for four digits —
+   1152 boosters is a real pool — and framed by the ± on either side, so it
+   reads as the counter's middle and not as a form field beside it. */
 .counter-value {
-  min-width: 34px;
+  width: 4.2em;
+  min-width: 0;
   padding: 3px 2px;
+  border: none;
+  border-left: 1px solid light-dark(#ddd6c8, #37322a);
+  border-right: 1px solid light-dark(#ddd6c8, #37322a);
+  background: none;
+  color: inherit;
   text-align: center;
+  font: inherit;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 0.85rem;
 }
 
-.sheet-control input[type='range'] {
-  width: 100%;
-  margin: 4px 0 0;
+.counter-value:focus {
+  outline: none;
+  background: light-dark(#f6f1e6, #2c2820);
+}
+
+/* Typed and not yet committed: the plan has not moved, and the field says so
+   — dashed and pale, until Enter or leaving the field makes it count (#113). */
+.counter.is-draft {
+  border-style: dashed;
+  border-color: light-dark(#b07a1e, #e0b45c);
+}
+
+.counter.is-draft .counter-value {
+  font-style: italic;
+  color: light-dark(#8a5d10, #e0b45c);
 }
 
 .step-grid {
@@ -1058,7 +1120,8 @@ body {
   opacity: 0.5;
 }
 
-.sheet-control.is-pinned .sheet-control-label {
+.sheet-control.is-pinned .sheet-control-label,
+.sheet-control-head.is-pinned .sheet-control-label {
   font-weight: 700;
 }
 
@@ -1493,4 +1556,192 @@ body {
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
+}
+
+/*
+ * The NoticeStack (#68). A layer over the whole app that covers and pushes
+ * nothing: both halves are `position: fixed`, so a standing notice takes no
+ * height from the tile grid — it lies over it (#61: measured, a notice in the
+ * flow left 11 of 114px of grid, on the maintainer's device none).
+ *
+ * The open notices stand on the foot, the plan's notice at the top of the
+ * stack and the input's at the bottom, beside the controls (#31). The chips
+ * have their own anchor one row above the foot: the corner is the lowest free
+ * one on the right, and a pill in its own band covers nothing, so it goes to
+ * the edge (CONTEXT.md, `NoticeStack`). In fullscreen there is no foot, and
+ * the same rule puts both on the bottom edge.
+ *
+ * `--notice-right` is the indent the open surface keeps from the controls
+ * column once the controls stand beside the plan as a column (from 740px,
+ * #71): there it ends before them and leaves their pin markings free. On a
+ * narrow screen the open notice covers the controls, `pinned` and reset
+ * included, on purpose — the lighter loss, since the ways out are clickable in
+ * the notice itself (the prototype's comment over `.stack > *`; maintainer
+ * decision on #68, run 12, K3 `prototyp-gilt`, which overrides the ticket's
+ * "must not cover the pin markings"). The app folds into one page at every
+ * width until #71 builds the columns, so it is 0 and the notice covers
+ * everywhere; the fold sets it once there are columns.
+ * `--notice-foot` is the foot's measured 56px (`.foot`: 20 + 3 + 12 + 2 × 10
+ * + 1).
+ *
+ * Told apart by colour and ways out only, never by form or by how they start
+ * (#61). The three tones are the prototype's: warn red, the reserve violet,
+ * and the bronze accent of what was just switched — not the pin violet, which
+ * sits next to the Offer's and cannot be told apart from it.
+ */
+.notice-layer {
+  --notice-foot: 56px;
+  --notice-right: 0px;
+}
+
+.notice-layer-bare {
+  --notice-foot: 0px;
+}
+
+/* A chip row standing lifts the open stack above it by its own height. */
+.notice-layer-chips {
+  --notice-chiprow: 42px;
+}
+
+.notice-stack {
+  position: fixed;
+  left: 0;
+  right: var(--notice-right);
+  bottom: calc(var(--notice-foot) + var(--notice-chiprow, 0px));
+  z-index: 36;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 12px 8px;
+  max-height: calc(100dvh - var(--notice-foot) - var(--notice-chiprow, 0px));
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.notice {
+  pointer-events: auto;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  box-shadow: 0 8px 24px light-dark(rgba(58, 42, 22, 0.18), rgba(0, 0, 0, 0.62));
+}
+
+.notice-conflict {
+  background: light-dark(#ffe1dd, #3d1b18);
+  color: light-dark(#96140f, #ff9f90);
+}
+
+.notice-offer {
+  background: light-dark(#f3ecf6, #2a2338);
+  color: light-dark(#6b3f80, #c8aee4);
+}
+
+.notice-carryOver {
+  background: light-dark(#f0e4d1, #2a2620);
+  color: light-dark(#241c12, #f2ece0);
+}
+
+.notice-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.notice-text {
+  flex: 1 1 auto;
+}
+
+.notice-line {
+  margin: 0;
+}
+
+.notice-line + .notice-line {
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.notice-lead {
+  font-weight: 700;
+}
+
+.notice-fold,
+.notice-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 2px 5px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.notice-action {
+  font: inherit;
+  font-size: 0.75rem;
+  border: 1px solid currentColor;
+  background: light-dark(#fffdf8, #1e1b16);
+  color: inherit;
+  border-radius: 999px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.notice-chips {
+  position: fixed;
+  right: 0;
+  bottom: var(--notice-foot);
+  z-index: 37;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0 12px 8px;
+  pointer-events: none;
+}
+
+/*
+ * The chip carries its colour as a ring, not as a fill, on the raised paper
+ * of both modes — on the dark paper a soft tint was not to be seen
+ * (prototype, `.chip`). Word and number, never a glyph alone; the ⚠ stands
+ * beside the ConflictNotice's word and is the corner's one sign.
+ */
+.notice-chip {
+  pointer-events: auto;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: light-dark(#fffdf8, #1e1b16);
+  font: 600 0.78rem/1 system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px currentColor, 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.notice-chip-conflict {
+  color: light-dark(#96140f, #ff9f90);
+}
+
+.notice-chip-offer {
+  color: light-dark(#8a5f9c, #a888c8);
+}
+
+.notice-chip-carryOver {
+  color: light-dark(#8c5a2b, #c9992e);
+}
+
+.notice-glyph {
+  font-size: 13px;
 }
