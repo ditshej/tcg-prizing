@@ -1,7 +1,7 @@
 <?php
 /**
  * The static outer shell (#62): what PHP renders and what never changes
- * while a slider is being dragged (ADR 0004 — "PHP rendert, was sich beim
+ * while a number is being set (ADR 0004 — "PHP rendert, was sich beim
  * Reglerziehen nie ändert"). Everything plan-dependent lives inside
  * `app.php` behind `x-data="planApp()"` and is Alpine's job, not PHP's —
  * `app.php` in turn composes the three pages and the footer (#63).

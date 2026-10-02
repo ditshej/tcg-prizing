@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
 import {
@@ -386,11 +386,11 @@ test('the carry reach asks the same question in other words', () => {
   assert.match(carry.note, /no undo/i);
 });
 
-test('one slider is one slider, and the plural follows the count', () => {
+test('one value is one value, and the plural follows the count', () => {
   const one = dropConfirmation({ keys: ['players'], typeTitle: 'Weekly' });
   const two = dropConfirmation({ keys: ['players', 'ranked'], typeTitle: 'Weekly' });
-  assert.match(one.headline, /^1 slider back to Weekly\?$/);
-  assert.match(two.headline, /^2 sliders back to Weekly\?$/);
+  assert.match(one.headline, /^1 value back to Weekly\?$/);
+  assert.match(two.headline, /^2 values back to Weekly\?$/);
 });
 
 /* ── The reaches (#67 AC 3, AC 5) ───────────────────────────────────────── */
@@ -522,11 +522,107 @@ test('the step grid has no title of its own — it is a member of Served ranks',
   assert.ok(!Object.values(PIN_LABELS).some((label) => /step/i.test(label)), 'no invented step word');
 });
 
+/* ── The typed field and its commit (#113) ──────────────────────────────── */
+
+/**
+ * #113: a typed number counts at Enter or when the field is left, and only if
+ * it changed. Until then the field is marked as not yet valid and the plan
+ * stands still. Escape discards. `−` and `+` write and pin at once. On a phone
+ * every leaving of the field is a commit — there is no gesture to cancel — so
+ * "unchanged writes nothing" is what stops a tap into the field from leaving a
+ * pin nobody set, which the question of the full reach would then read out by
+ * name (comment on #67, "Aus #113 nachgetragen").
+ */
+test('typing marks the field and moves nothing until the commit', () => {
+  const { app, written } = opened();
+  app.draft('players', '128');
+  assert.equal(app.isDraft('players'), true, 'the field says it is not yet valid');
+  assert.equal(app.plan.players, 32, 'the plan stands still');
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+
+  app.commitTyped('players', '128');
+  assert.equal(app.isDraft('players'), false);
+  assert.equal(app.plan.players, 128);
+  assert.equal(app.pins.players, 128, 'a changed commit pins');
+  assert.equal(written.length, 1);
+});
+
+test('a field typed back to its own value is not marked, and committing it writes and pins nothing', () => {
+  const { app, written } = opened();
+  app.draft('tournamentPacks', '32');
+  assert.equal(app.isDraft('tournamentPacks'), false, 'the auto value, typed again, is no draft');
+  app.commitTyped('tournamentPacks', '32');
+  app.commitTyped('players', ' 32');
+  assert.deepEqual(app.pins, {});
+  assert.equal(app.isPinned('tournamentPacks'), false);
+  assert.deepEqual(written, []);
+});
+
+test('Escape discards, and the leaving that follows it commits nothing', () => {
+  const { app, written } = opened();
+  app.draft('rankFloor', '7');
+  assert.equal(app.isDraft('rankFloor'), true);
+  app.discardDraft('rankFloor');
+  assert.equal(app.isDraft('rankFloor'), false);
+  // The field shows the standing value again, so the blur commits that.
+  app.commitTyped('rankFloor', String(app.value('rankFloor')));
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+});
+
+test('an entry that is not a number writes nothing and drops the draft', () => {
+  const { app, written } = opened();
+  for (const text of ['', 'abc', '3.5']) {
+    app.draft('players', text);
+    app.commitTyped('players', text);
+    assert.equal(app.isDraft('players'), false, JSON.stringify(text));
+  }
+  assert.deepEqual(app.pins, {});
+  assert.deepEqual(written, []);
+});
+
+test('minus and plus write and pin at once, on an auto value too', () => {
+  const { app } = opened();
+  app.step('tournamentPacks', 1);
+  assert.equal(app.pins.tournamentPacks, 33);
+  app.step('rankFloor', -1);
+  assert.equal(app.pins.rankFloor, 1);
+});
+
+test('the plus of an open number is never closed, and a wall closes it exactly there', () => {
+  const { app } = opened();
+  app.commitTyped('players', '128');
+  app.commitTyped('boosterRate', '9');
+  app.commitTyped('participationBooster', '6');
+  for (const key of ['players', 'boosterRate', 'tournamentPacks', 'winnerPacks', 'displaySize',
+    'envelopeSize', 'envelopeYield', 'rankFloor']) {
+    assert.equal(app.canStep(key, 1), true, `${key} + is open`);
+  }
+  app.commitTyped('judgeBooster', '384');
+  assert.equal(app.canStep('judgeBooster', 1), false, 'the wall at 384 closes the plus');
+  assert.equal(app.canStep('judgeBooster', -1), true);
+  app.commitTyped('judgeBooster', '9999');
+  assert.equal(app.value('judgeBooster'), 384, 'a typed number past the wall holds at it');
+});
+
+test('a pinned value a wall sank under stands, and its minus still leaves it (ADR 0006)', () => {
+  const { app } = opened();
+  app.commitTyped('participationBooster', '3');
+  app.commitTyped('boosterRate', '1');
+  assert.equal(app.value('participationBooster'), 3, 'never cut');
+  assert.equal(app.canStep('participationBooster', 1), false);
+  assert.equal(app.canStep('participationBooster', -1), true);
+  app.step('participationBooster', -1);
+  assert.equal(app.value('participationBooster'), 2);
+});
+
 /* ── The markup (#67 AC 1, AC 4, AC 7) ──────────────────────────────────── */
 
 const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
 const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
 const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url), 'utf8');
+const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
 
 /**
  * The screen word of a control and the word the question uses have to be the
@@ -534,8 +630,9 @@ const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url),
  * two files, so the pairing is held here rather than trusted.
  */
 test('the sheet labels and the question labels are the same words', () => {
-  const calls = [...SHEET.matchAll(/sheet_control\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g)];
-  assert.ok(calls.length >= 13, 'the sheet still composes its controls through sheet_control()');
+  const pattern = /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
+  const calls = [...SHEET.matchAll(pattern), ...RAIL.matchAll(pattern)];
+  assert.ok(calls.length >= 17, 'sheet and rail compose their numbers through the shared row');
   for (const [, key, label] of calls) {
     assert.equal(PIN_LABELS[key], label.replace(/\\'/g, "'"), `${key} is called the same in both places`);
   }
@@ -549,23 +646,30 @@ test('the sheet labels and the question labels are the same words', () => {
  * `Handout`).
  */
 test('every control on the sheet carries its state word and its own way back', () => {
-  assert.match(SHEET, /function sheet_pin_head[^]*stateWord\('<\?= \$k \?>'\)/);
-  assert.match(SHEET, /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/);
-  assert.match(SHEET, /function sheet_control[^]*sheet_pin_head\(\$key\)/);
-  assert.match(SHEET, /function sheet_control[^]*sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(ROW, /function sheet_pin_head[^]*stateWord\('<\?= \$k \?>'\)/);
+  assert.match(ROW, /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/);
+  assert.match(ROW, /function control_row[^]*sheet_pin_head\(\$key\)/);
+  assert.match(ROW, /function control_row[^]*sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(SHEET, /function sheet_control[^]*control_row\(\$key, \$label/);
+  const drawn = (key, helper) =>
+    SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`control_row('${key}'`) ||
+    SHEET.includes(`${helper}('${key}'`);
   for (const key of SHEET_KEYS) {
     if (key === 'depthStep') continue; // the step grid inside `Served ranks`, not a control of its own
-    const marked = SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`sheet_pin_head('${key}'`);
+    const marked = drawn(key, 'sheet_pin_head');
     assert.ok(marked, `${key} shows pinned or auto`);
-    const back = SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`sheet_pin_reset('${key}'`);
+    const back = drawn(key, 'sheet_pin_reset');
     assert.ok(back, `${key} has the single reach`);
   }
 });
 
 test('the rail under the plan marks its four the same way', () => {
-  for (const key of ['players', 'depth', 'curve', 'rankFloor']) {
-    assert.ok(RAIL.includes(`stateWord('${key}')`), `${key} is marked on the rail too`);
+  // Three through the shared row, which carries the word; the curve select
+  // marks itself as it did (#104).
+  for (const key of ['players', 'depth', 'rankFloor']) {
+    assert.ok(RAIL.includes(`control_row('${key}'`), `${key} is marked on the rail too`);
   }
+  assert.ok(RAIL.includes(`stateWord('curve')`), 'curve is marked on the rail too');
 });
 
 test('the full reach hangs off the type row and asks before it acts', () => {
@@ -588,15 +692,149 @@ test('the bubble draws a title and a target per item, and no run-on list of name
 });
 
 /**
- * #113 swaps the word the question calls an item by. It stands once, in
- * `DROP_NOUN`, and nothing in the bubble or at its chip spells it out again.
+ * #113 swaps the word the question calls an item by, from *slider* to
+ * *value* — not *setting*, because `Settings` is a glossary term. It stands
+ * once, in `DROP_NOUN`, and nothing in the bubble or at its chip spells it out
+ * again; and no text on screen calls a control a slider any more (#113 AC 16).
  */
-test('the question\'s word for an item stands in one place', () => {
+test('the question\'s word for an item stands in one place, and it is value', () => {
   const CONTROLS = readFileSync(new URL('../public/ui/controls.mjs', import.meta.url), 'utf8');
   const code = CONTROLS.split('\n').filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line)).join('\n');
-  assert.equal((code.match(/'slider/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
-  assert.ok(!/'sliders?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
+  assert.equal((code.match(/'value/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
+  assert.ok(!/'values?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
   const { app } = opened();
   app.setSlider('players', 24);
-  assert.equal(app.dropAllLabel, 'Drop 1 hand-set slider');
+  assert.equal(app.dropAllLabel, 'Drop 1 hand-set value');
+});
+
+/**
+ * The string and template literals of a module, comments left out — the
+ * screen text a `public/ui/*.mjs` file can put on screen. A template's
+ * `${…}` parts are code and fall out of its text; the literals nested in them
+ * are read as literals of their own. A regex literal is skipped, so a quote
+ * inside one does not open a string. Deliberately small: it reads this
+ * repo's modules, not JavaScript at large.
+ */
+function screenLiterals(source) {
+  const found = [];
+  const n = source.length;
+  let i = 0;
+  let prev = '';
+  const quoted = (quote) => {
+    let j = i + 1;
+    let text = '';
+    while (j < n && source[j] !== quote) {
+      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
+      text += source[j++];
+    }
+    i = j + 1;
+    return text;
+  };
+  const template = () => {
+    let j = i + 1;
+    let text = '';
+    while (j < n && source[j] !== '`') {
+      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
+      if (source[j] === '$' && source[j + 1] === '{') {
+        let depth = 1;
+        j += 2;
+        while (j < n && depth > 0) {
+          const c = source[j];
+          if (c === "'" || c === '"' || c === '`') {
+            i = j;
+            found.push(c === '`' ? template() : quoted(c));
+            j = i;
+            continue;
+          }
+          if (c === '{') depth++;
+          else if (c === '}') depth--;
+          j++;
+        }
+        text += ' … ';
+        continue;
+      }
+      text += source[j++];
+    }
+    i = j + 1;
+    return text;
+  };
+  while (i < n) {
+    const c = source[i];
+    if (c === '/' && source[i + 1] === '/') { while (i < n && source[i] !== '\n') i++; continue; }
+    if (c === '/' && source[i + 1] === '*') { const close = source.indexOf('*/', i + 2); i = close < 0 ? n : close + 2; continue; }
+    if (c === "'" || c === '"') { found.push(quoted(c)); prev = 'x'; continue; }
+    if (c === '`') { found.push(template()); prev = 'x'; continue; }
+    if (c === '/' && (prev === '' || '(,=:[!&|?{};'.includes(prev))) {
+      let j = i + 1;
+      let inClass = false;
+      while (j < n && (inClass || source[j] !== '/')) {
+        if (source[j] === '\\') j++;
+        else if (source[j] === '[') inClass = true;
+        else if (source[j] === ']') inClass = false;
+        j++;
+      }
+      i = j + 1;
+      prev = 'x';
+      continue;
+    }
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  return found;
+}
+
+/**
+ * #113 AC 16: no text on screen calls a control a *slider*, and its
+ * replacement is not *setting* either — `Settings` names all nineteen fields
+ * at once. Screen text is the views' markup **and** what `public/ui/*.mjs`
+ * composes: a sentence such as `${n} pinned ${plural(n, 'slider')} stayed
+ * behind.` reaches the screen from a module and was invisible to a probe that
+ * read the views alone (B6, run 12). Handler names (`setSlider`,
+ * `resetSlider`) are code, and so is a property read off `settings` in an
+ * Alpine expression (`settings.curve`).
+ */
+const NOT_ON_SCREEN = [/slider/i, /\bsettings?\b(?!\.[A-Za-z_$]|\[)/i];
+
+function screenWords(text) {
+  return text.replace(/\b(set|reset)Slider\b/g, '');
+}
+
+test('no text on screen calls a control a slider, nor a setting (#113 AC 16)', () => {
+  const VIEWS = new URL('../views/', import.meta.url);
+  for (const file of readdirSync(VIEWS).filter((name) => name.endsWith('.php'))) {
+    const markup = readFileSync(new URL(file, VIEWS), 'utf8')
+      .replace(/<\?php[^]*?\?>/g, (block) => (block.includes('/**') || block.includes('//') ? '' : block))
+      .replace(/<!--[^]*?-->/g, '');
+    for (const word of NOT_ON_SCREEN) assert.doesNotMatch(screenWords(markup), word, `${file} says ${word} on screen`);
+  }
+  const UI = new URL('../public/ui/', import.meta.url);
+  for (const file of readdirSync(UI).filter((name) => name.endsWith('.mjs'))) {
+    for (const literal of screenLiterals(readFileSync(new URL(file, UI), 'utf8'))) {
+      for (const word of NOT_ON_SCREEN) {
+        assert.doesNotMatch(screenWords(literal), word, `${file} puts ${JSON.stringify(literal)} on screen`);
+      }
+    }
+  }
+  const { app } = opened();
+  app.setSlider('players', 24);
+  app.setSlider('rankFloor', 3);
+  const question = dropConfirmation({ keys: app.pinnedKeys, typeTitle: 'Weekly' });
+  for (const word of NOT_ON_SCREEN) {
+    assert.doesNotMatch(JSON.stringify(question), word);
+    assert.doesNotMatch(app.dropAllLabel, word);
+  }
+});
+
+test('the screen-text probe reads what a module composes, and not its comments', () => {
+  const literals = screenLiterals([
+    "// a slider in a comment is no screen text",
+    "/* nor is a setting in a block */",
+    "const re = /'not a string/g;",
+    "const line = `${n} pinned ${plural(n, 'slider')} stayed behind.`;",
+    "const report = 'not a setting of this app';",
+  ].join('\n'));
+  assert.deepEqual(literals, ['slider', ' …  pinned  …  stayed behind.', 'not a setting of this app']);
+  assert.ok(literals.some((text) => NOT_ON_SCREEN[0].test(text)), 'the #68 sentence would turn the probe red');
+  assert.ok(literals.some((text) => NOT_ON_SCREEN[1].test(text)), 'the #72 sentence would turn the probe red');
+  assert.ok(!NOT_ON_SCREEN[1].test('settings.curve'), 'a property read is code');
 });

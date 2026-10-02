@@ -454,16 +454,28 @@ body {
 }
 
 /*
- * A note beside a rail control's counter — today only the `RankPoolDepth`
- * cap (#104). It is `.sheet-foot`'s job in the rail's dimensions: the sheet
- * can afford a line under the slider, this strip's height is counted by the
- * fold arithmetic, so the note sits inline after the counter and wraps only
- * where the column is too narrow for both.
+ * The rail's three numbers are the sheet's row (`control_row()`, #113), so
+ * their form is `.sheet-control-head` below; what is the rail's alone is the
+ * cell they sit in. A grid cell is narrower than the sheet's column, and
+ * where title and counter do not fit side by side the counter goes under the
+ * title as a whole, rather than the title breaking — `cap N` stays on the
+ * title line (K4 of run 11). The rail's height is counted by the fold
+ * arithmetic, so the row keeps the strip's small type.
  */
-.plan-control-note {
-  margin-left: 6px;
-  font-size: 0.7rem;
-  opacity: 0.6;
+.controls-hot .sheet-control-head {
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  min-height: 0;
+  font-size: 0.75rem;
+}
+
+.controls-hot .sheet-control-label {
+  font-size: 0.75rem;
+}
+
+.controls-hot .counter-value {
+  padding: 1px 2px;
+  font-size: 0.8rem;
 }
 
 /*
@@ -609,6 +621,29 @@ body {
   min-height: 26px;
 }
 
+/* Title, state word and note are one line and never break: `cap N` belongs
+   on the title line of `Served ranks` (#104, #113). */
+.sheet-control-title {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* …except a label too long for its column, which wraps inside itself rather
+   than pushing the counter off the edge. `Served ranks` is short, so its
+   line — title, word, `cap N` — stays one. */
+.sheet-control-title .sheet-control-label {
+  white-space: normal;
+}
+
+.sheet-control-note {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
 /* The number stands in the counter and nowhere else — twice the same number
    reads as two values (#64). The title therefore carries no figure. */
 .sheet-control-label {
@@ -623,7 +658,11 @@ body {
   white-space: nowrap;
 }
 
+/* `flex: none`: a long title ("Tournament Packs per Promo-Envelope") may
+   wrap, the counter may not shrink — squeezed, the field went to zero width
+   and the number vanished (measured at 393 px, #113). */
 .counter {
+  flex: none;
   margin-left: auto;
   display: flex;
   align-items: stretch;
@@ -642,25 +681,48 @@ body {
   cursor: pointer;
 }
 
-/* A ± that is out of reach says so, rather than moving nothing: slider and
-   counter share one cap (`boundsFor()` in controls.mjs). */
+/* A ± that is out of reach says so, rather than moving nothing. Only a wall
+   closes one — the core's own cut (`boundsFor()` in controls.mjs, #113) — or
+   a minimum; an open number's plus never closes. */
 .counter button:disabled {
   opacity: 0.3;
   cursor: default;
 }
 
+/* The number is a field one types into (#113). Wide enough for four digits —
+   1152 boosters is a real pool — and framed by the ± on either side, so it
+   reads as the counter's middle and not as a form field beside it. */
 .counter-value {
-  min-width: 34px;
+  width: 4.2em;
+  min-width: 0;
   padding: 3px 2px;
+  border: none;
+  border-left: 1px solid light-dark(#ddd6c8, #37322a);
+  border-right: 1px solid light-dark(#ddd6c8, #37322a);
+  background: none;
+  color: inherit;
   text-align: center;
+  font: inherit;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 0.85rem;
 }
 
-.sheet-control input[type='range'] {
-  width: 100%;
-  margin: 4px 0 0;
+.counter-value:focus {
+  outline: none;
+  background: light-dark(#f6f1e6, #2c2820);
+}
+
+/* Typed and not yet committed: the plan has not moved, and the field says so
+   — dashed and pale, until Enter or leaving the field makes it count (#113). */
+.counter.is-draft {
+  border-style: dashed;
+  border-color: light-dark(#b07a1e, #e0b45c);
+}
+
+.counter.is-draft .counter-value {
+  font-style: italic;
+  color: light-dark(#8a5d10, #e0b45c);
 }
 
 .step-grid {
@@ -1058,7 +1120,8 @@ body {
   opacity: 0.5;
 }
 
-.sheet-control.is-pinned .sheet-control-label {
+.sheet-control.is-pinned .sheet-control-label,
+.sheet-control-head.is-pinned .sheet-control-label {
   font-weight: 700;
 }
 
