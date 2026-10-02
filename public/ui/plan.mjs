@@ -902,6 +902,20 @@ export function planApp(seam = SEAM) {
       this.raffleOpen = !this.raffleOpen;
     },
 
+    /**
+     * Whether the diagram stands. Not in fullscreen (#63), and not on the
+     * **flat stage while the raffle bar is open** (#129): there the overlap
+     * the diagram pays under K1 is more than it has above its 60 px floor, so
+     * it gives way to 0 and the tiles come first; it is back as soon as the
+     * bar closes. Flat is the fold's own flag, read like every other part of
+     * the shell reads the fold — never a width. Everywhere not flat, K1 of
+     * run 14 stands unchanged: the diagram yields by the overlap, never under
+     * its floor (`diagramCap()`).
+     */
+    get diagramShown() {
+      return !this.fullscreen && !(this.fold.flat && this.raffleOpen);
+    },
+
     /** The bar's own ✕ — the one grip besides the legend's that closes it. */
     closeRaffle() {
       this.raffleOpen = false;

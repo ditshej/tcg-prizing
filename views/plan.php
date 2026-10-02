@@ -58,8 +58,11 @@
       Kacheln, nicht das Diagramm." Keeping it here is what made fullscreen show
       *fewer* ranks than the page it opened from, because the diagram takes
       every pixel the controls rail and the foot give up.
+
+      On the flat stage it is gone, too, while the raffle bar is open (#129):
+      the tiles come first there, and it comes back when the bar closes.
     -->
-    <div class="plan-diagram" aria-hidden="true" x-show="!fullscreen">
+    <div class="plan-diagram" aria-hidden="true" x-show="diagramShown">
       <template x-for="row in plan.rows" :key="row.rank">
         <div class="bar" :class="{ 'bar-unserved': !row.served }">
           <div class="seg-reservation" :style="`height:${segments(row).reservation}%`"></div>
