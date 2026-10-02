@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -99,32 +99,98 @@ test('the select keeps following settings.curve after the first $nextTick, not o
   );
 });
 
-test('the RankPoolDepth counter shows the value, and the cap is a note beside it (#104 G3)', () => {
-  const control = planControlMarkup('setDepth(');
-  // The slider runs to the player count — that is the one cap this control
-  // enforces (#61, "Caps at the controls": "auf die Spielerzahl gedeckelt
-  // sind `depth` und `ranked`"), and `bounds('depth')` in `public/ui/controls.mjs`
-  // returns the same for the sheet.
-  assert.match(control, /:max="plan\.players"/, 'the slider still runs to the player count');
-  // `depthCap` is a different number — how far the pool reaches at this floor
-  // — and putting it in the counter read as a fraction of the slider's range
-  // when it never was one. Measured cold: "8 of 15" beside a slider running
-  // to 32 under weekly, "8 of 31" under weekend, both 32 under release.
-  assert.doesNotMatch(
-    control,
-    /of\s*<span x-text="plan\.depthCap"/,
-    'the counter pairs the value with a cap that is not the slider\'s range',
-  );
-  assert.match(
-    control,
-    /\(<span x-text="plan\.depth"><\/span>\)/,
-    'the counter carries the value alone',
-  );
-  // The cap still has to be readable, as its own note — the short form of
-  // what `Details` says under the same slider (`views/controls-sheet.php`).
-  assert.match(
-    control,
-    /class="plan-control-note"\s+x-text="`cap \$\{plan\.depthCap\}`"/,
-    'the depth cap is gone from the rail instead of standing beside the counter',
-  );
+/* ── One row for rail and sheet (#113) ──────────────────────────────────── */
+
+const VIEWS = new URL('../views/', import.meta.url);
+const ROW = readFileSync(new URL('control-row.php', VIEWS), 'utf8');
+const SHEET = readFileSync(new URL('controls-sheet.php', VIEWS), 'utf8');
+const RAIL = readFileSync(VIEW_PATH, 'utf8');
+const CSS = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
+
+/** PHP and HTML comments out, so a sentence *about* a slider is not mistaken
+ *  for one. */
+const code = (source) => source.replace(/<!--[^]*?-->/g, '').replace(/\/\*[^]*?\*\//g, '');
+
+/** The body of `control_row()` — the one function both callers draw from. */
+function rowFunction() {
+  const start = ROW.indexOf('function control_row(');
+  assert.ok(start >= 0, 'views/control-row.php defines control_row()');
+  const end = ROW.indexOf('\n}\n', start);
+  return ROW.slice(start, end);
+}
+
+test('no view draws a range input any more (#113 AC 1)', () => {
+  for (const file of readdirSync(VIEWS).filter((name) => name.endsWith('.php'))) {
+    const source = code(readFileSync(new URL(file, VIEWS), 'utf8'));
+    assert.doesNotMatch(source, /type=["']range["']/, `${file} still has a slider`);
+  }
+});
+
+test('rail and sheet draw their row from one function, defined once (#113 AC 3)', () => {
+  assert.equal((ROW.match(/function control_row\(/g) ?? []).length, 1);
+  for (const [name, source] of [['sheet', SHEET], ['rail', RAIL]]) {
+    assert.match(source, /require_once __DIR__ \. '\/control-row\.php'/, `the ${name} loads the row`);
+    assert.doesNotMatch(source, /function control_row\(/, `the ${name} has no row of its own`);
+  }
+  // The rail's three numbers are the row, with the sheet's own titles.
+  assert.match(RAIL, /control_row\('players', 'Players'\)/);
+  assert.match(RAIL, /control_row\('depth', 'Served ranks'/);
+  assert.match(RAIL, /control_row\('rankFloor', 'Min boosters per rank'\)/);
+  assert.match(SHEET, /control_row\('depth', 'Served ranks'/);
+  assert.match(SHEET, /function sheet_control[^]*control_row\(\$key, \$label/);
+});
+
+test('the rail leaves out the explanation text and nothing of the row', () => {
+  assert.doesNotMatch(code(RAIL), /sheet-desc/, 'no explanation text on the rail (#64 AC 9)');
+  // The row carries the explanation nowhere: it is the sheet's, beside it.
+  assert.doesNotMatch(rowFunction(), /sheet-desc/);
+  // The way back is part of the row, so the rail has it too.
+  assert.match(rowFunction(), /sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(rowFunction(), /sheet_pin_head\(\$key\)/);
+});
+
+test('cap N stands on the title line of Served ranks, which does not wrap (#113 AC 3, K4)', () => {
+  const body = rowFunction();
+  const title = body.slice(body.indexOf('class="sheet-control-title"'), body.indexOf('class="counter"'));
+  assert.match(title, /sheet-control-note/, 'the note is inside the title, before the counter');
+  assert.match(CSS, /\.sheet-control-title\s*\{[^}]*white-space:\s*nowrap/);
+  for (const source of [RAIL, SHEET]) {
+    assert.match(source, /control_row\('depth', 'Served ranks', '', '`cap \$\{plan\.depthCap\}`'\)/);
+  }
+});
+
+test('the number is a typed field: numeric keypad, all selected on focus, a commit at Enter and at leaving', () => {
+  const body = rowFunction();
+  const field = body.slice(body.indexOf('<input'), body.indexOf('<button', body.indexOf('<input')));
+  assert.match(field, /type="text"/);
+  assert.match(field, /inputmode="numeric"/);
+  assert.match(field, /:value="value\('<\?= \$k \?>'\)"/);
+  assert.match(field, /@focus="[^"]*\$el\.select\(\)/, 'the whole content is selected on focus');
+  assert.match(field, /@input="draft\('<\?= \$k \?>', \$el\.value\)"/, 'a keystroke is a draft, not a write');
+  assert.match(field, /@keydown\.enter[^=]*="commitTyped\('<\?= \$k \?>', \$el\.value\)/);
+  assert.match(field, /@blur="commitTyped\('<\?= \$k \?>', \$el\.value\)/);
+  assert.match(field, /@keydown\.escape[^=]*="discardDraft\('<\?= \$k \?>'\)/);
+  // After a commit — written, held, or refused — the field shows what stands.
+  assert.equal((field.match(/\$el\.value = value\('<\?= \$k \?>'\)/g) ?? []).length, 3);
+  assert.doesNotMatch(field, /@input="(setSlider|commitTyped)/, 'nothing is written per keystroke');
+  assert.match(body, /:class="\{ 'is-draft': isDraft\('<\?= \$k \?>'\) \}"/, 'the draft is marked');
+  assert.match(CSS, /\.is-draft/);
+});
+
+test('minus and plus go through step(), the handling that writes and pins at once', () => {
+  const body = rowFunction();
+  assert.match(body, /@click="step\('<\?= \$k \?>', -1\)"[^>]*:disabled="!canStep\('<\?= \$k \?>', -1\)"/);
+  assert.match(body, /@click="step\('<\?= \$k \?>', 1\)"[^>]*:disabled="!canStep\('<\?= \$k \?>', 1\)"/);
+});
+
+test('the fourteen numbers all stand as the row, and the three choices do not', () => {
+  const rows = new Set([...SHEET.matchAll(/(?:sheet_control|control_row)\('([a-zA-Z]+)'/g)].map((m) => m[1]));
+  assert.deepEqual([...rows].sort(), [
+    'boosterRate', 'depth', 'displaySize', 'envelopeSize', 'envelopeYield', 'judgeBooster', 'judgeWinner',
+    'participationBooster', 'participationPack', 'players', 'rankFloor', 'ranked', 'tournamentPacks', 'winnerPacks',
+  ]);
+  // curve keeps its glyphs, depthStep its chips, combinedHandout its box (#113 AC 2).
+  assert.match(SHEET, /class="curve-step"/);
+  assert.match(SHEET, /class="step-chip"/);
+  assert.match(SHEET, /type="checkbox"[^>]*setSlider\('combinedHandout'/);
 });
