@@ -639,3 +639,32 @@ test('with a core source and the overhang at once, both are said and both sets o
   assert.ok(sources.includes('core') && sources.includes('winnerPackOverhang'));
   assert.equal(conflict.chip.word, `${ways.length} ways out`);
 });
+
+/**
+ * The mixed case of K-B3 (Lauf 13 on #70): a core conflict with no way out
+ * (`boosterRate` 0) and the overhang with its three ways at once. The chip
+ * counts what can be clicked — `⚠ 3 ways out` — and says `No boosters` only
+ * where there is no way at all. The stand is the decided Weekly of K-B2:
+ * `winnerPacks` 10, one pack by hand on Ranks 29–32, `judgeWinner` 4.
+ */
+function mixedStand() {
+  const weekly = TOURNAMENT_TYPES.find((t) => t.id === 'weekly');
+  const pins = { winnerPacks: 10, manualWinner: { 29: 1, 30: 1, 31: 1, 32: 1 }, judgeWinner: 4, boosterRate: 0, rankFloor: 2, depth: 3 };
+  return distribute(resolveSettings({ game: GAME, type: weekly, pins }), pins);
+}
+
+test('with boosterRate 0 and the overhang at once, the chip counts the clickable ways: 3 ways out (K-B3)', () => {
+  const plan = mixedStand();
+  assert.equal(unfit(plan), true);
+  const { ways } = searchesFor(plan);
+  assert.equal(ways.length, 3);
+  assert.ok(ways.every((w) => w.source === 'winnerPackOverhang'));
+  const conflict = noticeStack({ plan, ways, fold: freshFold() }).open[0];
+  assert.deepEqual(conflict.chip, { glyph: '⚠', word: '3 ways out' });
+});
+
+test('the overhang prose names only the lowest Ranks the take-back needs, though more tiles are marked (K-B2)', () => {
+  const plan = mixedStand();
+  const conflict = noticeStack({ plan, ways: searchesFor(plan).ways, fold: freshFold() }).open[0];
+  assert.match(conflict.lines.join(' '), /placed by hand on ranks 31 and 32\./);
+});
