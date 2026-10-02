@@ -21,11 +21,29 @@
  * stand adds up, and an empty PrizePool fulfils every sum rule (comment on
  * #68, 2026-09-27 14:59). Its sources are named, never numbered (K7,
  * CONTEXT.md `ConflictNotice`), and the kind is the set of sources that hold.
+ *
+ * One source is not the core's: the **`WinnerPack` overhang** (#70) — more
+ * WinnerPacks on the tiles than the RankPool holds. The core does not report
+ * it, so it is asked of `winnerPackOverhang(plan)` (`overhang.mjs`) beside
+ * `unfit(plan)`, and `conflictStands()` is the two together. `unfit()` itself
+ * stays the core's four: it is also the test every probe of the core's search
+ * must pass, and an overhang folded into it would fail every probe of a
+ * floor conflict standing beside it.
  */
 
 import { unfit } from '../core/distribute.mjs';
 import { offerFor, waysOut } from '../core/suggest.mjs';
 import { dropNoun, pinLabel } from './controls.mjs';
+import { overhangWaysOut, WINNER_PACK_OVERHANG, winnerPackOverhang } from './overhang.mjs';
+
+/**
+ * Whether a ConflictNotice stands: one of the core's four sources (`unfit`)
+ * or the `WinnerPack` overhang. This, not `unfit()`, is what the NoticeStack
+ * asks — for the notice, for its kind, and for the Offer's silence.
+ */
+export function conflictStands(plan) {
+  return unfit(plan) || winnerPackOverhang(plan) !== null;
+}
 
 /**
  * The ways out and the Offer of a plan, computed once per stand. Both are
@@ -38,7 +56,16 @@ let memo = { key: null, ways: [], offer: null };
 
 export function searchesFor(plan) {
   const key = JSON.stringify(plan.settings);
-  if (memo.key !== key) memo = { key, ways: waysOut(plan), offer: offerFor(plan) };
+  if (memo.key !== key) {
+    // The core's ways and the overhang's run on disjoint sliders, so both
+    // lists stand side by side; the Offer is silent while either holds —
+    // `offerFor()` asks `unfit()` alone and would offer on an overhang.
+    memo = {
+      key,
+      ways: [...waysOut(plan), ...overhangWaysOut(plan)],
+      offer: conflictStands(plan) ? null : offerFor(plan),
+    };
+  }
   return { ways: memo.ways, offer: memo.offer };
 }
 
@@ -53,8 +80,10 @@ const SOURCES = ['conflict', 'overtake', 'orphanedReservation', 'unclaimedRemain
  * own: a second fact turning up under a minimized notice is news.
  */
 export function conflictKind(plan) {
-  if (!unfit(plan)) return null;
-  return SOURCES.filter((source) => plan[source]).join('+');
+  if (!conflictStands(plan)) return null;
+  const sources = SOURCES.filter((source) => plan[source]);
+  if (winnerPackOverhang(plan)) sources.push(WINNER_PACK_OVERHANG);
+  return sources.join('+');
 }
 
 /** The rule itself, over two keys: a different key reopens, the same does not. */
@@ -85,7 +114,7 @@ export function freshFold() {
  * unfit one.
  */
 function offerKey(plan, offer, dismissed) {
-  if (!offer || unfit(plan)) return null;
+  if (!offer || conflictStands(plan)) return null;
   return offer.key === dismissed ? null : 'offer';
 }
 
@@ -196,6 +225,24 @@ function conflictLines(plan) {
   return lines;
 }
 
+/**
+ * The overhang's prose, written new: the prototype only has the half-line
+ * `5 placed, 2 over` at the `winnerPacks` control and reports nothing — the
+ * **correction to the prototype** of #61 and #70. The first sentence keeps
+ * its numbers; the second names the Ranks the stock does not cover, the ones
+ * the take-back touches, because the notice may open over the sheet and
+ * cover the tiles (#61).
+ */
+function overhangLines(plan) {
+  const overhang = winnerPackOverhang(plan);
+  if (!overhang) return [];
+  const { placed, by, have, ranks } = overhang;
+  return [
+    `${placed} ${plural(placed, 'winner pack')} placed, ${by} over — the ranks hold ${have}.`,
+    `${by === 1 ? 'The one' : 'The ones'} past the stock ${by === 1 ? 'is' : 'are'} placed by hand on ${rankList(ranks)}.`,
+  ];
+}
+
 /** The Offer's prose: the prototype's `offerBox()`, sentence for sentence. */
 function offerLines(offer, displaySize) {
   const k = offer.value;
@@ -259,17 +306,21 @@ const NO_WAY_OUT = {
 export function noticeStack({ plan, ways = [], offer = null, carry = null, fold }) {
   const notices = [];
 
-  if (unfit(plan)) {
+  if (conflictStands(plan)) {
+    // The core's sources speak first, then the overhang. Where the core's
+    // sources hold and none of the core's ways clears, its part is the one
+    // sentence to the fact (`NO_WAY_OUT`) — the overhang's ways do not
+    // touch that fact and are no way out of it.
+    const coreWays = ways.filter((way) => way.source !== WINNER_PACK_OVERHANG);
+    const mute = unfit(plan) && coreWays.length === 0;
     notices.push({
       id: 'conflict',
       closable: false,
-      ...(ways.length
-        ? {
-            lines: conflictLines(plan),
-            actions: ways.map((way) => ({ label: way.label, way })),
-            chip: { glyph: '⚠', word: `${ways.length} ${plural(ways.length, 'way')} out` },
-          }
-        : NO_WAY_OUT),
+      lines: [...(mute ? NO_WAY_OUT.lines : conflictLines(plan)), ...overhangLines(plan)],
+      actions: ways.map((way) => ({ label: way.label, way })),
+      chip: ways.length
+        ? { glyph: '⚠', word: `${ways.length} ${plural(ways.length, 'way')} out` }
+        : NO_WAY_OUT.chip,
     });
   } else if (offer && offer.key !== fold.offer.dismissed) {
     const displaySize = plan.settings?.displaySize ?? 1;

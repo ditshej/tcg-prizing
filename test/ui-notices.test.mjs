@@ -570,3 +570,72 @@ test('away from Details, the CarryOverNotice asks in a bubble of its own form, s
   assert.equal(a.confirmDrop.bubble, '[data-drop-bubble]');
   assert.match(view('notices.php'), /data-notice-drop/);
 });
+
+/* ── The `WinnerPack` overhang (#70) ────────────────────────────────────── */
+
+import { resolveSettings } from '../public/core/defaults.mjs';
+import { searchesFor, conflictStands } from '../public/ui/notices.mjs';
+
+/**
+ * Weekend at 32 carries an Offer (Rank 1, one display) and three WinnerPacks,
+ * two of them by rank. One goes on Rank 32 by hand, then `winnerPacks` drops
+ * to 2: one over. The core still offers — `offerFor()` knows nothing of the
+ * overhang — and the NoticeStack must not.
+ */
+function overhangStand(extra = {}) {
+  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  return resolveSettings({ game: GAME, type: weekend, pins: { manualWinner: { 32: 1 }, winnerPacks: 2, ...extra } });
+}
+
+test('the overhang stand is fit for the core and still carries an Offer there', () => {
+  const plan = distribute(overhangStand());
+  assert.equal(unfit(plan), false);
+  assert.notEqual(offerFor(plan), null);
+});
+
+test('a stand with ranked + manualCount above rank.winners carries a ConflictNotice', () => {
+  const plan = distribute(overhangStand());
+  assert.equal(conflictStands(plan), true);
+  const { ways, offer } = searchesFor(plan);
+  const stack = noticeStack({ plan, ways, offer, fold: freshFold() });
+  const conflict = stack.open.find((n) => n.id === 'conflict');
+  assert.ok(conflict);
+  assert.equal(conflict.closable, false);
+  assert.deepEqual(conflict.actions.map((a) => a.way.key), ['ranked', 'manualWinner']);
+  assert.match(conflict.lines.join(' '), /rank 32/);
+  assert.match(conflict.lines[0], /3 winner packs placed, 1 over/);
+});
+
+test('while the overhang stands, no Offer appears — not even one handed in', () => {
+  const plan = distribute(overhangStand());
+  assert.equal(searchesFor(plan).offer, null);
+  const stack = noticeStack({ plan, ways: searchesFor(plan).ways, offer: offerFor(plan), fold: freshFold() });
+  assert.deepEqual(ids(stack.open), ['conflict']);
+  const fold = foldStep(freshFold(), { plan, offer: offerFor(plan) });
+  assert.equal(fold.offer.key, null);
+});
+
+test('the overhang is a kind of its own, named and never numbered', () => {
+  assert.equal(conflictKind(distribute(overhangStand())), 'winnerPackOverhang');
+  const both = distribute({ ...overhangStand(), depth: 8, rankFloor: 3, boosterRate: 1, participationBooster: 1 });
+  assert.equal(conflictKind(both), 'conflict+winnerPackOverhang');
+});
+
+test('an overhang turning up under a minimized conflict reopens the notice', () => {
+  const floor = { ...overhangStand({ manualWinner: {}, winnerPacks: null }), depth: 8, rankFloor: 3, boosterRate: 1, participationBooster: 1 };
+  let fold = foldStep(freshFold(), { plan: distribute(floor) });
+  fold = minimize(fold, 'conflict');
+  fold = foldStep(fold, { plan: distribute({ ...floor, manualWinner: { 32: 1 }, winnerPacks: 2 }) });
+  assert.equal(fold.conflict.open, true);
+});
+
+test('with a core source and the overhang at once, both are said and both sets of ways stand', () => {
+  const plan = distribute({ ...overhangStand(), depth: 8, rankFloor: 3, boosterRate: 1, participationBooster: 1 });
+  const { ways } = searchesFor(plan);
+  const conflict = noticeStack({ plan, ways, fold: freshFold() }).open[0];
+  assert.match(conflict.lines.join(' '), /can't carry a floor/);
+  assert.match(conflict.lines.join(' '), /over/);
+  const sources = conflict.actions.map((a) => a.way.source ?? 'core');
+  assert.ok(sources.includes('core') && sources.includes('winnerPackOverhang'));
+  assert.equal(conflict.chip.word, `${ways.length} ways out`);
+});
