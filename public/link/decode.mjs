@@ -5,14 +5,16 @@
  * list (docs/agents/setup-link.md).
  */
 
-import { CURVES } from '../core/rules.mjs';
-import { BASE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
+import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
+import { BASE_KEYS, CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
 
 /**
  * Reads a SetupLink to
- * `{ version, game, type, pins, unknown, unreadable, report }` — the base, the
- * pinned sliders, the slider names we do not know, and what the link cost on
- * the way in.
+ * `{ version, game, type, pins, choices, unknown, unreadable, report }` — the
+ * base, the pinned sliders, the hand-set choices that are no slider
+ * (`CHOICE_KEYS`: the `RaffleRange`), the slider names we do not know, and
+ * what the link cost on the way in. `choices` names only what the link
+ * carries; an absent key is the term's constant, and the caller knows it.
  *
  * **The read result is one object: the state and the log of the read stick
  * together** (Lauf 8, "Entscheid K1"). The tournament state is what the
@@ -120,6 +122,7 @@ export function decode(query, games = null) {
       game: base.game,
       type: base.type,
       pins: {},
+      choices: {},
       unknown: {},
       unreadable: [],
       report: reportOf({ from: version, entries: [...base.entries, entry] }),
@@ -133,6 +136,13 @@ export function decode(query, games = null) {
     const value = readValue(type, params.get(key));
     if (value === UNREADABLE) unreadableValues.push(key);
     else pins[key] = value;
+  }
+  const choices = {};
+  for (const { key, type } of CHOICE_KEYS) {
+    if (!params.has(key)) continue;
+    const value = readValue(type, params.get(key));
+    if (value === UNREADABLE) unreadableValues.push(key);
+    else choices[key] = value;
   }
   const unknown = {};
   for (const key of new Set(params.keys())) {
@@ -149,6 +159,7 @@ export function decode(query, games = null) {
     game: base.game,
     type: base.type,
     pins,
+    choices,
     unknown,
     unreadable: unreadableValues,
     report: reportOf({ from: version, entries }),
@@ -282,8 +293,8 @@ function reportOf({ from, entries }) {
   };
 }
 
-/** Every key the v1 register names, base and sliders — anything else is loss. */
-const KNOWN_KEYS = new Set([...BASE_KEYS, ...KEYS].map(({ key }) => key));
+/** Every key the v1 register names, base, sliders and choices — anything else is loss. */
+const KNOWN_KEYS = new Set([...BASE_KEYS, ...KEYS, ...CHOICE_KEYS].map(({ key }) => key));
 
 /** What a value that does not fit its key's type reads as — never a default. */
 export const UNREADABLE = Symbol('unreadable');
@@ -302,6 +313,10 @@ export function readValue(type, raw) {
       return readInt(raw);
     case 'curveId':
       return CURVES.some((step) => step.id === raw) ? raw : UNREADABLE;
+    case 'stepId':
+      return DEPTH_STEPS.includes(raw) ? raw : UNREADABLE;
+    case 'rangeId':
+      return RANGES.some((step) => step.id === raw) ? raw : UNREADABLE;
     case 'bit':
       return raw === '0' ? false : raw === '1' ? true : UNREADABLE;
     case 'vector':

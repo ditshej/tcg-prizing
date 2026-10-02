@@ -3,23 +3,18 @@
  * The Details sheet (#64): the Set block, then all seventeen controls — the
  * four hot ones first, without a group title of their own, then the groups.
  *
- * PHP composes it because none of it changes while a slider is dragged
- * (#61, "The seam": "Gerüst, die Flächen-Container, Gruppentitel,
- * Erklärtexte, die ⓘ-Texte"). What a control *shows* — its number, its two
- * ends, whether a ± is still allowed — comes from `planApp()` over
- * `public/ui/controls.mjs`, which is where the caps live so that slider and
- * counter cannot disagree (#64: "Schieber und Zählwerk kennen denselben
- * Deckel").
+ * PHP composes it because none of it changes while a number is set (#61,
+ * "The seam": "Gerüst, die Flächen-Container, Gruppentitel, Erklärtexte, die
+ * ⓘ-Texte"). What a control *shows* — its number, its ends, whether a ± is
+ * still allowed — comes from `planApp()` over `public/ui/controls.mjs`, which
+ * is where the walls live (#113: "Die Wand am Bedienelement steht dort, wo der
+ * Kern still schneidet").
  *
- * Why this is a partial of its own and not an extension of
- * `controls-hot.php`: that file is the fixed rail under `Plan` and #63 owns
- * it. Two things here are true only of the sheet — the explanation text under
- * every title (#64's last criterion says it appears *only* here) and the
- * counter — so the two forms differ, and the sheet's cannot be reached by
- * adding to the rail's without changing the rail. Both call the same handlers
- * in `plan.mjs`, so they cannot drift in what they *do*; when #71 folds the
- * page into columns, the rail disappears into this sheet and the question
- * settles itself.
+ * The fourteen numbers are one row each, `− [number] +` with a typed field,
+ * drawn by `control_row()` in `control-row.php` — the same function the fixed
+ * rail under `Plan` draws its three numbers with (#113). What the sheet adds
+ * to the row, and the rail does not, is the explanation text under it (#64
+ * AC 9); that is the whole of the difference, and it is `sheet_control()`.
  *
  * Where `Rank pool` went: #61's fourth group is "how deep, how flat, how
  * steep" — `depth`, `rankFloor`, `curve` — and those three are exactly the
@@ -28,74 +23,17 @@
  * at the tile (#66), not here. So the group is not drawn.
  */
 
-/**
- * The marking and the first reach (#67), as one head for every control: the
- * word `pinned` or `auto`, and the button that puts this one control back on
- * the chosen `TournamentType`.
- *
- * The word is drawn from the **stored** pin and never from a comparison with
- * the sheet (ADR 0006) — `stateWord()` is `plan.mjs`'s, over `isPinned()` on
- * the proven side, so a slider dragged back onto its default still reads
- * `pinned`. Both words stand on screen as the glossary writes them
- * (CONTEXT.md, `Pinned`: "Beide Wörter stehen so auch am Schirm").
- *
- * The reset asks nothing, and that is the decision rather than an omission:
- * at a single control there is a visible value and one grip sets it again
- * (#33, ADR 0006). It is also not hidden while the control is `auto` and not
- * `disabled` either — it is the prototype's dimmed, live button
- * (`resetBtn()`): a control that grows a button when it is pinned moves the
- * counter beside it on every first drag, and a disabled one reads as broken
- * where it is merely idle (the same argument the `Game` chip carries).
- */
-function sheet_pin_head(string $key): void
-{
-    $k = htmlspecialchars($key, ENT_QUOTES);
-    ?>
-      <span class="pin-state" :class="`is-${stateWord('<?= $k ?>')}`"
-            x-text="stateWord('<?= $k ?>')"></span>
-    <?php
-}
-
-function sheet_pin_reset(string $key, string $label): void
-{
-    $k = htmlspecialchars($key, ENT_QUOTES);
-    $l = htmlspecialchars($label, ENT_QUOTES);
-    ?>
-      <button type="button" class="pin-reset" :class="{ 'is-idle': !isPinned('<?= $k ?>') }"
-              @click="resetSlider('<?= $k ?>')"
-              aria-label="<?= $l ?>, back to the chosen type">&#8634;</button>
-    <?php
-}
+require_once __DIR__ . '/control-row.php';
 
 /**
- * One control: title, counter, explanation, slider — in that order, and the
- * number appears once, in the counter. `$unit` belongs on the title because
- * it says what the number means and is part of the label, not a note under
- * the slider.
+ * One number on the sheet: the shared row, and the explanation text under it.
  */
 function sheet_control(string $key, string $label, string $desc, string $unit = ''): void
 {
-    $k = htmlspecialchars($key, ENT_QUOTES);
-    $l = htmlspecialchars($label, ENT_QUOTES);
     ?>
-  <div class="sheet-control" :class="{ 'is-pinned': isPinned('<?= $k ?>') }">
-    <div class="sheet-control-head">
-      <span class="sheet-control-label"><?= htmlspecialchars($label) ?><?php if ($unit !== ''): ?>
-        <span class="sheet-control-unit"><?= htmlspecialchars($unit) ?></span><?php endif; ?></span>
-      <?php sheet_pin_head($key); ?>
-      <span class="counter">
-        <button type="button" @click="step('<?= $k ?>', -1)" :disabled="!canStep('<?= $k ?>', -1)"
-                aria-label="<?= $l ?>, one less">&minus;</button>
-        <span class="counter-value" x-text="value('<?= $k ?>')"></span>
-        <button type="button" @click="step('<?= $k ?>', 1)" :disabled="!canStep('<?= $k ?>', 1)"
-                aria-label="<?= $l ?>, one more">+</button>
-      </span>
-      <?php sheet_pin_reset($key, $label); ?>
-    </div>
+  <div class="sheet-control">
+    <?php control_row($key, $label, $unit); ?>
     <p class="sheet-desc"><?= htmlspecialchars($desc) ?></p>
-    <input type="range" aria-label="<?= $l ?>"
-           :min="bounds('<?= $k ?>').min" :max="bounds('<?= $k ?>').max" :value="value('<?= $k ?>')"
-           @input="setSlider('<?= $k ?>', $event.target.value)">
   </div>
     <?php
 }
@@ -134,7 +72,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
   -->
   <div class="set-info" x-cloak x-show="openInfo === 'game'">
     <p>The card game this tournament runs for. It carries a full sheet of starting
-      values — every slider below starts somewhere here.</p>
+      values — every value below starts somewhere here.</p>
     <p class="set-info-muted">One Piece is the only one set up so far. The address names
       a single game; the app does not — built for One Piece, other games welcome.</p>
     <p class="set-info-foot">Run a different game? Say so on Discord —
@@ -179,17 +117,42 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         offer.
 
         It **asks** rather than acting. The set of pins is handed in, not
-        looked up inside — `pinnedKeys` is everything stored, which is
-        everything but `Game` and `TournamentType` by construction, and the
-        second caller #103 brings hands in two of them instead.
+        looked up inside — `handSetKeys` is everything stored, which is
+        everything but `Game` and `TournamentType` by construction, plus the
+        RaffleRange where it is off `all`: no pin, but counted here and put
+        back to `all` by this drop (run 12, Phase G on #72). The second caller
+        #103 brings hands in two pins instead.
       -->
       <button type="button" class="pin-chip" data-drop-all x-cloak x-show="pinCount > 0"
               :aria-expanded="!!dropQuestion"
               :aria-label="dropAllLabel"
-              @click="askDrop({ keys: pinnedKeys, anchor: '[data-drop-all]' })">
+              @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })">
         <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
         <span aria-hidden="true">&#8634;</span>
       </button>
+
+      <!--
+        `Copy link` (#72), behind the reset chip: the Set block already shows
+        the base and the pin count, which is exactly what the link carries.
+        Not in the foot — that carries only what lies across the pages, and an
+        address is no destination. `link` shortens `SetupLink`, so no
+        `_Label_` line. It copies the copy form, base plus pins, never the
+        resolved stand (K5 on #72). The confirmation is fleeting and lives on
+        the button element alone (`flashCopied()`); without a clipboard the
+        address opens in a preselected field instead of claiming a success.
+      -->
+      <button type="button" class="link-copy" :class="{ 'link-copy-alone': pinCount === 0 }"
+              @click="copyLink($el)">
+        <span class="link-copy-word">Copy link</span>
+        <span class="link-copy-done" aria-hidden="true">Copied</span>
+      </button>
+      <div class="link-field" x-cloak x-show="linkField !== null">
+        <input class="link-field-input" type="text" readonly aria-label="Link to copy"
+               :value="linkField ?? ''"
+               x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
+        <button type="button" class="link-field-close" aria-label="Close the link field"
+                @click="closeLinkField()">&#10005;</button>
+      </div>
     </div>
 
     <!--
@@ -209,7 +172,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         The sentence that was wrong in the prototype's own group heading and is
         corrected here: a switch overwrites nothing set by hand (#26, ADR 0003).
       -->
-      <p class="set-info-muted">Switching replaces the whole sheet. Sliders you set by
+      <p class="set-info-muted">Switching replaces the whole sheet. Values you set by
         hand stay where you put them.</p>
     </div>
   </div>
@@ -283,23 +246,19 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
 <div class="sheet-block">
   <?php sheet_control('players', 'Players', 'How many players are registered. Every pool below is counted from this number.'); ?>
 
-  <div class="sheet-control" :class="{ 'is-pinned': isPinned('depth') }">
-    <div class="sheet-control-head">
-      <span class="sheet-control-label">Served ranks</span>
-      <?php sheet_pin_head('depth'); ?>
-      <span class="counter">
-        <button type="button" @click="step('depth', -1)" :disabled="!canStep('depth', -1)"
-                aria-label="Served ranks, one less">&minus;</button>
-        <span class="counter-value" x-text="value('depth')"></span>
-        <button type="button" @click="step('depth', 1)" :disabled="!canStep('depth', 1)"
-                aria-label="Served ranks, one more">+</button>
-      </span>
-      <?php sheet_pin_reset('depth', 'Served ranks'); ?>
-    </div>
-    <p class="sheet-desc">How far down the standings the prizes reach. Ranks below get nothing.</p>
+  <!--
+    `cap N` stands on the title line, as the rail has it, and the long sentence
+    that used to stand under the slider ("the pool covers N ranks at this
+    floor") is folded into the explanation text: one number, once, and its
+    meaning where the meanings are (#113, K4 of run 11).
+  -->
+  <div class="sheet-control">
+    <?php control_row('depth', 'Served ranks', '', '`cap ${plan.depthCap}`'); ?>
+    <p class="sheet-desc">How far down the standings the prizes reach. Ranks below get nothing.
+      The cap is how many ranks the pool covers at this floor.</p>
     <!--
       The step grid is `depthStep`, the seventeenth field: a DefaultSet entry
-      that supplies the starting value while the slider itself stays absolute
+      that supplies the starting value while the number itself stays absolute
       (CONTEXT.md, `RankPoolDepth`). It is therefore part of this control, not
       a control beside it.
     -->
@@ -309,10 +268,6 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
                 @click="setSlider('depthStep', step.id)" x-text="step.label"></button>
       </template>
     </div>
-    <input type="range" aria-label="Served ranks"
-           :min="bounds('depth').min" :max="bounds('depth').max" :value="value('depth')"
-           @input="setSlider('depth', $event.target.value)">
-    <p class="sheet-foot" x-text="`the pool covers ${plan.depthCap} ranks at this floor`"></p>
   </div>
 
   <div class="sheet-control" :class="{ 'is-pinned': isPinned('curve') }">
@@ -385,8 +340,10 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
 
   <!--
     The RaffleRange is **no control** but session state of the WinnerRaffle's
-    operating step (#69, #61): no pin mark, no reset button, not counted in
-    `Drop all N`, never in the SetupLink, and a Set switch leaves it standing.
+    operating step (#69, #61): no pin mark, no reset button, and a Set switch
+    leaves it standing. It travels in the SetupLink (run 12, K1b on #72), and
+    the pin chip above counts it and its drop puts it back to `all` (run 12,
+    Phase G on #72).
     So what stands here is a **pointer** — and above all the explanation text:
     the bar has no room for one, and without this line the RaffleRange would
     lose its only explanation in the whole program (prototype, `winnerBlock()`).

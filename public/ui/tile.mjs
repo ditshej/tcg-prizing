@@ -4,9 +4,9 @@
  *
  * Two Settings fields are set here and nowhere else — the `DisplayReservation`
  * and the `manual` share of the `WinnerPackAllocation`. Both name a `Rank`, and
- * a `Rank` is a tile, not a number one types into a slider (ADR 0003, #17,
+ * a `Rank` is a tile, not a number one types into a control (ADR 0003, #17,
  * #21, #61 "The tiles and their grip"). The caps themselves are not in this
- * file: they live in `controls.mjs` beside the sliders', because #61 gives a
+ * file: they live in `controls.mjs` beside the numbers' ends, because #61 gives a
  * cap exactly one home. What is here is what the screen says **about** a cap —
  * and that is the ticket's third criterion, "ein gesperrtes ± sagt am Schirm,
  * warum es gesperrt ist".

@@ -8,6 +8,7 @@ import { RANGES } from '../public/core/rules.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { planApp } from '../public/ui/plan.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView, rangeName } from '../public/ui/raffle.mjs';
+import { CHOICE_KEYS, KEYS } from '../public/link/keys.mjs';
 
 /**
  * The WinnerRaffle as an operating step (#69): the bar's model, the throw, and
@@ -176,19 +177,122 @@ test('the grip toggles the bar and nothing else closes it by itself', () => {
 });
 
 /**
- * The `RaffleRange` is **no `Regler`**: no pin, never in the `SetupLink`, not
- * counted among the pins, and a Set switch leaves it standing (#69, #61). The
- * address bar is the sharpest of those — it is the one that would be wrong in
- * public.
+ * The `RaffleRange` is **no `Regler`**: no pin, and a Set switch leaves it
+ * standing (#69, #61). It **travels in the `SetupLink`** all the same (run 12,
+ * K1b on #72), so a range change writes the address bar — or `Copy link`
+ * would carry a range a reload loses. And the pin chip **counts** it (run 12,
+ * Phase G on #72, `zaehlt-mit`), so the counter names what the link carries.
  */
-test('setting the RaffleRange writes no pin and no address', () => {
+test('setting the RaffleRange writes no pin, but the address bar carries it and the chip counts it', () => {
   const { it, written } = app();
-  const before = written.length;
   it.setRaffleRange('bottomHalf');
   assert.equal(it.raffleRange, 'bottomHalf');
   assert.deepEqual(it.pins, {});
-  assert.equal(written.length, before, 'the address bar was written for a range change');
+  assert.deepEqual(it.pinnedKeys, [], 'still no pin: no marking, no reset at the element');
+  assert.deepEqual(it.handSetKeys, ['raffleRange']);
+  assert.equal(it.pinCount, 1, 'the chip beside Copy link counts it (G-pin-count-raffle)');
+  assert.equal(new URLSearchParams(written.at(-1).slice(1)).get('raffleRange'), 'bottomHalf');
   assert.equal('raffleRange' in it.settings, false);
+  it.setRaffleRange(DEFAULT_RANGE);
+  assert.equal(it.pinCount, 0, 'back on `all` there is nothing to count');
+});
+
+test('the wire and the screen agree on the term constant an absent raffleRange means', () => {
+  const entry = CHOICE_KEYS.find((k) => k.key === 'raffleRange');
+  assert.equal(entry.term, DEFAULT_RANGE, 'two layers that may not import one another, held together here');
+});
+
+function coldStart(query = '') {
+  const written = [];
+  const it = planApp({ read: () => query, write: (url) => written.push(url) });
+  return { it, written };
+}
+
+test('after a cold start the first range off `all` writes the base along, and `all` is never written', () => {
+  const { it, written } = coldStart();
+  it.setRaffleRange('topHalf');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekly&raffleRange=topHalf']);
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekly&raffleRange=topHalf');
+  it.setRaffleRange(DEFAULT_RANGE);
+  assert.equal(written.at(-1), '?v=1&game=onepiece&type=weekly', 'back on `all`, the key goes, the base stays');
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekly');
+});
+
+test('a link that names a RaffleRange opens with it, and Copy link carries it on', () => {
+  const { it, written } = coldStart('?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird');
+  assert.equal(it.raffleRange, 'bottomThird');
+  assert.equal(it.linkReport, null, 'a readable range is no loss');
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird']);
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekend&players=40&raffleRange=bottomThird');
+});
+
+test('an unknown range name is dropped with a report, and the bar opens on `all`', () => {
+  const { it, written } = coldStart('?v=1&game=onepiece&type=weekend&raffleRange=topFifth');
+  assert.equal(it.raffleRange, DEFAULT_RANGE);
+  assert.deepEqual(it.linkReport.entries, [{ kind: 'unreadableValue', key: 'raffleRange' }]);
+  assert.deepEqual(written, ['?v=1&game=onepiece&type=weekend'], 'the address is cleaned up');
+});
+
+test('the pin chip counts the RaffleRange, names it in its question, and its drop puts it back to `all`', () => {
+  const { it } = coldStart('?v=1&game=onepiece&type=weekend&players=40&raffleRange=top16');
+  assert.equal(it.pinCount, 2, 'one pin and the range');
+  assert.deepEqual(it.handSetKeys, ['players', 'raffleRange'], 'the range after the pins, in PIN_ORDER');
+  it.askDrop({ keys: it.handSetKeys, anchor: '[data-drop-all]' });
+  const ask = it.dropQuestion;
+  assert.equal(ask.count, it.pinCount, 'the question lists what the counter counts');
+  assert.deepEqual(ask.items.at(-1), { key: 'raffleRange', label: 'Raffle range', to: 'all ranks' });
+  assert.equal(ask.confirm, 'Drop 2');
+  it.applyDrop();
+  assert.equal(it.raffleRange, DEFAULT_RANGE);
+  assert.equal(it.pinCount, 0);
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekend', 'the address loses the range with the pins');
+});
+
+test('the RaffleRange alone puts up the chip, and its drop asks about the range only', () => {
+  const { it } = coldStart('?v=1&game=onepiece&type=weekend&raffleRange=bottomThird');
+  assert.equal(it.pinCount, 1);
+  it.askDrop({ keys: it.handSetKeys, anchor: '[data-drop-all]' });
+  assert.deepEqual(it.dropQuestion.items.map((item) => item.key), ['raffleRange']);
+  it.applyDrop();
+  assert.equal(it.raffleRange, DEFAULT_RANGE);
+  assert.equal(it.pinCount, 0);
+});
+
+test('a range on `all` is no item: a stale list naming it asks nothing about it', () => {
+  const { it } = coldStart('?v=1&game=onepiece&type=weekend');
+  it.askDrop({ keys: ['raffleRange'], anchor: '[data-drop-all]' });
+  assert.equal(it.confirmDrop, null, 'nothing set by hand, nothing to ask');
+});
+
+test('every narrower reach leaves the RaffleRange standing: one reset, a pins-only drop', () => {
+  const { it } = coldStart('?v=1&game=onepiece&type=weekend&players=40&rankFloor=1&raffleRange=top16');
+  it.resetSlider('players');
+  assert.equal(it.raffleRange, 'top16');
+  it.dropPins(it.pinnedKeys);
+  assert.equal(it.raffleRange, 'top16', 'Drop all N and follow hands in pins only, and so does this');
+  assert.equal(it.linkQuery, '?v=1&game=onepiece&type=weekend&raffleRange=top16');
+});
+
+/**
+ * G-raffle-hits (run 12, Phase G on #72): of the WinnerRaffle, only the
+ * `RaffleRange` is a key of the link — no throw count, no hit list, no last
+ * draw. A throw's hit still reaches it, as the `manualWinner` pin the tile's
+ * ± writes too (#69 AC 5); that collision with the maintainer's answer is
+ * open on #72, and this probe pins today's behaviour so a change to it is a
+ * decision and not a drift.
+ */
+test('of the raffle, only raffleRange is a link key; a thrown hit travels as manualWinner', () => {
+  const { it, written } = app({}, [0, 0.5, 0.99]);
+  it.setRaffleRange('topHalf');
+  for (let i = 0; i < 3 && it.raffle.canRaffle; i++) it.throwRaffle();
+  const params = new URLSearchParams(written.at(-1).slice(1));
+  const keys = [...params.keys()];
+  const raffleish = keys.filter((key) => /raffle|draw|throw|hit|pot/i.test(key));
+  assert.deepEqual(raffleish, ['raffleRange']);
+  assert.ok(it.lastDraw != null, 'a throw landed');
+  assert.ok(params.has('manualWinner'), 'the hit is a manual allocation, and that is a pin');
+  const wire = new Set([...KEYS.map((k) => k.key), ...CHOICE_KEYS.map((k) => k.key), 'v', 'g', 't', 'game', 'type']);
+  assert.deepEqual(keys.filter((key) => !wire.has(key)), [], 'nothing outside the register');
 });
 
 test('a Set switch leaves the RaffleRange standing', () => {

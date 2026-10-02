@@ -10,7 +10,7 @@ import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
 const WEEKEND = { game: 'onepiece', type: 'weekend' };
 
 /**
- * One value per register key, so "all eighteen keys at once" is a stand this
+ * One value per register key, so "all nineteen keys at once" is a stand this
  * file actually holds rather than a number it repeats. The values are
  * plausible, not measured — the round trip cares about the wire, not about
  * what the core makes of it; the measured plan is #49's tracer.
@@ -28,6 +28,7 @@ const EVERY_SLIDER = {
   judgeWinner: 2,
   rankFloor: 2,
   depth: 8,
+  depthStep: 'topQuarter',
   curve: 'steep',
   ranked: 17,
   winnerPacks: 5,
@@ -87,20 +88,20 @@ test('the allocation card is written ascending by rank, whatever order it was fi
  * Only the pinned sliders and the Game/Type base reach the address; the
  * receiver rebuilds the stand from the DefaultSet plus those deviations
  * (#86/#89/#72, "Entscheid K5"). The register is what says which key is a
- * slider, so anything else in the pin set is not written — `depthStep` above
- * all, which is a DefaultSet entry and not a slider (`keys.mjs`), and which a
- * settings object carries along.
+ * slider, so anything else in the pin set is not written — `raffleRange` above
+ * all, which is no slider and travels as a choice, never as a pin
+ * (`CHOICE_KEYS`, run 12 K1b on #72).
  *
  * What this **cannot** hold: `encode()` takes a pin set, and a pin set with all
- * eighteen keys is indistinguishable from a settings object with all eighteen
+ * nineteen keys is indistinguishable from a settings object with all nineteen
  * sliders — the same shape means the same link, and rightly so. Handing it
- * `plan.settings` therefore still turns one pin into eighteen, silently. That
+ * `plan.settings` therefore still turns one pin into nineteen, silently. That
  * is a rule about the caller and only a caller can carry it (finding G3 of run
  * 8; the wiring is #89). What is held here is the half that is a rule about the
  * wire: a key the register does not name never reaches a link.
  */
 test('a key the register does not name never reaches the link', () => {
-  const strays = { depthStep: 4, raffleRange: 12, nonsense: 'x' };
+  const strays = { raffleRange: 'topHalf', nonsense: 'x' };
   assert.equal(encode({ ...WEEKEND, pins: strays }), '?v=1&game=onepiece&type=weekend');
   assert.equal(addressFor({ ...WEEKEND, pins: strays }), null);
 
@@ -109,15 +110,15 @@ test('a key the register does not name never reaches the link', () => {
   assert.deepEqual(written, [...BASE_KEYS, ...KEYS].map((entry) => entry.key));
 });
 
-test('the round-trip corpus covers every key the register names, and the register names eighteen', () => {
+test('the round-trip corpus covers every key the register names, and the register names nineteen', () => {
   assert.deepEqual(Object.keys(EVERY_SLIDER), KEYS.map((entry) => entry.key));
-  assert.equal(KEYS.length, 18);
+  assert.equal(KEYS.length, 19);
 });
 
 /**
  * The pair character of `encode` and `decode`, nailed down as a test rather
  * than as a file (#49, "Entscheid K3"): a corpus of the empty pin set, every
- * single slider on its own, the two composites together, and all eighteen keys
+ * single slider on its own, the two composites together, and all nineteen keys
  * at once.
  *
  * The corpus carries **canonical** values only — no trailing zero in the

@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
+import { BASE_KEYS, CHOICE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
+import { DEPTH_STEPS, RANGES } from '../public/core/rules.mjs';
+import { readValue, UNREADABLE } from '../public/link/decode.mjs';
 
 /**
- * The register, transcribed by hand from Spec 3 (#47) — the eighteen Settings
- * fields from #46 without `depthStep`, in the order `encode()` must write
- * them. `absent` is what a missing key means: 'null' for the four trailing
+ * The register, transcribed by hand from Spec 3 (#47) — the nineteen Settings
+ * fields from #46, `depthStep` right after `depth` since run 12 (K1 on #72),
+ * in the order `encode()` must write them. `absent` is what a missing key means: 'null' for the four trailing
  * sliders (the core computes it), 'empty' for the two that start neutral
  * (they name no Rank), 'leaf' for every other slider (the DefaultSet leaf
  * value).
@@ -24,6 +26,7 @@ const EXPECTED = [
   ['judgeWinner', 'leaf'],
   ['rankFloor', 'leaf'],
   ['depth', 'null'],
+  ['depthStep', 'leaf'],
   ['curve', 'leaf'],
   ['ranked', 'null'],
   ['winnerPacks', 'null'],
@@ -43,17 +46,28 @@ test('the base names the Game and TournamentType, always, ahead of every slider'
   );
 });
 
-test('the register lists all eighteen slider keys, in wire order, each classified by what its absence means', () => {
+test('the register lists all nineteen slider keys, in wire order, each classified by what its absence means', () => {
   assert.deepEqual(
     KEYS.map((k) => [k.key, k.absent]),
     EXPECTED,
   );
 });
 
-test('depthStep and RaffleRange never reach the wire — neither key appears anywhere in the register', () => {
-  const names = [...BASE_KEYS, ...KEYS].map((k) => k.key);
-  assert.ok(!names.includes('depthStep'));
-  assert.ok(!names.includes('raffleRange'));
+test('the RaffleRange is a key of its own beside the sliders, never one of them (run 12, K1b on #72)', () => {
+  assert.ok(!KEYS.some((k) => k.key === 'raffleRange'), 'it is no Settings field and no slider');
+  assert.deepEqual(
+    CHOICE_KEYS.map((k) => [k.key, k.type, k.term]),
+    [['raffleRange', 'rangeId', 'all']],
+    'an absent key means the term constant `all`',
+  );
+});
+
+test('a step name is read off DEPTH_STEPS and a range id off RANGES, anything else is unreadable', () => {
+  for (const step of DEPTH_STEPS) assert.equal(readValue('stepId', step), step);
+  assert.equal(readValue('stepId', 'bottomHalf'), UNREADABLE, 'a lower step is no depth step');
+  assert.equal(readValue('stepId', 'topFifth'), UNREADABLE);
+  for (const { id } of RANGES) assert.equal(readValue('rangeId', id), id);
+  assert.equal(readValue('rangeId', 'topFifth'), UNREADABLE);
 });
 
 test('every key carries a value type, and the two composites carry their string shape', () => {

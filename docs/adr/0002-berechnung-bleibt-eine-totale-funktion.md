@@ -116,12 +116,47 @@ steht er allein da — der mehrgliedrige ist der Fall, in dem es sonst gar nicht
 gäbe, und genau darum wiegt seine Unlesbarkeit dort weniger als die leere
 Fläche. Gebaut wird er in **#68** (die Warnfläche) und **#70** (die Formel).
 
+> ⚠︎ **Teilweise zurückgezogen durch `Nachtrag (Lauf 12, K2)`.** Wo auch
+> **kein mehrgliedriger** Weg räumt — gemessen genau bei `boosterRate` 0 —,
+> bekommt die Meldung keinen Knopf, sondern **einen Satz zur Tatsache** des
+> Abends, und ihr Chip trägt ein Wort statt der Null. Weiterlesen dort, bevor du
+> dich auf diesen Absatz stützt.
+
 Offen mitgeschleppt und hier festgehalten, damit es die nächste Sitzung nicht
 wieder herleitet: `conflictBox()` im Prototyp (`cockpit.prototype.html`) kennt
 nur `conflict` und `overtake` und hat für die **verwaiste Reservation** und den
 **unbeanspruchten Rest** gar keinen Satz — 135 der gemessenen Stände sind genau
 das. Wer #68 baut, findet dort also keine Vorlage und muss zwei Sätze neu
 formulieren; das ist eine Lücke im Prototyp, kein Entscheid dagegen.
+
+Nachtrag (Lauf 12, K2): **Wenn gar kein Regler räumt.** Der Nachtrag oben ging
+davon aus, dass der mehrgliedrige Weg der Fall ist, „in dem es sonst gar nichts
+gäbe" — dass also immer **irgendein** Weg dasteht. Das stimmt nicht: der
+Prüfstand aus K1 (`boosterRate` 0, `rankFloor` 2, `depth` 3) hat **keinen**, und
+kein Regler, den die App vorschlagen darf, schafft einen. Ohne Booster pro Person
+ist der `PrizePool` ohne Booster und damit der `RankPool` leer, gleich was
+`rankFloor`, `depth`, Kurve oder Reservation sagen; ändern liesse es nur
+`boosterRate`, und das ist eine Tatsache über den Abend, nie ein Weg heraus.
+Entschieden (Kommentar an #68, Lauf 12, gewählt `satz-zur-tatsache`): steht eine
+`ConflictNotice` **ohne jeden Weg heraus** da, sagt sie in **einem Satz**, dass
+ohne `Boosters per player (pool)` nichts zu verteilen ist, und zeigt **keinen
+Knopf**; ihr Chip trägt **ein Wort ohne Zahl** — `⚠ 0 ways out` kündigte etwas
+an, das es nicht gibt. Verworfen wurde `wie-prototyp` (Konfliktsatz, keine
+Knöpfe, Chip `⚠ 0 ways out`).
+
+Das ist **nicht** der erklärende Satz, den der Nachtrag oben verwirft. Jener
+hätte das Fehlen eines **einzelnen** Wegs erklärt, wo ein kombinierter besteht;
+dieser steht nur, wo es **gar keinen** gibt, und er erklärt kein Fehlen, sondern
+nennt die Tatsache, die den `RankPool` leert. Gemessen: in B3 über 15 360 Stände
+(Kurve fest) sind die Stände ohne jeden Weg **genau** die mit `boosterRate` 0
+(3 072); die Rasterprobe in `test/ui-notices.test.mjs` variiert zusätzlich die
+Kurve und findet über 12 096 Stände dasselbe — 3 024 ohne Weg, alle und nur bei
+`boosterRate` 0. Taucht je ein Stand mit `boosterRate` > 0 ohne Weg auf, ist
+**das** der Befund; ein zweiter Satz dafür ist nicht vorgesehen. Das Chip-Wort
+ist entschieden (Lauf 12, Phase G, `G-chip-0-booster`, Kommentar an #68):
+**`⚠ No boosters`** — der Vorschlag `⚠ Nothing to give` fiel, weil `TournamentPack`s
+und `WinnerPack`s bei `boosterRate` 0 weiter an die Ränge gehen. Der Satz selbst
+bleibt ein Vorschlag des Builders (PR #118).
 
 Bewusst so entschieden (Entscheid 3 im Kommentar „Drei Entscheide aus der
 Fragebogenrunde" an #56, 2026-09-27): `conflict` (eine Tiefe über dem Deckel oder

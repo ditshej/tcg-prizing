@@ -24,9 +24,11 @@
 export const STEPS = [];
 
 /**
- * `{ game, type, pins, version, unknown, report }` (a `decode()` result) →
- * `{ game, type, pins, migrated, report }` — the same read, lifted to today's
- * version.
+ * `{ game, type, pins, choices, version, unknown, report }` (a `decode()`
+ * result) → `{ game, type, pins, choices, migrated, report }` — the same read,
+ * lifted to today's version. `choices` (the `RaffleRange`, `CHOICE_KEYS` in
+ * `keys.mjs`) rides through every step; a step that renames a range id hands
+ * back a `choices` of its own, every other step leaves it as it stood.
  *
  * **A link whose version was never established is passed through untouched** —
  * the one from the future, and the one with no readable `v` at all. `decode()`
@@ -97,22 +99,22 @@ export const STEPS = [];
  * 0007, Nachtrag #44).
  */
 export function migrate(read, steps = STEPS) {
-  const { version, game, type, pins = {}, unknown = {}, report = null } = read;
+  const { version, game, type, pins = {}, choices = {}, unknown = {}, report = null } = read;
 
   // Nothing was lifted here, and nothing will be: the chain does not run for a
   // read whose version was never established, so `migrated` is false rather
   // than absent.
-  if (isUnversionedRead(report)) return { game, type, pins, migrated: false, report };
+  if (isUnversionedRead(report)) return { game, type, pins, choices, migrated: false, report };
 
   const applicable = steps.slice(version - 1);
 
-  let state = { game, type, pins: { ...pins } };
+  let state = { game, type, pins: { ...pins }, choices: { ...choices } };
   let remaining = { ...unknown };
   const entries = [];
 
   for (const step of applicable) {
-    const next = step({ game: state.game, type: state.type, pins: state.pins, unknown: remaining });
-    state = { game: next.game, type: next.type, pins: next.pins };
+    const next = step({ ...state, unknown: remaining });
+    state = { game: next.game, type: next.type, pins: next.pins, choices: next.choices ?? state.choices };
     remaining = next.unknown ?? {};
     entries.push(...(next.entries ?? []));
   }
@@ -129,6 +131,7 @@ export function migrate(read, steps = STEPS) {
     game: state.game,
     type: state.type,
     pins: state.pins,
+    choices: state.choices,
     migrated,
     report: buildReport({
       from: version,

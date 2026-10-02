@@ -247,3 +247,32 @@ test('the empty query would decode as a broken link', () => {
   assert.notEqual(read.report, null);
   assert.ok(read.report.entries.some((entry) => entry.kind === 'unreadableVersion'));
 });
+
+/**
+ * #113's measured case, and why it is not measured where the ticket measured
+ * it. Its body: `Release`, 128 players, `Tournament packs available` at the
+ * stop of 512 — Prepare said "11 more packs would make it 33", the button
+ * said "Set packs to 523", and a press did nothing, because the slider ended
+ * at 512.
+ *
+ * Since #65's run-11 decision K2 the hint counts only inside the opened
+ * envelope, and 512 packs at 32 per envelope open none: at 512 the hint is
+ * silent, so the ticket's literal stand no longer offers anything. The same
+ * 523 comes out of 520 packs (eight loose, the next threshold at 11), and that
+ * is the stand held here — the point of the criterion is that an offer above
+ * the former stop is taken whole.
+ */
+test('Prepare\'s "Set packs to 523" writes 523, past the former stop of 512 (#113)', () => {
+  const { app } = opened('');
+  app.setType('release');
+  app.commitTyped('players', '128');
+  app.commitTyped('tournamentPacks', '512');
+  assert.equal(app.preparation.winners.offer, null, 'at 512 nothing is opened, so the hint is silent (#65 K2)');
+
+  app.commitTyped('tournamentPacks', '520');
+  const { offer } = app.preparation.winners;
+  assert.equal(offer.button, 'Set packs to 523');
+  app.takeOffer(offer);
+  assert.equal(app.settings.tournamentPacks, 523);
+  assert.equal(app.plan.pool.packs, 523);
+});

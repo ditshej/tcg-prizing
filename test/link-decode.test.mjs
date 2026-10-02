@@ -175,7 +175,7 @@ test('every other absent slider is the sheet value the chosen type resolves to',
     if (absent !== 'leaf') continue;
     assert.equal(settings[key], release[key] ?? GAME[key], `${key} should read off the sheet`);
   }
-  assert.equal(settings.depthStep, release.depthStep); // never in the link, always on the sheet
+  assert.equal(settings.depthStep, release.depthStep); // absent from the link, so off the sheet
 });
 
 /**
@@ -224,12 +224,12 @@ test('a depth over the cap stands, with the conflict hanging off the plan instea
   assert.ok(unfit(plan));
 });
 
-test('all eighteen slider keys read at once, each as the kind of value its key is', () => {
+test('all nineteen slider keys read at once, each as the kind of value its key is', () => {
   const query =
     '?v=1&game=onepiece&type=weekend' +
     '&players=48&boosterRate=4&tournamentPacks=50&envelopeSize=9&envelopeYield=2' +
     '&displaySize=24&participationBooster=1&participationPack=1&judgeBooster=2&judgeWinner=1' +
-    '&rankFloor=3&depth=10&curve=severe&ranked=4&winnerPacks=7' +
+    '&rankFloor=3&depth=10&depthStep=topThird&curve=severe&ranked=4&winnerPacks=7' +
     '&manualWinner=3:1,7:2&displays=2.1.1&combinedHandout=1';
   const { pins, unreadable } = decode(query);
 
@@ -241,6 +241,7 @@ test('all eighteen slider keys read at once, each as the kind of value its key i
   assert.deepEqual(pins.displays, [2, 1, 1]);
   assert.deepEqual(pins.manualWinner, { 3: 1, 7: 2 });
   assert.equal(pins.curve, 'severe');
+  assert.equal(pins.depthStep, 'topThird');
   assert.equal(pins.combinedHandout, true);
   const ints = KEYS.filter((k) => k.type === 'int').map((k) => k.key);
   for (const key of ints) assert.equal(typeof pins[key], 'number', `${key} should be a number`);
