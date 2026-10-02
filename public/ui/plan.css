@@ -1668,7 +1668,11 @@ body {
  * #68, run 12, K3 `prototyp-gilt`). It stands on the strip under the columns
  * (`--strip-bottom`: the 56px foot, the 48px strip, or nothing on the flat
  * stage and in fullscreen), and the chips sit where `--chip-right` and
- * `--chip-bottom` put them — all of it out of `foldProperties()`.
+ * `--chip-bottom` put them — all of it out of `foldProperties()`. While the
+ * raffle bar is open, the stack rises above it by `--raffle-lift` (measured
+ * by the rind), and so do the chips wherever they share its corner
+ * (`--chip-raffle`): a ConflictNotice under the bar is not present (ADR 0002;
+ * the prototype's `--raffleh`, Runde 16; found at the acceptance by image, #73).
  *
  * Told apart by colour and ways out only, never by form or by how they start
  * (#61). The three tones are the prototype's: warn red, the reserve violet,
@@ -1685,13 +1689,13 @@ body {
   position: fixed;
   left: calc(var(--deck-margin, 0px) + var(--plan-left, 0px));
   right: calc(var(--deck-margin, 0px) + var(--plan-right, 0px));
-  bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px));
+  bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px) + var(--raffle-lift, 0px));
   z-index: 36;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 8px;
-  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px));
+  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px) - var(--raffle-lift, 0px));
   overflow-y: auto;
   pointer-events: none;
 }
@@ -1775,7 +1779,8 @@ body {
 .notice-chips {
   position: fixed;
   right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px));
-  bottom: var(--chip-bottom, 64px);
+  /* Above an open raffle bar wherever the chips share its corner (#73). */
+  bottom: calc(var(--chip-bottom, 64px) + var(--raffle-lift, 0px) * var(--chip-raffle, 1));
   z-index: 37;
   display: flex;
   justify-content: flex-end;

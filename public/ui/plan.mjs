@@ -38,7 +38,7 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRafflePadding, attachFades, attachMeasuring, attachStage, showRaffleHit } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, showRaffleHit } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -972,16 +972,20 @@ export function planApp(seam = SEAM) {
      * Called from `x-effect` on the grid's wrap rather than from `init()`,
      * which is #66's and #62's. The reads on the first line are what the
      * effect subscribes to — the bar's height grows with the retraction list
-     * and with the empty-pot sentence, and fullscreen moves the grid's own
-     * bottom edge. `$nextTick` waits for Alpine to have drawn the bar the
-     * measurement is about.
+     * and with the empty-pot sentence, fullscreen moves the grid's own
+     * bottom edge, and the fold changes the bar's width and so its wrapping.
+     * `$nextTick` waits for Alpine to have drawn the bar the measurement is
+     * about. The same measurement lifts the `NoticeStack` above the bar
+     * (`applyRaffleLift()`, #73).
      */
     measureRaffle() {
       const view = this.raffle;
-      void [this.raffleOpen, this.fullscreen, this.activePage, view.takeBack.length, view.hit, view.potEmptyNote];
-      this.$nextTick?.(() =>
-        applyRafflePadding(this.$refs?.grid, this.raffleOpen ? this.$refs?.raffle : null),
-      );
+      void [this.raffleOpen, this.fullscreen, this.activePage, this.fold, view.takeBack.length, view.hit, view.potEmptyNote];
+      this.$nextTick?.(() => {
+        const bar = this.raffleOpen ? this.$refs?.raffle : null;
+        applyRafflePadding(this.$refs?.grid, bar);
+        applyRaffleLift(this.$refs?.notices, bar);
+      });
     },
 
     /* ── `pinned` against `auto`, and the three reaches back (#67) ─────── */

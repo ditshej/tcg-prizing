@@ -105,6 +105,30 @@ export function raffleScrollPadding(windowRect, barRect) {
 }
 
 /**
+ * The air between the strip and the bar's bottom edge — `.raffle-bar`'s `8px`
+ * over `--strip-bottom` in `plan.css`.
+ */
+export const RAFFLE_AIR = 8;
+
+/**
+ * How far the `NoticeStack` rises while the raffle bar is open: the bar's
+ * measured height plus its air, `0` while it is closed (`null` or `0`).
+ *
+ * The bar lies over the foot of the `Plan` column, and so does the stack. A
+ * ConflictNotice has to be present (ADR 0002), so it must not lie under the
+ * bar; the prototype lifts its stack by `--raffleh` for exactly that reason
+ * (Runde 16: "sonst legt sich die Verlosung über die ConflictNotice, die nach
+ * ADR 0002 anwesend sein muss") and its chips the same way wherever they share
+ * the bar's corner (Runde 21). Measured at the acceptance by image (#73): with
+ * the bar open the open ConflictNotice lay under it on every canvas, and the
+ * chip did wherever it was not in the strip. The height is the rind's to
+ * measure, because the bar grows with its retraction list.
+ */
+export function raffleLift(barHeight) {
+  return barHeight > 0 ? barHeight + RAFFLE_AIR : 0;
+}
+
+/**
  * How far the tile grid has to scroll to show a hit — the centre of the
  * **free strip**, which is the scroll window cut off at the bar's top edge
  * (#69: "in die Mitte des freien Streifens").

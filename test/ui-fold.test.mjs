@@ -293,3 +293,20 @@ test('the chip sits in the lowest free corner on the right', () => {
   assert.equal(props(1280, 760, true)['--strip-bottom'], '0px');
   assert.equal(props(1280, 760, true)['--chip-bottom'], '8px');
 });
+
+/**
+ * The open raffle bar is a surface over the `Plan` column, so the corner under
+ * it is no longer free: where the chips stand in the `Plan`'s corner — one row
+ * above the foot, beside the turned strip, at the fullscreen's bottom edge —
+ * they rise above the bar; in the strip they lie under the bar and stay put.
+ * The prototype's `#badges` rule, `bottom: calc(var(--foot) + var(--raffleh))`
+ * (Runde 16, Runde 21); found at the acceptance by image (#73).
+ */
+test('the chips rise above an open raffle bar exactly where they sit in the Plan\'s corner', () => {
+  const props = (w, h, fs = false) => foldProperties(fold({ width: w, height: h, fullscreen: fs }));
+  assert.equal(props(393, 830)['--chip-raffle'], '1');
+  assert.equal(props(812, 375)['--chip-raffle'], '1');
+  assert.equal(props(1280, 760, true)['--chip-raffle'], '1');
+  assert.equal(props(393, 830, true)['--chip-raffle'], '1');
+  for (const w of [674, 1030, 1597]) assert.equal(props(w, 800)['--chip-raffle'], '0', `strip at ${w}`);
+});

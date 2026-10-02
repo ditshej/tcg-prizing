@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleScrollPadding } from './geometry.mjs';
+import { columnsFor, diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleLift, raffleScrollPadding } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -88,6 +88,24 @@ export function applyRafflePadding(gridEl, barEl) {
     barEl ? barEl.getBoundingClientRect() : null,
   );
   gridEl.style.paddingBottom = pad ? `${pad}px` : '';
+}
+
+/**
+ * Lifts the `NoticeStack` — and the chips where they share the bar's corner —
+ * above the open raffle bar, so the bar never lies over a ConflictNotice that
+ * has to be present (ADR 0002; the prototype's `--raffleh`). `barEl` is `null`
+ * while the bar is closed; a bar whose page is hidden measures 0 high and
+ * lifts nothing.
+ *
+ * Reads one box, writes one length on the notice layer — not on the app root,
+ * whose `style` attribute Alpine rewrites with the fold's sizes.
+ * How much is `raffleLift()` in `geometry.mjs`; which chips follow is
+ * `--chip-raffle` out of `foldProperties()` — both under `node --test`.
+ */
+export function applyRaffleLift(layerEl, barEl) {
+  if (!layerEl) return;
+  const lift = raffleLift(barEl ? barEl.getBoundingClientRect().height : 0);
+  layerEl.style.setProperty('--raffle-lift', `${lift}px`);
 }
 
 /**

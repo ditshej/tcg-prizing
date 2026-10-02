@@ -12,6 +12,8 @@ import {
   diagramCap,
   hitScrollDelta,
   raffleScrollPadding,
+  raffleLift,
+  RAFFLE_AIR,
   fadeShown,
   fadeHeight,
 } from '../public/ui/geometry.mjs';
@@ -92,6 +94,21 @@ test('a bar that does not reach the grid window costs no padding at all', () => 
   assert.equal(raffleScrollPadding({ bottom: 640 }, { top: 640 }), 0); // edge to edge
   assert.equal(raffleScrollPadding({ bottom: 700 }, null), 0); // bar closed
 });
+
+/**
+ * The open raffle bar lies over the foot of the `Plan` column, and a
+ * ConflictNotice that has to be present (ADR 0002) must not lie under it: the
+ * stack — and the chips where they share the bar's corner — rise by the bar's
+ * measured height and the air it keeps to the strip (the prototype's
+ * `--raffleh`, Runde 16; found at the acceptance by image, #73).
+ */
+test('the raffle lift is the bar\'s height plus its air, and nothing while the bar is closed', () => {
+  assert.equal(raffleLift(119), 119 + RAFFLE_AIR);
+  assert.equal(raffleLift(0), 0);
+  assert.equal(raffleLift(null), 0);
+  assert.equal(RAFFLE_AIR, 8);
+});
+
 
 /**
  * "Sichtbar" measures against the **top edge of the bar**, not the bottom of

@@ -214,7 +214,8 @@ export const CHIP_AIR = 8;
  * place on the right (vertically centred in its 48 px); on the flat stage
  * beside the turned strip, not into it; in fullscreen at the bottom edge. One
  * rule, and the open stack lifts above the chip row exactly where the chips
- * do not sit in a band of their own (`--chip-lift`).
+ * do not sit in a band of their own (`--chip-lift`). Where they do not, they
+ * also rise above an open raffle bar with the stack (`--chip-raffle`).
  */
 export function foldProperties(f) {
   const chipsInStrip = f.stripBottom === STRIP_HEIGHT;
@@ -230,5 +231,9 @@ export function foldProperties(f) {
     '--chip-right': px(f.stripWidth),
     '--chip-bottom': px(chipsInStrip ? (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
     '--chip-lift': px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
+    // Whether the chips share the open raffle bar's corner and rise above it
+    // with the stack (`--raffle-lift`, measured by the rind): everywhere but
+    // in the strip, which lies under the bar (#73; the prototype's `#badges`).
+    '--chip-raffle': chipsInStrip ? '0' : '1',
   };
 }
