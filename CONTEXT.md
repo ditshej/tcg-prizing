@@ -337,16 +337,18 @@ Kacheln — dem Schlüssel zu genau der Marke, die sie erzeugt —, der eine fes
 Leiste über der Fussnavigation aufgehen lässt; die Leiste trägt Auslöser,
 `RaffleRange`, die Ansage des letzten Treffers und die nach `Rank` sortierte
 Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbild
-und deckt keine Kachel zu: solange sie offen ist, gibt das Diagramm um ihre
-gemessene Überlappung mit dem Kachelfenster nach (nie unter seinen Boden), so dass
-die zwei Reihen und der gezogene Treffer über ihr frei bleiben, auch wenn sie mit
-der Rücknahmeliste wächst (#73, K1). Auf der flachen Bühne (`fold().flat`, keine
-Breite) reicht das nicht, und dort gilt eine Ausnahme (#129): solange die Leiste offen
-ist, fällt das Diagramm ganz weg — es gibt unter seinen Boden nach, bis 0 — und kommt
-zurück, sobald sie zu ist; und die Leiste wächst dort nicht mit der Rücknahmeliste,
-die Liste blättert in ihr, eine Zeile je Seite, so dass die eine Kachelreihe mit dem
-Treffer auch nach dem Wurf frei bleibt. Überall sonst wächst die Leiste mit der Liste
-(#69). Ein Treffer wird **flüchtig** markiert — das Raster
+und deckt keine Kachel zu — gemeint sind Kacheln, nicht die Rangmeldung darunter,
+die bei offener Leiste verdeckt ist (#129, Lauf 15, K7): solange sie offen ist, gibt
+das Diagramm um ihre gemessene Überlappung mit dem Kachelfenster nach (#73, K1), und
+wo es dabei unter seinen Boden käme, ist es **weg** (#129, Lauf 15, K3/K4; die Regel
+steht bei `Fold`). Die Leiste wächst beim ersten Wurf einmal um Ansage und
+Rücknahmezeile und danach mit der Rücknahmeliste (#69) — ausser auf der flachen Bühne
+und in der engen Ausnahme (`fold().flat`, `fold().cramped`, keine Breite): dort ist die
+Rücknahmeliste **eine Zeile, die seitlich scrollt** (am Handy gezogen; die Pfeile `‹ ›`
+erscheinen nur, wenn sie überläuft, und verschieben sie um eine Pille), und ein Wurf
+scrollt den Chip seines Treffers in Sicht (#129, Lauf 15, K5; sie blättert nicht).
+Ein leerer Topf heisst am Schirm `every rank in range already has one`, ohne
+Aufforderung (K2). Ein Treffer wird **flüchtig** markiert — das Raster
 scrollt zu ihm, die Kachel hebt sich kurz heraus —, nie bleibend: eine bleibende
 Marke wäre die Herkunft, die das Modell bewusst nicht führt. Die Ansage nennt
 den `Rank` und trägt **keinen** Rückweg; zurückgenommen wird in der Liste oder an
@@ -491,6 +493,14 @@ keine eindeutige Breite hat. Daraus die Bruchstellen 674 und 1030 und der Deckel
 1597, alle drei als Summen. Die Ersthöhe ist 399 (178 fester Teil + 60 Boden des
 Diagramms + 113 für zwei Kachelreihen + 48 Streifen): das Diagramm geht mit
 seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
+**Das Diagramm ist Beigabe** (#129, Lauf 15, K3/K4, Definition an die Session
+delegiert): es steht nur, wo nach den zwei Kachelreihen und der gemessenen
+Überlappung einer offenen Verlosungsleiste noch sein Boden von 60 bleibt —
+`Rest − Überlappung − 113 ≥ 60`, der Rest gerechnet, als stünde es —, und ist sonst
+weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. Die Faltung selbst
+rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält
+seine 178 auch bei 320–340 Breite, weil die Ausgabezeile des Kopfs nicht umbricht,
+sondern seitlich scrollt (K6, schliesst A10).
 Die einspaltige Form hat eine eigene Schwelle: 351 + 56 Fuss + die **gemessene**
 Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung kippt je
 nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
@@ -501,7 +511,9 @@ unter der Zwei-Spalten-Stufe; die vier heissen Regler stehen dort erst ab 722
 Bühnen unter 436 Breite **und** unter der einspaltigen Schwelle bleiben die Ausnahme
 vom Masterboden: dort hält keine Faltung zwei Reihen im Bild — der `Plan` behält
 seinen Boden, die Schiene steht darunter, und die Plan-Seite **scrollt**; nichts
-liegt übereinander (#73, K4).
+liegt übereinander (#73, K4) — entschieden für die Schiene. Eine offene
+Verlosungsleiste liegt dort weiter fest am unteren Rand über der Seite; ihr weicht
+das Diagramm (Lauf 15, K4), und die Kacheln stehen über ihr, so weit der Platz reicht.
 _Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
 
 **NoticeStack**:
