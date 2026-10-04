@@ -347,6 +347,11 @@ Entscheid: Body von #129 (Maintainer, 2026-10-02). Flach (`fold().flat`, keine B
 Diagramm bei offener Leiste ganz weg und kommt beim Schliessen zurück; die Rücknahmeliste blättert
 in der Leiste statt sie wachsen zu lassen. Nicht flach gilt K1 unverändert.
 
+> ⚠︎ **Überholt durch die Antworten K1–K7 (Lauf 15, Phase F).** Das Diagramm steht nur noch mit Platz
+> (in jeder Faltung), die Liste scrollt seitlich statt zu blättern, A10 ist geschlossen. Die Messwerte
+> unten sind die des ersten Baus. Was jetzt gilt, steht im Abschnitt „Lauf 15 · Nachbau nach den
+> Antworten K1–K7".
+
 - **PHP:** 8.3.33 (`php -v`), Server `php -S localhost:8775 -t public` aus der Worktree-Wurzel `tcg-prizing-129`
 - **Zweig:** `feat/129-flache-buehne-blaettert`
 - **Adresse:** `?v=1&game=onepiece&type=weekly&winnerPacks=16` (sieben offene `WinnerPack`s, damit die Liste blättern kann), 🎲, dann Würfe
@@ -418,6 +423,100 @@ einer Schiene von 115 (Messwert aus Lauf 14).
   (`takeBackPages()`), `‹ n/m ›` in der Kopfzeile der Liste (kostet keine Höhe), ein Wurf springt auf die
   Seite seines Treffers.
 - **A10** bleibt offen (Plan-Kopf bei 320–340 zweizeilig, `PLAN_FIXED` 178); in Lauf 15 nicht angefasst.
+
+## Lauf 15 · Nachbau nach den Antworten K1–K7
+
+Entscheide: Kommentar an #129 (https://github.com/ditshej/tcg-prizing/issues/129#issuecomment-5966583624),
+Maintainer 2026-10-03; die Definition von „genug Platz" hat er an die Session delegiert (K3/K4).
+
+- **Regel:** Das Diagramm steht, wenn `Rest − Überlappung der offenen Leiste − 113 ≥ 60` gilt. Den Rest
+  rechnet der Messrand so, als stünde das Diagramm (`diagramFits()`). Sonst ist das Diagramm weg, und die
+  Rangsumme geht mit ihm. Die Rücknahmeliste ist flach und `cramped` eine seitlich scrollende Zeile mit
+  Pfeilen `‹ ›` (je eine Pille). Der Plan-Kopf bricht nicht um.
+- **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8795 -t public` aus `tcg-prizing-129`, Zweig
+  `feat/129-flache-buehne-blaettert`. Chromium über Playwright (MCP).
+- **Adresse:** `?v=1&game=onepiece&type=weekly&winnerPacks=16`. 🎲 und ✕ werden per Klick bedient, die Würfe
+  über `.raffle-trigger`.
+- **Bilder:** `review/73-bilder/lauf15f-<w>x<h>-<modus>-<plain|raffle|raffleThrown1|raffleThrown7|raffleClosed>.png`
+  (gitignoriert), dazu `lauf15f-436x380-light-rowStepped.png`, `…-potEmpty.png`, `lauf15f-320x524-light-head.png`,
+  `lauf15f-360x508-light-head.png`.
+- *frei* wie oben; eine Reihe braucht 54, zwei 113.
+
+### Soll und Ist
+
+| Leinwand | Faltung | zu: Diagramm | offen: Diagramm / frei | 1. Wurf: Diagramm / Leiste / frei | 7. Wurf: Leiste / frei | wieder zu |
+|---|---|---|---|---|---|---|
+| 812 × 375 | flach | 86,1 | **0** / 128,1 | 0 / 190,5 / 56,6 | 190,5 / 56,6 | 121,1¹ |
+| 436 × 380 | flach | 91,1 | **0** / 133,1 | 0 / 190,5 / 61,6 | 190,5 / 61,6, Zeile läuft über (534 auf 348), Pfeile da | 91,1 |
+| 600 × 493 | flach | 204,1 | **125,1** / 113 | 0 / 190,5 / 174,6 | 190,5 / 174,6 | 204,1 |
+| 673 × 468 | flach | 179,1 | **100,1** / 113 | 0 / 190,5 / 149,6 | 190,5 / 149,6 | 214,1¹ |
+| 674 × 398 | flach | 109,1 | 0 / 151,1 | 0 / 190,5 / 79,6 | 190,5 / 79,6 | 109,1 |
+| 673 × 469 | nicht flach | 62,1 | **0** / 166,1 | 0 / 190,5 / **94,6** | 190,5 / 94,6 | 97,1¹ |
+| 674 × 399 | zwei Spalten | 60,6 | **0** / 102,6 | 0 / 190,5 / **31,1** | **216** / **5,6** | 60,6 |
+| 600 × 494 | nicht flach | 62,1 | 62,1 / 121 | **0** / 190,5 / 119,6 | 190,5 / 119,6 | 62,1 |
+| 1280 × 450 | drei Spalten | 111,6 | **0** / 153,6 | 0 / 190,5 / **82,1** | 190,5 / 82,1 | 111,6 |
+| 1280 × 574 / 575 | drei Spalten | 235,6 / 236,6 | 156,6 / 113 | 85,1 / 190,5 / 113 | 190,5 / 113 | — |
+| 435 × 380 | `cramped` | **0** | 0 / 77,1 | 0 / 190,5 / **5,6** | 190,5 / 5,6, Zeile scrollt | 0 |
+| 393 × 830 | Master | 398,1 | 398,1 / 121 | 334,6 / 190,5 / 113 | 216 / 113 | 398,1 |
+
+¹ Nach sieben Würfen ändert sich der Plan: Die Rangmeldung fällt weg (27 + 8 px), und das Diagramm wird
+entsprechend höher. Ein Neuladen mit derselben Adresse misst denselben Wert.
+
+Vorher (erster Bau von Lauf 15) war es bei 673 × 469 nach dem Wurf 26,6 frei, bei 1280 × 450 14,1 und
+bei 435 × 380 −62,4. Bei 600 × 493 stand das Diagramm offen auf 0, jetzt sind es 125 neben zwei freien
+Reihen (B5).
+
+**Treffer als Kachel sichtbar** (nach dem weichen Scrollen, Würfe auf den höchsten, den niedrigsten und
+einen mittleren Rang): 436 × 380 (mit und ohne vorher gesetzte Ränge), 812 × 375, 1280 × 450,
+673 × 469, 600 × 493 und 393 × 830 je **54 von 54 px**. Bei 435 × 380 sind es **16 von 54**: Dort reicht
+die Fläche über der Leiste nach dem Wurf nicht für eine Reihe (siehe Offen). Der Chip des Treffers
+scrollt in die Zeile (436 × 380: Rang 32, `scrollLeft` 0 → 114).
+
+**Pfeile** (436 × 380, sieben Chips, Zeile 534 auf 348): Sie erscheinen ab dem fünften Chip. Ein Klick auf
+`›` verschiebt um eine Pille (`scrollLeft` 0 → 76 → 154), am Ende (192) ist `›` gesperrt, `‹` geht
+auf 154 zurück (`lauf15f-436x380-light-rowStepped.png`).
+
+**K2:** Bei 436 × 380, `top 8` nach einem Wurf, heisst der Satz `every rank in range already has one`. Er
+bricht noch auf zwei Zeilen um (`.raffle-stand` 31,2), die Leiste bleibt aber bei 190,5 und frei bleiben
+**61,6** (vorher 49,8; `lauf15f-436x380-light-potEmpty.png`).
+
+**K6, A10 geschlossen:** Ohne Verlosung, `players=64&depth=32`:
+
+| Leinwand | Kopf | Ausgabezeile (Inhalt / sichtbar) | Rangmeldung / Schiene ab | überdeckt |
+|---|---|---|---|---|
+| 320 × 524 | **40** | 330 / 304, scrollt | 324–351 / 351 | **0** (vorher 15,9) |
+| 330 × 524 | 40 | 330 / 314 | 324–351 / 351 | 0 |
+| 340 × 522 | 40 | 330 / 324 | 324–351 / 351 | 0 |
+| 360 × 508 | 40 | 344 / 344 | 324–351 / 351 | 0 |
+
+### Grenzen beidseitig
+
+| Paar | Grenze | Ist |
+|---|---|---|
+| 812 × 348 / 349, zu | genug Platz ohne Leiste | Diagramm **0** (Fenster 203,1) / **60,1** (Fenster 113) |
+| 1280 × 477 / 478, offen vor dem Wurf | genug Platz mit Leiste 119 | **0** (frei 180,6) / **60,6** (frei 113) |
+| 1280 × 548 / 549, nach dem 1. Wurf | genug Platz mit Leiste 190,5 | **0** (frei 180,1) / **60,1** (frei 113) |
+| 435 × 380 / 436 × 380 | `cramped` / flach | beide Zeile; Diagramm 0 / 0 (offen) |
+| 600 × 493 / 494 | flach / nicht flach (Schiene 87) | Zeile läuft über / Liste bricht um; offen Diagramm 125,1 / 62,1 |
+| 674 × 398 / 399 | flach / zwei Spalten | Zeile / Liste wächst (216 beim 7. Wurf) |
+| 673 × 468 / 469 | flach / nicht flach | nach dem Wurf frei 149,6 / 94,6, Diagramm je 0 |
+
+Unter `node --test`: `diagramFits()` bei 173 (= 113 + 60) und 172,9, mit und ohne Überlappung
+(`test/ui-geometry.test.mjs`); die Faltpaare der Zeile, darunter 500 × 521/522 mit Schiene 115 und
+420 × 380/900, sowie die Bindungen im Markup, ausgewertet gegen die Komponente
+(`test/ui-flat-raffle.test.mjs`). Neun Mutationen an Regel, Zeile, Pfeilen, Rangsumme, Satz und Kopf gingen
+alle rot.
+
+### Offen
+
+- **674 × 399** (zwei Spalten, knapp über der Ersthöhe): Ohne Diagramm bleiben nach dem ersten Wurf nur
+  31,1 frei, keine Reihe. Weil die Bühne nicht flach ist, bricht die Liste um und lässt die Leiste wachsen
+  (216, frei 5,6). Die Karte K3 sagte das voraus („bleibt knapp darunter“). Über den Platz hinaus ist
+  hier nichts entschieden.
+- **435 × 380** (`cramped`): Das Diagramm ist weg, wie entschieden, und vor dem Wurf ist eine Reihe frei
+  (77,1). Nach dem Wurf bleiben 5,6, der Treffer ist zu 16 von 54 px zu sehen. Mehr als „mind. ein
+  wenig“ gibt diese Bühne mit fester Leiste nicht her. Die Seite scrollt dort (K4) und lässt die Kacheln
+  hochziehen.
 
 ## Abnahmekriterien von #73
 
