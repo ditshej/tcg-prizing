@@ -10,6 +10,8 @@ import {
   rowsHeight,
   columnsFor,
   diagramCap,
+  diagramFits,
+  MIN_DIAGRAM_HEIGHT,
   hitScrollDelta,
   raffleCover,
   raffleScrollPadding,
@@ -215,8 +217,33 @@ test('the diagram pays for the cover, so two full rows stand above the bar', () 
   assert.equal(diagramCap(leftover, undefined, 0), diagramCap(leftover));
 });
 
-test('the diagram never yields under its floor — flat, that is not enough (K1, open there)', () => {
+test('the diagram never yields under its floor — where that is not enough, it goes away instead (#129)', () => {
   // 812 × 375 at the acceptance: diagram 86 over two rows, the bar 119 high.
   const leftover = 86 + rowsHeight(MIN_ROWS);
   assert.equal(diagramCap(leftover, undefined, 79), 60);
+  assert.equal(diagramFits(leftover, 79), false);
 });
+
+/*
+ * "Enough room" (#129, run 15, K3/K4 — the maintainer delegated what it means):
+ * the diagram stands where, after the two tile rows and the open bar's measured
+ * cover, its 60 px floor is still left. Under that it is gone, not clamped.
+ * Both sides of the edge, to the tenth of a pixel the browser measures in.
+ */
+test('the diagram stands exactly where two rows and the cover leave its floor, and is gone a tenth below', () => {
+  const edge = rowsHeight(MIN_ROWS) + MIN_DIAGRAM_HEIGHT; // 173
+  assert.equal(diagramFits(edge), true);
+  assert.equal(diagramFits(edge - 0.1), false);
+  assert.equal(diagramFits(edge + 79, 79), true);
+  assert.equal(diagramFits(edge + 79, 79.1), false);
+  // Where it stands, it gets what diagramCap gives, never less than the floor.
+  assert.equal(diagramCap(edge + 79, undefined, 79), MIN_DIAGRAM_HEIGHT);
+});
+
+test('a closed bar covers nothing, so the rule is the first height’s own floor', () => {
+  // 812 × 375 closed: diagram 86.1 over two rows, so it stands.
+  assert.equal(diagramFits(86.1 + rowsHeight(MIN_ROWS)), true);
+  // A flat stage too low for two rows and 60 — the diagram gives way to the tiles.
+  assert.equal(diagramFits(59 + rowsHeight(MIN_ROWS)), false);
+});
+

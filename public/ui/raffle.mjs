@@ -148,8 +148,10 @@ export function raffleView(plan, raffleRange, lastDraw = null) {
     stand: `${placed} of ${packs(total)} placed`,
     /* Only the empty pot gets a sentence. "All placed" needs none: the stand
        beside it already reads `6 of 6 winner packs placed`, and a second
-       sentence saying the same thing is the noise ADR 0002 is not asking for. */
-    potEmptyNote: potEmpty ? 'every rank in range already has one — widen the range' : null,
+       sentence saying the same thing is the noise ADR 0002 is not asking for.
+       It names the state and asks for nothing: "— widen the range" was taken
+       out everywhere (#129, run 15, K2 — "an diesem Ort falsch"). */
+    potEmptyNote: potEmpty ? 'every rank in range already has one' : null,
     /* The announcement does not survive the retraction: whoever takes the rank
        out of the list has undone the throw, and a sentence about it would be a
        claim about a state that no longer exists. */
@@ -191,3 +193,4 @@ export function drawFrom(pot, roll = Math.random) {
   const at = Math.floor(roll() * pot.length);
   return pot[Math.min(pot.length - 1, Math.max(0, at))];
 }
+

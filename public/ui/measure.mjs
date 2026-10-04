@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleCover, raffleLift, raffleScrollPadding, tileColumnsFor } from './geometry.mjs';
+import { chipIntoView, diagramCap, diagramFits, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, pillStep, raffleCover, raffleLift, raffleScrollPadding, rowScrollEnds, tileColumnsFor } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -25,15 +25,32 @@ import { diagramCap, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, raffleCo
  * of which this ticket's first cut left out (the diagram overran the two-row
  * floor on a genuinely tight landscape stage until this was added).
  *
+ * Returns whether the diagram has room (`diagramFits()`, #129, run 15), for
+ * the component to show or hide it. The leftover is measured **as if the
+ * diagram stood**: its own gap is counted whether it renders or not, and so
+ * is every part that leaves with it (`.plan-ranktotal`), at the height it had
+ * when it last rendered. Measured as it is drawn, the verdict would move the
+ * numbers it is made from — hide the diagram and the rank total, and the
+ * leftover grows by their height, enough to bring them back.
+ *
  * Reads: `clientWidth`/`clientHeight`, `getBoundingClientRect().height`,
  * computed `gap`/`padding`. Writes: `style.setProperty`. Nothing else — no
- * plan logic, no state.
+ * plan logic, no state but the last height of what leaves with the diagram.
  */
 export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
-  if (!stageEl) return;
+  if (!stageEl) return true;
   const width = stageEl.clientWidth;
   const height = stageEl.clientHeight;
-  const fixedHeight = fixedEls.reduce((sum, el) => sum + (el ? el.getBoundingClientRect().height : 0), 0);
+  const shown = (el) => el && el.getClientRects().length > 0;
+  const leaves = (el) => el && el.classList.contains('plan-ranktotal') && !stageEl.closest('[data-fullscreen]');
+  const fixedHeight = fixedEls.reduce((sum, el) => {
+    if (shown(el)) {
+      const h = el.getBoundingClientRect().height;
+      if (leaves(el)) lastHeight.set(el, h);
+      return sum + h;
+    }
+    return sum + (leaves(el) ? lastHeight.get(el) ?? 0 : 0);
+  }, 0);
 
   const style = getComputedStyle(stageEl);
   const gap = parseFloat(style.rowGap || style.gap) || 0;
@@ -41,9 +58,10 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   /* Only the children that actually render pay for a gap. Fullscreen hides
      several of them (`x-show` → `display: none`), and counting those would
      charge the leftover for gaps the browser never draws — pixels the tile
-     grid would then not get. */
+     grid would then not get. The diagram and what leaves with it count as
+     rendering, so the leftover is the one they would stand in. */
   const visibleChildren = Array.from(stageEl.children)
-    .filter((el) => el.getClientRects().length > 0).length;
+    .filter((el) => shown(el) || el.classList.contains('plan-diagram') || (leaves(el) && lastHeight.has(el))).length;
   const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
@@ -54,22 +72,27 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
   stageEl.style.setProperty('--plan-columns', String(tileColumnsFor(width - sides)));
   /* An open raffle bar over the tile window takes its overlap off the
-     diagram (#73, K1). A bar whose page is hidden has no box and covers
-     nothing. */
+     diagram (#73, K1) — or the diagram goes, where that leaves it under its
+     floor (#129). A bar whose page is hidden has no box and covers nothing. */
   const gridEl = stageEl.querySelector('.plan-grid');
   const bar = barEl && barEl.getClientRects().length > 0 ? barEl.getBoundingClientRect() : null;
   const covered = gridEl ? raffleCover(gridEl.getBoundingClientRect(), bar) : 0;
-  stageEl.style.setProperty('--diagram-height', `${diagramCap(Math.max(0, height - overhead), undefined, covered)}px`);
+  const leftover = Math.max(0, height - overhead);
+  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, undefined, covered)}px`);
+  return diagramFits(leftover, covered);
 }
+
+/** The last rendered height of each part that leaves with the diagram. */
+const lastHeight = new WeakMap();
 
 /**
  * Wires `applyGeometry` to run once now and again on every resize of
  * `stageEl`, via `ResizeObserver` — the browser's own measuring loop, not a
  * poll this module would have to own.
  */
-export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null) {
+export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null, onRoom = () => {}) {
   if (!stageEl || typeof ResizeObserver === 'undefined') return () => {};
-  const run = () => applyGeometry(stageEl, fixedEls, barOf());
+  const run = () => onRoom(applyGeometry(stageEl, fixedEls, barOf()));
   run();
   const observer = new ResizeObserver(run);
   observer.observe(stageEl);
@@ -112,6 +135,37 @@ export function applyRaffleLift(layerEl, barEl) {
   if (!layerEl) return;
   const lift = raffleLift(barEl ? barEl.getBoundingClientRect().height : 0);
   layerEl.style.setProperty('--raffle-lift', `${lift}px`);
+}
+
+/**
+ * The retraction list as one sideways row (#129, run 15, K5). Three reads of
+ * the row's scroll box; the arithmetic is `rowScrollEnds()`, `pillStep()` and
+ * `chipIntoView()` in `geometry.mjs`, under `node --test`. `listEl` is `null`
+ * while there is no list.
+ */
+export function readRowEnds(listEl) {
+  if (!listEl || listEl.getClientRects().length === 0) return null;
+  return rowScrollEnds(listEl);
+}
+
+/** One arrow click: the row moves by one pill (`direction` `1` on, `-1` back). */
+export function stepRow(listEl, direction) {
+  const chips = listEl ? listEl.querySelectorAll('.raffle-chip') : [];
+  if (!chips.length) return;
+  const lefts = Array.from(chips, (chip) => chip.offsetLeft - chips[0].offsetLeft);
+  const left = pillStep({
+    lefts, scrollLeft: listEl.scrollLeft, scrollWidth: listEl.scrollWidth, clientWidth: listEl.clientWidth,
+  }, direction);
+  listEl.scrollTo({ left, behavior: 'smooth' });
+}
+
+/** Brings the chip of `rank` into the row, and leaves the row alone where it is in view. */
+export function showChipInRow(listEl, rank) {
+  const chip = listEl?.querySelector(`.raffle-chip[data-rank="${rank}"]`);
+  if (!chip) return;
+  const origin = listEl.querySelector('.raffle-chip').offsetLeft;
+  const left = chipIntoView({ left: chip.offsetLeft - origin, width: chip.offsetWidth }, listEl.scrollLeft, listEl.clientWidth);
+  if (left !== listEl.scrollLeft) listEl.scrollTo({ left, behavior: 'smooth' });
 }
 
 /**

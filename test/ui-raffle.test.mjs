@@ -118,7 +118,8 @@ test('the trigger is locked with a sentence when the pot is empty and packs are 
   assert.equal(locked.pot.length, 0);
   assert.ok(locked.open > 0, 'winner packs are still open');
   assert.equal(locked.canRaffle, false);
-  assert.equal(locked.potEmptyNote, 'every rank in range already has one — widen the range');
+  // No request to widen the range — removed everywhere (#129, run 15, K2).
+  assert.equal(locked.potEmptyNote, 'every rank in range already has one');
 });
 
 test('the retraction list is sorted by rank and names each one, never by recency', () => {
