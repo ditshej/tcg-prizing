@@ -970,3 +970,63 @@ Device items went to #121 as one comment. No ADR. PR: #127 (#73), head
 2026-10-02, `main` at 563/563, #73 closed by its PR. No `dev/` follow-up: the
 bench imports none of the changed modules, and no stale `RAIL_HEIGHT` or 494
 remains outside the history lines.
+
+### Run 15 · 2026-10-02 to 10-04 · #129 · `/round`, five agents, seven cards, one stall
+
+**The conductor's context: 81k at its peak, measured** from the session
+transcript (input plus cache tokens of the last call, read before this entry
+was written), in one session segment. The base before the first phase was 30k,
+so the round itself cost about 51k, against run 14's 23k. This is the first
+round since run 9 with a Phase E. Run 9 ran Stages 2–5 inside the conductor and
+came to 137k. Here Stages 2–4 and the question file ran in an agent, and the
+conductor only started the server. What the conductor did carry: the
+`/ask-hard-questions` text, which the maintainer's command loads into the
+conductor whatever happens next, seven candidates in Phase D, and the free
+texts of the answers, read to brief Phase F.
+
+**PHP was 8.3.33**, checked before A, so the stop did not fire.
+
+**All seven candidates went to cards, and five came back as free text.** Phase
+D cost one interaction and decided nothing. The cards then did their job. Only
+K1 (`sprung-ok`) and K7 (`preis`) took an offered way. The free texts
+overturned more than the cards asked about. The diagram is now a nice-to-have
+that stands only where there is room, on every fold. The take-back list
+scrolls sideways instead of paging, so #129's own „blättert" is gone. The Plan
+header scrolls instead of wrapping, which closes A10. „— widen the range" is
+removed everywhere. A10 came in undecided and was not derived. It went to D as
+a candidate, as the prompt asked.
+
+**„Enough room" was delegated, and Phase F defined it by measuring it.** The
+maintainer's words were „was das genau bedeutet, überlasse ich mal dir". F
+set: the diagram stands where `rest − bar overlap − 113 ≥ 60`, with the rest
+measured as if the diagram stood. Otherwise it is gone. Boundaries were checked
+on both sides at 812×348/349, 1280×477/478 and 1280×548/549. Three further
+choices of F's own are flagged in the #129 resolution comment: the sideways row
+also applies in the cramped exception, a throw scrolls its chip into view, and
+tall flat stages keep the diagram with the bar open. They are for review at G.
+
+**F found a race that A and B did not.** On about every second load the
+raffle bar was measured before it was shown, so the diagram neither shrank nor
+left. It now waits a frame and re-measures until nothing moves.
+
+**Two stops, neither a death.** The question-file server outlived the
+background job's default limit before any answer was sent. It was restarted
+with the 2 h limit, and the answers arrived on the second run. Phase F stalled
+once, killed by the stream watchdog after 600 s mid-build with the filing
+committed and the build uncommitted. It was resumed with its own context via
+`SendMessage`, told to check the filing first, and finished. A long agent run
+should commit at each step it would not want to redo.
+
+**Counts.** 10 findings from A (0 blocking, 7 to decide, 3 notes), 3 more from
+B, 0 refuted, 2 sharpened. Gates: 13 in (B10 split in two), 7 candidates,
+7 dropped. Phase D: 0 answered in the terminal, 7 cards. Phase E: 7 answered,
+2 by an offered way and 5 by free text, one of them delegated. Suite: 563 on
+main, 579 after A, 579 after F. Decisions filed to #129 (resolution comment,
+seven ⚠︎ marks in the body, new title), #73 and #69 (earlier comments marked
+or struck), `CONTEXT.md` (`WinnerRaffle`, `Fold`). Device items went to #121
+as one comment, including the bar rendering 5 px taller in headless Chrome. No
+ADR. Prototype corrections are on `prototype/rank-distribution` (`1bb41a3`).
+PR: #130 (#129), head `6b78f10`, the only branch, with no merge order to get
+wrong. Open at G: 674×399 keeps 31 px after the first throw (the list still
+grows there per #69), and 435×380 keeps 5.6 px, the price of the cramped
+exception.
