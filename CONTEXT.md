@@ -281,12 +281,13 @@ Präfix ab `Rank` 1 automatisch raus; **`manual`** teilt der Lead einzelnen
 `ranked`-Anteil, frei über das ganze `Ranking` und unabhängig von
 `RankPoolDepth`; **`open`** ist der Rest, den die App nur ausweist und über den
 sie keine Aussage macht. Den `manual`-Anteil setzt der Lead von Hand oder lässt
-ihn per `WinnerRaffle` auslosen — beides schreibt in dieselben Zähler. `ranked` und `manual` sind Regler mit einer Staffel als
+ihn per `WinnerRaffle` auslosen — beides schreibt in dieselben Zähler. `ranked` ist ein Regler mit einer Staffel als
 Default (`ranked` = ⌊n/2⌋ + 1, wobei **n die Zahl `WinnerPack`s im `RankPool`**
 ist, also nach Abzug des `JudgePool`, und der Wert auf ebendiese **und auf die
 Spielerzahl** gedeckelt wird, siehe `RankPoolDepth` —
 auch bei n = 0, wo die Staffel damit selbst auf 0 fällt), die nachzieht,
-bis der Lead sie anfasst; ihre Summe ist nach oben durch dieselbe Zahl
+bis der Lead sie anfasst; `manual` startet neutral, ohne Zuteilung (ADR 0003).
+Die Summe von `ranked` und `manual` ist nach oben durch dieselbe Zahl
 gedeckelt. Die Staffel rechnet nie auf Stücken, die beiseite liegen: ein
 Judge-Pack verkürzt das automatische Präfix, statt den `open`-Rest aufzuzehren,
 der der `WinnerRaffle` gehört. `ranked` ist nur über die Zahl steuerbar, nie per `Rank` — wer `Rank` 1
@@ -462,12 +463,14 @@ Am Schirm ist das **Hochformat der Boden** (#40): das Kachelfenster zeigt in jed
 Fassung mindestens so viel wie das Hochformat — **sechs Kachelspalten und zwei
 Kachelreihen**. Unter 365 Breite (6 × 54 + 5 × 5 + 16 Polster) gibt die
 **Kachelbreite** nach, nicht die Spaltenzahl: die sechs Spalten werden schmaler als
-54 px und bleiben ganz sichtbar; Kachelhöhe und Reihen bleiben (#73, K3). Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
+54 px und bleiben ganz sichtbar; Kachelhöhe und Reihen bleiben (#73, K3). Die eine Ausnahme: Bühnen unter 436 Breite und unter der
+einspaltigen Höhenschwelle halten keine zwei Reihen im Bild, dort scrollt die
+Plan-Seite (#73, K4; siehe `Fold`). Das ist eine **Zusicherung**, keine Anordnung: wo die Reihenfolge
 der Blöcke sich mit der Breite ändern darf, darf dieser Boden es nicht. #37 hatte
 „Aufklappen nimmt nie etwas weg" beschlossen; im Querformat reicht das nicht, weil
 dort die Höhe fehlt und nicht die Breite — der Boden ist die Fassung dieses Satzes
 für die zweite Achse. Aus ihm sind sowohl die Höhenschwelle gerechnet, unterhalb
-derer der Schirm einspaltig bleibt, als auch die Grösse des Balkens, der als
+derer der Schirm einspaltig bleibt, als auch die Grösse des Diagramms, das als
 einzige elastische Grösse für die zweite Kachelreihe zahlt. Wer die zwei Reihen
 antastet, verschiebt keine Pixelzahl, sondern nimmt die Zusicherung zurück.
 _Avoid_: Payout
@@ -506,10 +509,10 @@ Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung ki
 nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
 aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117).
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
-unter der Zwei-Spalten-Stufe; die vier heissen Regler stehen dort erst ab 722
+unter der Zwei-Spalten-Bruchstelle; die vier heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
 Bühnen unter 436 Breite **und** unter der einspaltigen Schwelle bleiben die Ausnahme
-vom Masterboden: dort hält keine Faltung zwei Reihen im Bild — der `Plan` behält
+vom Hochformat-Boden (`DistributionPlan`): dort hält keine Faltung zwei Reihen im Bild — der `Plan` behält
 seinen Boden, die Schiene steht darunter, und die Plan-Seite **scrollt**; nichts
 liegt übereinander (#73, K4) — entschieden für die Schiene. Eine offene
 Verlosungsleiste liegt dort weiter fest am unteren Rand über der Seite; ihr weicht
@@ -535,7 +538,7 @@ ihnen. **Am schmalen Schirm deckt die offene Meldung die Regler zu**, samt
 `pinned` und Reset, und das ist gewollt: dort ist das Zudecken der leichtere
 Verlust, weil die Wege heraus in der Meldung selbst anklickbar sind (Prototyp,
 Kommentar über `.stack > *`; Entscheid an #68, Lauf 12, K3 `prototyp-gilt`).
-Frei bleiben die Regler erst ab der Zwei-Spalten-Stufe (674 Pixel), wenn sie
+Frei bleiben die Regler erst ab der Zwei-Spalten-Bruchstelle (674 Pixel), wenn sie
 als Spalte daneben stehen (#71) — für diese breite Faltung gilt der alte Grund: die Reglerfläche trägt
 die Pin-Markierungen, die der `CarryOverNotice` aufzählt, und eine Meldung, die
 dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Die
@@ -553,7 +556,7 @@ Reglern dreht. Aus demselben Grund braucht er nicht beweglich zu sein: eine
 verschobene Lage wäre Zustand, und den hat diese App nirgends.
 Sein Platz ist **die unterste freie Ecke rechts**. Am schmalen Schirm ist der
 Fuss von der Navigation belegt, dort sitzt er eine Zeile darüber; klappt die
-Breite die Seiten zu Spalten, hat der Fuss rechts einen freien Platz, und er
+Breite die Seiten zu Spalten, hat der Streifen rechts einen freien Platz, und er
 fällt hinein. Eine Regel, zwei Ergebnisse — und keiner der beiden Orte gehört
 einer Seite, weshalb die Schicht dabei nicht verlassen wird.
 Damit trennen sich Chip und offene Meldung in der **Fläche**: die offene folgt
@@ -746,13 +749,14 @@ einem Klick, der sichtbar wenig getan hat, und trägt deshalb den Weg mit: einen
 Knopf, der alle auf das neue Blatt zieht. Dieser Knopf ist die **dritte
 Reichweite** desselben Rückwegs und keine eigene Handlung — er lässt dieselben
 Pins fallen wie der Knopf am `TournamentType`-Titel, Kachel-Zuteilungen
-eingeschlossen, und fragt darum ebenso vorher nach: dieselbe Frage, in
+eingeschlossen; die `RaffleRange` stellt nur der Titel-Knopf zurück (Lauf 12,
+Phase G an #72). Er fragt darum ebenso vorher nach: dieselbe Frage, in
 derselben Blase, verankert an dem Knopf, den man gedrückt hat.
 Er heisst am Schirm **`Drop all N and follow <Typ>`** (#41), und die Zerstörung
 steht vorn, weil sie das Überraschende ist: der Knopf liest sich sonst als
 „nimm meine Sachen mit" und lässt in Wahrheit alle aufgezählten Pins fallen —
 es ist der Knopf mit der grössten Reichweite im Programm, und seit ADR 0006
-ohne Rückweg. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
+ohne Undo. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
 also trägt dieselbe Art Handlung dasselbe Wort. Der Satz benennt eine
 **Handlung** und steht nicht für einen Term ein, braucht also keine
 `_Label_`-Zeile. Mitbewertet und verworfen: *Unpin all N — <Typ> takes over*
@@ -764,7 +768,7 @@ ist, zeigt auf den falschen Eintrag.
 Wegklickbar und reiner Sitzungszustand,
 nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
 verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
-`TournamentType`-Titel (alle) steht.
+`TournamentType`-Titel (alle) steht — dort mit der `RaffleRange` dazu.
 Sie ist die einzige **Ereignismeldung** des `NoticeStack`: sie beschreibt keinen
 anhaltenden Zustand, sondern den Klick, der gerade geschehen ist. Zweimal
 hintereinander gewechselt heisst zweimal dieselbe Art, aber eine andere Liste
@@ -829,8 +833,8 @@ vorbereiten?") statt einen Gegenstand zu benennen. *Preparation* wäre
 deckungsgleich, liest sich aber wie eine Überschrift; *List* ist am Schirm
 ohnehin falsch, weil die Sicht kein Verzeichnis ist. Erste gezogene
 `_Label_`-Zeile seit der Regel aus #27. Was es benennt, hängt seit #37 von der
-Breite ab — eine Seite im Fuss, einen eingefalteten Streifen am Rand, oder eine
-Spalte neben dem Plan. An der Begründung ändert das nichts: das Wort bietet in
+Breite ab — eine Seite für sich, der Platz des `Plan` bei zwei Spalten, oder
+eine Spalte daneben. An der Begründung ändert das nichts: das Wort bietet in
 allen dreien dieselbe Handlung an.
 _Avoid_: Einkaufsliste (klingt nach Geld), ShoppingList, Vorbereitungsmodus (es ist kein Zustand)
 
@@ -919,8 +923,12 @@ etwas ändert: wer ins Feld tippt und es mit derselben Zahl wieder verlässt, ha
 nichts gesetzt, und es entsteht kein Pin (#113). Verglichen wird mit dem Wert,
 den das Bedienelement zeigt, also auch mit dem `auto`-Wert. Der Grund ist das
 Handy: dort gibt es keine Abbruchgeste, jedes Verlassen des Felds ist ein Commit,
-und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. `−`
-und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
+und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. Solange
+eine getippte Zahl **unbestätigt** im Feld steht, löst **kein anderes
+Bedienelement** etwas aus: ein Druck ausserhalb des Felds bestätigt nur die Zahl
+und wird dann verschluckt. Das gilt für jedes Bedienelement, auch für `−`/`+`,
+`Copy link`, das `Offer` und *Drop all N and follow*. Ein Feld, das nur den Fokus
+hat, sperrt nichts (Lauf 12, K4 an #113). `−` und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
 zurück, der Knopf neben dem `TournamentType`-Titel **alle** — und dazu die
 `RaffleRange` auf `all`, die kein Pin ist, aber mitgezählt wird (Lauf 12,
