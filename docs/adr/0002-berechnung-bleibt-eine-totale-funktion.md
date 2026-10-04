@@ -169,3 +169,15 @@ zweite auch noch gilt — das wäre genau das stille Verschlucken, gegen das die
 ADR geschrieben ist. Ob der `NoticeStack` daraus eine gemeinsame oder zwei
 getrennte Flächen macht, ist eine Frage für Spec 2, keine Frage an die
 Rechnung.
+
+## Nachtrag (#113): die Reglergrenzen sind Wände, wo der Kern still schneidet
+
+„Die Reglergrenzen" oben meint seit #113 keine Schieberenden mehr. Die Schieber
+sind gefallen, die Zahlen werden getippt oder mit `−`/`+` gesetzt, und eine feste
+Obergrenze gibt es nicht, auch nicht bei `players`. Die Minima bleiben. Eine
+**Wand am Bedienelement steht dort, wo der Kern still schneidet, und ist dieselbe
+Grösse wie im Kern**. Darum gilt der Satz oben weiter: Was die Eingabe nicht
+erreichen soll, fängt die Wand, und ein Konflikt entsteht nur, wenn ein zweiter
+Regler einen gesetzten Wert nachträglich ungültig macht. Welche Zahl welche Wand
+hat (sechs bewegliche Wände, sieben ohne Maximum, eine mit Suchbereich), steht
+an #113 und im Code, nicht hier.
