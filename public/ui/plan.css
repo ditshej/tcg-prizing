@@ -199,6 +199,17 @@ body {
      numbers: the first height counts this line once (`PLAN_FIXED`). At 16px
      it wrapped there, and the fixed part grew by a line exactly at the width
      the first height is measured at. */
+  /* And it never wraps at all (#129, run 15, K6, closes A10): at 320–340 the
+     line is wider than the column, and where it wrapped the head grew from 40
+     to 58 and the fixed part outgrew its 178. It scrolls sideways instead —
+     dragged on the phones where it happens, no scrollbar to add height. */
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.plan-output::-webkit-scrollbar {
+  display: none;
 }
 
 .plan-participation {
@@ -1141,18 +1152,18 @@ body {
   opacity: 0.7;
 }
 
-/* The pager of the flat stage's paged list (#129). It sits in the head line
-   and is no taller than that line, so paging adds no height to the bar. */
-.raffle-pager {
+/* The arrows of the sideways row (#129, run 15, K5). They sit in the head
+   line and are no taller than it, so they add no height to the bar; they say
+   the row goes on and move it by one pill — no page count. */
+.raffle-scroller {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 2px;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
-.raffle-pager button {
-  padding: 0 4px;
+.raffle-scroller button {
+  padding: 0 6px;
   border: none;
   background: none;
   color: inherit;
@@ -1162,7 +1173,7 @@ body {
   cursor: pointer;
 }
 
-.raffle-pager button:disabled {
+.raffle-scroller button:disabled {
   opacity: 0.3;
   cursor: default;
 }
@@ -1173,15 +1184,23 @@ body {
   gap: 4px;
 }
 
-/* The rind's probe of the list (`measureTakeBack()`): every chip in one
-   unwrapped row at the list's width, invisible and out of the flow. */
-.takeback-probe {
-  position: absolute;
-  visibility: hidden;
-  pointer-events: none;
+/* Flat and cramped, the list is one row that scrolls sideways and never
+   wraps, so the bar does not grow with it (#129, run 15, K5). Dragged on a
+   phone; no scrollbar of its own, which would add height on a desktop with
+   classic scrollbars — the arrows above stand in for it. */
+.raffle-takeback-row {
   flex-wrap: nowrap;
-  left: 0;
-  top: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.raffle-takeback-row::-webkit-scrollbar {
+  display: none;
+}
+
+.raffle-takeback-row > .raffle-chip {
+  flex: 0 0 auto;
 }
 
 .raffle-chip {

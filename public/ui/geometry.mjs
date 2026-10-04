@@ -88,13 +88,36 @@ export function tileColumnsFor(width) {
  * one elastic size of the column, and the sentence "the bar covers no tile"
  * (#69, #61) now rests on it rather than on an overlap of zero.
  *
- * On the flat stage the floor is not enough (812 × 375: a 60 px diagram left
- * less than one row above the bar). There the diagram does not yield at all —
- * it is gone while the bar is open (#129, `diagramShown` in `plan.mjs`), and
- * this cap only matters again once the bar closes.
+ * Where that would take it under its floor, the diagram does not stand at the
+ * floor any more: it is gone (`diagramFits()` below, #129, run 15). So the
+ * floor in this cap only keeps a diagram that fits from being drawn shorter
+ * than the one it was decided to be.
  */
 export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0) {
   return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS) - covered);
+}
+
+/**
+ * Whether the diagram stands at all: only where, after the two tile rows and
+ * the open bar's `covered`, its `floor` is still left. Under that it is gone,
+ * and the tiles get its place.
+ *
+ * The diagram is an extra, not part of the work (the maintainer, run 15 on
+ * #129: "nur ein 'nice-to-have' … nur dazu kommt, wenn wirklich genug platz
+ * ist"). What "enough room" means he left to the session, and it is this: no
+ * new number, but the floor taken seriously — 60 is the smallest diagram the
+ * first height 399 was decided with (#71, K-B8), two rows are the master's
+ * assurance. Under its floor a diagram is no diagram; before run 15 it stood at
+ * 60 anyway and the rows paid (812 × 375 flat after the first throw: −11.4 px
+ * free with it, 56.6 without; 1280 × 450: 14.1 with it).
+ *
+ * `leftoverHeight` must be measured **as if the diagram stood** (the rind
+ * does), and `covered` reads the tile window's bottom (`raffleCover()`), never
+ * its top — so showing or hiding the diagram moves neither input, and the
+ * verdict cannot flip itself.
+ */
+export function diagramFits(leftoverHeight, covered = 0, floor = MIN_DIAGRAM_HEIGHT) {
+  return leftoverHeight - rowsHeight(MIN_ROWS) - covered >= floor;
 }
 
 /* ── The WinnerRaffle bar (#69) ──────────────────────────────────────────── */
@@ -196,6 +219,47 @@ export function hitScrollDelta(windowRect, tileRect, barTop = Infinity) {
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
   return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
+}
+
+/* ── The retraction list as one sideways row (#129, run 15, K5) ─────────── */
+
+/**
+ * Where a row that scrolls sideways stands: whether it overflows at all, and
+ * whether it is at its start or its end. One pixel of slack on each, because
+ * scroll positions land on fractions.
+ */
+export function rowScrollEnds({ scrollLeft, scrollWidth, clientWidth }) {
+  const max = scrollWidth - clientWidth;
+  return { overflow: max > 1, atStart: scrollLeft <= 1, atEnd: scrollLeft >= max - 1 };
+}
+
+/**
+ * Where one arrow click takes the row: to the next pill edge in `direction`
+ * (`1` on, `-1` back) — the row moves by one pill (the maintainer, run 15:
+ * „ein klick auf einen pfeil lässt einfach eine pille bewegen"), never past
+ * either end. `lefts` are the pills' left edges in the row's own coordinates.
+ */
+export function pillStep({ lefts, scrollLeft, scrollWidth, clientWidth }, direction) {
+  const max = Math.max(0, scrollWidth - clientWidth);
+  if (direction > 0) {
+    const next = lefts.find((left) => left > scrollLeft + 0.5);
+    return next == null ? max : Math.min(max, next);
+  }
+  const before = lefts.filter((left) => left < scrollLeft - 0.5);
+  return before.length ? Math.max(0, before.at(-1)) : 0;
+}
+
+/**
+ * The `scrollLeft` that shows `chip` (its `left` and `width` in the row) in a
+ * row `clientWidth` wide now scrolled to `scrollLeft`: unchanged where it is
+ * already whole in view, else just far enough — its left edge at the start or
+ * its right edge at the end. A fresh hit's chip is brought in this way, the
+ * successor of turning to its page.
+ */
+export function chipIntoView(chip, scrollLeft, clientWidth) {
+  if (chip.left < scrollLeft) return chip.left;
+  if (chip.left + chip.width > scrollLeft + clientWidth) return chip.left + chip.width - clientWidth;
+  return scrollLeft;
 }
 
 /* ── The scroll fade band (#71) ──────────────────────────────────────────── */

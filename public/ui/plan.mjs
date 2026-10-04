@@ -38,9 +38,9 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, measureTakeBack, showRaffleHit } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, readRowEnds, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
-import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView, takeBackPages } from './raffle.mjs';
+import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
 import {
   DEPTH_STEP_LABELS,
@@ -763,13 +763,13 @@ export function planApp(seam = SEAM) {
       /* The open raffle bar takes its overlap with the tile window off the
          diagram (#73, K1), so every measuring pass asks for it. */
       const bar = () => (this.raffleOpen ? this.$refs.raffle : null);
-      this._detachMeasuring = attachMeasuring(this.$refs.stage, fixed, bar);
+      this._detachMeasuring = attachMeasuring(this.$refs.stage, fixed, bar, (fits) => this.applyDiagramRoom(fits));
       /* Entering fullscreen changes which fixed parts render, not always the
          stage's own box, and `ResizeObserver` only sees the box. Measure again
          after Alpine has applied the `x-show`s, or the grid would keep the
          column count and diagram height of the layout it just left. */
       this.$watch('fullscreen', () => {
-        requestAnimationFrame(() => applyGeometry(this.$refs.stage, fixed, bar()));
+        requestAnimationFrame(() => this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
       });
       /*
          The bubble is placed — and closed — after **every drawing**, not at
@@ -903,17 +903,28 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * Whether the diagram stands. Not in fullscreen (#63), and not on the
-     * **flat stage while the raffle bar is open** (#129): there the overlap
-     * the diagram pays under K1 is more than it has above its 60 px floor, so
-     * it gives way to 0 and the tiles come first; it is back as soon as the
-     * bar closes. Flat is the fold's own flag, read like every other part of
-     * the shell reads the fold — never a width. Everywhere not flat, K1 of
-     * run 14 stands unchanged: the diagram yields by the overlap, never under
-     * its floor (`diagramCap()`).
+     * Whether the diagram has room, as the rind last measured it
+     * (`diagramFits()` in `geometry.mjs`, written by `applyDiagramRoom()`).
+     * `true` until the first measuring pass, which runs with the diagram
+     * standing.
+     */
+    diagramFits: true,
+
+    /**
+     * Whether the diagram stands: not in fullscreen (#63), and only where it
+     * has room — after the two tile rows and an open raffle bar's cover, its
+     * 60 px floor (#129, run 15, K3/K4). It is an extra; the tiles come
+     * first. Neither the fold nor the bar decides this on its own: a flat
+     * stage tall enough keeps it with the bar open, a low wide window loses it.
+     * The rank total leaves with it (prototype `rankTotal()` in the diagram block).
      */
     get diagramShown() {
-      return !this.fullscreen && !(this.fold.flat && this.raffleOpen);
+      return !this.fullscreen && this.diagramFits;
+    },
+
+    /** The rind's verdict on the diagram's room (`applyGeometry()`). */
+    applyDiagramRoom(fits) {
+      if (this.diagramFits !== fits) this.diagramFits = fits;
     },
 
     /** The bar's own ✕ — the one grip besides the legend's that closes it. */
@@ -948,15 +959,15 @@ export function planApp(seam = SEAM) {
       if (rank == null) return;
       this.setManualWinner(rank, (this.plan.allocation.manual[rank] ?? 0) + 1);
       this.lastDraw = rank;
-      // Flat, the list turns to the page holding this hit at its next measuring.
-      this._takeBackTurnTo = rank;
-      /* Two waits, and the second is the load-bearing one. `$nextTick` waits
-         for the tile to carry its new mark; the frame after it waits for the
-         **bar** to have grown by the announcement and the new list entry, and
-         for `measureRaffle()` to have written the padding that goes with it.
-         Measured without it, the scroll was computed against the bar's old,
-         shorter box and put the hit behind the grown one. */
-      this.$nextTick?.(() => requestAnimationFrame(() => this.showHit(rank)));
+      // Where the list scrolls sideways, the next measuring brings this hit's chip in.
+      this._takeBackShow = this.takeBackScrolls ? rank : null;
+      /* The hit is shown by `measureRaffle()`, after it has laid the bar,
+         the padding and the diagram's verdict out — not on a timer of its
+         own. The bar grows by the announcement on the first throw, and the
+         diagram may go with it (#129); scrolled any earlier, the hit was put
+         against the old boxes and ended under the grown bar (run 14) or cut
+         by the diagram's leaving (run 15, 600 × 493). */
+      this._hitPending = rank;
     },
 
     /**
@@ -975,72 +986,47 @@ export function planApp(seam = SEAM) {
       this.setManualWinner(rank, 0);
     },
 
-    /* ── The retraction list pages, flat only (#129) ───────────────────── */
+    /* ── The retraction list as one sideways row (#129, run 15, K5) ────── */
 
     /**
-     * The list's pages as `[from, to)` pairs over `raffle.takeBack`, or `[]`
-     * where the list does not page. It pages **only on the flat stage** —
-     * `fold.flat`, never a width — and there it does not grow the bar: one
-     * row per page, sized by the rind's measure (`takeBackPages()`). Not
-     * flat, #69 holds unchanged: every chip stands, and the bar grows with
-     * the list. Session state like the bar itself, never in the link.
+     * Whether the retraction list is one row that scrolls sideways instead of
+     * wrapping and growing the bar: on the flat stage and in the cramped
+     * exception — the fold's own flags, never a width — where the room over
+     * the bar is shortest. On a phone it is dragged; the arrows in its head
+     * line say there is more and move it by one pill. It does not page (the
+     * maintainer, run 15: „nicht blättert, sondern horizontal scrolled").
+     * Everywhere else the list wraps and the bar grows with it (#69).
+     *
+     * Not tied to `diagramShown`: the bar's height goes into that verdict, and
+     * a list form decided by it would decide the bar's height in turn.
      */
-    takeBackPaging: [],
-
-    /** The page in front, `0` while the list does not page. */
-    takeBackPage: 0,
-
-    /** The rank a throw wants turned to at the next measuring, else `null`. */
-    _takeBackTurnTo: null,
-
-    /** How many pages the list has; `0` where it does not page. */
-    get takeBackPageCount() {
-      return this.takeBackPaging.length;
+    get takeBackScrolls() {
+      return this.fold.flat || this.fold.cramped;
     },
 
-    /** The `[from, to)` of the page in front — the whole list where it does not page. */
-    get takeBackRange() {
-      const page = this.takeBackPaging[this.takeBackPage];
-      return page ?? [0, this.raffle.takeBack.length];
+    /** Where the row stands (`rowScrollEnds()`): the arrows read it. */
+    takeBackEnds: { overflow: false, atStart: true, atEnd: true },
+
+    /** The rank whose chip the next measuring brings into the row, else `null`. */
+    _takeBackShow: null,
+
+    /** The rank the next measuring scrolls the grid to and lifts out, else `null`. */
+    _hitPending: null,
+
+    /** The list element, while there is one. */
+    _takeBackList() {
+      return this.$refs?.raffle?.querySelector('.raffle-takeback-list') ?? null;
     },
 
-    /** Whether the list's entry at `index` stands on the page in front. */
-    takeBackOn(index) {
-      const [from, to] = this.takeBackRange;
-      return index >= from && index < to;
+    /** Reads the row's ends again — on its own scroll and after every measuring. */
+    readTakeBackEnds() {
+      const ends = readRowEnds(this._takeBackList());
+      if (ends) this.takeBackEnds = ends;
     },
 
-    /** The entries of the page in front. */
-    get takeBackShown() {
-      const [from, to] = this.takeBackRange;
-      return this.raffle.takeBack.slice(from, to);
-    },
-
-    /** One page forward (`1`) or back (`-1`), stopping at both ends. */
-    pageTakeBack(step) {
-      const last = Math.max(0, this.takeBackPageCount - 1);
-      this.takeBackPage = Math.min(last, Math.max(0, this.takeBackPage + step));
-    },
-
-    /**
-     * The rind's measure of the list — every chip's width, the row's width,
-     * the gap (`measureTakeBack()`) — turned into pages, on the flat stage
-     * only. The page in front is kept where it still exists, falls back to
-     * the last one where it does not, and turns to the page holding a fresh
-     * hit once, right after its throw; a page chosen by hand is not undone by
-     * the next pass (a resize, a fold).
-     */
-    applyTakeBackMeasure(measure) {
-      const pages = this.fold.flat && measure ? takeBackPages(measure.widths, measure.rowWidth, measure.gap) : [];
-      this.takeBackPaging = pages;
-      let page = Math.min(this.takeBackPage, Math.max(0, pages.length - 1));
-      if (this._takeBackTurnTo != null) {
-        const at = this.raffle.takeBack.findIndex((entry) => entry.rank === this._takeBackTurnTo);
-        const holding = pages.findIndex(([from, to]) => at >= from && at < to);
-        if (holding >= 0) page = holding;
-        this._takeBackTurnTo = null;
-      }
-      this.takeBackPage = page;
+    /** One arrow click: the row moves by one pill, `1` on and `-1` back. */
+    stepTakeBack(direction) {
+      stepRow(this._takeBackList(), direction);
     },
 
     /**
@@ -1069,19 +1055,47 @@ export function planApp(seam = SEAM) {
     measureRaffle() {
       const view = this.raffle;
       void [this.raffleOpen, this.fullscreen, this.activePage, this.fold, view.hit, view.potEmptyNote,
-        view.takeBack.map((entry) => `${entry.rank}×${entry.count}`).join()];
+        view.takeBack.map((entry) => `${entry.rank}×${entry.count}`).join(), this.takeBackScrolls, this.lastDraw];
       this.$nextTick?.(() => {
         const bar = this.raffleOpen ? this.$refs?.raffle : null;
-        /* Flat, the list pages first (#129): which chips stand decides the
-           bar's height, and everything below measures that height. */
-        this.applyTakeBackMeasure(bar ? measureTakeBack(bar.querySelector('.raffle-takeback-list')) : null);
-        this.$nextTick(() => {
-          /* First the diagram yields to the bar (K1) — that moves the grid's
-             top, never its bottom, so the padding below reads the same box. */
-          if (this._fixed) applyGeometry(this.$refs?.stage, this._fixed, bar);
-          applyRafflePadding(this.$refs?.grid, bar);
-          applyRaffleLift(this.$refs?.notices, bar);
-        });
+        if (bar && this._takeBackShow != null) showChipInRow(this._takeBackList(), this._takeBackShow);
+        this._takeBackShow = null;
+        this.readTakeBackEnds();
+        /* A second wait, one frame: Alpine shows the bar (`x-show`) in a
+           frame of its own, so measured a tick after opening it sometimes had
+           no box yet, covered nothing, and the diagram neither yielded nor
+           went — at random, one load in two (run 15, 812 × 375, 600 × 493). */
+        const frame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (run) => run();
+        /* What the padding and the hit are measured against is only still
+           once two frames agree: the bar grows in steps (the list, then the
+           announcement's `x-if`), and the rank total under the grid leaves
+           and comes with the diagram, so the grid's bottom moves too — by its
+           height and gap, 23 px at 600 × 493 (run 15). Padded on the first
+           frame, the padding was short by such a step and the hit's row could
+           not reach the free strip. So: the diagram's verdict, a frame, and
+           again while the verdict flipped or bar or grid moved — at most four
+           times. */
+        const boxes = () => `${bar ? bar.getBoundingClientRect().height : 0}/${this.$refs?.grid?.getBoundingClientRect().bottom}`;
+        const pass = (round) => {
+          const seen = boxes();
+          const verdict = this.diagramFits;
+          /* First the diagram yields to the bar (K1), or goes where it has no
+             room (#129). */
+          if (this._fixed) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
+          const flipped = this.diagramFits !== verdict;
+          frame(() => {
+            if (round < 4 && (flipped || boxes() !== seen)) { pass(round + 1); return; }
+            applyRafflePadding(this.$refs?.grid, bar);
+            applyRaffleLift(this.$refs?.notices, bar);
+            /* A fresh hit last, against the boxes it will be seen in. */
+            if (this._hitPending != null) {
+              const rank = this._hitPending;
+              this._hitPending = null;
+              this.showHit(rank);
+            }
+          });
+        };
+        frame(() => pass(0));
       });
     },
 

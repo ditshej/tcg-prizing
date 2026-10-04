@@ -59,8 +59,10 @@
       *fewer* ranks than the page it opened from, because the diagram takes
       every pixel the controls rail and the foot give up.
 
-      On the flat stage it is gone, too, while the raffle bar is open (#129):
-      the tiles come first there, and it comes back when the bar closes.
+      And it stands only where it has room (#129, run 15, K3/K4): after the two
+      tile rows and an open raffle bar's cover, its 60 px floor must be left,
+      or it is gone and the tiles get its place. It is an extra, not the work.
+      The rind decides (`diagramFits()`), the component holds the verdict.
     -->
     <div class="plan-diagram" aria-hidden="true" x-show="diagramShown">
       <template x-for="row in plan.rows" :key="row.rank">
@@ -156,7 +158,7 @@
       message below it is the grid's own foot (`slotFoot()`) and stays: it is
       the only statement about the ranks that have no tile at all.
     -->
-    <p class="plan-ranktotal" x-ref="ranktotal" x-show="!fullscreen"
+    <p class="plan-ranktotal" x-ref="ranktotal" x-show="diagramShown"
        x-text="`${rankTotalBooster} boosters ${rankTotalLabel}`"></p>
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
 
@@ -297,30 +299,30 @@
     </template>
 
     <!--
-      On the flat stage the list **pages** instead of growing the bar (#129,
-      an exception to #69 for flat only): one row per page, as many chips as
-      the measured row holds (`takeBackPages()`), and the pager sits in the
-      head line, so paging costs no height of its own. Every chip is drawn and
-      the ones off the page are hidden, so the rind can measure them all.
-      Not flat, there is one page and no pager, and the list wraps as before.
+      On the flat stage and in the cramped exception the list is **one row that
+      scrolls sideways** instead of growing the bar (#129, run 15, K5; an
+      exception to #69 there only, read off the fold): dragged on a phone, and
+      on a desktop the arrows in the head line move it by one pill. They show
+      only while the row overflows and lock at their own end — they say there
+      is more, they count no pages. A fresh hit's chip is scrolled into the
+      row. Elsewhere the list wraps and the bar grows with it, as before.
     -->
     <template x-if="raffle.takeBack.length">
       <div class="raffle-takeback">
         <div class="raffle-takeback-head">
           <span>Placed by hand — tap to take back:</span>
-          <span class="raffle-pager" x-show="takeBackPageCount > 1">
-            <button type="button" aria-label="Previous ranks" :disabled="takeBackPage === 0"
-                    @click="pageTakeBack(-1)">‹</button>
-            <span x-text="`${takeBackPage + 1}/${takeBackPageCount}`"></span>
-            <button type="button" aria-label="Next ranks" :disabled="takeBackPage >= takeBackPageCount - 1"
-                    @click="pageTakeBack(1)">›</button>
+          <span class="raffle-scroller" x-show="takeBackEnds.overflow">
+            <button type="button" aria-label="Scroll the list back" :disabled="takeBackEnds.atStart"
+                    @click="stepTakeBack(-1)">‹</button>
+            <button type="button" aria-label="Scroll the list on" :disabled="takeBackEnds.atEnd"
+                    @click="stepTakeBack(1)">›</button>
           </span>
         </div>
-        <div class="raffle-takeback-list">
-          <template x-for="(entry, index) in raffle.takeBack" :key="entry.rank">
+        <div class="raffle-takeback-list" :class="{ 'raffle-takeback-row': takeBackScrolls }"
+             @scroll.passive="readTakeBackEnds()">
+          <template x-for="entry in raffle.takeBack" :key="entry.rank">
             <button type="button" class="raffle-chip" @click="takeBackWinner(entry.rank)"
-                    x-show="takeBackOn(index)"
-                    :aria-label="`Take back ${entry.label}`">
+                    :data-rank="entry.rank" :aria-label="`Take back ${entry.label}`">
               <span x-text="entry.label"></span>
               <span x-show="entry.count > 1" x-text="`×${entry.count}`"></span>
               <span aria-hidden="true">✕</span>
