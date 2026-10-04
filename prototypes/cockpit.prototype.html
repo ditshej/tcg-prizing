@@ -2185,6 +2185,10 @@ function setBlock(plan) {
    Rückweg mit. Das ist derselbe Preis, den #38 für die heissen Vier schon
    bezahlt hat — „zuoberst" ist in einer scrollenden Spalte eine Anordnung,
    keine Zusicherung. */
+/* ÜBERHOLT durch #129 (Lauf 15, K6): die Zeile unter dem Titel (`sub`)
+   bricht nicht um. Wo sie nicht passt (320–340 Breite), scrollt sie
+   seitlich, damit der Kopf seine eine Zeile behält und der feste Teil des
+   Plans seine 178 px (A10 geschlossen). Verbindlich ist der Kommentar „Entscheide des Maintainers — Lauf 15" an #129. */
 function headerBlock(plan) {
   return colHead({
     title: TYPES[st.type].title,
@@ -2546,6 +2550,15 @@ function slotLegend(plan) {
    nur für flach. Nicht flach wächst die Leiste wie hier. Wie geblättert wird
    (Seitengrösse, Bedienung), steht weder hier noch in #69 oder #61; der Bau
    von #129 nimmt die einfachste Form. Verbindlich ist der Text von #129. */
+/* ÜBERHOLT durch #129 (Lauf 15, K5 und K2), auch die Markierung direkt
+   darüber: die Rücknahmeliste **blättert nicht**. Flach und in der engen
+   Ausnahme (`cramped`) ist sie eine Zeile, die seitlich scrollt: am Handy
+   gezogen, am Desktop über Pfeile ‹ › in ihrer Kopfzeile. Die Pfeile zeigen
+   keine Seiten, erscheinen nur, wenn die Zeile überläuft, und ein Klick
+   verschiebt sie um eine Pille. Ein Wurf scrollt den Chip seines Treffers
+   in Sicht. Sonst wächst die Leiste wie hier. Der Satz zum leeren Topf
+   heisst nur noch „every rank in range already has one" — ohne „widen the
+   range", überall. Die Leiste wächst beim ersten Wurf einmal (K1). Verbindlich ist der Kommentar „Entscheide des Maintainers — Lauf 15" an #129. */
 function raffleBar(plan) {
   const pot = rafflePot(plan);
   const open = plan.allocation.open;
@@ -2624,6 +2637,11 @@ function raffleBar(plan) {
    keine Kachel zugedeckt wird, zahlt nicht flach das nachgebende Diagramm
    (K1, Lauf 14, #73) und flach das ganz wegfallende Diagramm samt blätternder
    Rücknahmeliste. Verbindlich ist der Text von #129. */
+/* ÜBERHOLT durch #129 (Lauf 15, K3/K4), auch die Markierung darüber: Keine
+   Kachel wird zugedeckt, weil das Diagramm um die Überlappung nachgibt, und
+   wo es dabei unter 60 käme, ist es **weg**, in jeder Faltung. Die Liste
+   blättert nicht, sie scrollt seitlich (K5). Gemeint sind nur Kacheln: die
+   Rangmeldung darunter ist bei offener Leiste verdeckt (K7, hingenommen). Verbindlich ist der Kommentar „Entscheide des Maintainers — Lauf 15" an #129. */
 function padBottom() {
   for (const box of [appEl.querySelector('.gridwin'), fsEl.querySelector('.body')]) {
     if (!box) continue;
@@ -3115,6 +3133,15 @@ function screen(plan, sugg, off) {
      bei 812 × 375 über der offenen Leiste keine Kachelreihe frei. Nicht
      flach gilt K1 aus Lauf 14 (#73): das Diagramm gibt um die gemessene
      Überlappung nach, nie unter 60. Verbindlich ist der Text von #129. */
+  /* ÜBERHOLT durch #129 (Lauf 15, K3/K4), auch die Markierung darüber: Das
+     Diagramm ist Beigabe. Es steht nur, wo nach zwei Kachelreihen und der
+     gemessenen Überlappung einer offenen Leiste noch sein Boden von 60
+     bleibt, und ist sonst weg. Es wird nicht auf 60 geklemmt (`Math.max(60, …)`
+     gilt so nicht mehr), und nicht nur flach. Die Rangsumme geht mit ihm.
+     Berichtigt (B11): Bei 812 × 375 liess ein Diagramm von 60 vor dem Wurf
+     eine Reihe frei (60,1) und nach dem ersten keine (−11,4), ein Diagramm
+     von 0 zwei (128,1) bzw. eine (56,6). Der Satz „keine Kachelreihe frei"
+     darüber gilt erst nach dem Wurf. Verbindlich ist der Kommentar „Entscheide des Maintainers — Lauf 15" an #129. */
   const stripMax = isFlat()
     ? Math.max(60, Math.min(96, h - CHROME0 - GRID2))
     : h < 460 ? 96 : cols >= 2 ? 190 : 280;
