@@ -1275,6 +1275,14 @@ function largestRemainder(weights, total) {
   for (let k = 0; k < left; k++) out[order[k % order.length].i]++;
   return out;
 }
+/* ÜBERHOLT durch #103 (ADR 0010), nur der Zweig `combinedHandout`: Die Rate
+   kommt nicht mehr flach nach der Formgebung auf jede Zeile. Bei
+   eingeschaltetem CombinedHandout ist der ParticipationPool auf beiden Achsen
+   leer. Die Booster laufen ganz durch Tiefendeckel, Rest, Kurve und
+   RankFloor, die Packs behalten die flache Rate. Eine Tiefe unter der
+   Spielerzahl meldet die ConflictNotice als `combinedHandoutDepth`.
+   Verbindlich ist der Kern (`public/core/distribute.mjs`) und die
+   Entscheide an #103. Nicht umgebaut. */
 function distribute(s) {
   const n = Math.max(1, s.players);
   const boosterTotal = s.boosterRate * n;
@@ -2431,6 +2439,9 @@ function confirmPop() {
    (`fsContent()`) bleibt ohne sie. */
 /* Die Zahl, die in die Ränge geht — oben rechts über den Balken, wo ohnehin
    Platz ist. Nullachsen bleiben weg: „0 packs" ist keine Information. */
+/* ÜBERHOLT durch #103 (ADR 0010), nur der Zweig `on`: In den Booster-Kacheln
+   steckt kein Teilnahmeanteil mehr, also zählt das Rangtotal nichts mit und
+   heisst in beiden Zweigen „to the ranks". Nicht umgebaut. */
 function rankTotal(plan) {
   // Bei CombinedHandout stecken die Teilnahmeanteile in den Kacheln. Eine Zahl,
   // die dann noch den reinen RankPool nennt, widerspricht dem, was unter ihr
