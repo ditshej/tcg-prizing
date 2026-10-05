@@ -125,6 +125,7 @@ function newTally() {
     overtake: 0,
     orphanedReservation: 0,
     unclaimedRemainder: 0,
+    combinedHandoutDepth: 0,
     negativeHave: 0,
     overAssignedWinners: 0,
   };
@@ -172,6 +173,7 @@ function assertSumRule(plan, where, tally) {
   if (plan.overtake) tally.overtake++;
   if (plan.orphanedReservation) tally.orphanedReservation++;
   if (plan.unclaimedRemainder) tally.unclaimedRemainder++;
+  if (plan.combinedHandoutDepth) tally.combinedHandoutDepth++;
   if (plan.conflict && plan.conflict.have < 0) tally.negativeHave++;
 
   // ---- The Pool level: the rule itself, per PrizeItem axis. ----------------
@@ -394,6 +396,15 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
   // This is deliberately a tripwire, not a bound: a core change that keeps the
   // sum rule perfectly intact and only shifts one boundary moves `conflict`
   // off 464, and the test falls. That is the test working.
+  //
+  // **#103 moved them, on purpose.** Under CombinedHandout the participation
+  // Boosters no longer sit beside the RankPool but run through the shaping
+  // (ADR 0010), so the `combinedHandout: true` half of the grid has a RankPool
+  // larger by `participationBooster · players`: fewer conflicts (464 → 440)
+  // and fewer negative `have`s (240 → 232), more overtakes (8 → 12), two
+  // fewer unclaimed remainders (188 → 186). The fifth source,
+  // `combinedHandoutDepth`, is counted beside them from here on. Filed on #58
+  // with the core stand of #103.
   const divisible = sweep(DIVISIBLE_AXES);
   assert.deepEqual(
     {
@@ -401,14 +412,16 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
       overtake: divisible.overtake,
       orphanedReservation: divisible.orphanedReservation,
       unclaimedRemainder: divisible.unclaimedRemainder,
+      combinedHandoutDepth: divisible.combinedHandoutDepth,
       negativeHave: divisible.negativeHave,
     },
     {
-      conflict: 464,
-      overtake: 8,
+      conflict: 440,
+      overtake: 12,
       orphanedReservation: 256,
-      unclaimedRemainder: 188,
-      negativeHave: 240,
+      unclaimedRemainder: 186,
+      combinedHandoutDepth: 104,
+      negativeHave: 232,
     },
   );
 

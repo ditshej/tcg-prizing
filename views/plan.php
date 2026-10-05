@@ -164,10 +164,12 @@
       too: the sum check is read with the bar closed. Fullscreen drops it with
       the head, as `fsContent()` does. The rank message below it
       is the grid's own foot (`slotFoot()`): the only statement about the ranks
-      that have no tile at all.
+      that have no tile at all. Its words are the same under `CombinedHandout`
+      since #103: no participation share sits in the Booster rows any more, so
+      the total is the ranks' in both branches.
     -->
     <p class="plan-ranktotal" x-ref="ranktotal" x-show="!fullscreen"
-       x-text="`${rankTotalBooster} boosters ${rankTotalLabel}`"></p>
+       x-text="`${rankTotalBooster} boosters to the ranks`"></p>
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
 
     <!--

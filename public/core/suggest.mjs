@@ -82,7 +82,7 @@ export function suggestions(plan) {
   out.push(...curveWaysOut(settings, plan));
   // 2–4 · the promises, in the precedence chain of ADR 0001.
   out.push(...numericWaysOut(settings, plan, 'rankFloor', plan.rankFloor, 0, 8, floorLabel));
-  out.push(...numericWaysOut(settings, plan, 'depth', plan.depth, 1, plan.players, depthLabel));
+  out.push(...(plan.combinedHandout ? handoutWayOut(settings, plan) : depthWaysOut(settings, plan)));
   out.push(...displayWaysOut(settings, plan));
   // 5 · the participation rate, which sits in no chain and applies to everyone.
   out.push(
@@ -109,6 +109,53 @@ const plural = (n, word) => `${word}${n === 1 ? '' : 's'}`;
 const floorLabel = (v, cur) => `Floor ${direction(v, cur)} to ${v}`;
 const depthLabel = (v) => `Serve ${v} ${plural(v, 'rank')}`;
 const participationLabel = (v, cur) => `Participation boosters ${direction(v, cur)} to ${v}`;
+
+/** The RankPoolDepth, searched like any other whole-numbered slider. */
+function depthWaysOut(settings, plan) {
+  return numericWaysOut(settings, plan, 'depth', plan.depth, 1, plan.players, depthLabel);
+}
+
+/**
+ * The depth under CombinedHandout, the way out of a `combinedHandoutDepth`
+ * (#103, ADR 0010): serve every Player, and raise the RankFloor to the
+ * participation Booster rate the Players would otherwise have had. It is the
+ * depth slot of the list, and it replaces the plain depth search there: under
+ * CombinedHandout no depth short of the players clears, so that search could
+ * only ever find this depth, and without the floor.
+ *
+ * The rate is the one the plan computed with, `participation.rate.booster`,
+ * and never the slider's value: a pinned rate over a wall that sank under it
+ * would ask for a floor the pool cannot carry (maintainer, 2026-10-05). The
+ * floor is only raised, never lowered: one standing above the rate already
+ * covers what the participation Booster promised (same decision).
+ *
+ * The two values become pins when the way is taken (`applyWayOut()` sets each
+ * through the control's own handler). A depth left unpinned would be cut by
+ * the cap again, and the way out would break its own promise (ADR 0006).
+ * Where the floor needs no raise, the way is the depth alone, in the single
+ * way's own shape. Where both move, it is one way over two sliders in the
+ * shape `combinedWayOut()` hands out, so the surface applies it the same way.
+ * Nothing is offered where the result would still be unfit.
+ */
+function handoutWayOut(settings, plan) {
+  if (!plan.combinedHandoutDepth) return [];
+  const floor = Math.max(plan.rankFloor, plan.participation.rate.booster);
+  if (!clears(plan, { ...settings, rankFloor: floor, depth: plan.players })) return [];
+  const changes = [];
+  if (floor !== plan.rankFloor) {
+    changes.push({ key: 'rankFloor', value: floor, label: floorLabel(floor, plan.rankFloor) });
+  }
+  changes.push({ key: 'depth', value: plan.players, label: depthLabel(plan.players) });
+  return [changes.length === 1 ? changes[0] : joined(changes)];
+}
+
+/** Several changes as one way out: their labels joined into the one the button carries. */
+function joined(changes) {
+  const label = changes
+    .map((change, i) => (i === 0 ? change.label : change.label[0].toLowerCase() + change.label.slice(1)))
+    .join(' and ');
+  return { key: 'combined', changes, label };
+}
 
 /** One slider over a whole-numbered range, its nearest clearing values. */
 function numericWaysOut(settings, plan, key, current, low, high, label) {
@@ -252,27 +299,6 @@ function clears(plan, candidate) {
 }
 
 /**
- * The RankPool share behind a row's payout — never `row.booster` itself and
- * never a row sum. CombinedHandout shifts the participation rate into every
- * served row uniformly (`row.booster += pbRate` in `distribute()`), but a
- * DisplayReservation reserves only out of the RankPool; measuring on
- * `row.booster` would read the participation share as though the RankPool
- * had reserved it and over-propose (#46's correction to the prototype, which
- * measures `offerFor` on `row.booster`).
- *
- * Subtracting the same rate back out makes this identical whether or not
- * CombinedHandout is on: the shift adds `plan.participation.rate.booster` to
- * every row of both the plan and any candidate probe alike, so it cancels
- * both in the offered value and in the `also` differences — which is what
- * makes "no proposal changes under CombinedHandout" (#60) hold by
- * construction rather than by coincidence.
- */
-function rankShare(plan, row) {
-  const pbRate = plan.combinedHandout ? plan.participation.rate.booster : 0;
-  return row.booster - pbRate;
-}
-
-/**
  * offerFor(plan) — the Offer of #46: on a **fully valid** plan, a rounder
  * DisplayReservation, today the only kind there is. ConflictNotice and Offer
  * can never meet: one presumes an invalid plan, the other a valid one — so an
@@ -280,7 +306,9 @@ function rankShare(plan, row) {
  *
  * The window is symmetric, `win = max(1, round(displaySize / 4))`, in both
  * directions: rounding only upward would take `displaySize − 1` Boosters from
- * the top Rank in the extreme case. For each served Rank from the top,
+ * the top Rank in the extreme case. For each served Rank from the top, with
+ * `share` the row's Boosters — the number on its tile, in both handout
+ * branches since #103 —
  * `k = round(share / displaySize)` — skipped where `k < 1`, `k ≤
  * row.displays`, the distance from `k · displaySize` exceeds the window, the
  * DisplayReservation vector would no longer fall (`d₁ ≥ d₂ ≥ …`, the one rule
@@ -309,7 +337,7 @@ export function offerFor(plan) {
 
   for (let i = 0; i < plan.depth; i++) {
     const row = plan.rows[i];
-    const share = rankShare(plan, row);
+    const share = row.booster;
     const k = Math.round(share / displaySize);
     if (k < 1) continue;
     if (k <= row.displays) continue;
@@ -324,8 +352,8 @@ export function offerFor(plan) {
     const also = [];
     for (let j = 0; j < plan.depth; j++) {
       if (j === i) continue;
-      const before = rankShare(plan, plan.rows[j]);
-      const after = rankShare(probe, probe.rows[j]);
+      const before = plan.rows[j].booster;
+      const after = probe.rows[j].booster;
       if (before !== after) also.push({ rank: j + 1, before, after });
     }
 
@@ -387,7 +415,9 @@ export function waysOut(plan) {
  *
  * `RankPoolDepth` and the `DistributionCurve` are not moved: at the edge of
  * pass 1 neither is needed, and a depth that stays keeps an overtaking Rank in
- * the plan, which is the extra condition `clears()` puts on an overtake.
+ * the plan, which is the extra condition `clears()` puts on an overtake. The
+ * one exception is a `combinedHandoutDepth` (#103): there the depth goes to
+ * the player count in pass 1 and stays, since no shorter depth clears.
  *
  * What comes out is the list of what differs from the stand, in the order the
  * single ways would list them, each entry in the single way's own shape and
@@ -399,7 +429,11 @@ export function combinedWayOut(plan) {
   const current = reservationVector(settings);
   const rate = plan.participation.rate.booster;
 
-  const edge = { ...settings, displays: [], rankFloor: 0, participationBooster: 0 };
+  // Under CombinedHandout a depth short of the players is unfit by itself
+  // (`combinedHandoutDepth`), so there the edge serves every Player as well,
+  // exactly as `handoutWayOut()` does — the one case in which the depth moves.
+  const depth = plan.combinedHandoutDepth ? plan.players : settings.depth;
+  const edge = { ...settings, displays: [], rankFloor: 0, participationBooster: 0, depth };
   if (!clears(plan, edge)) return null;
 
   const stand = { ...edge };
@@ -417,6 +451,9 @@ export function combinedWayOut(plan) {
   const changes = [];
   if (stand.rankFloor !== plan.rankFloor) {
     changes.push({ key: 'rankFloor', value: stand.rankFloor, label: floorLabel(stand.rankFloor, plan.rankFloor) });
+  }
+  if (plan.combinedHandoutDepth) {
+    changes.push({ key: 'depth', value: plan.players, label: depthLabel(plan.players) });
   }
   current.forEach((now, i) => {
     const v = kept[i];
@@ -439,10 +476,7 @@ export function combinedWayOut(plan) {
     });
   }
 
-  const label = changes
-    .map((change, i) => (i === 0 ? change.label : change.label[0].toLowerCase() + change.label.slice(1)))
-    .join(' and ');
-  return { key: 'combined', changes, label };
+  return joined(changes);
 }
 
 /** The value of one slider nearest to `from` on the way to `to` at which the

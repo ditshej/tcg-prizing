@@ -14,8 +14,10 @@
  * then the Rank 1 lead, then the RankFloor — instead of clamping a negative
  * ShapedRemainder to 0 and pretending the rows still add up. A reservation
  * past the depth is reported as `orphanedReservation` rather than read as
- * though it were not there. `unfit()` is the shared predicate over all four
- * ways a plan can be reported instead of refused.
+ * though it were not there. `unfit()` is the shared predicate over all five
+ * ways a plan can be reported instead of refused — the fifth,
+ * `combinedHandoutDepth`, came with #103, which also put the whole Booster
+ * share through the shaping under CombinedHandout (ADR 0010).
  *
  * Since #86 the plan also carries the Settings it was computed from, as one
  * untrimmed field (ADR 0009) — that is what makes `suggestions(plan)` in
@@ -70,16 +72,29 @@ function thresholdAt(k, envelopeSize, yieldPer) {
  * the ceiling of the next slider (#4), so `participation + judge + rank` is
  * the PrizePool by arithmetic. The order is participation → JudgePool →
  * RankPool as the rest; the JudgePool never touches TournamentPacks.
+ *
+ * Under CombinedHandout the ParticipationPool is **empty on both axes**
+ * (#103, ADR 0010): there is no handout before the tournament, so nothing is
+ * set aside for it. The rate is still read and carried — the TournamentPacks
+ * hand it to every row flat, and the way out of a `combinedHandoutDepth`
+ * turns the Booster rate into the RankFloor — but it takes nothing off the
+ * pool, so the JudgePool's ceiling is the whole Booster pool and the
+ * RankPool is everything the JudgePool leaves.
+ *
+ * `cyclePacks` is the TournamentPack share the RankCycle hands out. In the
+ * separate branch it is `rank.packs`; under CombinedHandout `rank.packs` also
+ * carries the participation share, which reaches the rows as the flat rate
+ * and must not run through the cycle a second time.
  */
-function splitPool(pool, settings, players) {
+function splitPool(pool, settings, players, combinedHandout) {
   const participationRate = {
     booster: clamp(int(settings.participationBooster), 0, Math.floor(pool.booster / players)),
     packs: clamp(int(settings.participationPack), 0, Math.floor(pool.packs / players)),
   };
   const participation = {
     rate: participationRate,
-    booster: participationRate.booster * players,
-    packs: participationRate.packs * players,
+    booster: combinedHandout ? 0 : participationRate.booster * players,
+    packs: combinedHandout ? 0 : participationRate.packs * players,
   };
   const judge = {
     booster: clamp(int(settings.judgeBooster), 0, pool.booster - participation.booster),
@@ -90,7 +105,8 @@ function splitPool(pool, settings, players) {
     packs: pool.packs - participation.packs,
     winners: pool.winners - judge.winners,
   };
-  return { participation, judge, rank };
+  const cyclePacks = pool.packs - participationRate.packs * players;
+  return { participation, judge, rank, cyclePacks };
 }
 
 /**
@@ -268,7 +284,8 @@ function snapshot(source) {
 export function distribute(settings, pinned = {}) {
   const players = Math.max(2, int(settings.players, 2));
   const pool = derivePool(settings);
-  const { participation, judge, rank } = splitPool(pool, settings, players);
+  const combinedHandout = !!settings.combinedHandout;
+  const { participation, judge, rank, cyclePacks } = splitPool(pool, settings, players, combinedHandout);
 
   const rankFloor = Math.max(0, int(settings.rankFloor));
   const displaySize = Math.max(1, int(settings.displaySize, 1));
@@ -381,9 +398,9 @@ export function distribute(settings, pinned = {}) {
   // Overtaking: Rank 1's lead is a guarantee *inside* the curve and lapses the
   // moment a DisplayReservation settles it out of the curve — the first pair
   // i < j < depth with booster[j] > booster[i] is reported, never prevented
-  // (ADR 0001, ADR 0002). Compared on the RankPool share alone, before
-  // CombinedHandout shifts the participation rate in: that shift adds the
-  // same amount to every row, so it can neither create nor hide an overtake.
+  // (ADR 0001, ADR 0002). Compared on the shaped Booster rows, which are the
+  // rows themselves: under CombinedHandout too, since no flat rate is added
+  // to them afterwards any more (#103).
   let overtake = null;
   outer: for (let i = 0; i < depth; i++) {
     for (let j = i + 1; j < depth; j++) {
@@ -395,9 +412,7 @@ export function distribute(settings, pinned = {}) {
   }
   // flagged: the overtake pair, unioned in the conflict branch with every
   // served Rank that did not get its full quota — reservation, lead and
-  // floor together (CONTEXT.md "ShapedRemainder"). Measured on `booster`
-  // before the CombinedHandout shift, the same rule as overtake: the shift
-  // adds the same amount to every row and must not create or hide a flag.
+  // floor together (CONTEXT.md "ShapedRemainder").
   const conflictFlags = [];
   if (conflict) {
     for (let i = 0; i < depth; i++) {
@@ -413,35 +428,29 @@ export function distribute(settings, pinned = {}) {
   // RankCycle hands out the RankPool's TournamentPacks, and the
   // WinnerPackAllocation says who gets the RankPool's WinnerPacks.
   const allocation = allocateWinners(settings, rank.winners, players);
-  const packsCycle = rankCycle(rank.packs, allocation.ranked, players);
+  const packsCycle = rankCycle(cyclePacks, allocation.ranked, players);
 
-  // CombinedHandout shifts the participation shares into the rank rows
-  // instead of adding them: the same numbers, differently grouped, so the sum
-  // over the PrizePool never changes. The shift runs on both levels at once —
-  // every row takes the rate, and on the Pool level the ParticipationPool
-  // falls to 0 while the RankPool takes the whole share. Reporting the shares
-  // in both places would count the same PrizeItems twice.
-  //
-  // It runs *after* the shaping, so depth cap, ShapedRemainder and curve read
-  // the same RankPool in both branches: how the shares are grouped at handout
-  // is not a shaping decision.
-  const combinedHandout = !!settings.combinedHandout;
-  const pbRate = combinedHandout ? participation.rate.booster : 0;
+  // CombinedHandout hands everything out at the end of the tournament, so
+  // there is no ParticipationPool to report (#103, ADR 0010). The two axes
+  // part ways there. The Boosters are already in the RankPool and went
+  // through the shaping above — depth cap, ShapedRemainder, curve and
+  // RankFloor — so a Rank holding a Display gets the Display and no extra
+  // participation Booster on top. The TournamentPacks have no floor and run
+  // past the curve, so they keep the flat rate: every row takes it, and
+  // `rank.packs` carries it on the Pool level, or the same packs would be
+  // counted twice.
   const ppRate = combinedHandout ? participation.rate.packs : 0;
-  const handedOut = combinedHandout
-    ? {
-        participation: { rate: participation.rate, booster: 0, packs: 0 },
-        rank: {
-          booster: rank.booster + participation.booster,
-          packs: rank.packs + participation.packs,
-          winners: rank.winners,
-        },
-      }
-    : { participation, rank };
+
+  // The RankPool reaches the RankFloor only down to the depth. With no
+  // participation Booster before the tournament, a depth short of the player
+  // count leaves the Ranks below it with nothing, so the state is reported
+  // here, not prevented: `combinedHandout` travels in the SetupLink and the
+  // state is reachable and legal (ADR 0002, ADR 0010).
+  const combinedHandoutDepth = combinedHandout && depth < players ? { depth, players } : null;
 
   const rows = Array.from({ length: players }, (_, i) => ({
     rank: i + 1,
-    booster: booster[i] + pbRate,
+    booster: booster[i],
     packs: packsCycle[i] + ppRate,
     winners: (i < allocation.ranked ? 1 : 0) + (allocation.manual[i + 1] ?? 0),
     displays: i < depth ? d[i] : 0,
@@ -456,9 +465,9 @@ export function distribute(settings, pinned = {}) {
     pinned: carriedPins(pinned),
     players,
     pool,
-    participation: handedOut.participation,
+    participation,
     judge,
-    rank: handedOut.rank,
+    rank,
     combinedHandout,
     depth,
     depthCap,
@@ -477,6 +486,7 @@ export function distribute(settings, pinned = {}) {
     conflict,
     overtake,
     orphanedReservation,
+    combinedHandoutDepth,
     flagged,
   };
 }
@@ -484,14 +494,21 @@ export function distribute(settings, pinned = {}) {
 /**
  * The shared predicate over a DistributionPlan (#56): true wherever the
  * NoticeStack has something to show and `suggestions()` (#59) has a way out
- * to search for. Four independent facts feed it — a depth over the cap, an
- * overtake, a reservation past the depth, and a reservation that swallows
- * the whole depth — and it is their plain OR: none of the four is treated as
- * excluding another (see the `unclaimedRemainder` note above for the one
- * case where two can hold of the same plan at once).
+ * to search for. Five independent facts feed it — a depth over the cap, an
+ * overtake, a reservation past the depth, a reservation that swallows the
+ * whole depth, and a CombinedHandout whose depth falls short of the players
+ * (#103) — and it is their plain OR: none of the five is treated as
+ * excluding another (see the `unclaimedRemainder` note above for one case
+ * where two can hold of the same plan at once).
  */
 export function unfit(plan) {
-  return !!plan.conflict || !!plan.overtake || !!plan.orphanedReservation || !!plan.unclaimedRemainder;
+  return (
+    !!plan.conflict ||
+    !!plan.overtake ||
+    !!plan.orphanedReservation ||
+    !!plan.unclaimedRemainder ||
+    !!plan.combinedHandoutDepth
+  );
 }
 
 /** The geometric weights of the curve: `ratio⁰, ratio¹, …` over the shaped ranks. */

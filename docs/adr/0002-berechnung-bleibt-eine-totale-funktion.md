@@ -1,6 +1,7 @@
 # Die Berechnung bleibt eine totale Funktion
 
 Ergänzt durch ADR-0009.
+Ergänzt durch ADR-0010.
 
 Für widersprüchliche Reglerstände — etwa eine `RankPoolDepth`, die unter die
 bereits gesetzten `DisplayReservation`s gesenkt wurde — war ursprünglich

@@ -30,8 +30,9 @@ require_once __DIR__ . '/control-row.php';
  */
 function sheet_control(string $key, string $label, string $desc, string $unit = ''): void
 {
+    $k = htmlspecialchars($key, ENT_QUOTES);
     ?>
-  <div class="sheet-control">
+  <div class="sheet-control" x-show="controlShown('<?= $k ?>')">
     <?php control_row($key, $label, $unit); ?>
     <p class="sheet-desc"><?= htmlspecialchars($desc) ?></p>
   </div>
@@ -311,7 +312,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
   <p class="sheet-desc">What comes off the top for everyone and for the judge, before the ranks
     are served.</p>
   <?php sheet_control('participationBooster', 'Participation boosters', 'Boosters every player gets just for showing up. Taken off the pool before the ranks.', 'per player'); ?>
-  <?php sheet_control('participationPack', 'Participation packs', 'Same for tournament packs — handed to everyone before the ranks are served.', 'per player'); ?>
+  <?php sheet_control('participationPack', 'Participation packs', 'Tournament packs every player gets just for showing up, whatever their rank.', 'per player'); ?>
   <?php sheet_control('judgeBooster', 'Judge boosters', 'Boosters set aside for the judge before anything else is distributed.'); ?>
   <?php sheet_control('judgeWinner', 'Judge winner packs', 'Winner packs reserved for the judge.'); ?>
 
@@ -322,8 +323,9 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       <span class="pin-spacer"></span>
       <?php sheet_pin_reset('combinedHandout', 'Handout'); ?>
     </div>
-    <p class="sheet-desc">Whether participation prizes travel in the same handful as the rank
-      prizes, instead of being handed out separately.</p>
+    <p class="sheet-desc">Whether everything is handed out once, after the tournament. Then there
+      are no participation boosters: the whole booster pool goes to the ranks, and serving every
+      rank is what gives everyone something.</p>
     <label class="sheet-check">
       <input type="checkbox" :checked="settings.combinedHandout"
              @change="setSlider('combinedHandout', $event.target.checked)">

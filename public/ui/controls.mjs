@@ -80,6 +80,28 @@ export const GROUPS = [
 export const SHEET_KEYS = [...HOT_KEYS, 'depthStep', ...GROUPS.flatMap((g) => g.keys)];
 
 /**
+ * Whether a control stands on the sheet at this stand. One does not:
+ * `Participation boosters` while `CombinedHandout` is on (#103, decision A).
+ * It distributes nothing then — the whole Booster share is shaped — and a
+ * control that moves nothing looks broken; greyed out would say the same
+ * (`views/control-row.php`). It goes the way the `Participation` line of the
+ * plan goes (`views/plan.php`). Its value stays: it is in `Settings` and in
+ * the pins, travels in the SetupLink and is there again when the handout is
+ * switched off (E4). `Participation packs` stays, since the packs still go
+ * to everyone (E5).
+ */
+export function controlShown(key, settings) {
+  return !(key === 'participationBooster' && settings.combinedHandout);
+}
+
+/**
+ * The two pins the way out of a `combinedHandoutDepth` sets (`suggest.mjs`,
+ * `handoutWayOut()`) — what switching `CombinedHandout` back off lists, where
+ * they stand pinned (#103, E4).
+ */
+export const HANDOUT_PINS = ['rankFloor', 'depth'];
+
+/**
  * The three controls that pick a **named rule** of the core instead of a
  * number (ADR 0003: a DefaultSet entry is a constant or such a choice), plus
  * the one that is a flag. None of them has bounds; their whole range is the
@@ -659,6 +681,9 @@ export const DROP_NOTES = {
     `${many ? 'Each one goes' : 'It goes'} back to what ${typeTitle} says.`,
   carry: ({ many, typeTitle }) =>
     `${many ? 'They' : 'It'} stayed behind when you switched. Following ${typeTitle} now means ` +
+    `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
+  handout: ({ many, typeTitle }) =>
+    `${many ? 'They' : 'It'} stayed when the handout went back off. Following ${typeTitle} now means ` +
     `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
 };
 

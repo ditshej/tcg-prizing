@@ -14,10 +14,13 @@
  *   the notice sprang open at every click on exactly the slider it names.
  * - **The event notice** — `CarryOverNotice`. Every Set switch is a new event;
  *   it always opens, and it opens the standing state notices with it, because
- *   the whole sheet under them was just exchanged.
+ *   the whole sheet under them was just exchanged. Since #103 its form has a
+ *   second trigger: switching `CombinedHandout` back off raises a notice of
+ *   the same kind (`handoutOff`) over the two pins the way out of a
+ *   `combinedHandoutDepth` sets. It opens alone, since no sheet was exchanged.
  *
  * **Whether a ConflictNotice stands is asked of `unfit(plan)`** and of the
- * plan's four report fields, never by recomputing a sum: since #56 a conflict
+ * plan's five report fields, never by recomputing a sum: since #56 a conflict
  * stand adds up, and an empty PrizePool fulfils every sum rule (comment on
  * #68, 2026-09-27 14:59). Its sources are named, never numbered (K7,
  * CONTEXT.md `ConflictNotice`), and the kind is the set of sources that hold.
@@ -26,7 +29,7 @@
  * WinnerPacks on the tiles than the RankPool holds. The core does not report
  * it, so it is asked of `winnerPackOverhang(plan)` (`overhang.mjs`) beside
  * `unfit(plan)`, and `conflictStands()` is the two together. `unfit()` itself
- * stays the core's four: it is also the test every probe of the core's search
+ * stays the core's five: it is also the test every probe of the core's search
  * must pass, and an overhang folded into it would fail every probe of a
  * floor conflict standing beside it.
  */
@@ -37,7 +40,7 @@ import { dropNoun, pinLabel } from './controls.mjs';
 import { overhangWaysOut, WINNER_PACK_OVERHANG, winnerPackOverhang } from './overhang.mjs';
 
 /**
- * Whether a ConflictNotice stands: one of the core's four sources (`unfit`)
+ * Whether a ConflictNotice stands: one of the core's five sources (`unfit`)
  * or the `WinnerPack` overhang. This, not `unfit()`, is what the NoticeStack
  * asks — for the notice, for its kind, and for the Offer's silence.
  */
@@ -69,8 +72,8 @@ export function searchesFor(plan) {
   return { ways: memo.ways, offer: memo.offer };
 }
 
-/** The four sources the core reports, in the order `CONTEXT.md` lists them. */
-const SOURCES = ['conflict', 'overtake', 'orphanedReservation', 'unclaimedRemainder'];
+/** The five sources the core reports, in the order `CONTEXT.md` lists them. */
+const SOURCES = ['conflict', 'overtake', 'orphanedReservation', 'unclaimedRemainder', 'combinedHandoutDepth'];
 
 /**
  * The ConflictNotice's key: the names of the sources that hold, joined — or
@@ -102,6 +105,7 @@ export function freshFold() {
     conflict: { key: null, open: true },
     offer: { key: null, open: true, dismissed: null },
     carryOver: { event: 0, open: true, dismissed: false },
+    handoutOff: { event: 0, open: true, dismissed: false },
   };
 }
 
@@ -121,12 +125,18 @@ function offerKey(plan, offer, dismissed) {
 /**
  * One step of the fold: the record before, the stand now → the record after.
  * `event` is the count of Set switches so far; a higher one than the record
- * knows is a new switch.
+ * knows is a new switch. `handoutEvent` counts the times `CombinedHandout`
+ * was switched off (#103, E4) the same way: each one is a new event, and the
+ * notice it raises opens.
  */
-export function foldStep(fold, { plan, offer = null, event = fold.carryOver.event }) {
+export function foldStep(
+  fold,
+  { plan, offer = null, event = fold.carryOver.event, handoutEvent = fold.handoutOff.event },
+) {
   const conflictNow = conflictKind(plan);
   const offerNow = offerKey(plan, offer, fold.offer.dismissed);
   const switched = event !== fold.carryOver.event;
+  const handoutSwitched = handoutEvent !== fold.handoutOff.event;
   return {
     conflict: {
       key: conflictNow,
@@ -140,6 +150,9 @@ export function foldStep(fold, { plan, offer = null, event = fold.carryOver.even
     carryOver: switched
       ? { event, open: true, dismissed: false }
       : fold.carryOver,
+    handoutOff: handoutSwitched
+      ? { event: handoutEvent, open: true, dismissed: false }
+      : fold.handoutOff,
   };
 }
 
@@ -155,13 +168,14 @@ export function expand(fold, id) {
 
 /**
  * The ✕. The Offer remembers **which** offer was turned down, by its content;
- * the CarryOverNotice is gone until the next switch. The ConflictNotice has no
+ * the CarryOverNotice is gone until the next switch, and the notice of a
+ * switched-off handout until the handout is switched off again. The ConflictNotice has no
  * ✕ — its presence is the statement (ADR 0002) — so there is nothing to
  * dismiss and the record comes back unchanged.
  */
 export function dismiss(fold, id, offer = null) {
   if (id === 'offer') return { ...fold, offer: { ...fold.offer, key: null, dismissed: offer?.key ?? null } };
-  if (id === 'carryOver') return { ...fold, carryOver: { ...fold.carryOver, dismissed: true } };
+  if (id === 'carryOver' || id === 'handoutOff') return { ...fold, [id]: { ...fold[id], dismissed: true } };
   return fold;
 }
 
@@ -221,6 +235,16 @@ function conflictLines(plan) {
       `The reserved displays settle all ${depth} served ${plural(depth, 'rank')}, ` +
         `so ${rest} ${plural(rest, 'booster')} ${rest === 1 ? 'has' : 'have'} no rank to go to.`,
     );
+  }
+  if (plan.combinedHandoutDepth) {
+    // Written new, like the two above: the prototype predates #103.
+    const { depth, players } = plan.combinedHandoutDepth;
+    const left = players - depth;
+    lines.push(
+      `Everything is handed out together, but only ${depth} of ${players} ranks are served — ` +
+        `${left === 1 ? 'the last one gets' : `the last ${left} get`} no boosters.`,
+    );
+    lines.push('With no participation boosters, serving every rank is what gives everyone something.');
   }
   return lines;
 }
@@ -306,9 +330,12 @@ const NO_WAY_OUT = {
  * - `offer` — `offerFor(plan)`, or `null`.
  * - `carry` — the last Set switch, `{ to, keys }`: the type it went to and the
  *   pinned items that stayed behind; `null` before the first switch.
+ * - `handout` — the last time `CombinedHandout` was switched off, `{ to, keys }`:
+ *   the type the drop would follow and the pins of its way out that still
+ *   stand (`rankFloor`, `depth`); `null` where there is nothing to say.
  * - `fold` — the record `foldStep()` keeps.
  */
-export function noticeStack({ plan, ways = [], offer = null, carry = null, fold }) {
+export function noticeStack({ plan, ways = [], offer = null, carry = null, handout = null, fold }) {
   const notices = [];
 
   if (conflictStands(plan)) {
@@ -352,6 +379,27 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, fold 
       ],
       actions: [{ label: carryLabel(n, carry.to), drop: carry.keys }],
       chip: { glyph: null, word: `${n} kept` },
+    });
+  }
+
+  // The handout switched back off (#103, E4): the CarryOverNotice's form at a
+  // second trigger. The two pins the way out of a `combinedHandoutDepth` set
+  // stay standing (ADR 0006), now beside the participation Boosters that are
+  // back; the notice lists them and carries the drop, and solves nothing by
+  // itself. It does not say the pins came from the way out — a pin does not
+  // know where it came from, and that was the rejected option.
+  if (handout && handout.keys.length && !fold.handoutOff.dismissed) {
+    const n = handout.keys.length;
+    const names = handout.keys.map(pinLabel).join(', ');
+    notices.push({
+      id: 'handoutOff',
+      closable: true,
+      lines: [
+        `${pinLabel('combinedHandout')} is off, and ${n} pinned ${dropNoun(n)} stayed.`,
+        `${names} — set by hand, so the participation boosters now come on top of ${n > 1 ? 'them' : 'it'}.`,
+      ],
+      actions: [{ label: carryLabel(n, handout.to), drop: handout.keys }],
+      chip: { glyph: null, word: `${pinLabel('combinedHandout')} off` },
     });
   }
 
