@@ -153,12 +153,20 @@
     </div>
 
     <!--
-      The rank total belongs to the diagram — the prototype prints it above the
-      bars, not under the tiles — so it leaves with the diagram. The rank
-      message below it is the grid's own foot (`slotFoot()`) and stays: it is
-      the only statement about the ranks that have no tile at all.
+      The rank total does not leave with the diagram (#132): it is the third of
+      the three places the sum check runs over — Booster total, handout total,
+      rank total — so it stands wherever the head does, diagram or not. Where
+      it stands without one is the maintainer's (2026-10-05): its own line,
+      where it is today; the prototype has no place for that case, its
+      `rankTotal()` sits only above the bars. It was always part of the fixed
+      `PLAN_FIXED` 178, so the two-row floor is counted with it. Under an open
+      raffle bar it lies beneath the bar, as the rank message does — decided
+      too: the sum check is read with the bar closed. Fullscreen drops it with
+      the head, as `fsContent()` does. The rank message below it
+      is the grid's own foot (`slotFoot()`): the only statement about the ranks
+      that have no tile at all.
     -->
-    <p class="plan-ranktotal" x-ref="ranktotal" x-show="diagramShown"
+    <p class="plan-ranktotal" x-ref="ranktotal" x-show="!fullscreen"
        x-text="`${rankTotalBooster} boosters ${rankTotalLabel}`"></p>
     <p class="plan-rest" x-ref="rest" x-show="restMessage" x-text="restMessage"></p>
 

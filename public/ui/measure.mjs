@@ -27,30 +27,21 @@ import { chipIntoView, diagramCap, diagramFits, fadeHeight, fadeShown as fadeLef
  *
  * Returns whether the diagram has room (`diagramFits()`, #129, run 15), for
  * the component to show or hide it. The leftover is measured **as if the
- * diagram stood**: its own gap is counted whether it renders or not, and so
- * is every part that leaves with it (`.plan-ranktotal`), at the height it had
- * when it last rendered. Measured as it is drawn, the verdict would move the
- * numbers it is made from — hide the diagram and the rank total, and the
- * leftover grows by their height, enough to bring them back.
+ * diagram stood**: its own gap is counted whether it renders or not.
+ * Measured as it is drawn, the verdict would move the numbers it is made
+ * from — hide the diagram, and the leftover grows by its gap. Since #132
+ * nothing else leaves with it: the rank total stays.
  *
  * Reads: `clientWidth`/`clientHeight`, `getBoundingClientRect().height`,
  * computed `gap`/`padding`. Writes: `style.setProperty`. Nothing else — no
- * plan logic, no state but the last height of what leaves with the diagram.
+ * plan logic, no state.
  */
 export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   if (!stageEl) return true;
   const width = stageEl.clientWidth;
   const height = stageEl.clientHeight;
   const shown = (el) => el && el.getClientRects().length > 0;
-  const leaves = (el) => el && el.classList.contains('plan-ranktotal') && !stageEl.closest('[data-fullscreen]');
-  const fixedHeight = fixedEls.reduce((sum, el) => {
-    if (shown(el)) {
-      const h = el.getBoundingClientRect().height;
-      if (leaves(el)) lastHeight.set(el, h);
-      return sum + h;
-    }
-    return sum + (leaves(el) ? lastHeight.get(el) ?? 0 : 0);
-  }, 0);
+  const fixedHeight = fixedEls.reduce((sum, el) => sum + (shown(el) ? el.getBoundingClientRect().height : 0), 0);
 
   const style = getComputedStyle(stageEl);
   const gap = parseFloat(style.rowGap || style.gap) || 0;
@@ -58,10 +49,10 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   /* Only the children that actually render pay for a gap. Fullscreen hides
      several of them (`x-show` → `display: none`), and counting those would
      charge the leftover for gaps the browser never draws — pixels the tile
-     grid would then not get. The diagram and what leaves with it count as
-     rendering, so the leftover is the one they would stand in. */
+     grid would then not get. The diagram counts as rendering, so the
+     leftover is the one it would stand in. */
   const visibleChildren = Array.from(stageEl.children)
-    .filter((el) => shown(el) || el.classList.contains('plan-diagram') || (leaves(el) && lastHeight.has(el))).length;
+    .filter((el) => shown(el) || el.classList.contains('plan-diagram')).length;
   const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
@@ -81,9 +72,6 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, undefined, covered)}px`);
   return diagramFits(leftover, covered);
 }
-
-/** The last rendered height of each part that leaves with the diagram. */
-const lastHeight = new WeakMap();
 
 /**
  * Wires `applyGeometry` to run once now and again on every resize of

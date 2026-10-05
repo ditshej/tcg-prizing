@@ -13,7 +13,8 @@ import { chipIntoView, pillStep, rowScrollEnds } from '../public/ui/geometry.mjs
  *    and the open bar's measured cover, its 60 px floor is left
  *    (`diagramFits()` in `geometry.mjs`, under its own tests); elsewhere it is
  *    gone, on every fold. The rind measures, the component only holds the
- *    verdict (`applyDiagramRoom()`), and the rank total leaves with it.
+ *    verdict (`applyDiagramRoom()`). The rank total does not leave with it
+ *    (#132): the sum check has three places on every stage.
  * 2. On the flat stage and in the cramped exception the retraction list is
  *    one row that scrolls sideways — it does not page and it does not grow
  *    the bar. Arrows say there is more and move it by one pill.
@@ -78,16 +79,30 @@ test('opening the bar is no verdict of its own: the fold and the bar do not hide
   }
 });
 
-test('the diagram and the rank total in the markup stand on diagramShown — evaluated, not matched', () => {
+test('the diagram in the markup stands on diagramShown — evaluated, not matched', () => {
   const it = app();
   it.setStage({ width: 812, height: 375 });
-  for (const marker of ['class="plan-diagram"', 'class="plan-ranktotal"']) {
-    const show = attrOf(marker, 'x-show');
-    assert.equal(evaluate(show, it), true, marker);
-    it.applyDiagramRoom(false);
-    assert.equal(evaluate(show, it), false, `${marker}, no room`);
-    it.applyDiagramRoom(true);
-  }
+  const show = attrOf('class="plan-diagram"', 'x-show');
+  assert.equal(evaluate(show, it), true);
+  it.applyDiagramRoom(false);
+  assert.equal(evaluate(show, it), false, 'no room');
+});
+
+test('the rank total stays when the diagram goes, and leaves only with fullscreen (#132)', () => {
+  const it = app();
+  it.setStage({ width: 812, height: 375 });
+  const show = attrOf('class="plan-ranktotal"', 'x-show');
+  assert.equal(evaluate(show, it), true, 'diagram stands');
+  it.applyDiagramRoom(false);
+  assert.equal(it.diagramShown, false);
+  assert.equal(evaluate(show, it), true, 'diagram gone, rank total stays');
+  it.toggleRaffle();
+  assert.equal(evaluate(show, it), true, 'bar open, diagram gone');
+  it.toggleRaffle();
+  it.openFullscreen();
+  assert.equal(evaluate(show, it), false, 'fullscreen');
+  it.closeFullscreen();
+  assert.equal(evaluate(show, it), true, 'back from fullscreen');
 });
 
 /* ── 2 · The retraction list scrolls sideways, flat and cramped ─────────── */
