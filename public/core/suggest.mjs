@@ -145,8 +145,13 @@ function handoutWayOut(settings, plan) {
   if (floor !== plan.rankFloor) {
     changes.push({ key: 'rankFloor', value: floor, label: floorLabel(floor, plan.rankFloor) });
   }
-  changes.push({ key: 'depth', value: plan.players, label: depthLabel(plan.players) });
+  changes.push(everyRank(plan));
   return [changes.length === 1 ? changes[0] : joined(changes)];
+}
+
+/** The depth that serves every Player, as a change of a way out. */
+function everyRank(plan) {
+  return { key: 'depth', value: plan.players, label: depthLabel(plan.players) };
 }
 
 /** Several changes as one way out: their labels joined into the one the button carries. */
@@ -452,9 +457,7 @@ export function combinedWayOut(plan) {
   if (stand.rankFloor !== plan.rankFloor) {
     changes.push({ key: 'rankFloor', value: stand.rankFloor, label: floorLabel(stand.rankFloor, plan.rankFloor) });
   }
-  if (plan.combinedHandoutDepth) {
-    changes.push({ key: 'depth', value: plan.players, label: depthLabel(plan.players) });
-  }
+  if (plan.combinedHandoutDepth) changes.push(everyRank(plan));
   current.forEach((now, i) => {
     const v = kept[i];
     if (v === now) return;

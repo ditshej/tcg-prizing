@@ -396,7 +396,7 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, hando
       closable: true,
       lines: [
         `${pinLabel('combinedHandout')} is off, and ${n} pinned ${dropNoun(n)} stayed.`,
-        `${names} — set by hand, so the participation boosters now come on top of ${n > 1 ? 'them' : 'it'}.`,
+        `${names} — still pinned, so the participation boosters now come on top of ${n > 1 ? 'them' : 'it'}.`,
       ],
       actions: [{ label: carryLabel(n, handout.to), drop: handout.keys }],
       chip: { glyph: null, word: `${pinLabel('combinedHandout')} off` },

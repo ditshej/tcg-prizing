@@ -110,7 +110,7 @@ test('switching the handout off lists the two pins and carries the drop', () => 
   assert.equal(notice.closable, true);
   assert.deepEqual(notice.lines, [
     'Handout is off, and 2 pinned values stayed.',
-    'Min boosters per rank, Served ranks — set by hand, so the participation boosters now come on top of them.',
+    'Min boosters per rank, Served ranks — still pinned, so the participation boosters now come on top of them.',
   ]);
   assert.deepEqual(notice.actions.map((action) => action.label), ['Drop all 2 and follow Weekend']);
   assert.deepEqual(notice.actions[0].drop, HANDOUT_PINS);
