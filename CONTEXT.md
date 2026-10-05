@@ -619,8 +619,7 @@ Tickets, Code, Kommentaren und Proben —, und kein Text zählt sie: #103 sagte
 Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
 `DistributionPlan` sind `conflict`, `overtake`, `orphanedReservation`,
 `unclaimedRemainder` und `combinedHandoutDepth`; ihr Name ist der Feldname,
-`unfit(plan)` ist ihre
-Disjunktion, und ihre Wege sucht `suggestions(plan)`:
+`unfit(plan)` ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
 - `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
   die den `RankPool` allein schon übersteigt.
 - `overtake` — die Überholung ohne Verlierer.

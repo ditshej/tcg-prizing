@@ -95,13 +95,6 @@ export function controlShown(key, settings) {
 }
 
 /**
- * The two pins the way out of a `combinedHandoutDepth` sets (`suggest.mjs`,
- * `handoutWayOut()`) — what switching `CombinedHandout` back off lists, where
- * they stand pinned (#103, E4).
- */
-export const HANDOUT_PINS = ['rankFloor', 'depth'];
-
-/**
  * The three controls that pick a **named rule** of the core instead of a
  * number (ADR 0003: a DefaultSet entry is a constant or such a choice), plus
  * the one that is a flag. None of them has bounds; their whole range is the
@@ -679,13 +672,17 @@ export function pinsWithout(pins, keys) {
 export const DROP_NOTES = {
   all: ({ many, typeTitle }) =>
     `${many ? 'Each one goes' : 'It goes'} back to what ${typeTitle} says.`,
-  carry: ({ many, typeTitle }) =>
-    `${many ? 'They' : 'It'} stayed behind when you switched. Following ${typeTitle} now means ` +
-    `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
-  handout: ({ many, typeTitle }) =>
-    `${many ? 'They' : 'It'} stayed when the handout went back off. Following ${typeTitle} now means ` +
-    `${many ? 'they take its' : 'it takes those'} values instead of yours.`,
+  carry: ({ many, typeTitle }) => stayedNote('stayed behind when you switched', { many, typeTitle }),
+  handout: ({ many, typeTitle }) => stayedNote('stayed when the handout went back off', { many, typeTitle }),
 };
+
+/** The two event reaches say the same thing and differ only in what left the pins standing. */
+function stayedNote(when, { many, typeTitle }) {
+  return (
+    `${many ? 'They' : 'It'} ${when}. Following ${typeTitle} now means ` +
+    `${many ? 'they take its' : 'it takes those'} values instead of yours.`
+  );
+}
 
 /** The one sentence no reach may drop: there is no undo, and it is said
  *  because #33 withdrew the session-wide undo that would have made the

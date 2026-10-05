@@ -93,7 +93,8 @@ Zwei Präzisierungen beim Bau (Maintainer, 2026-10-05, im Terminal):
   Weg (`combinedWayOut()`, ADR 0002, Nachtrag) bedient alle Ränge mit dem Floor,
   den der Pool trägt. Genau in diesem Fall fallen Reglerwert und gedeckelte Rate
   auseinander. Ein Reglerwert hätte daran also nichts geändert.
-- **Der Weg heraus steht als zweigliedriger Weg zwischen den einzelnen.** An der
+- **Der Weg heraus steht als zweigliedriger Weg zwischen den einzelnen**
+  (darum `Ergänzt durch ADR-0010.` an ADR 0002). An der
   Stelle der Tiefe ersetzt er unter `CombinedHandout` deren gewöhnliche Suche,
   weil dort keine kürzere Tiefe räumt. Das erweitert ADR 0002: Es ist ein
   entschiedener Weg über zwei Regler, kein gesuchter, und er steht auch dort, wo
@@ -108,5 +109,12 @@ Zwei Präzisierungen beim Bau (Maintainer, 2026-10-05, im Terminal):
   `test/suggest.test.mjs`. „CombinedHandout changes no proposal" (#60, AK 7)
   gilt nicht mehr. An seiner Stelle steht die Probe aus #103, nach der Kachel und
   Satz dieselbe Zahl nennen.
-- Oberfläche (Entscheid 4 und A) steht in `CONTEXT.md` unter `CombinedHandout`,
-  nicht hier.
+- **Die dritte Reichweite des Rückwegs bekommt einen zweiten Auslöser**
+  (Entscheid 4). Wer `CombinedHandout` wieder ausschaltet, sieht eine Meldung in
+  der Form der `CarryOverNotice`. Sie listet `rankFloor` und `depth`, soweit sie
+  gepinnt stehen, und ihr Knopf lässt sie fallen, mit derselben Rückfrage. Das
+  erweitert den Nachtrag (#26) zu ADR 0006, „Die Reichweite ist die Handlung,
+  nicht der Ort": Es ist dieselbe Handlung an einer dritten Stelle. Die Pins
+  bleiben dabei stehen, wie ADR 0006 es verlangt.
+- Die übrige Oberfläche (Entscheid A) steht in `CONTEXT.md` unter
+  `CombinedHandout`, nicht hier.

@@ -136,7 +136,13 @@ function depthWaysOut(settings, plan) {
  * way's own shape. Where both move, it is one way over two sliders in the
  * shape `combinedWayOut()` hands out, so the surface applies it the same way.
  * Nothing is offered where the result would still be unfit.
+ *
+ * `HANDOUT_PINS` names the two sliders this way sets, so the surface can list
+ * exactly these where switching the handout back off leaves them pinned (E4)
+ * without restating them.
  */
+export const HANDOUT_PINS = ['rankFloor', 'depth'];
+
 function handoutWayOut(settings, plan) {
   if (!plan.combinedHandoutDepth) return [];
   const floor = Math.max(plan.rankFloor, plan.participation.rate.booster);
@@ -146,7 +152,7 @@ function handoutWayOut(settings, plan) {
     changes.push({ key: 'rankFloor', value: floor, label: floorLabel(floor, plan.rankFloor) });
   }
   changes.push(everyRank(plan));
-  return [changes.length === 1 ? changes[0] : joined(changes)];
+  return [changes.length === 1 ? changes[0] : combinedWay(changes)];
 }
 
 /** The depth that serves every Player, as a change of a way out. */
@@ -155,7 +161,7 @@ function everyRank(plan) {
 }
 
 /** Several changes as one way out: their labels joined into the one the button carries. */
-function joined(changes) {
+function combinedWay(changes) {
   const label = changes
     .map((change, i) => (i === 0 ? change.label : change.label[0].toLowerCase() + change.label.slice(1)))
     .join(' and ');
@@ -479,7 +485,7 @@ export function combinedWayOut(plan) {
     });
   }
 
-  return joined(changes);
+  return combinedWay(changes);
 }
 
 /** The value of one slider nearest to `from` on the way to `to` at which the

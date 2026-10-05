@@ -494,7 +494,7 @@ test('the CarryOverNotice asks the same question as the type title, and closes w
   a.setSlider('rankFloor', 3);
   a.setType('weekend');
   a.refreshNotices();
-  a.dropCarried('[data-notice-carry]');
+  a.dropCarried('[data-notice-reach="carry"]');
   assert.equal(a.confirmDrop.reach, 'carry');
   assert.deepEqual(a.confirmDrop.keys, ['rankFloor']);
   a.applyDrop();
@@ -562,11 +562,11 @@ test('away from Details, the CarryOverNotice asks in a bubble of its own form, s
   a.setSlider('rankFloor', 3);
   a.setType('weekend');
   a.refreshNotices();
-  a.dropCarried('[data-notice-carry]');
+  a.dropCarried('[data-notice-reach="carry"]');
   assert.equal(a.confirmDrop.bubble, '[data-notice-drop]');
   a.cancelDrop();
   a.setPage('details');
-  a.dropCarried('[data-notice-carry]');
+  a.dropCarried('[data-notice-reach="carry"]');
   assert.equal(a.confirmDrop.bubble, '[data-drop-bubble]');
   assert.match(view('notices.php'), /data-notice-drop/);
 });

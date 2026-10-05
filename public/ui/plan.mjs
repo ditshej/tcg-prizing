@@ -32,6 +32,7 @@
 
 import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
+import { HANDOUT_PINS } from '../core/suggest.mjs';
 import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
 import { decode } from '../link/decode.mjs';
 import { addressFor, encode } from '../link/encode.mjs';
@@ -45,7 +46,6 @@ import { rankSegments } from './diagram.mjs';
 import {
   DEPTH_STEP_LABELS,
   DROP_BUBBLE,
-  HANDOUT_PINS,
   clampToBounds,
   controlShown,
   dropConfirmation,
@@ -1480,13 +1480,13 @@ export function planApp(seam = SEAM) {
      * The last time `CombinedHandout` was switched off, `{ keys }`: which of
      * the two pins its way out sets stood pinned at that moment (#103, E4).
      * An event like `carryOver`, recorded at the switch and not re-derived —
-     * a pin set after it is no pin the switch left behind. `handoutEvent`
-     * counts the switches, `noticeHandout` is the handout as the last fold
-     * step saw it.
+     * a pin set after it is no pin the switch left behind. `handoutOffCount`
+     * counts the switches the way `noticeEvent` counts the Set switches, and
+     * `handoutSeen` is the handout as the last fold step saw it.
      */
-    handoutOff: null,
-    handoutEvent: 0,
-    noticeHandout: null,
+    handoutSwitchedOff: null,
+    handoutOffCount: 0,
+    handoutSeen: null,
 
     /**
      * One step of the fold, after every change: the effect in
@@ -1509,17 +1509,17 @@ export function planApp(seam = SEAM) {
       // Switched off by any handling — the box, its reset, a drop, a Set
       // switch — is the one event, told apart here like the Set switch above.
       const handout = !!this.settings.combinedHandout;
-      if (this.noticeHandout === true && !handout) {
-        this.handoutEvent += 1;
-        this.handoutOff = { keys: HANDOUT_PINS.filter((key) => this.isPinned(key)) };
+      if (this.handoutSeen === true && !handout) {
+        this.handoutOffCount += 1;
+        this.handoutSwitchedOff = { keys: HANDOUT_PINS.filter((key) => this.isPinned(key)) };
       }
-      this.noticeHandout = handout;
+      this.handoutSeen = handout;
       const plan = this.plan;
       const next = foldStep(this.noticeFold, {
         plan,
         offer: searchesFor(plan).offer,
         event: this.noticeEvent,
-        handoutEvent: this.handoutEvent,
+        handoutEvent: this.handoutOffCount,
       });
       if (JSON.stringify(next) !== JSON.stringify(this.noticeFold)) this.noticeFold = next;
     },
@@ -1539,7 +1539,7 @@ export function planApp(seam = SEAM) {
         ways,
         offer,
         carry: this.carryOver,
-        handout: this.handoutLeft,
+        handout: this.handoutPinsLeft,
         fold: this.noticeFold,
       });
     },
@@ -1550,9 +1550,9 @@ export function planApp(seam = SEAM) {
      * while the handout is on again — the two pins are its way out then, not
      * left-overs.
      */
-    get handoutLeft() {
-      if (!this.handoutOff || this.settings.combinedHandout) return null;
-      const keys = this.handoutOff.keys.filter((key) => this.isPinned(key));
+    get handoutPinsLeft() {
+      if (!this.handoutSwitchedOff || this.settings.combinedHandout) return null;
+      const keys = this.handoutSwitchedOff.keys.filter((key) => this.isPinned(key));
       return keys.length ? { to: this.typeTitle, keys } : null;
     },
 
@@ -1633,7 +1633,7 @@ export function planApp(seam = SEAM) {
      * the notice lists, and the notice closes with the answer.
      */
     dropHandout(anchor) {
-      const left = this.handoutLeft;
+      const left = this.handoutPinsLeft;
       if (!left) return;
       this.askDrop({
         keys: left.keys,
@@ -1642,6 +1642,17 @@ export function planApp(seam = SEAM) {
         bubble: this.carryBubble,
         done: () => this.dismissNotice('handoutOff'),
       });
+    },
+
+    /**
+     * The drop button of an event notice, by the reach its action names: the
+     * CarryOverNotice's or the switched-off handout's. Anchored at the button
+     * itself, which carries its reach as `data-notice-reach`.
+     */
+    dropFromNotice(action) {
+      const anchor = `[data-notice-reach="${action.reach}"]`;
+      if (action.reach === 'handout') this.dropHandout(anchor);
+      else this.dropCarried(anchor);
     },
 
     /** Whether a control stands on the sheet at this stand (`controlShown()`). */

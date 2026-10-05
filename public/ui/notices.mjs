@@ -136,7 +136,6 @@ export function foldStep(
   const conflictNow = conflictKind(plan);
   const offerNow = offerKey(plan, offer, fold.offer.dismissed);
   const switched = event !== fold.carryOver.event;
-  const handoutSwitched = handoutEvent !== fold.handoutOff.event;
   return {
     conflict: {
       key: conflictNow,
@@ -147,14 +146,18 @@ export function foldStep(
       open: switched || reopens(fold.offer.key, offerNow) ? true : fold.offer.open,
       dismissed: fold.offer.dismissed,
     },
-    carryOver: switched
-      ? { event, open: true, dismissed: false }
-      : fold.carryOver,
-    handoutOff: handoutSwitched
-      ? { event: handoutEvent, open: true, dismissed: false }
-      : fold.handoutOff,
+    carryOver: eventStep(fold.carryOver, event),
+    handoutOff: eventStep(fold.handoutOff, handoutEvent),
   };
 }
+
+/** The record of an event notice: a count it has not seen yet is a new event, and opens it. */
+function eventStep(record, event) {
+  return event === record.event ? record : { event, open: true, dismissed: false };
+}
+
+/** The notices that report an event; a ✕ closes them until the next one. */
+const EVENT_NOTICES = new Set(['carryOver', 'handoutOff']);
 
 /** Minimized: the notice shrinks to its chip. The chip only opens again. */
 export function minimize(fold, id) {
@@ -168,14 +171,15 @@ export function expand(fold, id) {
 
 /**
  * The ✕. The Offer remembers **which** offer was turned down, by its content;
- * the CarryOverNotice is gone until the next switch, and the notice of a
- * switched-off handout until the handout is switched off again. The ConflictNotice has no
- * ✕ — its presence is the statement (ADR 0002) — so there is nothing to
- * dismiss and the record comes back unchanged.
+ * an event notice is gone until its next event — the CarryOverNotice until the
+ * next switch, the notice of a switched-off handout until the handout is
+ * switched off again. The ConflictNotice has no ✕ — its presence is the
+ * statement (ADR 0002) — so there is nothing to dismiss and the record comes
+ * back unchanged.
  */
 export function dismiss(fold, id, offer = null) {
   if (id === 'offer') return { ...fold, offer: { ...fold.offer, key: null, dismissed: offer?.key ?? null } };
-  if (id === 'carryOver' || id === 'handoutOff') return { ...fold, [id]: { ...fold[id], dismissed: true } };
+  if (EVENT_NOTICES.has(id)) return { ...fold, [id]: { ...fold[id], dismissed: true } };
   return fold;
 }
 
@@ -377,7 +381,7 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, hando
         `${n} pinned ${dropNoun(n)} stayed behind.`,
         `${names} — set by hand, so ${n > 1 ? 'they do' : 'it does'} not follow ${carry.to}.`,
       ],
-      actions: [{ label: carryLabel(n, carry.to), drop: carry.keys }],
+      actions: [{ label: carryLabel(n, carry.to), drop: carry.keys, reach: 'carry' }],
       chip: { glyph: null, word: `${n} kept` },
     });
   }
@@ -398,7 +402,7 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, hando
         `${pinLabel('combinedHandout')} is off, and ${n} pinned ${dropNoun(n)} stayed.`,
         `${names} — still pinned, so the participation boosters now come on top of ${n > 1 ? 'them' : 'it'}.`,
       ],
-      actions: [{ label: carryLabel(n, handout.to), drop: handout.keys }],
+      actions: [{ label: carryLabel(n, handout.to), drop: handout.keys, reach: 'handout' }],
       chip: { glyph: null, word: `${pinLabel('combinedHandout')} off` },
     });
   }

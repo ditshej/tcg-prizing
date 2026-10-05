@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { unfit } from '../public/core/distribute.mjs';
-import { controlShown, dropConfirmation, HANDOUT_PINS } from '../public/ui/controls.mjs';
+import { HANDOUT_PINS } from '../public/core/suggest.mjs';
+import { controlShown, dropConfirmation } from '../public/ui/controls.mjs';
 import { conflictKind } from '../public/ui/notices.mjs';
 import { planApp } from '../public/ui/plan.mjs';
 
@@ -120,8 +121,9 @@ test('it solves nothing by itself — the pins stand until the drop is confirmed
   const a = switchedBack();
   assert.equal(a.isPinned('rankFloor'), true);
   assert.equal(a.isPinned('depth'), true);
-  a.dropHandout('[data-notice-handout]');
+  a.dropFromNotice(open(a, 'handoutOff').actions[0]);
   assert.equal(a.confirmDrop.reach, 'handout');
+  assert.equal(a.confirmDrop.anchor, '[data-notice-reach="handout"]');
   assert.deepEqual(a.confirmDrop.keys, ['rankFloor', 'depth']);
   assert.equal(a.isPinned('rankFloor'), true, 'asking drops nothing');
   a.applyDrop();
@@ -163,10 +165,20 @@ test('it lists only what still stands, goes while the handout is on again, and i
   assert.equal(open(b, 'handoutOff'), undefined);
 });
 
-test('the notice\'s button calls the handout drop, at its own anchor', () => {
+test('an event notice\'s button carries its reach, and one handler drops by it', () => {
   const markup = view('notices.php');
-  assert.match(markup, /:data-notice-handout="action\.drop && notice\.id === 'handoutOff'/);
-  assert.match(markup, /notice\.id === 'handoutOff' \? dropHandout\('\[data-notice-handout\]'\)/);
+  assert.match(markup, /:data-notice-reach="action\.reach \?\? null"/);
+  assert.match(markup, /: dropFromNotice\(action\)"/);
+  assert.doesNotMatch(markup, /notice\.id ===/, 'the markup no longer switches on the notice id');
+
+  const a = switchedBack();
+  assert.equal(open(a, 'handoutOff').actions[0].reach, 'handout');
+  a.setType('weekly');
+  a.refreshNotices();
+  const carried = open(a, 'carryOver').actions[0];
+  assert.equal(carried.reach, 'carry');
+  a.dropFromNotice(carried);
+  assert.equal(a.confirmDrop.reach, 'carry');
 });
 
 /* ── The rank total (E6) ───────────────────────────────────────────────── */
