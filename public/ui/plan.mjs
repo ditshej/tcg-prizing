@@ -916,7 +916,8 @@ export function planApp(seam = SEAM) {
      * 60 px floor (#129, run 15, K3/K4). It is an extra; the tiles come
      * first. Neither the fold nor the bar decides this on its own: a flat
      * stage tall enough keeps it with the bar open, a low wide window loses it.
-     * The rank total leaves with it (prototype `rankTotal()` in the diagram block).
+     * The rank total does not leave with it (#132): the sum check has three
+     * places on every stage.
      */
     get diagramShown() {
       return !this.fullscreen && this.diagramFits;

@@ -500,7 +500,13 @@ seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
 delegiert): es steht nur, wo nach den zwei Kachelreihen und der gemessenen
 Überlappung einer offenen Verlosungsleiste noch sein Boden von 60 bleibt —
 `Rest − Überlappung − 113 ≥ 60`, der Rest gerechnet, als stünde es —, und ist sonst
-weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. Die Faltung selbst
+weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. Das **Rangtotal geht
+nicht mit ihm** (#132): Die Summenprobe hat auf jeder Bühne drei Stellen
+(Gesamtzahl `Booster` · Handout-Total · Rangtotal), und ohne Diagramm bleibt das
+Rangtotal als eigene Zeile unter dem Raster stehen. Es steckt im festen Teil (178),
+kostet also keine Kachelreihe. Unter einer offenen Verlosungsleiste liegt es,
+wie die Rangmeldung, unter der Leiste: Die Summenprobe liest man bei
+geschlossener Leiste (Maintainer, 2026-10-05). Die Faltung selbst
 rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält
 seine 178 auch bei 320–340 Breite, weil die Ausgabezeile des Kopfs nicht umbricht,
 sondern seitlich scrollt (K6, schliesst A10).

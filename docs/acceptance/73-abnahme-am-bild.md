@@ -431,7 +431,7 @@ Maintainer 2026-10-03; die Definition von „genug Platz" hat er an die Session 
 
 - **Regel:** Das Diagramm steht, wenn `Rest − Überlappung der offenen Leiste − 113 ≥ 60` gilt. Den Rest
   rechnet der Messrand so, als stünde das Diagramm (`diagramFits()`). Sonst ist das Diagramm weg, und die
-  Rangsumme geht mit ihm. Die Rücknahmeliste ist flach und `cramped` eine seitlich scrollende Zeile mit
+  Rangsumme geht mit ihm (⚠︎ überholt durch #132: sie bleibt, s. „Lauf 16 · #132“). Die Rücknahmeliste ist flach und `cramped` eine seitlich scrollende Zeile mit
   Pfeilen `‹ ›` (je eine Pille). Der Plan-Kopf bricht nicht um.
 - **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8795 -t public` aus `tcg-prizing-129`, Zweig
   `feat/129-flache-buehne-blaettert`. Chromium über Playwright (MCP).
@@ -517,6 +517,58 @@ alle rot.
   (77,1). Nach dem Wurf bleiben 5,6, der Treffer ist zu 16 von 54 px zu sehen. Mehr als „mind. ein
   wenig“ gibt diese Bühne mit fester Leiste nicht her. Die Seite scrollt dort (K4) und lässt die Kacheln
   hochziehen.
+
+## Lauf 16 · #132 — das Rangtotal bleibt, wenn das Diagramm weicht
+
+Entscheid: Body von #132 (Maintainer, 2026-10-04): Die Summenprobe hat auf jeder Bühne drei Stellen.
+Die Stelle ohne Diagramm stand nicht im Prototyp (`rankTotal()` nur über den Balken, `fsContent()` ohne).
+Der Maintainer hat sie am 2026-10-05 im Terminal entschieden: **die eigene Zeile unter dem Raster bleibt
+stehen**, und **unter einer offenen Leiste darf sie liegen**, wie die Rangmeldung. Die Summenprobe
+liest man bei geschlossener Leiste.
+
+- **Bau:** `x-show` des Rangtotals von `diagramShown` auf `!fullscreen`. Der Messrand führt die letzte
+  Höhe des Rangtotals nicht mehr nach (`lastHeight` entfällt), nur die Lücke des Diagramms zählt weiter,
+  als stünde es.
+- **PHP:** 8.3.33. Server `php -S localhost:8796 -t public` (Zweig `feat/132-rangtotal-bleibt`), zum
+  Vergleich `main` auf 8797. Chromium über Playwright (MCP), hell. Das Layout ist hell und dunkel
+  gleich (s. oben).
+- **Adresse:** `?v=1&game=onepiece&type=weekly&winnerPacks=16`, Summenprobe dort 96 · 64 · 32.
+- **Bilder:** `review/73-bilder/lauf16-812x375-light-raffle.png`, `lauf16-812x348-light-plain.png`,
+  `lauf16-435x380-light-plain.png` (gitignoriert).
+- *frei* wie oben (Oberkante Leiste − 10). *Fenster* = Höhe von `.plan-grid`.
+
+### Soll und Ist
+
+Soll: Ohne Diagramm ist das Rangtotal sichtbar, bei geschlossener Leiste ohne Scrollen. Das Fenster hält
+zwei Reihen (113), ausser in der Ausnahme aus #73 K4. Wo das Diagramm steht, ändert sich nichts.
+
+| Leinwand | Leiste | Diagramm | Fenster `main` → #132 | Rangtotal (y) | sichtbar |
+|---|---|---|---|---|---|
+| 812 × 348 | zu | weg | 203,1 → **180,1** | 298–313 | ja (`lauf16-812x348-light-plain.png`) |
+| 1280 × 348 | zu | weg | 203,1 → **180,1** | 298–313 | ja |
+| 812 × 340 / 320 / 300 | zu | weg | — → 172,1 / 152,1 / 132,1 | 290 / 270 / 250 | ja |
+| 436 × 330 / 300 | zu | weg | — → 162,1 / 132,1 | 280 / 250 | ja |
+| 435 × 380 (`cramped`) | zu | weg | 113 → 113 | 230,9–245,9 | ja |
+| 812 × 349 | zu | 60,1 | 113 → 113 | 299–314 | ja, wie bisher |
+| 812 × 375 | offen / 1. Wurf | weg | frei 128,1 / 56,6 (unverändert) | 325–340 | **unter der Leiste** (`lauf16-812x375-light-raffle.png`) |
+| alle zwölf Leinwände aus „Lauf 15 · Nachbau“ | zu / offen / 1. Wurf | wie dort | Diagramm und frei **unverändert** | — | zu: ja; offen: unter der Leiste |
+| 393 × 830, 812 × 375, 435 × 380 | Vollbild | weg | 67,9–795 / –340 / –345 (unverändert) | — | nein, wie `fsContent()` |
+
+Über der offenen Leiste kostet das Rangtotal nichts: es liegt unter ihr, also zählt es nicht gegen
+*frei*. Bei geschlossener Leiste ohne Diagramm bekommt das Fenster seine 23 px (15 Zeile + 8 Lücke)
+nicht mehr zurück. Gerechnet war mit ihnen nie: Das Rangtotal steckt im festen Teil (178) der Ersthöhe 399.
+
+**Zwei Reihen halten überall**, das Fenster fällt nirgends unter 113. Der Preis liegt auf sehr niedrigen
+flachen Bühnen: Die Höhe, ab der die Plan-Seite um ein paar Pixel scrollt, steigt von **257** (`main`:
+257 → 1 px, 250 → 8 px) auf **280** (#132: 280 → 1 px, 270 → 11 px, 250 → 31 px, gleich bei 436 und
+600 Breite). Darüber scrollt nichts. Unter 281 Höhe liegt das Rangtotal also erst nach einem Scroll von
+höchstens der Überlaufhöhe im Bild, die Rangmeldung ebenso. Ob echte Geräte so niedrig werden, gehört zu
+A6 (#121).
+
+**Tests:** `test/ui-flat-raffle.test.mjs`, „the rank total stays when the diagram goes, and leaves only
+with fullscreen (#132)“, wertet das `x-show` des Markups gegen die Komponente aus: Diagramm da, weg, Leiste
+offen, Vollbild, zurück. Zwei Mutationen (`diagramShown` zurück, `true` statt `!fullscreen`) gingen rot.
+`node --test`: 580 grün.
 
 ## Abnahmekriterien von #73
 
