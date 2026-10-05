@@ -1787,7 +1787,9 @@ body {
   color: light-dark(#6b3f80, #c8aee4);
 }
 
-.notice-carryOver {
+/* The notice of a switched-off handout is the CarryOverNotice's form (#103, E4). */
+.notice-carryOver,
+.notice-handoutOff {
   background: light-dark(#f0e4d1, #2a2620);
   color: light-dark(#241c12, #f2ece0);
 }
@@ -1890,7 +1892,8 @@ body {
   color: light-dark(#8a5f9c, #a888c8);
 }
 
-.notice-chip-carryOver {
+.notice-chip-carryOver,
+.notice-chip-handoutOff {
   color: light-dark(#8c5a2b, #c9992e);
 }
 

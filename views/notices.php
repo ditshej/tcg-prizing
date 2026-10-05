@@ -2,9 +2,10 @@
 /**
  * The NoticeStack (#68): a layer over the whole app that covers and pushes
  * nothing, with its three inhabitants — `ConflictNotice`, `Offer`,
- * `CarryOverNotice`. It is required by the app root and by no page, so it
- * belongs to none of them: a chip survives every page switch because the
- * layer it lies on never left (CONTEXT.md, `NoticeStack`).
+ * `CarryOverNotice` — and, in the CarryOverNotice's form, the notice a
+ * switched-off `CombinedHandout` raises (#103). It is required by the app root
+ * and by no page, so it belongs to none of them: a chip survives every page
+ * switch because the layer it lies on never left (CONTEXT.md, `NoticeStack`).
  *
  * Layer and surface are two statements. The layer is everything here; the
  * surface of an open notice is as wide as the room the DistributionPlan takes
@@ -44,10 +45,10 @@
         </div>
         <div class="notice-actions" x-show="notice.actions.length">
           <template x-for="(action, i) in notice.actions" :key="i">
-            <button type="button" class="notice-action" :data-notice-carry="action.drop ? '' : null"
+            <button type="button" class="notice-action" :data-notice-reach="action.reach ?? null"
                     @click="action.way ? applyWayOut(action.way)
                           : action.offer ? acceptOffer(action.offer)
-                          : dropCarried('[data-notice-carry]')"
+                          : dropFromNotice(action)"
                     x-text="action.label"></button>
           </template>
         </div>

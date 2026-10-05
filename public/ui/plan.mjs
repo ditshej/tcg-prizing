@@ -32,6 +32,7 @@
 
 import { resolveSettings } from '../core/defaults.mjs';
 import { distribute } from '../core/distribute.mjs';
+import { HANDOUT_PINS } from '../core/suggest.mjs';
 import { CURVES, DEPTH_STEPS } from '../core/rules.mjs';
 import { decode } from '../link/decode.mjs';
 import { addressFor, encode } from '../link/encode.mjs';
@@ -46,6 +47,7 @@ import {
   DEPTH_STEP_LABELS,
   DROP_BUBBLE,
   clampToBounds,
+  controlShown,
   dropConfirmation,
   dropNoun,
   effectiveValue,
@@ -396,10 +398,6 @@ export function planApp(seam = SEAM) {
     /** The chosen step's ratio, for the sentence under the shapes. */
     get curveRatio() {
       return CURVES.find((step) => step.id === this.settings.curve)?.ratio ?? 0;
-    },
-
-    get rankTotalLabel() {
-      return this.plan.combinedHandout ? 'on the tiles' : 'to the ranks';
     },
 
     get rankTotalBooster() {
@@ -1479,6 +1477,18 @@ export function planApp(seam = SEAM) {
     noticeBase: null,
 
     /**
+     * The last time `CombinedHandout` was switched off, `{ keys }`: which of
+     * the two pins its way out sets stood pinned at that moment (#103, E4).
+     * An event like `carryOver`, recorded at the switch and not re-derived —
+     * a pin set after it is no pin the switch left behind. `handoutOffCount`
+     * counts the switches the way `noticeEvent` counts the Set switches, and
+     * `handoutSeen` is the handout as the last fold step saw it.
+     */
+    handoutSwitchedOff: null,
+    handoutOffCount: 0,
+    handoutSeen: null,
+
+    /**
      * One step of the fold, after every change: the effect in
      * `views/notices.php` runs it whenever the plan or the base moves, which
      * is Alpine's equivalent of the prototype's `render()` reading the keys
@@ -1496,8 +1506,21 @@ export function planApp(seam = SEAM) {
         this.carryOver = { to: this.typeTitle, keys: this.pinnedKeys };
       }
       this.noticeBase = base;
+      // Switched off by any handling — the box, its reset, a drop, a Set
+      // switch — is the one event, told apart here like the Set switch above.
+      const handout = !!this.settings.combinedHandout;
+      if (this.handoutSeen === true && !handout) {
+        this.handoutOffCount += 1;
+        this.handoutSwitchedOff = { keys: HANDOUT_PINS.filter((key) => this.isPinned(key)) };
+      }
+      this.handoutSeen = handout;
       const plan = this.plan;
-      const next = foldStep(this.noticeFold, { plan, offer: searchesFor(plan).offer, event: this.noticeEvent });
+      const next = foldStep(this.noticeFold, {
+        plan,
+        offer: searchesFor(plan).offer,
+        event: this.noticeEvent,
+        handoutEvent: this.handoutOffCount,
+      });
       if (JSON.stringify(next) !== JSON.stringify(this.noticeFold)) this.noticeFold = next;
     },
 
@@ -1516,8 +1539,21 @@ export function planApp(seam = SEAM) {
         ways,
         offer,
         carry: this.carryOver,
+        handout: this.handoutPinsLeft,
         fold: this.noticeFold,
       });
+    },
+
+    /**
+     * What the notice of a switched-off handout lists: the pins the switch
+     * left, as far as they still stand, and the type a drop follows. Nothing
+     * while the handout is on again — the two pins are its way out then, not
+     * left-overs.
+     */
+    get handoutPinsLeft() {
+      if (!this.handoutSwitchedOff || this.settings.combinedHandout) return null;
+      const keys = this.handoutSwitchedOff.keys.filter((key) => this.isPinned(key));
+      return keys.length ? { to: this.typeTitle, keys } : null;
     },
 
     minimizeNotice(id) {
@@ -1588,6 +1624,40 @@ export function planApp(seam = SEAM) {
         bubble: this.carryBubble,
         done: () => this.dismissNotice('carryOver'),
       });
+    },
+
+    /**
+     * The button of the notice a switched-off handout raises (#103, E4): the
+     * same third reach of the way back at a second trigger, "keine neue
+     * Mechanik". It asks the same question in the same bubble, over the pins
+     * the notice lists, and the notice closes with the answer.
+     */
+    dropHandout(anchor) {
+      const left = this.handoutPinsLeft;
+      if (!left) return;
+      this.askDrop({
+        keys: left.keys,
+        anchor,
+        reach: 'handout',
+        bubble: this.carryBubble,
+        done: () => this.dismissNotice('handoutOff'),
+      });
+    },
+
+    /**
+     * The drop button of an event notice, by the reach its action names: the
+     * CarryOverNotice's or the switched-off handout's. Anchored at the button
+     * itself, which carries its reach as `data-notice-reach`.
+     */
+    dropFromNotice(action) {
+      const anchor = `[data-notice-reach="${action.reach}"]`;
+      if (action.reach === 'handout') this.dropHandout(anchor);
+      else this.dropCarried(anchor);
+    },
+
+    /** Whether a control stands on the sheet at this stand (`controlShown()`). */
+    controlShown(key) {
+      return controlShown(key, this.settings);
     },
 
     /**

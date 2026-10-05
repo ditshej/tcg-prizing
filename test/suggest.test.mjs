@@ -181,6 +181,7 @@ test('player count, Booster rate and Display size never appear as a way out', ()
 
 /** A suggestion accepted: the slider it names set to the value it names. */
 function accepted(settings, s) {
+  if (s.changes) return s.changes.reduce(accepted, settings);
   if (s.key !== 'displays') return { ...settings, [s.key]: s.value };
   const d = (settings.displays ?? []).slice();
   while (d.length < s.rank) d.push(0);
@@ -374,9 +375,15 @@ test('over a grid of stands the carried sliders recompute the plan and every way
   // 292 of 384 stands are unfit and they yield 164 entries between them: most
   // unfit stands here have no individually walkable way out, which is the
   // state ADR 0002 describes and not a gap in the search.
+  //
+  // #103 moved the last two, on purpose (292 → 317, 164 → 145): under
+  // CombinedHandout a depth short of the players is unfit by itself
+  // (`combinedHandoutDepth`), and there the depth slot offers the one way that
+  // serves everyone instead of the floor and reservation ways that used to
+  // clear the other sources one by one.
   assert.equal(stands, 384);
-  assert.equal(unfitStands, 292);
-  assert.equal(entries, 164);
+  assert.equal(unfitStands, 317);
+  assert.equal(entries, 145);
 });
 
 /**
@@ -431,6 +438,11 @@ test('an unfit plan always answers null — offerFor and ConflictNotice never me
  *
  * What it bites: with the guard removed, 70 of the 3108 unfit stands come back
  * carrying an Offer.
+ *
+ * #103 moved all three, on purpose (3108 → 3748, 1404 → 764, 532 → 284): the
+ * Weekend sheet serves the top 8, and under CombinedHandout a depth short of
+ * the players is unfit (`combinedHandoutDepth`), so the `combinedHandout`
+ * half of the raster went unfit wherever it was not already.
  */
 test('over a raster of unfit stands, offerFor answers null every time', () => {
   let unfitStands = 0;
@@ -457,9 +469,9 @@ test('over a raster of unfit stands, offerFor answers null every time', () => {
       }
     }
   }
-  assert.equal(unfitStands, 3108);
-  assert.equal(fitStands, 1404);
-  assert.equal(fitOffers, 532, 'the fit half carries Offers — the raster is not null everywhere');
+  assert.equal(unfitStands, 3748);
+  assert.equal(fitStands, 764);
+  assert.equal(fitOffers, 284, 'the fit half carries Offers — the raster is not null everywhere');
 });
 
 /**
@@ -560,33 +572,63 @@ test('a candidate is withheld where it would make the DisplayReservation vector 
 });
 
 /**
- * CombinedHandout shifts the participation rate into every row uniformly and
- * must move no proposal (#60's acceptance criterion) — the measured Weekend
- * 32 scenario above, both ways.
+ * The probe of #103: `Weekend`, 32 Players, CombinedHandout on. The plan as it
+ * opens serves the top 8 and is unfit (`combinedHandoutDepth`); its one way out
+ * serves all 32 — the floor of 2 already covers the participation rate of 1,
+ * so only the depth moves. On the plan after it, Rank 1's tile shows 20, and
+ * the Offer names that 20 — the number the tile shows is the number the
+ * sentence says (E6). Accepting it gives Rank 1 the Display and nothing on top:
+ * „wenn der Winner ein Display kriegt, dann kriegt er einfach ein Display".
  */
-test('CombinedHandout changes no proposal', () => {
-  const off = offerFor(distribute(settingsFor('weekend', { combinedHandout: false })));
-  const on = offerFor(distribute(settingsFor('weekend', { combinedHandout: true })));
-  assert.ok(off, 'the comparison is only meaningful where there is an Offer to compare');
-  assert.deepEqual(on, off);
+test('under CombinedHandout the tile shows the number the Offer names (#103)', () => {
+  const opened = settingsFor('weekend', { combinedHandout: true });
+  const plan = distribute(opened);
+  assert.deepEqual(plan.combinedHandoutDepth, { depth: 8, players: 32 });
+  assert.deepEqual(suggestions(plan), [{ key: 'depth', value: 32, label: 'Serve 32 ranks' }]);
+
+  const served = distribute(accepted(opened, suggestions(plan)[0]));
+  assert.equal(unfit(served), false);
+  const offer = offerFor(served);
+  assert.equal(offer.rank, 1);
+  assert.equal(offer.from, served.rows[0].booster, 'tile and sentence say the same number');
+  assert.deepEqual(offer, {
+    rank: 1,
+    value: 1,
+    from: 20,
+    to: 24,
+    also: [
+      { rank: 2, before: 10, after: 8 },
+      { rank: 3, before: 5, after: 4 },
+      { rank: 4, before: 4, after: 3 },
+    ],
+    key: '1:1:20',
+  });
+  for (const moved of offer.also) assert.equal(moved.before, served.rows[moved.rank - 1].booster);
+
+  const after = distribute({ ...accepted(opened, suggestions(plan)[0]), displays: [1] });
+  assert.equal(after.rows[0].booster, 24, 'the Display and no participation Booster on top');
 });
 
 /**
  * A sweep, the same spirit as the equivalence sweep above: 752 stands over
  * `players` 2…48, `displaySize` ∈ {1, 4, 8, 24}, `rankFloor` ∈ {0, 2} and
- * `combinedHandout` both ways. Every one of these 752 stands happens to be
- * fit — the tests above and `UNFIT_STATES` are where the unfit states are
- * exercised, not this sweep — so what it checks is the shape of every Offer
- * that comes back: the key names its content, accepting it never lets the
- * vector rise, accepting it always clears, and toggling `combinedHandout` on
- * the same stand never changes it.
+ * `combinedHandout` both ways. A `combinedHandout` stand is swept as it stands
+ * after its way out (#103): as the sheet opens it serves the top 8 and is
+ * unfit, so the sweep takes the way the ConflictNotice offers first. Every
+ * stand is then fit — the tests above and `UNFIT_STATES` are where the unfit
+ * states are exercised, not this sweep — so what it checks is the shape of
+ * every Offer that comes back: the key names its content, accepting it never
+ * lets the vector rise, accepting it always clears, and its numbers are the
+ * numbers on the tiles, in both branches.
  *
  * The two counts were read off the core at #60 and follow the rule the
  * equivalence sweep above and `test/sum-rule.test.mjs` both set out: carried
  * forward, never adjusted. When one moves, the question is whether the core
- * changed on purpose, not which number makes the line green.
+ * changed on purpose, not which number makes the line green. #103 moved the
+ * Offer count on purpose (516 → 522): until then the toggle changed no Offer
+ * by construction, and now the combined half is a different plan.
  */
-test('over a sweep, every Offer clears, never rises the vector, and ignores CombinedHandout', () => {
+test('over a sweep, every Offer clears, never rises the vector, and names the tiles\' numbers', () => {
   const accept = (settings, off) => {
     const d = (settings.displays ?? []).slice();
     while (d.length < off.rank) d.push(0);
@@ -599,9 +641,11 @@ test('over a sweep, every Offer clears, never rises the vector, and ignores Comb
     for (const displaySize of [1, 4, 8, 24]) {
       for (const rankFloor of [0, 2]) {
         for (const combinedHandout of [false, true]) {
-          const settings = settingsFor('weekend', { players, displaySize, rankFloor, combinedHandout });
-          const plan = distribute(settings);
+          let settings = settingsFor('weekend', { players, displaySize, rankFloor, combinedHandout });
           const where = JSON.stringify({ players, displaySize, rankFloor, combinedHandout });
+          const opened = distribute(settings);
+          if (opened.combinedHandoutDepth) settings = accepted(settings, waysOutOf(opened)[0]);
+          const plan = distribute(settings);
           stands++;
           assert.equal(unfit(plan), false, `stand ${where} is unfit — the sweep no longer covers only fit stands`);
 
@@ -609,22 +653,148 @@ test('over a sweep, every Offer clears, never rises the vector, and ignores Comb
           if (!off) continue;
           offers++;
           assert.equal(off.key, `${off.rank}:${off.value}:${off.from}`, `key does not carry the content at ${where}`);
+          assert.equal(off.from, plan.rows[off.rank - 1].booster, `the Offer does not name the tile's number at ${where}`);
 
-          const accepted = accept(settings, off);
-          const d = accepted.displays.map((v) => Math.max(0, Math.trunc(v)));
+          const taken = accept(settings, off);
+          const d = taken.displays.map((v) => Math.max(0, Math.trunc(v)));
           for (let i = 1; i < d.length; i++) {
             assert.ok(d[i] <= d[i - 1], `Offer ${JSON.stringify(off)} makes the vector rise at ${where}`);
           }
-          assert.equal(unfit(distribute(accepted)), false, `Offer ${JSON.stringify(off)} does not clear at ${where}`);
-
-          const other = offerFor(distribute({ ...settings, combinedHandout: !combinedHandout }));
-          assert.deepEqual(other, off, `CombinedHandout changed the Offer at ${where}`);
+          const probe = distribute(taken);
+          assert.equal(unfit(probe), false, `Offer ${JSON.stringify(off)} does not clear at ${where}`);
+          for (const moved of off.also) {
+            assert.equal(moved.before, plan.rows[moved.rank - 1].booster, `'also' before is no tile at ${where}`);
+            assert.equal(moved.after, probe.rows[moved.rank - 1].booster, `'also' after is no tile at ${where}`);
+          }
         }
       }
     }
   }
   assert.equal(stands, 752);
-  assert.equal(offers, 516);
+  assert.equal(offers, 522);
+});
+
+/* ── The way out of a `combinedHandoutDepth` (#103, ADR 0010) ─────────── */
+
+test('the way out of a combinedHandoutDepth raises the floor to the rate and serves every Player', () => {
+  // Weekend at 32, the floor pulled down to 0: the participation rate of 1 is
+  // what every Player had before, so the floor goes back up to it.
+  const plan = distribute(settingsFor('weekend', { combinedHandout: true, rankFloor: 0 }));
+  assert.deepEqual(plan.combinedHandoutDepth, { depth: 8, players: 32 });
+  assert.deepEqual(suggestions(plan), [
+    {
+      key: 'combined',
+      changes: [
+        { key: 'rankFloor', value: 1, label: 'Floor up to 1' },
+        { key: 'depth', value: 32, label: 'Serve 32 ranks' },
+      ],
+      label: 'Floor up to 1 and serve 32 ranks',
+    },
+  ]);
+});
+
+test('the floor is only raised — one above the rate stays where it is', () => {
+  const plan = distribute(settingsFor('weekend', { combinedHandout: true, rankFloor: 2 }));
+  assert.equal(plan.participation.rate.booster, 1);
+  assert.deepEqual(suggestions(plan), [{ key: 'depth', value: 32, label: 'Serve 32 ranks' }]);
+});
+
+test('the floor follows the rate the plan computed with, not a pinned slider over its wall', () => {
+  // `participationBooster` pinned at 6, `boosterRate` lowered to 1 under it:
+  // the core takes 1 per Player, and that 1 is the floor (maintainer,
+  // 2026-10-05). A floor of 6 would need six times the pool. A Display of
+  // size 1 settles Rank 1, so no lead is owed and the pool of 16 carries
+  // the floor of 1 over the 15 Ranks below it.
+  const plan = distribute(
+    settingsFor('weekend', {
+      combinedHandout: true, rankFloor: 0, boosterRate: 1, participationBooster: 6, players: 16, displays: [1], displaySize: 1,
+    }),
+  );
+  assert.equal(plan.participation.rate.booster, 1);
+  const [way] = suggestions(plan);
+  assert.deepEqual(way.changes.map((c) => [c.key, c.value]), [['rankFloor', 1], ['depth', 16]]);
+});
+
+/**
+ * Where the rate is the whole `boosterRate`, a floor of the rate over every
+ * Player leaves nothing for the Rank 1 lead, so the depth slot's way does not
+ * clear and is not offered. The way over several sliders is what remains, and
+ * it serves everyone with the floor it can carry (`combinedWayOut()`).
+ */
+test('a rate that is the whole Booster rate cannot become the floor — the combined way serves everyone instead', () => {
+  const plan = distribute(
+    settingsFor('weekend', { combinedHandout: true, rankFloor: 2, boosterRate: 1, participationBooster: 6, players: 16 }),
+  );
+  assert.equal(plan.participation.rate.booster, 1);
+  assert.deepEqual(suggestions(plan), []);
+  assert.deepEqual(waysOutOf(plan), [
+    {
+      key: 'combined',
+      changes: [
+        { key: 'rankFloor', value: 0, label: 'Floor down to 0' },
+        { key: 'depth', value: 16, label: 'Serve 16 ranks' },
+      ],
+      label: 'Floor down to 0 and serve 16 ranks',
+    },
+  ]);
+});
+
+test('apart, a short depth needs no such way — the depth search is the plain one', () => {
+  const plan = distribute(settingsFor('weekend', { combinedHandout: false }));
+  assert.equal(plan.combinedHandoutDepth, null);
+  assert.deepEqual(suggestions(plan), []);
+});
+
+/**
+ * Over a grid of `combinedHandoutDepth` stands: every way the ConflictNotice
+ * offers clears, serves every Player, and leaves every Rank outside the
+ * settled prefix at least at the RankFloor — the settled ones stand on their
+ * Displays (CONTEXT.md, `RankFloor`). Where the depth slot's own way is
+ * offered, its floor is the rate, or the floor where that was higher.
+ *
+ * A way exists wherever there are Boosters at all: at a `boosterRate` of 0 the
+ * list is empty, the one case `NO_WAY_OUT` speaks for (`notices.mjs`).
+ */
+test('over a grid, every way out of a combinedHandoutDepth leaves every unsettled Rank on the floor', () => {
+  let stands = 0;
+  let handoutWays = 0;
+  for (const players of [5, 8, 16, 32]) {
+    for (const boosterRate of [0, 1, 3]) {
+      for (const participationBooster of [0, 1, 2, 6]) {
+        for (const rankFloor of [0, 1, 4]) {
+          for (const displays of [[], [1], [2, 1]]) {
+            for (const displaySize of [1, 8, 24]) {
+              const input = settingsFor('weekend', {
+                players, boosterRate, participationBooster, rankFloor, displays, displaySize, combinedHandout: true,
+              });
+              const plan = distribute(input);
+              if (!plan.combinedHandoutDepth) continue;
+              stands++;
+              const where = JSON.stringify({ players, boosterRate, participationBooster, rankFloor, displays, displaySize });
+              const ways = waysOutOf(plan);
+              assert.equal(ways.length > 0, boosterRate > 0, `ways out at ${where}: ${ways.length}`);
+              for (const way of ways) {
+                const after = distribute(accepted(input, way));
+                assert.equal(unfit(after), false, `'${way.label}' does not clear at ${where}`);
+                assert.equal(after.depth, players, `'${way.label}' does not serve everyone at ${where}`);
+                for (const row of after.rows) {
+                  if (row.settled) continue;
+                  assert.ok(row.booster >= after.rankFloor, `'${way.label}' leaves rank ${row.rank} under the floor at ${where}`);
+                }
+              }
+              const own = suggestions(plan).find((way) => (way.changes ?? [way]).some((c) => c.key === 'depth'));
+              if (own) {
+                handoutWays++;
+                const floor = (own.changes ?? []).find((c) => c.key === 'rankFloor')?.value ?? plan.rankFloor;
+                assert.equal(floor, Math.max(plan.rankFloor, plan.participation.rate.booster), `floor at ${where}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.ok(stands > 0 && handoutWays > 0, `the grid reaches the state (${stands}) and the way (${handoutWays})`);
 });
 
 /* ── When no single slider clears (#68, ADR 0002 addendum, K1) ─────────── */

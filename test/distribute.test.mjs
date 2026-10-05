@@ -388,7 +388,7 @@ function assertRowsWithinPayout(plan, where) {
   }
 }
 
-test('CombinedHandout shifts the participation shares into the rows and does not add them', () => {
+test('CombinedHandout empties the ParticipationPool and shapes the whole Booster share (#103, ADR 0010)', () => {
   // 8 Players at 4 Boosters each make 32; a participation rate of 1 takes 8,
   // the Judge 2, so the RankPool carries 22. 16 TournamentPacks at a rate of
   // 1 take 8, leaving 8 in the RankPool.
@@ -417,8 +417,8 @@ test('CombinedHandout shifts the participation shares into the rows and does not
   assert.equal(rowSum(apart, 'booster'), 22);
   assert.equal(rowSum(apart, 'packs'), 8);
 
-  // Combined: the block falls to 0 and the shares stand in the rows instead —
-  // on the Pool level too, or the same PrizeItems would be counted twice.
+  // Combined: the ParticipationPool is empty on both axes, and the rate is
+  // still carried — the packs read it, and so does the way out.
   assert.equal(combined.combinedHandout, true);
   assert.equal(combined.participation.booster, 0);
   assert.equal(combined.participation.packs, 0);
@@ -428,16 +428,50 @@ test('CombinedHandout shifts the participation shares into the rows and does not
   assert.equal(rowSum(combined, 'booster'), 30);
   assert.equal(rowSum(combined, 'packs'), 16);
 
-  // Shifted, not added: every row grew by exactly the rate, and the shaping
-  // of the divisible axis is untouched — the same numbers, differently
-  // grouped.
+  // The Boosters: the whole share after the JudgePool runs through the
+  // shaping, with no flat rate on top. That is exactly the plan of the same
+  // stand with no participation Booster at all.
+  const whole = distribute(settings({ ...base, participationBooster: 0, combinedHandout: false }));
+  assert.deepEqual(
+    combined.rows.map((row) => row.booster),
+    whole.rows.map((row) => row.booster),
+  );
+  assert.equal(combined.shapedRemainder, whole.shapedRemainder);
+  assert.equal(combined.depthCap, whole.depthCap);
+
+  // The TournamentPacks are not shaped: every row takes the flat rate.
   for (let i = 0; i < apart.rows.length; i++) {
-    assert.equal(combined.rows[i].booster, apart.rows[i].booster + 1, `row ${i + 1} Booster`);
     assert.equal(combined.rows[i].packs, apart.rows[i].packs + 1, `row ${i + 1} TournamentPacks`);
   }
-  assert.equal(combined.shapedRemainder, apart.shapedRemainder);
-  assert.equal(combined.depth, apart.depth);
-  assert.equal(combined.depthCap, apart.depthCap);
+});
+
+test('under CombinedHandout the participation slider takes nothing off the JudgePool ceiling (#103)', () => {
+  // 8 Players at 4 Boosters, a participation rate of 4 would take all 32. Apart,
+  // the Judge can then get nothing; combined, the ParticipationPool is empty
+  // and the Judge's ceiling is the whole pool.
+  const base = { players: 8, boosterRate: 4, participationBooster: 4, judgeBooster: 10, rankFloor: 0 };
+  assert.equal(distribute(settings({ ...base, combinedHandout: false })).judge.booster, 0);
+  const combined = distribute(settings({ ...base, combinedHandout: true }));
+  assert.equal(combined.judge.booster, 10);
+  assert.equal(combined.rank.booster, 22);
+  assert.equal(combined.participation.rate.booster, 4);
+});
+
+test('CombinedHandout with a depth short of the players reports combinedHandoutDepth (#103)', () => {
+  const short = distribute(settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: true }));
+  assert.deepEqual(short.combinedHandoutDepth, { depth: 5, players: 8 });
+  assert.equal(unfit(short), true);
+  // The rows below the depth get no Booster: that is what the state says.
+  assert.deepEqual(short.rows.slice(5).map((row) => row.booster), [0, 0, 0]);
+
+  const full = distribute(settings({ players: 8, boosterRate: 4, depth: 8, combinedHandout: true }));
+  assert.equal(full.combinedHandoutDepth, null);
+  assert.equal(unfit(full), false);
+
+  // Apart, the same short depth is no such state: the participation Booster
+  // reaches the Ranks below it before the tournament.
+  const apart = distribute(settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: false }));
+  assert.equal(apart.combinedHandoutDepth, null);
 });
 
 test('the sum rule holds at the plan itself, in both handout branches', () => {
@@ -553,18 +587,14 @@ test('a settled Rank has floor 0 and gets exactly its Displays', () => {
   assert.equal(plan.rows[0].booster, 2); // exactly its Displays, no floor, no lead, no curve
 });
 
-test('CombinedHandout neither creates nor hides an overtake — the RankPool share decides, not the row total', () => {
-  const overtaking = weekendSettings({ players: 48, displays: [1] });
-  const withOvertake = distribute({ ...overtaking, combinedHandout: false });
-  const withOvertakeCombined = distribute({ ...overtaking, combinedHandout: true });
-  assert.deepEqual(withOvertakeCombined.overtake, withOvertake.overtake);
-  assert.ok(withOvertakeCombined.overtake); // still reported, not hidden by the shift
-
-  const clean = weekendSettings({ players: 32, displays: [1] });
-  const withoutOvertake = distribute({ ...clean, combinedHandout: false });
-  const withoutOvertakeCombined = distribute({ ...clean, combinedHandout: true });
-  assert.equal(withoutOvertake.overtake, null);
-  assert.equal(withoutOvertakeCombined.overtake, null); // not conjured by the shift either
+test('under CombinedHandout the overtake is read off the rows the tiles show (#103)', () => {
+  // Weekend 64 with d = (1), served to every Rank: the whole Booster share
+  // is shaped, Rank 2 gets 25 against Rank 1's Display of 24, and the
+  // overtake names the very numbers in the rows.
+  const plan = distribute({ ...weekendSettings({ players: 64, displays: [1] }), depth: 64, combinedHandout: true });
+  assert.deepEqual(plan.overtake, { under: 1, over: 2, has: 24, gets: 25 });
+  assert.equal(plan.overtake.has, plan.rows[plan.overtake.under - 1].booster);
+  assert.equal(plan.overtake.gets, plan.rows[plan.overtake.over - 1].booster);
 });
 
 test('a DisplayReservation reaching the whole depth reports an unclaimedRemainder instead of losing the ShapedRemainder silently (#56 resolution on #56, 2026-09-27)', () => {

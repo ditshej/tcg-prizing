@@ -1,5 +1,7 @@
 # Der Pin ist ein gespeicherter Zustand, kein Vergleich
 
+Ergänzt durch ADR-0010.
+
 Ein Regler, den der `CommunityLead` gesetzt hat, folgt keiner Rechnung mehr — er
 ist `pinned`. Dieser Zustand wird bei der **Bedienhandlung gesetzt und
 gespeichert**, nicht bei jedem Neuzeichnen aus einem Vergleich „Wert ≠ Default"

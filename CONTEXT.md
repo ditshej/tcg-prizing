@@ -81,7 +81,8 @@ Eine benannte Teilmenge des `PrizePool` mit einer eigenen Verteilungsregel. Ein
 Der `Pool`, der gleichmässig an alle `Player` geht, unabhängig vom `Ranking`.
 Hängt nicht vom Turnierverlauf ab und kann vor dem Turnier ausgeteilt werden.
 Ein `Player` erhält diesen Anteil zusätzlich zu allem, was ihm über den
-`RankPool` zusteht.
+`RankPool` zusteht. Bei eingeschaltetem `CombinedHandout` ist er auf beiden
+Achsen leer (#103, ADR 0010).
 Abgreifbar sind **`Booster` und `TournamentPack`**, `WinnerPack`s **nicht**: die
 gehören an einen `Rank` oder an die `WinnerRaffle`, und ein `WinnerPack` an jeden
 wäre keine Teilnahme mehr. Es gibt darum kein `participation.winners` — zusammen
@@ -527,7 +528,8 @@ _Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
 
 **NoticeStack**:
 Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
-`CarryOverNotice`. Sie schwebt **über der ganzen App**, nicht über dem
+`CarryOverNotice`, dazu in deren Form die Meldung beim Ausschalten von
+`CombinedHandout` (#103). Sie schwebt **über der ganzen App**, nicht über dem
 `DistributionPlan`: eine Meldung über die Herkunft der Eingabe passt in kein
 plan-förmiges Loch, und im Plan verankert lag sie unter der Reglerfläche —
 ausgerechnet dort, wo die Regler stehen, die den Konflikt auslösen. Sie
@@ -615,9 +617,9 @@ Bedingung, unter der die Meldung steht. Jede wird mit ihrem Namen genannt — in
 Tickets, Code, Kommentaren und Proben —, und kein Text zählt sie: #103 sagte
 „dritte Quelle", #70 „zweite", #61 „the fourth", und das waren zwei verschiedene
 Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
-`DistributionPlan` sind `conflict`, `overtake`, `orphanedReservation` und
-`unclaimedRemainder`; ihr Name ist der Feldname, `unfit(plan)` ist ihre
-Disjunktion, und ihre Wege sucht `suggestions(plan)`:
+`DistributionPlan` sind `conflict`, `overtake`, `orphanedReservation`,
+`unclaimedRemainder` und `combinedHandoutDepth`; ihr Name ist der Feldname,
+`unfit(plan)` ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
 - `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
   die den `RankPool` allein schon übersteigt.
 - `overtake` — die Überholung ohne Verlierer.
@@ -625,6 +627,18 @@ Disjunktion, und ihre Wege sucht `suggestions(plan)`:
   `RankPoolDepth` nicht bedient.
 - `unclaimedRemainder` — die randabdeckende Reservation: ein gedeckter
   Überschuss ohne Empfänger.
+- `combinedHandoutDepth` (#103) — `CombinedHandout` an und die `RankPoolDepth`
+  unter der Spielerzahl, sodass die
+  Ränge unter der Tiefe null bekommen. Der Weg heraus steht in `suggestions()` an
+  der Stelle der Tiefe und ersetzt dort deren gewöhnliche Suche, weil unter
+  `CombinedHandout` keine kürzere Tiefe räumt. Er setzt `depth` auf die
+  Spielerzahl und hebt `rankFloor` auf die Teilnahme-Booster-Rate, beides als
+  `pinned` Werte (siehe `CombinedHandout`). Wo die Rate die ganze `boosterRate`
+  ist, trägt der Pool Floor und Rang-1-Vorsprung zusammen nicht. Dann räumt der
+  Weg nicht und steht nicht da, und der mehrgliedrige Weg bedient alle Ränge mit
+  dem Floor, den der Pool trägt. Vor dem Bau hiess die Quelle vorläufig
+  „`CombinedHandout` depth". Der Bau hat ein eigenes Feld gebracht, und nach dem
+  Entscheid aus Lauf 11, Phase G heisst die Quelle darum wie dieses Feld.
 
 Eine ist gebaut und kommt nicht aus dem Kern:
 - `WinnerPack` overhang (#70) — `ranked + manualCount` über dem Bestand
@@ -638,11 +652,6 @@ Eine ist gebaut und kommt nicht aus dem Kern:
   verschwänden. Seine Wege kommen aus `overhangWaysOut(plan)`: der über
   `judgeWinner` ist gesucht, die beiden anderen sind gerechnet. #61
   überschreibt ihn mit „overplaced winner packs".
-
-Eine weitere ist entschieden und noch nicht gebaut:
-- `CombinedHandout` depth (#103) — `CombinedHandout` an und die `RankPoolDepth`
-  unter der Spielerzahl, sodass die Ränge unter der Tiefe null bekommen. Der Weg
-  heraus kommt aus `suggestions()` und setzt `rankFloor` und `depth` als `pinned` Werte.
 
 Eine neue Quelle bekommt ihren Namen hier, im selben Zug wie das Ticket, das sie
 baut.
@@ -787,25 +796,49 @@ ersatzlos gestrichen hat.
 _Avoid_: Warning (es ist nichts schiefgegangen), ChangeLog, Diff
 
 **CombinedHandout**:
-Ob der `ParticipationPool` zusammen mit dem `RankPool` ausgeteilt wird oder
-vorher. Ein Bit am `Tournament` und kein Rechenschritt: es verschiebt die
-Teilnahmeanteile in die Rangzeilen des `DistributionPlan`, statt sie als eigenen
-Block auszuweisen — dieselben Zahlen, anders gruppiert, und der Block
-verschwindet dabei, damit kein `PrizeItem` zweimal auf dem Schirm steht. Steht
-im Normalfall auf aus, weil die Teilnahmepreise meist beim Einchecken rausgehen.
-Startwert im `DefaultSet`, weil eine Konstante keinen `Rank` benennt. Es ist der
-einzige Ort, an dem ein Zeitpunkt im Modell überhaupt vorkommt — als ein Bit,
-nicht als Achse: die App kennt kein `Ranking` als Eingabe, also wird kein Teil
-des `DistributionPlan` später wahr als ein anderer.
-**Der `Pool`-Schnitt wandert mit**, und das ist die Stelle, an der sich leicht
-verrechnet, wer nur die Zeilen im Blick hat: bei eingeschaltetem
-`combinedHandout` wird `participation.booster` **0**, und `rank.booster` trägt
-den Teilnahmeanteil mit. Die Formung rechnet unverändert auf dem Anteil **ohne**
-Teilnahme — `ShapedRemainder` und Tiefendeckel ändern sich nicht, die Zeilen
-unterscheiden sich um genau die Teilnahmerate je `Rank`. Wer `rank.booster` als
-„was der `RankPool` zum Formen hat" liest, zieht den Anteil ein zweites Mal ab
-und meldet Gleichheitsbrüche, die es nicht gibt (gemessen im Lauf #49·#59·#58,
-Befund B5).
+Ob alles **einmal, nach dem Turnier** ausgeteilt wird, statt die Teilnahmepreise
+vorher beim Einchecken herauszugeben. Ein Bit am `Tournament`. Seit #103
+(ADR 0010) ist es auch ein Rechenschritt: bei eingeschaltetem `combinedHandout`
+gibt es **keinen** `ParticipationPool`, er ist auf beiden Achsen leer, weil
+nichts mehr vorher ausgeteilt wird. Die zwei Achsen gehen dabei verschiedene Wege:
+- **Booster** — der ganze Anteil nach dem `JudgePool` läuft durch die
+  Formgebung, also durch Tiefendeckel, `ShapedRemainder`, `DistributionCurve`
+  und `RankFloor`. Kein flaches `+ Rate` je Zeile mehr. Ein `Rank`, der ein
+  Display bekommt, bekommt das Display und keinen Teilnahme-Booster obendrauf
+  („wenn der Winner ein Display kriegt, dann kriegt er einfach ein Display").
+  Dass trotzdem jeder etwas bekommt, leistet der `RankFloor` über alle Spieler.
+  Die Kachelzahl ist darum die Angebotszahl, in beiden Zweigen (`Offer`).
+- **TournamentPacks** — sie haben keine Untergrenze und laufen am `RankCycle`
+  vorbei an der Kurve. Darum bleiben sie flach: jede Zeile bekommt die
+  Teilnahmerate dazu, und `rank.packs` trägt sie auf `Pool`-Ebene mit.
+  `participation.packs` ist 0, sonst stünden dieselben Packs zweimal da.
+
+`participation.rate` bleibt im Plan stehen: die Packs lesen sie, und der Weg
+heraus aus der Quelle `combinedHandoutDepth` liest sie ebenfalls. Der Regler
+`participationBooster` verteilt in dieser Lage nichts und deckelt auch den
+`JudgePool` nicht mehr.
+**Am Schirm** (#103, Entscheid A): „Participation boosters" ist ausgeblendet,
+solange `combinedHandout` an ist, so wie die Zeile `Participation` im Plan. Sein
+Wert bleibt erhalten, reist im `SetupLink` mit und ist beim Ausschalten wieder
+da. „Participation packs" bleibt sichtbar. Das Rangtotal heisst in beiden Zweigen
+„to the ranks", weil kein Teilnahmeanteil mehr in den Booster-Zeilen steckt.
+**Einschalten** mit einer Tiefe unter der Spielerzahl ist erreichbar und legal,
+und die `ConflictNotice` meldet es als Quelle `combinedHandoutDepth`. Ihr Weg
+heraus setzt die `RankPoolDepth` auf die Spielerzahl und hebt den `RankFloor` auf
+die Teilnahme-Booster-Rate, beides als `pinned` Werte. Gemeint ist die Rate, mit
+der der Plan rechnet (`participation.rate.booster`), nicht der Reglerwert. Ein
+Floor, der schon darüber steht, wird nicht gesenkt (Maintainer, 2026-10-05).
+**Ausschalten** (Entscheid 4) lässt die zwei Pins stehen (ADR 0006), und zwar
+neben der zurückkehrenden Teilnahmerate. Es zeigt eine Meldung in der Form der
+`CarryOverNotice` (`handoutOff`): sie listet `rankFloor` und `depth`, soweit sie
+beim Ausschalten gepinnt waren, und trägt den Knopf, der sie fallen lässt,
+dieselbe dritte Reichweite des Rückwegs. Von selbst löst sie nichts. Sie sagt
+nicht, woher die Pins kommen, denn ein Pin kennt seinen Urheber nicht.
+Steht im Normalfall auf aus. Startwert im `DefaultSet`, weil eine Konstante
+keinen `Rank` benennt. Es ist der einzige Ort, an dem ein Zeitpunkt im Modell
+überhaupt vorkommt, und zwar als Bit, nicht als Achse: die App kennt kein
+`Ranking` als Eingabe, also wird kein Teil des `DistributionPlan` später wahr
+als ein anderer.
 _Avoid_: Zeitpunkt, PlanStage (es ist keine Achse, sondern ein Bit), MergedView
 
 **PreparationList**:
