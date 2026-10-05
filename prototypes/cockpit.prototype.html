@@ -2425,6 +2425,10 @@ function confirmPop() {
     </div>`;
 }
 
+/* ERGÄNZT durch #132: Wo das Diagramm steht, bleibt die Zahl hier über den
+   Balken. Wo es fehlt, hat dieser Prototyp keine Stelle für sie; entschieden
+   ist eine eigene Zeile unter dem Raster (Kommentar an #132). Das Vollbild
+   (`fsContent()`) bleibt ohne sie. */
 /* Die Zahl, die in die Ränge geht — oben rechts über den Balken, wo ohnehin
    Platz ist. Nullachsen bleiben weg: „0 packs" ist keine Information. */
 function rankTotal(plan) {
@@ -3142,6 +3146,12 @@ function screen(plan, sugg, off) {
      eine Reihe frei (60,1) und nach dem ersten keine (−11,4), ein Diagramm
      von 0 zwei (128,1) bzw. eine (56,6). Der Satz „keine Kachelreihe frei"
      darüber gilt erst nach dem Wurf. Verbindlich ist der Kommentar „Entscheide des Maintainers — Lauf 15" an #129. */
+  /* ÜBERHOLT durch #132, nur der Satz „Die Rangsumme geht mit ihm" in der
+     Markierung darüber: Das Rangtotal geht **nicht** mit dem Diagramm. Die
+     Summenprobe hat auf jeder Bühne drei Stellen (Gesamtzahl · Handout-Total
+     · Rangtotal). Ohne Diagramm steht es als eigene Zeile unter dem Raster,
+     über der Rangmeldung; unter einer offenen Leiste liegt es, wie die
+     Rangmeldung, unter ihr. Verbindlich ist der Kommentar „Entscheide des Maintainers — die Stelle des Rangtotals ohne Diagramm" an #132. */
   const stripMax = isFlat()
     ? Math.max(60, Math.min(96, h - CHROME0 - GRID2))
     : h < 460 ? 96 : cols >= 2 ? 190 : 280;
