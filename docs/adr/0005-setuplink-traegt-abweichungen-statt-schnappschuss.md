@@ -111,7 +111,8 @@ sein „alle zurücksetzen" stellt sie auf `all` zurück (Lauf 12, Phase G an #7
 gewählt `zaehlt-mit`) — so nennt der Zähler dieselben Posten, die der Link
 trägt. Ein Pin wird sie dadurch nicht. Von der `WinnerRaffle` reist allein sie:
 kein weiterer Verlosungsschlüssel (Phase G, `G-raffle-hits`; dass gewürfelte
-Treffer als `manualWinner` mitreisen, ist dort als offener Befund abgelegt).
+Treffer als `manualWinner` mitreisen, ist dort entschieden: „bleibt so", #72,
+Korrektur zu `G-raffle-hits` vom 2026-10-01).
 
 Kein eigener ADR-Eintrag und kein Stempel: die Absicht dieses Dokuments ändert
 sich nicht, eine Lücke in ihrer Umsetzung wird geschlossen — Präzedenz sind die

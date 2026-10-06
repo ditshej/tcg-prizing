@@ -163,7 +163,8 @@ Phase G on #72) — the screen's business; the wire still carries it as a choice
 never as a pin. Of the WinnerRaffle, the `RaffleRange` is the **only** key that
 travels: no throw count, no hit list, no last draw (Phase G, `G-raffle-hits`).
 A thrown hit does reach the link — as a `manualWinner` pin, because a throw
-writes the tile's own counters (#69 AC 5); that collision is open on #72.
+writes the tile's own counters (#69 AC 5); decided on #72 (correction to
+`G-raffle-hits`, 2026-10-01): it stays that way.
 
 ## Caps are not a migration concern
 
