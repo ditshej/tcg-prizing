@@ -141,10 +141,14 @@ Feld ohne Inhalt. Ob das `Tournament` eine K.-o.-Runde gespielt
 hat, spielt keine Rolle. Ihr Startwert kommt aus dem `DefaultSet` und darf dort
 als Konstante oder als eine der **oberen acht** Stufen der Bereichsliste stehen
 (siehe `RaffleRange`) — weil sie ein Präfix ab `Rank` 1 ist, sind die unteren
-Stufen unbrauchbar. Der Regler selbst bleibt absolut: die Stufe liefert nur den
-Startwert und zieht mit der Spielerzahl nach, bis der Lead ihn anfasst. Ein nicht
-`pinned` Regler steht auf `min(Stufe, Deckel)` und kehrt von selbst zurück,
-sobald der Deckel wieder steigt. Ein `pinned` Wert dagegen wird vom sinkenden
+Stufen unbrauchbar. Die Stufe liefert den Startwert und zieht mit der
+Spielerzahl nach, bis der Lead den Regler anfasst. Anfassen geht auf zwei Arten:
+ein absoluter Wert pinnt `depth`, der Griff an eine Stufe pinnt `depthStep`
+(#67, #114). Die gepinnte Stufe zieht weiter mit der Spielerzahl nach und bleibt
+unter dem Deckel wie ein nicht `pinned` Regler; stehen beide, sticht `depth`, und
+zusammen sind sie ein Posten (siehe `Pinned`). Ein nicht `pinned` Regler steht
+auf `min(Stufe, Deckel)` und kehrt von selbst zurück, sobald der Deckel wieder
+steigt. Ein `pinned` `depth` dagegen wird vom sinkenden
 Deckel nie gekappt — er bleibt stehen, und die `ConflictNotice` zeigt die Wege
 heraus, **geordnet** nach der Vorrangkette aus ADR 0001. Die Kette wählt dabei
 keinen Verlierer: sind Tiefe und `DisplayReservation` beide `pinned` und zusammen
@@ -592,8 +596,10 @@ und ein Vorschlag, den niemand sieht, ist kein Vorschlag; das ✕ ist der Preis
 dafür, laut anfangen zu dürfen. Unterschieden sind sie allein durch
 **Farbe und Resolve-Wege**, nie durch Form oder Anfangszustand.
 Die **Ordnung bildet ab, wovon geredet wird**: die Meldung über den Plan sitzt
-oben bei den Kacheln, die über die Eingabe unten bei den Reglern. Eine vierte
-wäre nicht einzusortieren, sondern zu fragen, worüber sie redet.
+oben bei den Kacheln, die über die Eingabe unten bei den Reglern. Dort sitzt
+auch `handoutOff`: Sie redet wie die `CarryOverNotice` über Pins und teilt deren
+Form und Farbe (#103). Eine weitere wäre nicht einzusortieren, sondern zu
+fragen, worüber sie redet.
 Zwei Familien, und sie entscheiden, wann eine minimierte Meldung wieder
 aufgeht — **Zustandsmeldung** (`ConflictNotice`, `Offer`): sie steht, solange
 eine Bedingung gilt, und geht auf, wenn sich die **Art** ändert, nie wenn sich
@@ -646,7 +652,7 @@ Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
   `pinned` Werte (siehe `CombinedHandout`). Wo die Rate die ganze `boosterRate`
   ist, trägt der Pool Floor und Rang-1-Vorsprung zusammen nicht. Dann räumt der
   Weg nicht und steht nicht da, und der mehrgliedrige Weg (`combinedWayOut()`,
-ADR 0002, Nachtrag) bedient alle Ränge mit
+  ADR 0002, Nachtrag) bedient alle Ränge mit
   dem Floor, den der Pool trägt. Vor dem Bau hiess die Quelle vorläufig
   „`CombinedHandout` depth". Der Bau hat ein eigenes Feld gebracht, und nach dem
   Entscheid aus Lauf 11, Phase G heisst die Quelle darum wie dieses Feld.
@@ -667,9 +673,10 @@ Eine ist gebaut und kommt nicht aus dem Kern:
 Eine neue Quelle bekommt ihren Namen hier, im selben Zug wie das Ticket, das sie
 baut.
 **Ihre Wege kommen aus zwei Herkünften**, und das ist keine Zählung der Quellen:
-die der Kernquellen **sucht** `suggestions(plan)` (ein Regler über seinen
-Bereich, oder der mehrgliedrige Weg, wo keiner räumt) — mit einer Ausnahme:
-der Weg aus `combinedHandoutDepth` ist **entschieden**, nicht gesucht, geht über
+die der Kernquellen **sucht** `suggestions(plan)`, ein Regler über seinen
+Bereich; wo keiner räumt, ist der mehrgliedrige Weg **gerechnet**
+(`combinedWayOut()`, ADR 0002, Nachtrag), und `waysOut()` holt ihn dazu. Eine
+Ausnahme: der Weg aus `combinedHandoutDepth` ist **entschieden**, nicht gesucht, geht über
 zwei Regler und steht auch neben einzelnen Wegen (`handoutWayOut()`, ADR 0010);
 die des
 `WinnerPack`-Überhangs kommen aus `overhangWaysOut(plan)`, in dieser Ordnung:
