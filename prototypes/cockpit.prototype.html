@@ -386,6 +386,11 @@
      mehr: den Zustand „eine andere Seite ist vorne" gibt es in Spalten nicht.
      Am Handy liegen die Regler unten, dort deckt der Stapel sie zu: der
      leichtere Verlust, weil die Wege heraus in der Meldung anklickbar sind. */
+  /* ÜBERHOLT durch #71 (Lauf 13, K-B9), nur die Zahl 740: Die Zwei-Spalten-Stufe
+     liegt bei 388 + 286 = 674. Ab 674 steht `Details` daneben, und die offene
+     Meldung endet vor der Reglerspalte. Darunter deckt sie zu, wie hier
+     beschrieben (#68, Lauf 12, K3). Verbindlich ist der Kommentar „Entscheide
+     des Maintainers — Lauf 13“ an #71. Nicht umgebaut. */
   .stack > * { pointer-events: auto; box-shadow: var(--panel-shadow); }
   /* Die Badge-Zeile ist ein durchsichtiger Halter, kein Panel — der Schatten
      gehört an die Pille, nicht an die Luft neben ihr. */
@@ -839,6 +844,9 @@
      einspaltig ist — ab da ist Details eine Spalte. Die Zweispaltigkeit von
      Runde 14 trifft damit nur noch den Querformat-Fall unter der Bruchstelle;
      sie hängt an der gemessenen Breite, nicht mehr an der Leinwand-Klasse. */
+  /* ÜBERHOLT durch #71 (Lauf 13, K-B9), nur die Zahl 740: Die Bruchstelle ist
+     674 (388 + 286), darunter ist das Reglerblatt ein Overlay. Verbindlich ist
+     der Kommentar „Entscheide des Maintainers — Lauf 13“ an #71. Nicht umgebaut. */
   /* ── Runde 22: Zeilen statt Spalten ───────────────────────────────────
      `column-count` fliesst **senkrecht**: die linke Spalte läuft bis unten
      und setzt sich oben rechts fort. Am Bild heisst das, die Gruppe „Supply"
@@ -2894,6 +2902,14 @@ function slotBlock(plan, stack) {
    (boosterRate 0), steht statt „The curve has nothing left to shape.“ ein Satz
    zur Tatsache, ohne Knopf (Lauf 12, K2, #68 5936574157). Verbindlich ist ADR
    0002 mit den Nachträgen und #68. Nicht umgebaut. */
+/* ERGÄNZT durch #68 (Runde #49·#59·#58 und Lauf 8, G2): Die Meldung hat Quellen,
+   die der Prototyp nicht zeichnet: die verwaiste Reservation
+   (`orphanedReservation`) und den unbeanspruchten Rest (`unclaimedRemainder`),
+   dazu seit #103 `combinedHandoutDepth`. Für die verwaiste Reservation ist sie
+   der einzige Ort am Schirm. Der Wortlaut der Sätze ist nicht entschieden,
+   gebaut ist der Vorschlag in public/ui/notices.mjs. Verbindlich sind die
+   Kommentare 5859216801 und 5875462734 an #68, die Liste der Quellen steht in
+   CONTEXT.md › ConflictNotice. Nicht umgebaut. */
 function conflictBox(plan, sugg) {
   if (!unfit(plan)) return '';
   // Zwei unpassende Zustände in einer Fläche. Die Überholung ist der neue: bei
