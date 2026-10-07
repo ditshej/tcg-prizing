@@ -61,6 +61,12 @@ Knopf gäbe es keinen Rückweg ausser dem Wechsel von `Game` oder
 „folgt der Rechnung nicht mehr" und nicht „weicht ab" — sie steht auch dann,
 wenn der Wert mit dem Default übereinstimmt.
 
+> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#26): der Rückweg hat zwei
+> Reichweiten, der Wechsel ist keine`.** Der Wechsel von `Game` oder
+> `TournamentType` setzt nichts mehr zurück; den Rückweg für alle Pins trägt ein
+> zweiter Knopf neben dem `TournamentType`-Titel. Weiterlesen dort, bevor du dich
+> auf diesen Absatz stützt.
+
 **Die Regel gilt für alle Regler gleich**, obwohl sie nur bei dreien Arbeit tut.
 Bei Reglern mit konstantem Default und bei den neutral startenden
 (`DisplayReservation`, `manual`) ist der Pin ohne Wirkung auf die Rechnung und
@@ -92,6 +98,14 @@ Stelle — der erste Druck macht den Knopf zur Frage samt Zahl („reset 12 tile
 picks?"), der zweite führt aus. Kein Overlay, keine neue Fläche. Die Sicherung
 ist **hinfällig, sobald es ein sitzungsweites Undo gibt**: eine Rückfrage vor
 einer rücknehmbaren Handlung ist Reibung ohne Gegenwert.
+
+> ⚠︎ **Zurückgezogen durch `## Nachtrag (#33): die Verfallsklausel verfällt, die
+> Sicherung bleibt — an der Handlung, nicht am Ort`.** Ein Undo kommt nicht, die
+> Sicherung bleibt dauerhaft, und zwar als verankerte Blase statt eines
+> zweistufigen Knopfs; „einzige verbliebene Stelle" gilt nicht mehr, denn
+> dieselbe Handlung steht in der dritten Reichweite auch an der
+> `CarryOverNotice` und, seit ADR 0010, an der `handoutOff`-Meldung. Weiterlesen
+> dort, bevor du dich auf diesen Absatz stützt.
 
 Der Satz „es gibt keine Bedienhistorie" bleibt für die Zwecke gültig, für die er
 getroffen wurde — die `ConflictNotice` ordnet weiter nach der Vorrangkette, weil
