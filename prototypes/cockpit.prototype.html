@@ -2290,6 +2290,10 @@ function prepContent(plan) {
     </div>`;
 }
 
+/* ÜBERHOLT durch #103 (ADR 0010), nur die Begründung: Die Zeile fällt weiter,
+   aber weil der ParticipationPool unter CombinedHandout leer ist, nicht weil
+   die Anteile in den Rangzeilen stecken. Verbindlich ist `CONTEXT.md` ›
+   `CombinedHandout`. Nicht umgebaut. */
 /* Was zu Beginn rausgeht, samt Total — die Rate allein liesse die 64 unsichtbar.
    Steht `CombinedHandout` auf ein, verschwindet die Zeile ganz: den Posten gibt
    es dann nicht mehr, die Anteile stecken in den Rangzeilen. Eine Zeile, die
@@ -3275,6 +3279,9 @@ function sheetContent(plan, withSet) {
 
     <div class="grouphead">Split the pool</div>
     <div class="desc">${esc(GROUP_DESC.split)}</div>
+    <!-- ÜBERHOLT durch #103, Entscheid A: Unter CombinedHandout ist „Participation
+         boosters“ ausgeblendet, der Wert bleibt erhalten und reist im Link.
+         Verbindlich ist CONTEXT.md › CombinedHandout. Nicht umgebaut. -->
     ${slider('participationBooster', plan, { alwaysReset: true, unit: 'per player' })}
     ${slider('participationPack', plan, { alwaysReset: true, unit: 'per player' })}
     ${slider('judgeBooster', plan, { alwaysReset: true })}
