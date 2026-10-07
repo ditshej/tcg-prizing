@@ -579,11 +579,14 @@ reservierten Band deckt nichts zu, also geht sie bis an die Kante.
 Der Chip trägt ein **Wort und nach Möglichkeit eine Zahl** (`3 ways out`,
 `2 kept`), kein Zeichen: ein Glyph beschreibt die Meldung und muss gedeutet
 werden, während der Chip zum Antippen auffordern soll. Die Zahl ist dabei der
-eigentliche Antrieb — sie sagt, wieviel dahinterliegt. Das `Offer` hat als
-einziges keine, weil es immer genau eines ist.
+eigentliche Antrieb — sie sagt, wieviel dahinterliegt. Ohne Zahl stehen nur
+Chips, bei denen sie nichts sagte: das `Offer`, weil es immer genau eines ist;
+die `handoutOff`-Meldung, die den Schalter nennt (`Combined handout off`) statt
+der Pins (#103); und die `ConflictNotice` ohne Booster (`⚠ No boosters`), die
+keinen Weg anbietet (Map-Closure Durchgang 3).
 Das ⚠ bleibt **neben** dem Wort der `ConflictNotice` und ist das einzige
 Zeichen der Ecke: es trennt die Meldung, die gelöst werden **muss**, von den
-zweien, die man wegklicken **darf** — dieselbe Achse wie das ✕.
+dreien, die man wegklicken **darf** (`Offer`, `CarryOverNotice`, `handoutOff`) — dieselbe Achse wie das ✕.
 **Alle beginnen offen.** Eine Meldung, die als Chip erscheint, wird ignoriert,
 und ein Vorschlag, den niemand sieht, ist kein Vorschlag; das ✕ ist der Preis
 dafür, laut anfangen zu dürfen. Unterschieden sind sie allein durch
@@ -642,7 +645,8 @@ Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
   Spielerzahl und hebt `rankFloor` auf die Teilnahme-Booster-Rate, beides als
   `pinned` Werte (siehe `CombinedHandout`). Wo die Rate die ganze `boosterRate`
   ist, trägt der Pool Floor und Rang-1-Vorsprung zusammen nicht. Dann räumt der
-  Weg nicht und steht nicht da, und der mehrgliedrige Weg bedient alle Ränge mit
+  Weg nicht und steht nicht da, und der mehrgliedrige Weg (`combinedWayOut()`,
+ADR 0002, Nachtrag) bedient alle Ränge mit
   dem Floor, den der Pool trägt. Vor dem Bau hiess die Quelle vorläufig
   „`CombinedHandout` depth". Der Bau hat ein eigenes Feld gebracht, und nach dem
   Entscheid aus Lauf 11, Phase G heisst die Quelle darum wie dieses Feld.
@@ -725,7 +729,9 @@ Ein `WayOut` ist in der Regel **ein** Regler auf einem anderen Wert. Räumt kein
 einzelner Regler den Stand, bleibt die Fläche nicht leer: dann wird ein Weg über
 **mehrere Regler zugleich** gerechnet und ebenso als `WayOut` angeboten — die
 Ausnahme, die der Nachtrag „Wenn kein einzelner Regler räumt" zu ADR 0002
-festhält.
+festhält. Die zweite Ausnahme ist nicht gerechnet, sondern **entschieden**: der
+Weg aus `combinedHandoutDepth` setzt zwei Regler zugleich und steht auch neben
+einzelnen Wegen (`handoutWayOut()`, ADR 0010; Map-Closure Durchgang 3).
 _Avoid_: Fix, Solution (beide behaupten, die Rechnung sei fehlgeschlagen; sie war
 es nie — siehe die `_Avoid_`-Zeile der `ConflictNotice`), Hint, Suggestion, Tip
 (die `_Avoid_`-Zeile unter `Offer` hält diese drei bereits vom Schirm fern, damit
@@ -784,8 +790,7 @@ derselben Blase, verankert an dem Knopf, den man gedrückt hat.
 Er heisst am Schirm **`Drop all N and follow <Typ>`** (#41), und die Zerstörung
 steht vorn, weil sie das Überraschende ist: der Knopf liest sich sonst als
 „nimm meine Sachen mit" und lässt in Wahrheit alle aufgezählten Pins fallen —
-es ist der Knopf mit der grössten Reichweite im Programm, und seit ADR 0006
-ohne Undo. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
+alle auf einmal, und seit ADR 0006 ohne Undo. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
 also trägt dieselbe Art Handlung dasselbe Wort. Der Satz benennt eine
 **Handlung** und steht nicht für einen Term ein, braucht also keine
 `_Label_`-Zeile. Mitbewertet und verworfen: *Unpin all N — <Typ> takes over*
@@ -845,7 +850,9 @@ Floor, der schon darüber steht, wird nicht gesenkt (Maintainer, 2026-10-05).
 **Ausschalten** (Entscheid 4) lässt die zwei Pins stehen (ADR 0006), und zwar
 neben der zurückkehrenden Teilnahmerate. Es zeigt eine Meldung in der Form der
 `CarryOverNotice` (`handoutOff`): sie listet `rankFloor` und `depth`, soweit sie
-beim Ausschalten gepinnt waren, und trägt den Knopf, der sie fallen lässt,
+beim Ausschalten gepinnt waren — `depth` als Posten `Served ranks`, ein gepinnter
+`depthStep` eingeschlossen und mit ihm fallen gelassen (#67, `PIN_MEMBERS`;
+Map-Closure Durchgang 3) — und trägt den Knopf, der sie fallen lässt,
 dieselbe dritte Reichweite des Rückwegs — dieselbe Handlung über die Pins, die
 sie aufzählt, mit derselben Rückfrage. Von selbst löst sie nichts. Sie sagt
 nicht, woher die Pins kommen, denn ein Pin kennt seinen Urheber nicht.
@@ -991,8 +998,9 @@ der dritten Reichweite steht momentan im `CarryOverNotice` und in der
 `handoutOff`-Meldung, jeweils über die Pins, die sie aufzählt. Kein Aufheben,
 sondern ein Umlegen ist der Griff an eine Stufe unter `Served ranks`: er legt den
 Pin des Postens von `depth` auf `depthStep` (#114); stehen beide, gilt ein
-gepinntes `depth` vor `depthStep` (`distribute()`), und im Zähler sind sie ein
-Posten (#67, K3). Ein Wechsel von
+gepinntes `depth` vor `depthStep` (`distribute()`), und im Zähler, an der
+Markierung und am Einzel-Reset sind sie ein Posten (#67, K3 und Lauf 11 Phase G);
+fällt `depth`, fällt `depthStep` mit (Map-Closure Durchgang 3). Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die zwei Reichweiten
 über mehrere Pins — der Titel-Knopf und die dritte — fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
 Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,

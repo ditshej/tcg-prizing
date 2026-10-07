@@ -114,8 +114,9 @@ Zwei Präzisierungen beim Bau (Maintainer, 2026-10-05, im Terminal):
 - **Die dritte Reichweite des Rückwegs bekommt einen zweiten Auslöser**
   (Entscheid 4). Wer `CombinedHandout` wieder ausschaltet, sieht eine Meldung in
   der Form der `CarryOverNotice`. Sie listet `rankFloor` und `depth`, soweit sie
-  gepinnt stehen, und ihr Knopf lässt sie fallen, mit derselben Rückfrage. Das
-  erweitert den Nachtrag (#26) zu ADR 0006, „Die Reichweite ist die Handlung,
+  gepinnt stehen — `depth` als Posten `Served ranks`, ein gepinnter `depthStep`
+  eingeschlossen (#67), und ihr Knopf lässt sie fallen, mit derselben Rückfrage. Das
+  erweitert den Nachtrag (#33) zu ADR 0006, „Die Reichweite ist die Handlung,
   nicht der Ort": Es ist dieselbe Handlung an einer dritten Stelle. Die Pins
   bleiben dabei stehen, wie ADR 0006 es verlangt.
 - Die übrige Oberfläche (Entscheid A) steht in `CONTEXT.md` unter
