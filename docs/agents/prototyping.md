@@ -100,6 +100,12 @@ the file — otherwise the next lookup reads the old form as decided.
   file: `ÜBERHOLT durch #N` (or `ERGÄNZT durch #N`), narrowed with „nur …“ where
   only part of it fell, then „Verbindlich ist …“ naming where the decision now
   lives, and „Nicht umgebaut.“ Inside HTML markup the comment is `<!-- … -->`.
+- **The word follows the stamp rule in `docs/agents/domain.md`.** `ERGÄNZT`
+  where the old form still holds and has only become incomplete; `ÜBERHOLT …
+  nur …` where part of it no longer holds — and a form that stops holding in one
+  branch (say, under `CombinedHandout`) has stopped holding, as ADR 0002's
+  restamp to „Teilweise überholt“ in map-closure pass 2 decided. The ticket
+  stamp and the prototype mark for the same claim use the same word.
 - **One `docs(proto): mark … as superseded by #N` commit** on the prototype
   branch, comments only.
 - **The prototype counts in a stamp row.** A late ticket that stamps the
