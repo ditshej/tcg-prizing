@@ -9,6 +9,13 @@ abgeleitet. Wer einen Regler verstellt und wieder auf den Ausgangswert
 zurückzieht, lässt ihn damit `pinned`; zurück auf „folgt der Rechnung" führt
 allein ein Knopf neben dem Regler.
 
+> ⚠︎ **Ergänzt durch #67 und #114: der Stufen-Pin `depthStep` folgt weiter der Spielerzahl.**
+> Der Griff an eine Stufe unter `Served ranks` pinnt die **Stufe**, nicht die Zahl;
+> die Zahl daraus zieht mit der Spielerzahl nach und steht unter dem Deckel wie ein
+> `auto`-Regler. Das ist die eine Ausnahme von „folgt keiner Rechnung mehr“ — und
+> kein Kappen im Sinne dieses ADR. Verbindlich ist `CONTEXT.md` › `Pinned`
+> (Map-Closure Durchgang 5, 6 und 7).
+
 ADR 0003 hatte festgelegt, dass „abweichend" und „angefasst" **ein** Bit sind,
 und ADR 0005 hat daraus den `SetupLink` gebaut. Das bleibt richtig — es ist ein
 Bit je Regler —, aber die Gleichsetzung war zu stark: die `pinned` Regler sind
