@@ -33,6 +33,11 @@ nachzöge. Zwei Dinge sprechen dagegen.
   dieselbe Zahl ergeben. Nur der gespeicherte Zustand hält sie auseinander,
   sobald sich die Spielerzahl ändert.
 
+> ⚠︎ **Die Zählung „bei den drei Reglern“ ist veraltet, seit `b3340a5` (2026-09-17).** Auch die
+> Zahl vorhandener `WinnerPack`s ist seither ein Regler mit gerechnetem
+> `auto`-Wert; es sind **vier**, nicht drei. Das Argument bleibt. Verbindlich ist
+> `CONTEXT.md` › `Pinned` (Map-Closure Durchgang 5).
+
 **Zwei Bits: Wert plus „angefasst".** ADR 0005 hat das bereits als redundant
 verworfen, und das gilt weiterhin. Der hier gewählte Weg fügt kein zweites Bit
 hinzu — er entscheidet nur, **wodurch** das eine Bit gesetzt und gelöscht wird.
@@ -73,6 +78,11 @@ Bei Reglern mit konstantem Default und bei den neutral startenden
 verlängert nur den Link. Eine Ausnahmeliste wäre teurer als dieser Eintrag: sie
 müsste im Kopf des Lesers und im Code mitgeführt werden, und der `SetupLink`
 bliebe nicht mehr wörtlich „diese Regler sind festgelegt".
+
+> ⚠︎ **Die Zählung „nur bei dreien“ ist veraltet, seit `b3340a5` (2026-09-17).** Auch die
+> Zahl vorhandener `WinnerPack`s ist seither ein Regler mit gerechnetem
+> `auto`-Wert; es sind **vier**, nicht drei. Das Argument bleibt. Verbindlich ist
+> `CONTEXT.md` › `Pinned` (Map-Closure Durchgang 5).
 
 **Es gibt keine Bedienhistorie.** Der Pin ist eine Menge, keine Reihenfolge. Wo
 zwei `pinned` Regler sich widersprechen, kann die Meldung deshalb nicht auf den

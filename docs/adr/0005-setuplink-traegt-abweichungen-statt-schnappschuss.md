@@ -103,8 +103,10 @@ an #72, wörtlich: „Auch die RaffleRange reist im Link mit"). Sie bleibt **kei
 kein Rückweg am Element, ein Set-Wechsel lässt sie stehen —, reist
 aber als eigener Schlüssel `raffleRange` neben den Reglern, geschrieben nur, wo
 sie von `all` abweicht; ein fehlender Schlüssel heisst `all`, wie es jeder
-v1-Link ohne ihn schon bedeutet hat. Überholt ist damit allein das „nie im Link"
-in #61 („Session state") und #69. Nicht berührt bleibt der übrige
+v1-Link ohne ihn schon bedeutet hat. Überholt ist damit das „nie im Link"
+in #61 („Session state") und #69, dazu die Zählung „achtzehn Schlüssel“ ohne
+`depthStep` und `raffleRange` in #48 und #50 (gestempelt im Map-Closure
+Durchgang 5). Nicht berührt bleibt der übrige
 Sitzungszustand — Seite, Vollbild, Faltung, offene Blase, Verlosungsleiste.
 Der Pin-Knopf neben `Copy link` zählt sie mit, wo sie von `all` abweicht, und
 sein „alle zurücksetzen" stellt sie auf `all` zurück (Lauf 12, Phase G an #72,

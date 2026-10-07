@@ -122,7 +122,7 @@ Reservation sind `a` und die reservierten `Booster` null, und es bleibt der
 frühere Deckel `⌊(Booster im RankPool − 1) / RankFloor⌋` übrig. Dass die
 `DisplayReservation` darin vorkommt, kehrt die Vorrangkette **nicht** um: ein
 Deckel bindet nur den nachziehenden Wert, ein `pinned` Wert wird nach ADR 0006
-nie gekappt, und die `DisplayReservation` wird nie automatisch gesetzt, zieht
+nie gekappt (der Stufen-Pin `depthStep` zählt hier als nachziehend, siehe unten), und die `DisplayReservation` wird nie automatisch gesetzt, zieht
 also nie nach — die Kette bleibt azyklisch, weil eine ihrer beiden Richtungen
 nie feuert. Der `RankFloor` deckelt
 die Tiefe, nie umgekehrt. An zwei Rändern liefert die Auflösung keine brauchbare
@@ -151,7 +151,7 @@ auf `min(Stufe, Deckel)` und kehrt von selbst zurück, sobald der Deckel wieder
 steigt. Ein `pinned` `depth` dagegen wird vom sinkenden
 Deckel nie gekappt — er bleibt stehen, und die `ConflictNotice` zeigt die Wege
 heraus, **geordnet** nach der Vorrangkette aus ADR 0001. Die Kette wählt dabei
-keinen Verlierer: sind Tiefe und `DisplayReservation` beide `pinned` und zusammen
+keinen Verlierer: sind `depth` und `DisplayReservation` beide `pinned` und zusammen
 nicht machbar, stehen beide Wege nebeneinander und der Lead wählt. Einen
 einzelnen Verlierer gibt es nur, wo ein `pinned` Wert einem nachziehenden
 gegenübersteht — dann folgt immer der nachziehende.
@@ -635,7 +635,8 @@ Tickets, Code, Kommentaren und Proben —, und kein Text zählt sie: #103 sagte
 Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
 `DistributionPlan` sind `conflict`, `overtake`, `orphanedReservation`,
 `unclaimedRemainder` und `combinedHandoutDepth`; ihr Name ist der Feldname,
-`unfit(plan)` ist ihre Disjunktion, und ihre Wege sucht `suggestions(plan)`:
+`unfit(plan)` ist ihre Disjunktion, und ihre Wege holt `waysOut(plan)` — woher sie
+kommen, steht unten bei den Herkünften:
 - `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
   die den `RankPool` allein schon übersteigt.
 - `overtake` — die Überholung ohne Verlierer.
@@ -1007,7 +1008,10 @@ sondern ein Umlegen ist der Griff an eine Stufe unter `Served ranks`: er legt de
 Pin des Postens von `depth` auf `depthStep` (#114); stehen beide, gilt ein
 gepinntes `depth` vor `depthStep` (`distribute()`), und im Zähler, an der
 Markierung und am Einzel-Reset sind sie ein Posten (#67, K3 und Lauf 11 Phase G);
-fällt `depth`, fällt `depthStep` mit (Map-Closure Durchgang 3). Ein Wechsel von
+fällt `depth`, fällt `depthStep` mit (Map-Closure Durchgang 3). Der Stufen-Pin
+ist die eine Ausnahme von „folgt keiner Rechnung mehr“: er hält die Stufe fest,
+nicht die Zahl, zieht also weiter mit der Spielerzahl nach und bleibt unter dem
+Deckel wie ein `auto`-Regler (siehe `RankPoolDepth`; Map-Closure Durchgang 5). Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die zwei Reichweiten
 über mehrere Pins — der Titel-Knopf und die dritte — fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
 Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,
@@ -1027,8 +1031,8 @@ darf denselben Wert tragen wie sein Default. Der Zustand gilt für alle Regler
 gleich, auch wenn er nur bei den vieren beisst, deren Startwert eine Rechnung
 statt einer Zahl ist — `RankPoolDepth`, die absolute `TournamentPack`-Zahl, die
 Zahl vorhandener `WinnerPack`s und der `ranked`-Anteil der
-`WinnerPackAllocation`. Ein `pinned` Wert wird nie
-nachträglich gekappt: sinkt ein Deckel unter ihn, bleibt er stehen und die App
+`WinnerPackAllocation`. Ein `pinned` Wert — ausser dem
+Stufen-Pin `depthStep`, siehe oben — wird nie nachträglich gekappt: sinkt ein Deckel unter ihn, bleibt er stehen und die App
 zeigt die Lage (ADR 0002). Das Gegenteil heisst **`auto`** — der Regler folgt
 noch einer Rechnung. Beide Wörter stehen so auch am Schirm.
 _Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), Touched (beschreibt die Geste, nicht den Zustand), Locked (klingt nach Schutz vor dem Nutzer), Dirty, Manual (ist schon der `manual`-Anteil der `WinnerPackAllocation` — dasselbe Wort für zwei Sachen auf demselben Schirm)
