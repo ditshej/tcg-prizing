@@ -2097,6 +2097,9 @@ function curveGlyphs(plan, withRatio) {
    einen Knopf zu legen, hiesse die harte Regel der Karte unprüfbar machen. */
 /* Ein Badge je minimierter Meldung — nie eines für mehrere. Die Reihenfolge
    ist dieselbe wie im Stapel: Plan zuerst, Eingabe zuletzt. */
+/* ÜBERHOLT durch #68 (Lauf 12, K2 und Phase G), nur der Chip ohne Weg: er heisst
+   `⚠ No boosters`, nicht `⚠ 0 ways out`. Verbindlich ist #68 (5937393197),
+   gebaut in public/ui/notices.mjs. Nicht umgebaut. */
 function badgeRow(plan, sugg, off) {
   const b = [
     unfit(plan) && !st.noticeOpen
@@ -2226,6 +2229,9 @@ function prepContent(plan) {
   const full = Math.floor(plan.pool.packs / g);
   const off = p.winnerYield - plan.pool.winnersDerived;
   const nextAt = p.partialYield < y ? p.thresholds[p.partialYield] : null;
+  // ÜBERHOLT durch #65 (Lauf 11, Phase G), nur der Fall ohne angebrochenen
+  // Umschlag (opened = 0, z. B. 64 Packs in zwei glatten Umschlägen): dort steht
+  // kein Hinweis. Verbindlich ist der Kommentar an #65 (5932986744). Nicht umgebaut.
   const need = nextAt == null ? 0 : nextAt - p.opened;
   const loosePacks = p.partialYield > 0 ? 0 : p.opened;
   return colHead({
@@ -2359,6 +2365,9 @@ function infoWinners(plan) {
   const nextAt = got < y ? plan.prep.thresholds[got] : null;
   // Nur anbieten, wenn die nächste Stufe im selben Umschlag noch kommt — sonst
   // wäre der nächste WinnerPack ein ganzes Kuvert weit weg und der Vorschlag gelogen.
+  // ÜBERHOLT durch #65 (Lauf 11, Phase G), nur der Fall ohne angebrochenen
+  // Umschlag (opened = 0, z. B. 64 Packs in zwei glatten Umschlägen): dort steht
+  // kein Hinweis. Verbindlich ist der Kommentar an #65 (5932986744). Nicht umgebaut.
   const need = nextAt == null ? 0 : nextAt - rest;
   const pinned = !!st.pin.winnerPacks;
   return `<div class="pophead"><strong>${plan.pool.winners} winner packs</strong>
@@ -2386,6 +2395,9 @@ function infoWinners(plan) {
    die gilt der Ebene mit einem Eintrag. Der Tag ist sichtbar, weil man ihn
    auch abtippen können muss, wenn der Link ins Leere führt. */
 const DISCORD = { tag: 'ditshej', id: '428891117220659241' };
+/* ÜBERHOLT durch #113, nur das Wort *slider* am Schirm: es heisst *value*.
+   Verbindlich ist #113, AK 16, gebaut in public/ui/controls.mjs (DROP_NOUN).
+   Nicht umgebaut. */
 function infoGame() {
   return `<div class="pophead"><strong>Game</strong>
       <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
@@ -2396,6 +2408,9 @@ function infoGame() {
       <a href="https://discord.com/users/${DISCORD.id}" target="_blank"
          rel="noreferrer"><strong>${DISCORD.tag}</strong></a></div>`;
 }
+/* ÜBERHOLT durch #113, nur das Wort *slider* am Schirm: es heisst *value*.
+   Verbindlich ist #113, AK 16, gebaut in public/ui/controls.mjs (DROP_NOUN).
+   Nicht umgebaut. */
 function infoType() {
   return `<div class="pophead"><strong>Tournament type</strong>
       <button class="reset" data-closepop="1" style="margin-left:auto">✕</button></div>
@@ -2418,6 +2433,14 @@ const INFO = { displays: infoDisplays, winners: infoWinners,
    Handlung ist die handoutOff-Meldung, die der Prototyp nicht zeichnet; das
    gilt auch für die Suche des Knopfs und die Antwort weiter unten.
    Verbindlich ist CONTEXT.md › CarryOverNotice. Nicht umgebaut.
+   ERGÄNZT durch #67 (Lauf 11, K3 und Phase G): je Posten nennt die Blase den
+   Bildschirmtitel und den Wert, auf den der Reset ihn stellt, nachgeschlagen,
+   nicht hergeleitet; eine Klammerzahl bei Served ranks nur, wo der Stufenname
+   sie nicht trägt. Verbindlich ist #67 (Kommentare 5932306429, 5932986345).
+   Nicht umgebaut.
+   ÜBERHOLT durch #113, nur das Wort *slider* am Schirm (im Titel unten): es
+   heisst *value*. Verbindlich ist #113, AK 16, gebaut in public/ui/controls.mjs
+   (DROP_NOUN). Nicht umgebaut.
 
    Was #26 als zweistufigen Knopf mit Verfallsklausel hatte, ist beides nicht
    mehr: die Klausel hing an einem sitzungsweiten Undo, und das kommt nicht.
@@ -2788,6 +2811,10 @@ function pulse(el) {
    manual-WinnerPacks, „nicht ein zweites Muster". Also nicht eine zweite Blase,
    sondern zwei Zeilen in derselben: was diesem Rang von Hand zugeteilt wird.
    Was der Regler `ranked` gesetzt hat, ist auch hier nicht zu rütteln. */
+/* ERGÄNZT durch #66 (Lauf 8, B9): die vier hier stummen Sperren (Winner −,
+   Displays + bei abgelehnter Reservation, Displays − bei 0 und gegen die
+   Monotonie) haben je einen entschiedenen Satz. Verbindlich ist #66, Kommentar
+   5875457191, gebaut in public/ui/tile.mjs. Nicht umgebaut. */
 function slotPop(plan) {
   const r = st.openSlot;
   if (r == null) return '';
@@ -2861,6 +2888,12 @@ function slotBlock(plan, stack) {
    geworden — dort, wo alle anderen Meldungen auch stehen. Der seltene Fall
    ShapedRemainder == 0 *ohne* Konflikt bleibt bewusst unbenannt: eine Meldung
    dort würde nach ADR 0002 einen gültigen Plan für ungültig erklären. */
+/* ÜBERHOLT durch #68, nur die Fläche ohne einzelnen Weg. Räumt nur ein Weg über
+   mehrere Regler zugleich, trägt die Fläche ihn als Knopf (Lauf 7, K1; ADR 0002,
+   Nachtrag „Wenn kein einzelner Regler räumt“). Gibt es gar keinen Weg
+   (boosterRate 0), steht statt „The curve has nothing left to shape.“ ein Satz
+   zur Tatsache, ohne Knopf (Lauf 12, K2, #68 5936574157). Verbindlich ist ADR
+   0002 mit den Nachträgen und #68. Nicht umgebaut. */
 function conflictBox(plan, sugg) {
   if (!unfit(plan)) return '';
   // Zwei unpassende Zustände in einer Fläche. Die Überholung ist der neue: bei
@@ -2947,6 +2980,9 @@ function offerBox(off) {
    Nichts tun ist hier der Normalfall und kein Notausgang: der Wechsel hat nach
    #26 nichts von Hand Gesetztes überschrieben, die Pins stehen. Ein erzwungenes
    „übernehmen" wäre die Bestätigungsabfrage, die #26 abgeschafft hat. */
+/* ÜBERHOLT durch #113, nur das Wort *slider* am Schirm: es heisst *value*.
+   Verbindlich ist #113, AK 16, gebaut in public/ui/controls.mjs (DROP_NOUN).
+   Nicht umgebaut. */
 function carryBox() {
   const c = st.carry;
   if (!c || !st.carryOpen) return '';
@@ -3129,6 +3165,10 @@ function colCount() {
    hat `hotCol`: die vier heissen Regler stehen als Spalte erst ab
    388 + 286 + 48 = 722; zwischen 436 und 721 steht der Plan ohne sie, sie
    stehen dann nur auf Details. Verbindlich ist der Kommentar an #71. */
+/* ÜBERHOLT durch #73 (Lauf 14, K2), nur die Zahl 494 und die Schiene 87 in der
+   Markierung darüber: die einspaltige Schwelle ist 351 + 56 + die gemessene Höhe
+   der Schiene bei der Breite der Bühne, keine feste Zahl. Verbindlich ist der
+   Kommentar K2 an #73, abgedruckt in CONTEXT.md › Fold. Nicht umgebaut. */
 function isFlat() {
   return stage.clientHeight < BPH && stage.clientWidth >= BP2;
 }
