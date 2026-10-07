@@ -1876,6 +1876,10 @@ const DESC = {
   envelopeSize: 'How many tournament packs one Promo-Envelope holds. Full envelopes are what yield the winner packs.',
   envelopeYield: 'How many winner packs one Promo-Envelope holds. An opened envelope counts them off as it empties.',
   participationBooster: 'Boosters every player gets just for showing up. Taken off the pool before the ranks.',
+  // ÜBERHOLT durch #103: der Erklärtext von combinedHandout ganz (er beschreibt
+  // den Schalter vor ADR 0010), der von participationPack nur unter
+  // CombinedHandout; beide sind beim Bau neu gefasst (3076440). Verbindlich ist views/controls-sheet.php (Participation packs,
+  // Handout) und CONTEXT.md › CombinedHandout. Nicht umgebaut.
   participationPack: 'Same for tournament packs — handed to everyone before the ranks are served.',
   judgeBooster: 'Boosters set aside for the judge before anything else is distributed.',
   judgeWinner: 'Winner packs reserved for the judge.',
@@ -2410,6 +2414,10 @@ const INFO = { displays: infoDisplays, winners: infoWinners,
    `CarryOverNotice` —, also stellen beide dieselbe Frage, in derselben Blase,
    verankert an dem Knopf, den man gedrückt hat. Kein Overlay: das eine, das
    die App hat, ist vergeben.
+   ERGÄNZT durch #103 (ADR 0010, Entscheid 4): ein dritter Auslöser derselben
+   Handlung ist die handoutOff-Meldung, die der Prototyp nicht zeichnet; das
+   gilt auch für die Suche des Knopfs und die Antwort weiter unten.
+   Verbindlich ist CONTEXT.md › CarryOverNotice. Nicht umgebaut.
 
    Was #26 als zweistufigen Knopf mit Verfallsklausel hatte, ist beides nicht
    mehr: die Klausel hing an einem sitzungsweiten Undo, und das kommt nicht.
@@ -3279,7 +3287,7 @@ function sheetContent(plan, withSet) {
 
     <div class="grouphead">Split the pool</div>
     <div class="desc">${esc(GROUP_DESC.split)}</div>
-    <!-- ÜBERHOLT durch #103, Entscheid A: Unter CombinedHandout ist „Participation
+    <!-- ÜBERHOLT durch #103, Entscheid A, nur der Zweig combinedHandout: Unter CombinedHandout ist „Participation
          boosters“ ausgeblendet, der Wert bleibt erhalten und reist im Link.
          Verbindlich ist CONTEXT.md › CombinedHandout. Nicht umgebaut. -->
     ${slider('participationBooster', plan, { alwaysReset: true, unit: 'per player' })}
