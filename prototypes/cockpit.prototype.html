@@ -1291,6 +1291,13 @@ function largestRemainder(weights, total) {
    Spielerzahl meldet die ConflictNotice als `combinedHandoutDepth`.
    Verbindlich ist der Kern (`public/core/distribute.mjs`) und die
    Entscheide an #103. Nicht umgebaut. */
+/* ÜBERHOLT durch #46 („Korrektur am Prototyp“), auch ausserhalb von
+   `combinedHandout`, zwei Stellen: Der Reservationsvektor wird über `depth`
+   hinaus gelesen, eine tiefere Reservation verschwindet nicht lautlos (unten
+   `for (i < depth)`). Die DisplayReservation wird nicht vor der Klemmung
+   gutgeschrieben, der Plan teilt nie mehr Booster aus, als der RankPool hat
+   (unten `booster[0] += 1` im else-Zweig). Verbindlich sind #46 und der Kern
+   (`public/core/distribute.mjs`). Nicht umgebaut. */
 function distribute(s) {
   const n = Math.max(1, s.players);
   const boosterTotal = s.boosterRate * n;
@@ -1600,6 +1607,9 @@ function suggestions(plan) {
   // Überholer fällt aus dem Plan, damit ist die Meldung weg und nichts gelöst.
   const keeps = (p) => !plan.overtake || p.depth >= plan.overtake.over;
   const clears = (t) => { const p = distribute(t); return !unfit(p) && keeps(p); };
+  /* ÜBERHOLT durch #46 („Korrektur am Prototyp“), nur der Gleichstand: Sind
+     zwei Werte gleich nah, werden beide gezeigt, nicht nur der erste streng
+     nähere. Verbindlich sind #46 und der Kern. Nicht umgebaut. */
   const tryKey = (key, lo, hi, label) => {
     const cur = eff(key, plan);
     let best = null;
@@ -2905,7 +2915,8 @@ function slotBlock(plan, stack) {
 /* ERGÄNZT durch #68 (Runde #49·#59·#58 und Lauf 8, G2): Die Meldung hat Quellen,
    die der Prototyp nicht zeichnet: die verwaiste Reservation
    (`orphanedReservation`) und den unbeanspruchten Rest (`unclaimedRemainder`),
-   dazu seit #103 `combinedHandoutDepth`. Für die verwaiste Reservation ist sie
+   dazu seit #103 `combinedHandoutDepth` und seit #70 den `WinnerPack`-Überhang
+   (`winnerPackOverhang`, siehe winnerTotalRow()). Für die verwaiste Reservation ist sie
    der einzige Ort am Schirm. Der Wortlaut der Sätze ist nicht entschieden,
    gebaut ist der Vorschlag in public/ui/notices.mjs. Verbindlich sind die
    Kommentare 5859216801 und 5875462734 an #68, die Liste der Quellen steht in
@@ -3067,6 +3078,11 @@ function reservationBlock(plan) {
 /* Der Deckel ueber allem, was mit WinnerPacks passiert: die Kuverts geben eine
    Zahl her, aber es liegt am Tisch, nicht an der Rechnung, wie viele wirklich
    verteilt werden. Von Hand gehoben heisst: einer mehr kommt aus der Kiste. */
+/* ÜBERHOLT durch #61 und #70, nur das Schweigen: Der Überhang ist eine Quelle
+   der ConflictNotice, nicht bloss diese rote Halbzeile am Regler (#61,
+   „Korrektur am Prototyp“; gebaut in #70). Seine Wege heraus kommen aus
+   `overhangWaysOut(plan)`. Verbindlich sind #61, #70 und CONTEXT.md ›
+   ConflictNotice. Nicht umgebaut. */
 function winnerTotalRow(plan) {
   const derived = plan.pool.winnersDerived;
   const have = plan.pool.winners;
