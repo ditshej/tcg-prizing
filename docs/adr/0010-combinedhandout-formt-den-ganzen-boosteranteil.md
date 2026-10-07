@@ -94,7 +94,9 @@ Zwei Präzisierungen beim Bau (Maintainer, 2026-10-05, im Terminal):
   den der Pool trägt. Genau in diesem Fall fallen Reglerwert und gedeckelte Rate
   auseinander. Ein Reglerwert hätte daran also nichts geändert.
 - **Der Weg heraus steht als zweigliedriger Weg zwischen den einzelnen**
-  (darum `Ergänzt durch ADR-0010.` an ADR 0002). An der
+  (darum `Teilweise überholt durch ADR-0010.` an ADR 0002; bis zum
+  Map-Closure Durchgang 2 stand dort `Ergänzt`, aber „steht er allein da"
+  gilt unter `CombinedHandout` nicht mehr). An der
   Stelle der Tiefe ersetzt er unter `CombinedHandout` deren gewöhnliche Suche,
   weil dort keine kürzere Tiefe räumt. Das erweitert ADR 0002: Es ist ein
   entschiedener Weg über zwei Regler, kein gesuchter, und er steht auch dort, wo

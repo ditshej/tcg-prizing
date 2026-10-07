@@ -444,15 +444,18 @@ tiefer, eine bei der Tiefe abgeschnittene Darstellung würde Zuteilungen
 verschlucken. `PrizeItem`s ohne Empfänger gehören zu ihm und stehen neben den
 Rängen: der `JudgePool` und die `open`-`WinnerPack`s, damit die Summe über den
 `PrizePool` prüfbar bleibt.
-Neben den Rangzeilen trägt er vier Konfliktfelder, jedes `null` oder ein Objekt
+Neben den Rangzeilen trägt er Konfliktfelder, jedes `null` oder ein Objekt
 mit den Angaben, die eine Meldung ohne Rückgriff auf andere Plan-Felder
 braucht — dieselbe Bauart wie `overtake.has`/`.gets`: `conflict` (Tiefe über
 dem Deckel oder eine Reservation, die den `RankPool` allein schon übersteigt —
 `{ need, have }`), `overtake` (Überholung ohne Verlierer — `{ under, over,
 has, gets }`), `orphanedReservation` (Reservation auf einem `Rank`, den die
 `RankPoolDepth` nicht bedient — `{ ranks: [...] }`) und `unclaimedRemainder`
-(die randabdeckende Reservation, siehe `ShapedRemainder` — `{ depth }`, #56).
-`unfit(plan)` ist die reine Disjunktion aller vier — keines schliesst ein
+(die randabdeckende Reservation, siehe `ShapedRemainder` — `{ depth }`, #56) und
+`combinedHandoutDepth` (`CombinedHandout` an, die Tiefe unter der Spielerzahl —
+`{ depth, players }`, #103, ADR 0010). Die Liste zählt sie nicht (K7, siehe
+`ConflictNotice`).
+`unfit(plan)` ist die reine Disjunktion aller Konfliktfelder — keines schliesst ein
 anderes aus, auch nicht `conflict` und `unclaimedRemainder`: eine Reservation,
 die zugleich die ganze Tiefe abdeckt und für sich allein grösser ist als der
 `RankPool`, erfüllt beide Bedingungen gleichzeitig, und beide Meldungen stehen
@@ -503,11 +506,13 @@ delegiert): es steht nur, wo nach den zwei Kachelreihen und der gemessenen
 `Rest − Überlappung − 113 ≥ 60`, der Rest gerechnet, als stünde es —, und ist sonst
 weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. Das **Rangtotal geht
 nicht mit ihm** (#132): Die Summenprobe hat auf jeder Bühne drei Stellen
-(Gesamtzahl `Booster` · Handout-Total · Rangtotal), und ohne Diagramm bleibt das
+(Gesamtzahl `Booster` · `Participation` · Rangtotal), und ohne Diagramm bleibt das
 Rangtotal als eigene Zeile unter dem Raster stehen. Es steckt im festen Teil (178),
 kostet also keine Kachelreihe. Unter einer offenen Verlosungsleiste liegt es,
 wie die Rangmeldung, unter der Leiste: Die Summenprobe liest man bei
-geschlossener Leiste (Maintainer, 2026-10-05). Die Faltung selbst
+geschlossener Leiste (Maintainer, 2026-10-05). Unter `CombinedHandout` sind es zwei Stellen,
+weil die Zeile `Participation` ausgeblendet ist; „to the ranks" trägt dann den
+ganzen Anteil ohne den `JudgePool` (#103, Map-Closure Durchgang 2). Die Faltung selbst
 rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält
 seine 178 auch bei 320–340 Breite, weil die Ausgabezeile des Kopfs nicht umbricht,
 sondern seitlich scrollt (K6, schliesst A10).
@@ -581,7 +586,7 @@ Zeichen der Ecke: es trennt die Meldung, die gelöst werden **muss**, von den
 zweien, die man wegklicken **darf** — dieselbe Achse wie das ✕.
 **Alle beginnen offen.** Eine Meldung, die als Chip erscheint, wird ignoriert,
 und ein Vorschlag, den niemand sieht, ist kein Vorschlag; das ✕ ist der Preis
-dafür, laut anfangen zu dürfen. Unterschieden sind die drei allein durch
+dafür, laut anfangen zu dürfen. Unterschieden sind sie allein durch
 **Farbe und Resolve-Wege**, nie durch Form oder Anfangszustand.
 Die **Ordnung bildet ab, wovon geredet wird**: die Meldung über den Plan sitzt
 oben bei den Kacheln, die über die Eingabe unten bei den Reglern. Eine vierte
@@ -590,9 +595,11 @@ Zwei Familien, und sie entscheiden, wann eine minimierte Meldung wieder
 aufgeht — **Zustandsmeldung** (`ConflictNotice`, `Offer`): sie steht, solange
 eine Bedingung gilt, und geht auf, wenn sich die **Art** ändert, nie wenn sich
 nur Zahlen ändern; wer am genannten Regler zieht, soll nicht angesprungen
-werden. **Ereignismeldung** (`CarryOverNotice`): jedes Auftreten ist ein neues
-Ereignis, sie geht **immer** auf — und öffnet die stehenden Zustandsmeldungen
-mit, weil unter ihnen gerade der Boden bewegt wurde.
+werden. **Ereignismeldung** (`CarryOverNotice` und, in deren Form, `handoutOff`): jedes
+Auftreten ist ein neues Ereignis, sie geht **immer** auf. Die `CarryOverNotice`
+öffnet die stehenden Zustandsmeldungen mit, weil unter ihnen gerade der Boden
+bewegt wurde; `handoutOff` geht allein auf, weil kein Blatt getauscht wurde
+(#103, `EVENT_NOTICES` in `public/ui/notices.mjs`).
 Der Klappzustand ist reiner Sitzungszustand: nie im `SetupLink`, ein Neuladen
 setzt alles auf offen. Minimieren ist schwächer als Wegklicken und kann darum
 nicht länger überleben.
@@ -657,7 +664,10 @@ Eine neue Quelle bekommt ihren Namen hier, im selben Zug wie das Ticket, das sie
 baut.
 **Ihre Wege kommen aus zwei Herkünften**, und das ist keine Zählung der Quellen:
 die der Kernquellen **sucht** `suggestions(plan)` (ein Regler über seinen
-Bereich, oder der mehrgliedrige Weg, wo keiner räumt), die des
+Bereich, oder der mehrgliedrige Weg, wo keiner räumt) — mit einer Ausnahme:
+der Weg aus `combinedHandoutDepth` ist **entschieden**, nicht gesucht, geht über
+zwei Regler und steht auch neben einzelnen Wegen (`handoutWayOut()`, ADR 0010);
+die des
 `WinnerPack`-Überhangs kommen aus `overhangWaysOut(plan)`, in dieser Ordnung:
 `judgeWinner` hinunter ist **gesucht** — der nächstliegende Wert, der räumt,
 ab `judge.winners −` Überhang abwärts, weil jeder zurückgegebene Pack
@@ -674,7 +684,8 @@ stehen bleibt, weil nur der Überhang räumt, ist bewusst genommen.
 `winnerPacks` hoch ist nie ein Weg — die Zahl vorhandener `WinnerPack`s ist eine **Tatsache über den Abend**.
 **Woraus die Wege gewählt werden**, sagt ADR 0002 nicht — das Verfahren schon
 (einen Regler über seinen Bereich variieren, nie zwei zugleich, den
-nächstliegenden Wert nehmen, der räumt). Durchsucht wird ein Regler genau dann,
+nächstliegenden Wert nehmen, der räumt). Das gilt für die Suche; der
+entschiedene Weg aus `combinedHandoutDepth` steht ausserhalb (ADR 0010). Durchsucht wird ein Regler genau dann,
 wenn **beides** gilt: er ist eine **Stellschraube der Verteilung** und keine
 **Tatsache über den Abend**, und er geht in die **verletzte Bedingung** ein.
 Die erste Hälfte hält Spielerzahl, `Booster`-Rate und `Display`-Grösse draussen
@@ -762,9 +773,12 @@ welche `pinned` Regler den Wechsel überstanden haben und darum nicht dem neuen
 `ConflictNotice`, die eine Aussage über den Plan macht. Sie ist die Ansage zu
 einem Klick, der sichtbar wenig getan hat, und trägt deshalb den Weg mit: einen
 Knopf, der alle auf das neue Blatt zieht. Dieser Knopf ist die **dritte
-Reichweite** desselben Rückwegs und keine eigene Handlung — er lässt dieselben
-Pins fallen wie der Knopf am `TournamentType`-Titel, Kachel-Zuteilungen
-eingeschlossen; die `RaffleRange` stellt nur der Titel-Knopf zurück (Lauf 12,
+Reichweite** desselben Rückwegs und keine eigene Handlung. Die dritte Reichweite
+ist eine Form der Handlung, keine Menge: sie lässt die Pins fallen, die ihre
+Meldung aufzählt, und fragt vorher nach. Hier sind das dieselben Pins wie am
+`TournamentType`-Titel, Kachel-Zuteilungen eingeschlossen; der zweite Auslöser,
+die `handoutOff`-Meldung (siehe `CombinedHandout`), zählt nur `rankFloor` und
+`depth` auf (Map-Closure Durchgang 2); die `RaffleRange` stellt nur der Titel-Knopf zurück (Lauf 12,
 Phase G an #72). Er fragt darum ebenso vorher nach: dieselbe Frage, in
 derselben Blase, verankert an dem Knopf, den man gedrückt hat.
 Er heisst am Schirm **`Drop all N and follow <Typ>`** (#41), und die Zerstörung
@@ -784,7 +798,7 @@ Wegklickbar und reiner Sitzungszustand,
 nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
 verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
 `TournamentType`-Titel (alle) steht — dort mit der `RaffleRange` dazu.
-Sie ist die einzige **Ereignismeldung** des `NoticeStack`: sie beschreibt keinen
+Sie ist eine **Ereignismeldung** des `NoticeStack` (die andere ist `handoutOff`): sie beschreibt keinen
 anhaltenden Zustand, sondern den Klick, der gerade geschehen ist. Zweimal
 hintereinander gewechselt heisst zweimal dieselbe Art, aber eine andere Liste
 darunter — ein Zustandsschlüssel liesse sie minimiert stehen und behauptete,
@@ -832,7 +846,8 @@ Floor, der schon darüber steht, wird nicht gesenkt (Maintainer, 2026-10-05).
 neben der zurückkehrenden Teilnahmerate. Es zeigt eine Meldung in der Form der
 `CarryOverNotice` (`handoutOff`): sie listet `rankFloor` und `depth`, soweit sie
 beim Ausschalten gepinnt waren, und trägt den Knopf, der sie fallen lässt,
-dieselbe dritte Reichweite des Rückwegs. Von selbst löst sie nichts. Sie sagt
+dieselbe dritte Reichweite des Rückwegs — dieselbe Handlung über die Pins, die
+sie aufzählt, mit derselben Rückfrage. Von selbst löst sie nichts. Sie sagt
 nicht, woher die Pins kommen, denn ein Pin kennt seinen Urheber nicht.
 Steht im Normalfall auf aus. Startwert im `DefaultSet`, weil eine Konstante
 keinen `Rank` benennt. Es ist der einzige Ort, an dem ein Zeitpunkt im Modell
@@ -972,9 +987,14 @@ bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet
 zurück, der Knopf neben dem `TournamentType`-Titel **alle** — und dazu die
 `RaffleRange` auf `all`, die kein Pin ist, aber mitgezählt wird (Lauf 12,
 Phase G an #72) —, und derselbe Weg in
-voller Reichweite steht momentan im `CarryOverNotice`. Ein Wechsel von
-`Game` oder `TournamentType` hebt ihn nicht auf. Die beiden **vollen**
-Reichweiten fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
+der dritten Reichweite steht momentan im `CarryOverNotice` und in der
+`handoutOff`-Meldung, jeweils über die Pins, die sie aufzählt. Kein Aufheben,
+sondern ein Umlegen ist der Griff an eine Stufe unter `Served ranks`: er legt den
+Pin des Postens von `depth` auf `depthStep` (#114); stehen beide, gilt ein
+gepinntes `depth` vor `depthStep` (`distribute()`), und im Zähler sind sie ein
+Posten (#67, K3). Ein Wechsel von
+`Game` oder `TournamentType` hebt ihn nicht auf. Die zwei Reichweiten
+über mehrere Pins — der Titel-Knopf und die dritte — fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
 Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,
 denn dort steht ein sichtbarer Wert, der mit einem Griff wieder gesetzt ist. Die
 Rückfrage hängt an der **Handlung**, nicht am Ort, und bleibt: ein sitzungsweites
@@ -1035,7 +1055,8 @@ gesetzt werden. Ein einziger Schlüssel steht ausserhalb der `Settings`:
 der zwei Zahlen, weil er kein Regler ist. Er ist von der `WinnerRaffle` der
 **einzige** Schlüssel im Link — kein Wurfzähler, keine Trefferliste (Lauf 12,
 Phase G an #72); ein gewürfelter Treffer reist nur als `manual`-Zuteilung, weil
-der Wurf in dieselben Zähler schreibt wie die Kachel (offener Befund dort). _Überholt:_ bis Lauf 12
+der Wurf in dieselben Zähler schreibt wie die Kachel — entschieden: „bleibt so"
+(#72, Korrektur zu `G-raffle-hits`, 2026-10-01). _Überholt:_ bis Lauf 12
 stand hier, der Draht lasse `depthStep` weg (18), weil die Stufe „aus der Basis
 reproduzierbar" sei — das trägt nur für eine ungepinnte Stufe, und seit #67 pinnt
 der Stufen-Chip sie. Wer eine dritte Zahl findet, hat wahrscheinlich `Object.keys(plan.settings)` gezählt: das
