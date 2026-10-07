@@ -72,11 +72,11 @@ moment either gets a commit.
 The rebase rule above is for the **planning phase**, when a prototype is being
 drawn and a feature branch is being built at the same time and both are open in
 worktrees. Once a map's surfaces are decided, the prototype files stop being
-touched, and rebasing a branch nobody commits to buys nothing — it only rewrites
+drawn — they only get marked (see the next section) — and rebasing a branch nobody commits to buys nothing — it only rewrites
 SHAs that closed-ticket comments may point at.
 
 **So: remove the worktree, keep the branch.** The branch is the primary source
-and stays exactly as it is; what goes away is the checked-out copy of the *rest*
+and keeps its history, gaining only marking commits; what goes away is the checked-out copy of the *rest*
 of the tree — `public/`, `CONTEXT.md`, `docs/` — which is what actually goes
 stale and what a `grep` wanders into. Fetch the prototype when you need to look
 at it:
@@ -89,3 +89,22 @@ git worktree remove <tmp>                                     # done
 Decided 2026-09-28, after run 8, with `prototype/rank-distribution` 114 commits
 behind `main` and its files untouched since the planning phase. The rebase rule
 stands for the next map while its prototype is still being drawn.
+
+## When a later decision overturns the prototype
+
+The prototype is where a surface question is answered (`AGENTS.md`, "A decided
+form is looked up too"), so a decision that overturns part of it has to reach
+the file — otherwise the next lookup reads the old form as decided.
+
+- **Mark, don't redraw.** A comment at the place itself, in German like the
+  file: `ÜBERHOLT durch #N` (or `ERGÄNZT durch #N`), narrowed with „nur …“ where
+  only part of it fell, then „Verbindlich ist …“ naming where the decision now
+  lives, and „Nicht umgebaut.“ Inside HTML markup the comment is `<!-- … -->`.
+- **One `docs(proto): mark … as superseded by #N` commit** on the prototype
+  branch, comments only.
+- **The prototype counts in a stamp row.** A late ticket that stamps the
+  tickets it overturned stamps the prototype in the same go, and a map-closure
+  filing that stamps a ticket checks the prototype for the same claim.
+
+Practised since 2026-09-28, written down after map-closure
+pass 4 (2026-10-07) found two places a ticket's stamp row had missed.
