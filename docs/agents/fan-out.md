@@ -1066,3 +1066,40 @@ the body), #143, #129 (⚠︎ on AC 1) and #69; repairs to #142 and #145. No ADR
 (#142) head `73a9622`; merge #147 first. Open at G: 320 wide still scrolls
 (rail 229), and `MEASURED_RAIL` in `test/ui-fold.test.mjs` still holds the
 2026-10-02 readings, left because it tests the mechanism.
+
+### Run 17 · 2026-10-08 · #146, #143, #144 · `/round`, four agents, no cards, one quota death
+
+**The conductor's context: not readable as one number this time.** The
+harness's remaining-token counter restarted when the API session limit reset
+mid-round. It showed about 39k spent before the break, about 37k of it base
+(the expanded `/round` text included), and about 27k after. Adding the two
+segments gives an upper bound of about 66k. The round itself cost about 30k,
+below run 16's 52k. Phase E did not run, so no cards were read.
+
+**The quota death came in Phase A, and resuming it worked.** A and its #143
+builder both died on the session limit, after #146 and #144 were built. A
+`SendMessage` to A, giving it the worktrees, PRs and partial findings file on
+disk, let it resume its own builder and finish. Nothing was rebuilt.
+
+**Phase 0 found the tickets not disjoint**, as the maintainer foresaw. #146 was
+built alone, then #143 and #144 off its branch in parallel. B simulated the two
+cross-PR repairs (`.prep-offer` stub, the SetupLink sentence in `CONTEXT.md`)
+inside the PRs. That removed A's planned post-merge follow-up commit.
+
+**All three candidates were answered in the terminal, so there were no cards.**
+K-B1 a (every header icon button is a raised card, the theme toggle too), K-B3 b
+(shorter output line, `tournament` dropped, measured to fit at 393 and 375),
+K-B5 a (⚠︎ note at the sentence in ADR 0002/0005/0006, standing rule in
+`docs/agents/domain.md`).
+
+**Counts.** 15 findings from A (0 blocking, 6 to decide, 9 notes), 4 more from
+B (all notes). B confirmed 9 of A's findings, refuted 3 and corrected 3. Gates:
+3 candidates, 16 dropped. Phase D: 3 answered, 0 cards. Decisions filed to #143
+and #144, none to #121. Suite after F: 631 on #152, 650 on #151, 649 on the
+merge probe in both orders. PRs: #150 (#146) head `5fdabab`, #152 (#143) head
+`ef1390e`, #151 (#144) head `ba89b23`. Merge #150 first, then the other two in
+either order. Open at G: B13, B16 and B17 were not built. A joint test over all
+three header buttons is possible only after the merge. F added a `Theme`
+glossary entry with a `_Label_` line „Mode“ that nobody asked for. That is the
+fallback AGENTS.md says to avoid if either side can move, so it is put to the
+maintainer at G.
