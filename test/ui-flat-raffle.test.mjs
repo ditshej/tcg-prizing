@@ -253,6 +253,29 @@ test('the output line says `packs`, not `tournament packs`, so it stands whole a
   );
 });
 
+/* ── The plan head's buttons are one family: raised cards (#143, K-B1, B18) ─ */
+
+test('share and reset stand in both hit lists and carry the card form', () => {
+  const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8')
+    .replace(/\/\*[^]*?\*\//g, '');
+  const lists = [...css.matchAll(/^:where\(([^)]*)\)(?:::after)?\s*\{/gm)]
+    .map(([, list]) => list.split(',').map((s) => s.trim()))
+    .filter((names) => names.includes('.bubble-close'));
+  assert.equal(lists.length, 2, 'the hit rule comes as two lists: position, then ::after');
+  for (const names of lists) {
+    assert.ok(names.includes('.plan-share'), '.plan-share is in the hit list');
+    assert.ok(names.includes('.plan-reset'), '.plan-reset is in the hit list');
+  }
+  const at = css.indexOf('.plan-reset,\n.plan-share {');
+  assert.ok(at >= 0, 'share and reset share one rule');
+  const rule = css.slice(at, css.indexOf('}', at));
+  assert.match(rule, /\bwidth:\s*32px/);
+  assert.match(rule, /\bheight:\s*32px/);
+  assert.match(rule, /background:\s*var\(--paper\)/);
+  assert.match(rule, /box-shadow:\s*var\(--btn-shadow\)/);
+  assert.match(rule, /border-radius:\s*var\(--r-ctl\)/);
+});
+
 test('a throw leaves its hit to the next measuring pass, which shows it after the bar and the diagram are laid out', () => {
   const it = app();
   it.setStage({ width: 600, height: 493 });
