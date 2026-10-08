@@ -86,20 +86,24 @@ export const STRIP_HEIGHT = 48;
 export const STRIP_WIDTH = 48;
 
 /**
- * The rail of the four hot controls under the `Plan`, while there is one
- * column: its height is **measured**, not assumed (#73, run 14, K2
- * `schiene-gemessen`). The rail wraps with the width — one cell per row under
- * 360, two rows from 360 (round 142·145, K2) — and since #142's 44 px
- * counters its height goes 124 to 229 px (run 17 of the acceptance by image;
- * 62 to 117 before); the 87 that #71's K-B10a reckoned with held at the
- * master only. The measuring rind (`measureRail()` in `measure.mjs`) reads the
- * rail in its bar form at the stage's width and hands it in as `railHeight`.
+ * The rail of the hot controls under the `Plan`, while there is one column:
+ * its height is **measured**, not assumed (#73, run 14, K2
+ * `schiene-gemessen`). The rail wraps with the width — since #143 two
+ * counters (Players, Served ranks) side by side from a 360 stage up (round
+ * 142·145, K2) and the curve chips over the full width under them, breaking
+ * 4 + 3 under 348 — and its height goes 124 to 212 px (measured after #143;
+ * 124 to 229 with #142's four controls, 62 to 117 before #142); the 87 that
+ * #71's K-B10a reckoned with held at the master only. The measuring rind
+ * (`measureRail()` in `measure.mjs`) reads the rail in its bar form at the
+ * stage's width and hands it in as `railHeight`.
  *
  * This value is no rule — it is what `fold()` uses **until the first
  * reading** and under `node --test`, where nothing is measured: the rail at
- * the boot stage, the 393 × 830 master, measured 124 on 2026-10-08 (headless
- * Chrome, `.plan-controls` with its border and padding; 87 on 2026-10-02,
- * before #142).
+ * the boot stage, the 393 × 830 master, measured 124 again on 2026-10-08
+ * after #143 (headless Chrome, `.plan-controls` with its padding, no link and
+ * with the old start values pinned: 650–774) — the same 124 as before #143,
+ * since the chips' row is as high as the counter row it replaced (87 on
+ * 2026-10-02, before #142).
  */
 export const RAIL_AT_MASTER = 124;
 

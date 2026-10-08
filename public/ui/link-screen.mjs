@@ -1,6 +1,6 @@
 /**
  * The SetupLink on screen (#72): the two places where the encoding of #47
- * becomes visible — the `Copy link` button on the Set block, and the
+ * becomes visible — the Share button in the plan head (#143), and the
  * `LinkMigration` report as the app's one overlay.
  *
  * Everything here is on the proven side of the seam (ADR 0004): what the
@@ -40,23 +40,25 @@ export async function copyText(text, clipboard) {
   }
 }
 
-/** How long the button says `Copied` before it falls back. */
-export const COPIED_MS = 1500;
+/** How long the bubble at Share says `Link copied` before it runs out —
+ *  "rund 2 s" (#143, decision 4). */
+export const COPIED_MS = 2000;
 
 /**
  * The confirmation, and it is **fleeting** — the raffle hit's kind, not a
- * state (#72 AC 3; #61, "Copy link"). It lives on the button element as a data
- * attribute for one moment and is taken off again; nothing in the component
- * remembers that a copy happened. A second copy inside the moment restarts it
- * rather than stacking a second fall-back on the first.
+ * state (#72 AC 3; #61, "Copy link"). It lives on an element — since #143 the
+ * bubble at the Share button — as a data attribute for one moment and is
+ * taken off again; nothing in the component remembers that a copy happened.
+ * A second copy inside the moment restarts it rather than stacking a second
+ * fall-back on the first.
  */
-export function flashCopied(button, { later = setTimeout, cancel = clearTimeout } = {}) {
-  if (!button) return;
-  if (button._linkTimer != null) cancel(button._linkTimer);
-  button.dataset.linkCopied = '';
-  button._linkTimer = later(() => {
-    delete button.dataset.linkCopied;
-    button._linkTimer = null;
+export function flashCopied(el, { later = setTimeout, cancel = clearTimeout } = {}) {
+  if (!el) return;
+  if (el._linkTimer != null) cancel(el._linkTimer);
+  el.dataset.linkCopied = '';
+  el._linkTimer = later(() => {
+    delete el.dataset.linkCopied;
+    el._linkTimer = null;
   }, COPIED_MS);
 }
 

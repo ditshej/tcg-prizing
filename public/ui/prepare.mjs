@@ -45,19 +45,12 @@
  *    (#65, `CONTEXT.md`), not a `keep` line of its own — a `Herkunftsangabe`
  *    and not a second hint.
  *
- * The hint follows the prototype's arithmetic (`nextAt =
- * partialYield < y ? thresholds[partialYield] : null`): it counts **only
- * inside the opened envelope**. Built first as a "correction" that reached
- * across into the next envelope, it said `21 more packs would make it 5` at
- * Release with 54 packs; the maintainer's run-11 decision on #65 (K2) took it
- * back, because a sentence asking for a whole further envelope for one card is
- * exactly the extra order the closing note says nothing here is. The same
- * decision makes a fifth departure: where nothing is opened, the prototype
- * still offers its first threshold, and this hint stays silent — see
- * `nextWinner()`.
+ * The `WinnerPack` hint that stood under the yield line — "21 more packs
+ * would make it 5", with a button "Set packs to …" — is gone, sentence and
+ * button (#143, decision 7, overruling #61 story 44 and #65: "Wir passen die
+ * TournamentPacks eigentlich nie an — ein Usecase, der nur verwirrt"). The
+ * CONTEXT term `Offer` is the NoticeStack's and is not touched by that.
  */
-
-import { derivePool } from '../core/distribute.mjs';
 
 /** `1st`, `2nd`, `3rd`, `4th` — and `11th`, `12th`, `13th`, `21st`. */
 function ordinal(n) {
@@ -167,55 +160,18 @@ function envelopesItem(plan) {
 }
 
 /**
- * How many more `TournamentPack`s the next `WinnerPack` is away, and what it
- * would make — **inside the opened `PromoEnvelope` and nowhere else** (#65,
- * run-11 decision K2). The way is the prototype's: the next threshold of the
- * envelope's staffel, minus what is already counted off it.
- *
- * Two stands have no such way, and the hint falls silent at both, beside the
- * pin (the ticket's first silence; this is its second):
- *
- * - **Nothing is opened** — the packs come out even in sealed envelopes. The
- *   next `WinnerPack` would need a further envelope fetched and broken, and
- *   that is an extra order. The prototype would still offer it here; the
- *   decision names this stand (64 packs, two even envelopes) as silent, and
- *   the decision is what is built.
- * - **The opened envelope has passed every threshold** — the next
- *   `WinnerPack` lies a whole envelope away (Release at 54 packs: 4 winner
- *   packs, and no sentence about a 5th).
- *
- * What the count would make is read out of `derivePool()` rather than written
- * as `+ 1`, so the promise is the core's and not this function's.
- */
-function nextWinner(plan) {
-  const { opened, partialYield, thresholds, packs } = plan.pool;
-  if (opened === 0 || partialYield >= thresholds.length) return null;
-  const need = thresholds[partialYield] - opened;
-  if (need <= 0) return null;
-  const would = derivePool({ ...plan.settings, tournamentPacks: packs + need }).winnersDerived;
-  return { need, value: packs + need, would };
-}
-
-/**
  * The `WinnerPack`s: what the full `PromoEnvelope`s yield, what the opened one
  * has counted off so far, and what is on the table in the end.
  *
- * Two things hang off the **yield line** and nothing else does. A difference
- * between the `WinnerPack`s that are there and what the envelopes yield is a
- * half-sentence on it, in both directions — a `Herkunftsangabe`, not a second
- * hint. And the opportunity sits under it as the last line of the derivation:
- * whoever says how the 3 came about says with it how one gets to 4.
+ * One thing hangs off the **yield line**: a difference between the
+ * `WinnerPack`s that are there and what the envelopes yield is a half-sentence
+ * on it, in both directions — a `Herkunftsangabe`, not a second hint. The
+ * line is the last of the derivation; the hint that stood under it is gone
+ * (#143).
  *
- * It is an **opportunity and not a notice**, so it never enters the
- * `NoticeStack`. It falls silent while `winnerPacks` is `pinned` — read off
- * the plan's own record of what was set by hand, which is the same stored
- * `pins` the app keeps (ADR 0006: the pin is set by the operating gesture) —
- * because then the staffel is not what the number follows. It falls silent,
- * too, where the opened envelope has no next threshold left (`nextWinner()`).
- *
- * The button raises **`tournamentPacks`**: the way to another `WinnerPack`
- * runs over more packs out of the envelope already opened, up to its next
- * threshold. It is not an extra `WinnerPack` conjured onto the table.
+ * The aside names where the number comes from: the envelopes, or the hand
+ * where `winnerPacks` is `pinned` — read off the plan's own record of what was
+ * set by hand, the same stored `pins` the app keeps (ADR 0006).
  */
 function winnersItem(plan) {
   const perEnvelope = size(plan.settings.envelopeSize, 1);
@@ -257,16 +213,6 @@ function winnersItem(plan) {
     }),
   );
 
-  const next = pinned ? null : nextWinner(plan);
-  const offer = next && {
-    key: 'tournamentPacks',
-    need: next.need,
-    value: next.value,
-    would: next.would,
-    text: `${next.need} more ${plural(next.need, 'pack')} would make it ${next.would}`,
-    button: `Set packs to ${next.value}`,
-  };
-
   return {
     fetch: winners,
     unit: plural(winners, 'winner pack'),
@@ -274,7 +220,6 @@ function winnersItem(plan) {
     // count. What the aside says instead is where it comes from.
     source: pinned ? 'set by hand' : 'from the envelopes',
     lines,
-    offer: offer ?? null,
   };
 }
 

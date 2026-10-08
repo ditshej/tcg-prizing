@@ -4,99 +4,35 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /**
- * `views/controls-hot.php` (#104) has no pure derivation of its own — it is
- * static Alpine markup composed once by PHP (ADR 0004), so there is nothing
- * in `public/ui/` to import here. What `node --test` can hold is the markup
- * text itself: the `<select>` that drives `DistributionCurve` in the fixed
- * rail under `Plan`.
+ * `views/controls-hot.php` is static Alpine markup composed once by PHP
+ * (ADR 0004), so what `node --test` can hold is the markup text itself.
  *
- * Two independent bugs sat in that one element (#104):
- *
- * 1. `$el.value` was written once, at `x-init`, and never again — the field
- *    fell out of step with `settings.curve` the moment it changed from
- *    anywhere else (the sheet, a `SetupLink`, a Set switch).
- * 2. `@change` wrote `settings.curve` directly instead of going through
- *    `setSlider()`, so the pin was never set (ADR 0006) and `clampToBounds()`
- *    was bypassed.
- *
- * Both are provable only as markup — no logic to call, no DOM to mount
- * without a browser. Read the file, find the `<select>`, and check it.
+ * Since #143 (decision 6) the rail's `DistributionCurve` is the sheet's chips
+ * over the full width, not the `<select>` the tracer #62 left there and #104
+ * had to mend twice — a field that fell out of step with `settings.curve`, and
+ * a handling that wrote it past `setSlider()`. The chips cannot fall out of
+ * step: each one's pressed state is bound to `settings.curve` itself. And
+ * they are drawn by the one function the sheet draws them with, so the two
+ * cannot drift.
  */
 
 const VIEW_PATH = new URL('../views/controls-hot.php', import.meta.url);
 
-/** The curve `<select>`'s own markup, isolated from the rest of the file —
- *  there is exactly one `<select>` in this view. */
-function curveSelectMarkup() {
-  const source = readFileSync(VIEW_PATH, 'utf8');
-  const start = source.indexOf('<select');
-  assert.ok(start >= 0, 'the view still has a <select> for DistributionCurve');
-  const end = source.indexOf('</select>', start);
-  assert.ok(end > start, 'the <select> is closed');
-  return source.slice(start, end + '</select>'.length);
-}
-
-/** One `<label class="plan-control">` of this view, picked by a handler name
- *  only that control calls. */
-function planControlMarkup(handler) {
-  const source = readFileSync(VIEW_PATH, 'utf8');
-  const hit = source.indexOf(handler);
-  assert.ok(hit >= 0, `the view still has a control calling ${handler}`);
-  const start = source.lastIndexOf('<label class="plan-control">', hit);
-  assert.ok(start >= 0, `${handler} still sits inside a .plan-control label`);
-  const end = source.indexOf('</label>', hit);
-  assert.ok(end > start, 'the label is closed');
-  return source.slice(start, end + '</label>'.length);
-}
-
-test('the select carries the comment explaining why x-model/:value cannot be used (#104 AC 2)', () => {
-  const source = readFileSync(fileURLToPath(VIEW_PATH), 'utf8');
-  // The load-bearing half of the comment: the x-for child races the parent's
-  // own bindings. #104 extends the fix that follows it, it does not replace
-  // the reasoning.
-  assert.match(source, /x-model/);
-  assert.match(source, /walks a parent's own bindings before its\s+children exist/);
+test('the rail carries no select any more: the curve is chips (#143, decision 6)', () => {
+  const source = readFileSync(fileURLToPath(VIEW_PATH), 'utf8').replace(/<!--[^]*?-->/g, '').replace(/\/\*[^]*?\*\//g, '');
+  assert.doesNotMatch(source, /<select\b/);
+  assert.match(source, /curve_steps\(\)/, 'the rail draws the chips of the sheet');
 });
 
-test('a handling of the curve select goes through setSlider, not a direct write to settings.curve (#104 AC 3)', () => {
-  const select = curveSelectMarkup();
-  assert.doesNotMatch(
-    select,
-    /@change="settings\.curve\s*=\s*\$event\.target\.value"/,
-    'a direct write bypasses the pin (ADR 0006) and clampToBounds()',
-  );
-  assert.match(
-    select,
-    /@change="setSlider\('curve',\s*\$event\.target\.value\)"/,
-    'setSlider() is the one place that writes both pins[key] and settings[key]',
-  );
-});
-
-test('the select keeps following settings.curve after the first $nextTick, not only at it (#104 AC 1)', () => {
-  const select = curveSelectMarkup();
-  // The first, deferred write still has to happen — the options do not exist
-  // before $nextTick settles (the comment explains why).
-  assert.match(select, /\$nextTick\(\(\) => \{[^}]*\$el\.value = settings\.curve/);
-  // And something has to reapply $el.value whenever settings.curve changes
-  // afterwards. Name and body are read off the *same* call (run 10, decision
-  // K2): the earlier or-chain was blind in both of its branches on their own.
-  // A $watch on the wrong key slipped through the "more than one assignment"
-  // branch, because the watch body was itself the second assignment; a $watch
-  // on the right key with a body that writes nothing slipped through the
-  // name-only branch. Required is therefore the name of the curve AND an
-  // assignment to the field inside that watch's own body.
-  const watch = select.match(/\$watch\(\s*'settings\.curve'\s*,[^{]*\{([^}]*)\}/);
-  assert.ok(
-    watch,
-    "no $watch('settings.curve', (value) => { … }) reapplies the field when the "
-    + 'curve changes from outside the rail',
-  );
-  assert.match(
-    watch[1],
-    /\$el\.value\s*=/,
-    'the $watch names settings.curve but its body never writes $el.value, so the '
-    + 'field still stops following after the first $nextTick',
-  );
+test('rail and sheet draw the curve chips from one function, and a chip goes through setSlider', () => {
+  const row = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
+  const sheet = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
+  assert.equal((row.match(/function curve_steps\(/g) ?? []).length, 1);
+  assert.match(sheet, /curve_steps\(\)/);
+  const body = row.slice(row.indexOf('function curve_steps('));
+  assert.match(body, /class="curve-step"/);
+  assert.match(body, /@click="setSlider\('curve', step\.id\)"/, 'the pin is set by the gesture (ADR 0006)');
+  assert.match(body, /:aria-pressed="settings\.curve === step\.id"/, 'it follows settings.curve from anywhere');
 });
 
 /* ── One row for rail and sheet (#113) ──────────────────────────────────── */
@@ -135,7 +71,7 @@ test('rail and sheet draw their row from one function, defined once (#113 AC 3)'
   // The rail's three numbers are the row, with the sheet's own titles.
   assert.match(RAIL, /control_row\('players', 'Players'\)/);
   assert.match(RAIL, /control_row\('depth', 'Served ranks'/);
-  assert.match(RAIL, /control_row\('rankFloor', 'Min boosters per rank'\)/);
+  assert.doesNotMatch(RAIL, /rankFloor/, 'RankFloor stands on Details only (#143, decision 5)');
   assert.match(SHEET, /control_row\('depth', 'Served ranks'/);
   assert.match(SHEET, /function sheet_control[^]*control_row\(\$key, \$label/);
 });
@@ -190,7 +126,8 @@ test('the fourteen numbers all stand as the row, and the three choices do not', 
     'participationBooster', 'participationPack', 'players', 'rankFloor', 'ranked', 'tournamentPacks', 'winnerPacks',
   ]);
   // curve keeps its glyphs, depthStep its chips, combinedHandout its box (#113 AC 2).
-  assert.match(SHEET, /class="curve-step"/);
+  assert.match(SHEET, /curve_steps\(\)/);
+  assert.match(ROW, /class="curve-step"/);
   assert.match(SHEET, /class="step-chip"/);
   assert.match(SHEET, /type="checkbox"[^>]*setSlider\('combinedHandout'/);
 });

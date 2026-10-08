@@ -126,3 +126,31 @@ function control_row(string $key, string $label, string $unit = '', string $note
     </div>
     <?php
 }
+
+/**
+ * The `DistributionCurve`'s seven steps as chips, each a slope (ADR 0001) —
+ * the one control that picks a curve rather than counting. Two callers, like
+ * `control_row()`: the sheet, and since #143 (decision 6) the rail, where it
+ * stood as a `<select>` that was never decided (#62's tracer; #104 mended it
+ * twice). The prototype's rail has the same chips (`curveGlyphs()`).
+ *
+ * A chip goes through `setSlider()`, so pressing it pins the curve (ADR 0006),
+ * and its pressed state is bound to `settings.curve` itself — a Set switch, a
+ * `SetupLink` or the other caller moving the curve moves it here too.
+ */
+function curve_steps(): void
+{
+    ?>
+    <div class="curve-steps">
+      <template x-for="step in curveSteps" :key="step.id">
+        <button type="button" class="curve-step" :aria-pressed="settings.curve === step.id"
+                :title="`${step.id} · ×${step.ratio}`" :aria-label="`Curve ${step.id}`"
+                @click="setSlider('curve', step.id)">
+          <template x-for="(height, i) in curveBars(step)" :key="i">
+            <i :style="`height:${height}px`"></i>
+          </template>
+        </button>
+      </template>
+    </div>
+    <?php
+}

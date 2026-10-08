@@ -174,8 +174,8 @@ body {
   .set-chip,
   .info,
   .pin-reset,
-  .pin-chip,
-  .link-copy,
+  .plan-reset,
+  .plan-share,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -190,7 +190,6 @@ body {
   .notice-close,
   .notice-action,
   .notice-chip,
-  .prep-offer button,
   .link-report-exit,
   .sheet-check
 ) {
@@ -206,8 +205,8 @@ body {
   .set-chip,
   .info,
   .pin-reset,
-  .pin-chip,
-  .link-copy,
+  .plan-reset,
+  .plan-share,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -222,7 +221,6 @@ body {
   .notice-close,
   .notice-action,
   .notice-chip,
-  .prep-offer button,
   .link-report-exit,
   .sheet-check
 )::after {
@@ -455,14 +453,113 @@ textarea {
   flex: 0 0 auto; /* the fixed parts never shrink; only .plan-grid may */
 }
 
+/*
+ * The plan head carries Share and Reset-all top right (#143), beside its two
+ * lines and not in the title line: `.col-titleline` clips, and is 22 high. The
+ * buttons are drawn 32 × 32 — inside the head's 40, so the head and with it
+ * `PLAN_FIXED` keep their height — and take 44 × 44 through the hit rule,
+ * reaching 6 past the head into the stage's padding above and the gap below.
+ * Side by side at a pitch of 44 (32 + 12), so no area lies over the other
+ * button's drawing.
+ */
+.plan-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.plan-head > .col-titleline,
+.plan-head > .col-sub {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.plan-head-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  gap: 12px;
+}
+
+.plan-reset,
+.plan-share {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* The full reach is a pin matter, so it wears the pin's colours, as the chip
+   it replaces did; the count rides on its corner (#67 AC 6). */
+.plan-reset {
+  background: var(--pin-soft);
+  box-shadow: var(--glow);
+  color: var(--pin);
+}
+
+.plan-reset-count {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: var(--r-pill);
+  background: var(--pin);
+  color: var(--paper);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bubble at Share (#143): `Link copied` while the element carries
+   `data-link-copied`, the link field while there is no clipboard. Hidden
+   otherwise; placed by `placeShare()` in the viewport, like the drop
+   question. */
+.share-bubble {
+  position: fixed;
+  z-index: 40;
+  display: none;
+  padding: 7px 10px;
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.share-bubble[data-link-copied],
+.share-bubble.has-field {
+  display: block;
+}
+
+.share-bubble-done {
+  display: none;
+}
+
+.share-bubble[data-link-copied] .share-bubble-done {
+  display: inline;
+}
+
 .plan-output {
   font-size: 0.8rem;
   line-height: 18px;
   font-weight: 600;
-  /* One line at the Plan's first width (388 − 16 = 372px) for the usual
-     numbers: the first height counts this line once (`PLAN_FIXED`). At 16px
-     it wrapped there, and the fixed part grew by a line exactly at the width
-     the first height is measured at. */
+  /* One line, and worded short enough to stand whole at 393 beside both head
+     buttons (#143, K-B3: `packs`, not `tournament packs`): the first height
+     counts this line once (`PLAN_FIXED`). K6 below stays the net for the
+     narrower phones. */
   /* And it never wraps at all (#129, run 15, K6, closes A10): at 320–340 the
      line is wider than the column, and where it wrapped the head grew from 40
      to 58 and the fixed part outgrew its 178. It scrolls sideways instead —
@@ -817,7 +914,7 @@ textarea {
 }
 
 /*
- * The four hot sliders themselves (#63): pulled out of `plan.php` into
+ * The hot controls themselves (#63): pulled out of `plan.php` into
  * `controls-hot.php`, which was then shared by the fixed rail under `Plan` and
  * `Details`'s Grundform body. Since #64 filled that page from
  * `controls-sheet.php`, this grid is the rail's alone — `.plan-controls` (the
@@ -825,6 +922,7 @@ textarea {
  * controls are `.sheet-control` below and do not use this grid.
  */
 .controls-hot {
+  --rail-cells: repeat(auto-fit, minmax(164px, 1fr));
   display: grid;
   /* One row where the width allows it, two where it doesn't — the same rule
      that keeps the tile grid from needing an `if` on the fold, applied to
@@ -836,61 +934,45 @@ textarea {
      The rail's field is 44, not the sheet's 54, so two cells stand side by
      side down to a 360 stage (2 × 164 + 16 + 2 × 8); below it they stack
      (round 142·145, K2). */
-  grid-template-columns: repeat(auto-fit, minmax(164px, 1fr));
+  grid-template-columns: var(--rail-cells);
   /* 10 between the rows: a counter's field reaches 5 past its drawing, so a
      row below must not start inside that (#142). */
   gap: 10px 16px;
 }
 
-.plan-control {
+/*
+ * The curve on the rail (#143, decision 6): the sheet's chips over the
+ * rail's full width, under a head of title and state word. The chips are
+ * 34 high and 44 to the finger (#142), so the row is as high as a counter's:
+ * title line, then 34. Under a 348 stage seven chips at 44 no longer fit
+ * (7 × 44 + 6 × 4 = 332 for the rail's content) and they break 4 + 3, as on
+ * `Details` (round 142·145, K2: "+44 Höhe" at 320). The rail is the query
+ * container for that, named, so the sheet's own query (`Details`' column)
+ * does not answer for it.
+ */
+.plan-controls {
+  container: rail / inline-size;
+}
+
+.hot-curve {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
   gap: 2px;
 }
 
-.plan-control input,
-.plan-control select {
-  width: 100%;
+.controls-hot .curve-steps {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-/* The curve's select, drawn like the counter's field: 34 high, 44 to the
-   finger through a transparent border the background does not paint (#142).
-   Its own arrow is gone with `appearance`, so the Lucide chevron stands in
-   for it, laid over the right end and not in the way of a tap. */
-.plan-control-select {
-  position: relative;
-  display: block;
-}
-
-.plan-control select {
-  appearance: none;
-  display: block;
-  height: var(--hit);
-  margin: -5px 0;
-  padding: 0 28px 0 8px;
-  border: none;
-  border-block: 5px solid transparent;
-  border-radius: var(--r-ctl);
-  background: var(--accent-soft);
-  background-clip: padding-box;
-  color: var(--ink);
-  font-size: var(--field-size);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.plan-control-select .icon {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  font-size: 14px;
+@container rail (max-width: 331px) {
+  .controls-hot .curve-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /*
- * The rail's three numbers are the sheet's row (`control_row()`, #113), so
+ * The rail's two numbers are the sheet's row (`control_row()`, #113), so
  * their form is `.sheet-control-head` below; what is the rail's alone is the
  * cell they sit in. A grid cell is narrower than the sheet's column, and
  * where title and counter do not fit side by side the counter goes under the
@@ -1731,34 +1813,6 @@ textarea {
   opacity: 0.28;
 }
 
-/* The second reach, beside the `TournamentType` title: the count of what is
-   pinned, and it is the length of the list the question reads out. A word or
-   a number, never a bare symbol on its own. */
-.pin-chip {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 30px;
-  padding: 2px 9px;
-  border: none;
-  border-radius: var(--r-pill);
-  background: var(--pin-soft);
-  box-shadow: var(--glow);
-  color: var(--pin);
-  font: inherit;
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.pin-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentcolor;
-}
-
 /*
  * The question. Same form as the tile's bubble and a higher layer than the
  * messages: since the third reach sits in a button *inside* the NoticeStack,
@@ -1982,37 +2036,6 @@ textarea {
   color: inherit;
 }
 
-/*
- * The opportunity, and it reads as one: it sits under the last step, carries
- * the one button on this page, and wraps rather than squeezing the button —
- * in portrait the sentence and the button do not fit on one line, and a
- * button pushed to two characters would stop saying what it does.
- */
-.prep-offer {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
-  color: var(--accent);
-}
-
-.prep-offer button {
-  position: relative;
-  min-height: 30px;
-  border: 0;
-  border-radius: var(--r-ctl);
-  padding: 4px 10px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--btn-shadow);
-}
-
 .prep-note {
   margin: 10px 2px 0;
   font-size: 0.7rem;
@@ -2023,56 +2046,10 @@ textarea {
    The SetupLink on screen (#72)
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* `Copy link`, behind the reset chip. It takes the row's free space itself
-   only while the chip is gone — two `auto` margins would split it. */
-.link-copy {
-  display: inline-grid;
-  align-items: center;
-  min-height: 30px;
-  padding: 2px 9px;
-  border: none;
-  border-radius: var(--r-pill);
-  background: var(--paper);
-  box-shadow: var(--btn-shadow);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.72rem;
-  cursor: pointer;
-}
-
-.link-copy-alone {
-  margin-left: auto;
-}
-
-/* Both words share one cell, so the button keeps its width while it says
-   `Copied` for a moment (`flashCopied()`). Fleeting: the attribute lives on
-   the element and nowhere in the component. */
-.link-copy-word,
-.link-copy-done {
-  grid-area: 1 / 1;
-}
-
-.link-copy-done {
-  visibility: hidden;
-}
-
-.link-copy[data-link-copied] {
-  color: var(--accent);
-  box-shadow: var(--glow);
-}
-
-.link-copy[data-link-copied] .link-copy-word {
-  visibility: hidden;
-}
-
-.link-copy[data-link-copied] .link-copy-done {
-  visibility: visible;
-}
-
-/* No clipboard: the address in a preselected field, on its own line. */
+/* No clipboard: the address in a preselected field, in the Share bubble. */
 .link-field {
-  flex: 1 0 100%;
   display: flex;
+  width: min(292px, calc(100vw - 32px));
   gap: 6px;
   align-items: center;
 }
@@ -2524,6 +2501,10 @@ textarea {
   overflow: visible;
 }
 
+/* The bar's own cells, by the same property, so the probe cannot go on
+   measuring a cell the bar no longer has: until #143 it said 176 here while
+   the bar had 164 since K2 (round 142·145), and at 360–392 the probe stacked
+   the counters the bar stood side by side. */
 .app .rail-probe .controls-hot {
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  grid-template-columns: var(--rail-cells);
 }

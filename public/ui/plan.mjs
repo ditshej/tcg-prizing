@@ -92,6 +92,9 @@ const GAMES = [{ id: GAME.id, title: GAME_TITLE, types: TOURNAMENT_TYPES }];
  */
 const SEAM = { read: readLocation, write: writeLocation };
 
+/** The bubble at the Share button in the plan head (#143). */
+const SHARE_BUBBLE = '[data-share-bubble]';
+
 /**
  * What the app opens with, out of the address it was opened at.
  *
@@ -850,7 +853,7 @@ export function planApp(seam = SEAM) {
     /**
      * The `RaffleRange`, and it is **no `Regler`** (#69, #61): no pin, no
      * reset button, and a Set switch leaves it standing. The full reach at the
-     * pin chip counts it all the same and puts it back to `all` (run 12,
+     * reset in the plan head counts it all the same and puts it back to `all` (run 12,
      * Phase G on #72, `zaehlt-mit`) — `handSetKeys`, never `pinnedKeys`. Its default `all` is a constant of the term, which is why it
      * sits here as a literal and in no `DefaultSet`.
      *
@@ -1127,7 +1130,7 @@ export function planApp(seam = SEAM) {
       return pinnedItems(this.pins);
     },
 
-    /** What the pin chip counts and hands its question: the pinned items
+    /** What the reset in the plan head counts and hands its question: the pinned items
      *  and the `RaffleRange` off `all` (run 12, Phase G on #72). */
     get handSetKeys() {
       return handSetKeys(this.pins, this.linkChoices);
@@ -1140,7 +1143,7 @@ export function planApp(seam = SEAM) {
       return this.isPinned(key);
     },
 
-    /** The counter beside the type row. It counts `displays` and
+    /** The counter on the reset in the plan head (#143). It counts `displays` and
      *  `manualWinner` as **one** item each, however many `Rank`s carry one
      *  (#61, #67) — by being the same list the question enumerates — and the
      *  `RaffleRange` as one where it is off `all`, so it names the items the
@@ -1173,13 +1176,13 @@ export function planApp(seam = SEAM) {
      * **anchor** rather than a reach's name, which is the whole seam #103 is
      * owed: its Entscheid 4 puts this same handling at a second trigger, with
      * two pins and another button, and calls it "keine neue Mechanik".
-     * Nothing here knows "everything but Game and TournamentType" — the type
-     * row's chip passes `handSetKeys`, and a caller with a shorter list gets a
+     * Nothing here knows "everything but Game and TournamentType" — the plan
+     * head's reset passes `handSetKeys`, and a caller with a shorter list gets a
      * shorter question.
      */
     confirmDrop: null,
 
-    askDrop({ keys, anchor, reach = 'all', bubble = DROP_BUBBLE, done = null }) {
+    askDrop({ keys, anchor, reach = 'all', bubble = this.dropBubble, done = null }) {
       const list = (keys ?? []).filter((key) => this.isHandSet(key));
       if (!list.length) return;
       this.openTile = null;
@@ -1217,7 +1220,7 @@ export function planApp(seam = SEAM) {
 
     /** Confirming. The pins of the question fall — no more and no fewer — and
      *  whoever asked runs its own errand afterwards: #103's message closes
-     *  itself with the answer, the type row's chip has nothing to close. */
+     *  itself with the answer, the plan head's reset has nothing to close. */
     applyDrop() {
       const ask = this.dropQuestion;
       const done = this.confirmDrop?.done;
@@ -1327,23 +1330,6 @@ export function planApp(seam = SEAM) {
       return [list.displays, list.envelopes, list.winners];
     },
 
-    /**
-     * The `WinnerPack` hint's button. It is an **opportunity, not a notice**
-     * — it never enters the `NoticeStack` — and the way to another
-     * `WinnerPack` runs over more `TournamentPack`s, so what it sets is
-     * `tournamentPacks` and not `winnerPacks` (the prototype's
-     * `prepContent()`: `data-apply="tournamentPacks"`).
-     *
-     * It goes through `setSlider()` like every other control rather than
-     * writing `settings` itself: taking the offer is an operating gesture, so
-     * it pins the value (ADR 0006) and writes the address bar, and the
-     * `pinned` record the hint then falls silent on stays the one there
-     * already is.
-     */
-    takeOffer(offer) {
-      this.setSlider(offer.key, offer.value);
-    },
-
     // SetupLink on screen (#72)
 
     /**
@@ -1370,16 +1356,23 @@ export function planApp(seam = SEAM) {
     linkField: null,
 
     /**
-     * The button's one handling. `env` is what a browser has — the clipboard,
-     * the page's own address, a timer — handed in so `node --test` can hand in
-     * its own; the defaults are read only here, at the rind.
+     * The Share button's one handling (#72; #143). `env` is what a browser
+     * has — the clipboard, the page's own address, a timer, and the bubble
+     * at the button with the way to place it — handed in so `node --test` can
+     * hand in its own; the defaults are read only here, at the rind.
+     *
+     * The confirmation is the bubble saying `Link copied` for a moment
+     * (`flashCopied()` on the bubble element, #143 decision 4) — not in the
+     * NoticeStack, and not a member of this component. Without a clipboard
+     * the same bubble opens with the address in a preselected field.
      */
-    async copyLink(button, env = this.linkEnv()) {
+    async copyLink(button, env = this.linkEnv(button)) {
       const address = linkAddress(this.linkQuery, env.page);
       const outcome = await copyText(address, env.clipboard);
       if (outcome === 'copied') {
         this.linkField = null;
-        flashCopied(button, env);
+        flashCopied(env.note, env);
+        env.place?.();
       } else {
         this.linkField = address;
       }
@@ -1391,11 +1384,12 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * What the `Copy link` handling needs from a browser: the clipboard, if
-     * there is one, and the page's own address to resolve the copy form
-     * against. `document.baseURI` rather than the address bar's own object:
-     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page address
-     * is all that is needed here — its query is replaced anyway.
+     * What the Share handling needs from a browser: the clipboard, if there
+     * is one, the page's own address to resolve the copy form against, a
+     * timer, and the bubble at the button (`[data-share-bubble]`) with its
+     * placing. `document.baseURI` rather than the address bar's own object:
+     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page
+     * address is all that is needed here — its query is replaced anyway.
      */
     linkEnv() {
       return {
@@ -1403,7 +1397,29 @@ export function planApp(seam = SEAM) {
         page: globalThis.document?.baseURI,
         later: setTimeout,
         cancel: clearTimeout,
+        note: globalThis.document?.querySelector(SHARE_BUBBLE) ?? null,
+        place: () => this.placeShare(),
       };
+    },
+
+    /**
+     * The measuring rind of the Share bubble: the bubble layer's arithmetic
+     * (`bubble.mjs`), the viewport as its frame, the Share button as its
+     * anchor — the same placing as the drop question's. It runs when the
+     * bubble shows: at a copy, and when the link field opens.
+     */
+    placeShare() {
+      if (typeof document === 'undefined') return;
+      const bubbleEl = document.querySelector(SHARE_BUBBLE);
+      const anchorEl = document.querySelector('[data-share]');
+      if (!bubbleEl || !anchorEl) return;
+      const at = bubblePosition({
+        anchor: anchorEl.getBoundingClientRect(),
+        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        stage: { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight },
+      });
+      bubbleEl.style.left = `${at.left}px`;
+      bubbleEl.style.top = `${at.top}px`;
     },
 
     /**
@@ -1611,7 +1627,7 @@ export function planApp(seam = SEAM) {
 
     /**
      * *Drop all N and follow <Type>* — the third reach of the way back, and
-     * the same question in the same bubble as at the type title (#33, #67):
+     * the same question in the same bubble as at the reset in the plan head (#33, #67; #143):
      * anchored at the button that was pressed. Confirmed, it drops exactly the
      * pins the notice lists and the notice closes with the answer.
      */
@@ -1621,7 +1637,6 @@ export function planApp(seam = SEAM) {
         keys: this.carryOver.keys,
         anchor,
         reach: 'carry',
-        bubble: this.carryBubble,
         done: () => this.dismissNotice('carryOver'),
       });
     },
@@ -1639,7 +1654,6 @@ export function planApp(seam = SEAM) {
         keys: left.keys,
         anchor,
         reach: 'handout',
-        bubble: this.carryBubble,
         done: () => this.dismissNotice('handoutOff'),
       });
     },
@@ -1664,14 +1678,15 @@ export function planApp(seam = SEAM) {
      * Where the question is drawn. The sheet's bubble (`DROP_BUBBLE`) is
      * markup inside `Details`, so wherever `Details` is not on screen it sits
      * under a hidden ancestor and cannot show — while the CarryOverNotice
-     * lies over every page. There the question is drawn in the layer's own
-     * bubble of the same form (`views/notices.php`), the second trigger site
-     * `askDrop()`'s `bubble` argument was left open for. Asked of the fold,
-     * not of `activePage` (#71, B13): from two columns on `Details` stands as
-     * a column while the active page is `Plan`, and the sheet's bubble is the
-     * one to use.
+     * lies over every page, and since #143 the full reach is pressed in the
+     * plan head, which is on screen wherever the `Plan` is. There the question
+     * is drawn in the layer's own bubble of the same form
+     * (`views/notices.php`). Asked of the fold, not of `activePage` (#71,
+     * B13): from two columns on `Details` stands as a column while the active
+     * page is `Plan`, and the sheet's bubble is the one to use. It is
+     * `askDrop()`'s default, so every reach takes the same rule.
      */
-    get carryBubble() {
+    get dropBubble() {
       return this.shows('details') ? DROP_BUBBLE : '[data-notice-drop]';
     },
   };

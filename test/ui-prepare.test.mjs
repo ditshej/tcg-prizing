@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { resolveSettings } from '../public/core/defaults.mjs';
 import { derivePool, distribute } from '../public/core/distribute.mjs';
@@ -34,7 +35,7 @@ function texts(item) {
 /** Everything the three items and the closing note put on the screen. */
 function allText(list) {
   const fromItem = (item) =>
-    [item.unit, item.total ?? '', item.source ?? '', item.offer?.text ?? '', item.offer?.button ?? '']
+    [item.unit, item.total ?? '', item.source ?? '']
       .concat(item.lines.flatMap((line) => [line.text, line.aside ?? '']))
       .join(' ');
   return [fromItem(list.displays), fromItem(list.envelopes), fromItem(list.winners), list.note].join(' ');
@@ -172,81 +173,29 @@ test('the difference to the yield is a half-sentence on the yield line, both way
   assert.equal(more.lines.filter((line) => line.id === 'yield').length, 1);
 });
 
-test('the WinnerPack hint names the amount, carries a button and points at the packs', () => {
-  const { list } = stand('weekly');
-  const offer = list.winners.offer;
-
-  assert.ok(offer);
-  assert.equal(offer.key, 'tournamentPacks');
-  assert.ok(offer.need > 0);
-  assert.ok(offer.text.startsWith(`${offer.need} more`));
-  assert.ok(offer.text.endsWith(`would make it ${offer.would}`));
-  assert.equal(offer.button, `Set packs to ${offer.value}`);
-});
-
 /**
- * The hint counts **only inside the opened `PromoEnvelope`** (#65, run-11
- * decision K2), the way the prototype does. Held against the core rather than
- * against itself: where it speaks, the packs it points at are the smallest
- * `tournamentPacks` count at which `derivePool()` yields one more
- * `WinnerPack`, and that count still lies inside the envelope already opened.
- * Where that envelope has nothing left to give — or nothing is opened — it is
- * silent. Swept over a range of stands so both envelope boundaries are inside
- * the sweep and not a case somebody remembered.
+ * #143, decision 7 (overruling #61 story 44 and #65): the `WinnerPack` hint
+ * is gone, sentence and button — "Wir passen die TournamentPacks eigentlich
+ * nie an — ein Usecase, der nur verwirrt." Swept over the stands where it used
+ * to speak, inside and across both envelope boundaries of Release, and at the
+ * stand it was first built for.
  */
-test('the hint speaks only where the opened envelope still yields one more', () => {
+test('Prepare offers no more packs at any stand: the WinnerPack hint is gone (#143)', () => {
   const type = TOURNAMENT_TYPES.find((entry) => entry.id === 'release');
-  let spoke = 0;
-  let silent = 0;
   for (let packs = 0; packs <= 100; packs++) {
     const pins = { tournamentPacks: packs };
-    const settings = resolveSettings({ game: GAME, type, pins });
-    const plan = distribute(settings, pins);
-    const offer = preparationList(plan).winners.offer;
-    const now = derivePool(settings).winnersDerived;
-    const size = settings.envelopeSize;
-    const envelopeEnd = (Math.floor(packs / size) + 1) * size;
-
-    let first = null;
-    for (let n = packs + 1; n < envelopeEnd && first === null; n++) {
-      if (derivePool({ ...settings, tournamentPacks: n }).winnersDerived > now) first = n;
-    }
-    if (plan.pool.opened === 0 || first === null) {
-      assert.equal(offer, null, `packs ${packs} offers past the opened envelope`);
-      silent++;
-      continue;
-    }
-    assert.ok(offer, `packs ${packs} has no hint`);
-    assert.equal(offer.value, first, `packs ${packs}`);
-    assert.equal(offer.need, first - packs, `packs ${packs}`);
-    assert.equal(offer.would, derivePool({ ...settings, tournamentPacks: first }).winnersDerived);
-    spoke++;
+    const plan = distribute(resolveSettings({ game: GAME, type, pins }), pins);
+    const list = preparationList(plan);
+    assert.ok(!('offer' in list.winners), `packs ${packs}`);
+    assert.doesNotMatch(allText(list), /more packs? would make it|Set packs to/, `packs ${packs}`);
   }
-  assert.ok(spoke > 0 && silent > 0, 'the sweep has to hold both sides');
+  assert.ok(!('offer' in stand('weekly').list.winners));
+  assert.equal(stand('weekly').list.winners.lines.at(-1).id, 'yield', 'the derivation still ends on the yield line');
 });
 
-/** The two stands the decision names, measured on the real Release sheet. */
-test('Release at 54 packs and at 64 packs carries no hint', () => {
-  const at54 = stand('release', { tournamentPacks: 54 }).list.winners;
-  assert.equal(at54.fetch, 4);
-  assert.equal(at54.offer, null);
-
-  const at64 = stand('release', { tournamentPacks: 64 });
-  assert.equal(at64.plan.pool.opened, 0, 'two even envelopes, nothing opened');
-  assert.equal(at64.list.winners.offer, null);
-});
-
-test('the hint is silent while winnerPacks is pinned', () => {
-  assert.ok(stand('weekly').list.winners.offer);
-  assert.equal(stand('weekly', { winnerPacks: 4 }).list.winners.offer, null);
-  // A pin on some other slider says nothing about the staffel.
-  assert.ok(stand('weekly', { players: 39 }).list.winners.offer);
-});
-
-test('the hint sits under the last line of the WinnerPack derivation', () => {
-  const { list } = stand('weekly');
-  assert.equal(list.winners.lines.at(-1).id, 'yield');
-  assert.ok(list.winners.offer);
+test('the Prepare view carries no offer and no button any more (#143)', () => {
+  const view = readFileSync(new URL('../views/prepare.php', import.meta.url), 'utf8');
+  assert.doesNotMatch(view, /prep-offer|takeOffer|item\.offer/);
 });
 
 test('the closing sentence calls the judge pool and the reserved displays a move, not an order', () => {

@@ -62,6 +62,7 @@ now?**
 | A later ADR **extends** it — adds a level, a condition, a case — and overturns nothing             | yes            | the new ADR                                                  | `Ergänzt durch ADR-NNNN.`                                               |
 | A later ADR **overturns** it, in part or in whole                                                  | yes            | the new ADR                                                  | `Teilweise überholt durch ADR-NNNN.` / `Vollständig überholt durch ADR-NNNN.` |
 | A later `Nachtrag` in the **same** ADR retracts a sentence of its own body — tickets and months after it was written | no             | that ADR's `Nachtrag`                                        | no title stamp — a ⚠︎ note **at the retracted sentence** (see below)     |
+| A **ticket**, not an ADR, moves a place an ADR names — a button, a hint, a surface                  | no             | the ticket                                                   | no title stamp — a ⚠︎ note **at the sentence**, naming the ticket (see below) |
 
 Either stamp is a single line directly under the title of the earlier ADR:
 
@@ -148,6 +149,24 @@ and the `Nachtrag` is the decision that changed it; a document that quietly
 reads as if the first had never happened loses the reason the second exists.
 
 Decided 2026-09-28, out of run 8, at ADR-0007.
+
+### A ticket that moves a place an ADR names is marked at the sentence too
+
+ADRs name places as examples — "the button beside the `TournamentType` title".
+When a ticket later moves that place, the decision itself stands; only its
+address is stale. That is not a new ADR and not a title stamp: the same ⚠︎ note
+as above goes **directly after the sentence**, names the **ticket** (`#143`, not
+a line number), and says the new place in one sentence. The old sentence stays.
+
+```md
+> ⚠︎ **Ort verlegt durch #143.** Der Knopf steht seit #143 als Icon mit Zähler im
+> Plan-Kopf oben rechts, nicht mehr neben dem `TournamentType`-Titel.
+```
+
+Where the ticket removes the thing outright, the note says so
+(`Beispiel entfernt durch #143`) and what still holds.
+
+Decided 2026-10-08, out of the round on #143 (K-B5).
 
 The vendored `/domain-modeling` skill offers only a whole-file
 `Status: superseded` in frontmatter and never asks for the back-reference. That

@@ -111,7 +111,13 @@ Sitzungszustand — Seite, Vollbild, Faltung, offene Blase, Verlosungsleiste.
 Der Pin-Knopf neben `Copy link` zählt sie mit, wo sie von `all` abweicht, und
 sein „alle zurücksetzen" stellt sie auf `all` zurück (Lauf 12, Phase G an #72,
 gewählt `zaehlt-mit`) — so nennt der Zähler dieselben Posten, die der Link
-trägt. Ein Pin wird sie dadurch nicht. Von der `WinnerRaffle` reist allein sie:
+trägt.
+
+> ⚠︎ **Ort verlegt durch #143.** Der Knopf „alle zurücksetzen" mit seinem Zähler
+> steht seit #143 als Icon im Plan-Kopf oben rechts, neben Share; auf `Details`
+> stehen weder er noch `Copy link`.
+
+Ein Pin wird sie dadurch nicht. Von der `WinnerRaffle` reist allein sie:
 kein weiterer Verlosungsschlüssel (Phase G, `G-raffle-hits`; dass gewürfelte
 Treffer als `manualWinner` mitreisen, ist dort entschieden: „bleibt so", #72,
 Korrektur zu `G-raffle-hits` vom 2026-10-01).

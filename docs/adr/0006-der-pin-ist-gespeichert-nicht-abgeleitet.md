@@ -78,6 +78,9 @@ wenn der Wert mit dem Default übereinstimmt.
 > `TournamentType` setzt nichts mehr zurück; den Rückweg für alle Pins trägt ein
 > zweiter Knopf neben dem `TournamentType`-Titel. Weiterlesen dort, bevor du dich
 > auf diesen Absatz stützt.
+>
+> ⚠︎ **Ort verlegt durch #143.** Dieser zweite Knopf steht seit #143 als Icon mit
+> Zähler im Plan-Kopf oben rechts, nicht mehr am `TournamentType`-Titel.
 
 **Die Regel gilt für alle Regler gleich**, obwohl sie nur bei dreien Arbeit tut.
 Bei Reglern mit konstantem Default und bei den neutral startenden
@@ -108,6 +111,10 @@ auf einmal auf das gewählte Set zurückstellt — dieselbe Handlung wie der Kno
 Regler, nur mit voller Reichweite. Er reicht über sämtliche Pins einschliesslich
 der Kachel-Zuteilungen, hält aber bei `Game` und `TournamentType` an: er stellt
 den Schirm auf den gewählten Typ zurück, er wählt ihn nicht neu.
+
+> ⚠︎ **Ort verlegt durch #143.** Der Knopf steht seit #143 als Icon mit Zähler im
+> Plan-Kopf oben rechts, nicht mehr neben dem `TournamentType`-Titel; seine
+> Reichweite ist dieselbe.
 
 Damit ist dieser Knopf die einzige verbliebene Stelle im Programm, an der
 Handarbeit verlorengeht, und er trägt eine zweistufige Sicherung an Ort und
@@ -151,6 +158,9 @@ wahr und ist es seit dem `CarryOverNotice` (#31) nicht mehr: dessen Knopf „all
 `manual`. Es ist dieselbe Handlung in der dritten Reichweite, nicht eine eigene.
 Sie fragt darum ebenso nach. Die Reichweite am **einzelnen** Regler fragt nicht:
 dort steht ein Wert, er ist sichtbar, und er ist mit einem Griff wieder gesetzt.
+
+> ⚠︎ **Ort verlegt durch #143.** Der Knopf, der hier „am `TournamentType`-Titel"
+> heisst, steht seit #143 als Icon mit Zähler im Plan-Kopf oben rechts.
 
 Kein eigener Begriff im Glossar. Eine Rückfrage vor einer Massenlöschung ist
 allgemeine Bedienform und keine Aussage über die Domäne; was sie schützt, steht

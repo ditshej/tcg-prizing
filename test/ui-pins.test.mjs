@@ -636,6 +636,7 @@ test('a pinned value a wall sank under stands, and its minus still leaves it (AD
 const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
 const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
 const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url), 'utf8');
+const PLAN = readFileSync(new URL('../views/plan.php', import.meta.url), 'utf8');
 const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
 
 /**
@@ -646,7 +647,8 @@ const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), '
 test('the sheet labels and the question labels are the same words', () => {
   const pattern = /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
   const calls = [...SHEET.matchAll(pattern), ...RAIL.matchAll(pattern)];
-  assert.ok(calls.length >= 17, 'sheet and rail compose their numbers through the shared row');
+  // Fourteen on the sheet and two on the rail (#143 took RankFloor off it).
+  assert.ok(calls.length >= 16, 'sheet and rail compose their numbers through the shared row');
   for (const [, key, label] of calls) {
     assert.equal(PIN_LABELS[key], label.replace(/\\'/g, "'"), `${key} is called the same in both places`);
   }
@@ -677,19 +679,33 @@ test('every control on the sheet carries its state word and its own way back', (
   }
 });
 
-test('the rail under the plan marks its four the same way', () => {
-  // Three through the shared row, which carries the word; the curve select
-  // marks itself as it did (#104).
-  for (const key of ['players', 'depth', 'rankFloor']) {
+test('the rail under the plan marks its three the same way', () => {
+  // Two through the shared row, which carries the word; the curve chips carry
+  // their own head (#143).
+  for (const key of ['players', 'depth']) {
     assert.ok(RAIL.includes(`control_row('${key}'`), `${key} is marked on the rail too`);
   }
-  assert.ok(RAIL.includes(`stateWord('curve')`), 'curve is marked on the rail too');
+  assert.ok(RAIL.includes(`sheet_pin_head('curve')`), 'curve is marked on the rail too');
 });
 
-test('the full reach hangs off the type row and asks before it acts', () => {
-  assert.match(SHEET, /data-drop-all/);
-  assert.match(SHEET, /askDrop\(/);
-  assert.ok(!/@click="applyDrop\(\)"[^]*data-drop-all/.test(SHEET), 'the chip never drops outright');
+/**
+ * #143, decisions 1–3: the full reach left the type row on `Details` for the
+ * plan head, top right, as the `rotate-ccw` icon. It still asks first, over
+ * the same list (`handSetKeys`), and still carries the count of that list —
+ * the pin counter #67 AC 6 holds against the question.
+ */
+test('the full reach hangs off the plan head, carries the count and asks before it acts (#143)', () => {
+  const head = PLAN.slice(PLAN.indexOf('<header class="col-head plan-head"'), PLAN.indexOf('</header>'));
+  const reset = head.slice(head.indexOf('class="plan-reset"'));
+  const button = reset.slice(0, reset.indexOf('</button>'));
+  assert.match(button, /data-drop-all/);
+  assert.match(button, /@click="askDrop\(\{ keys: handSetKeys, anchor: '\[data-drop-all\]' \}\)"/);
+  assert.match(button, /:aria-label="dropAllLabel"/);
+  assert.match(button, /:title="dropAllLabel"/);
+  assert.match(button, /icon\('rotate-ccw'\)/);
+  assert.match(button, /x-text="pinCount"/);
+  assert.ok(!/@click="applyDrop\(\)"/.test(button), 'the button never drops outright');
+  assert.doesNotMatch(SHEET, /data-drop-all|pin-chip/, 'Details carries it no more');
 });
 
 test('the question is a bubble anchored at the button, and not the app one overlay', () => {
