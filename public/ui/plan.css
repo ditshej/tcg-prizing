@@ -2036,17 +2036,6 @@ textarea {
   color: inherit;
 }
 
-/*
- * LEFT ON PURPOSE, TO BE DELETED: the `WinnerPack` hint this dressed is gone
- * (#143, decision 7), and nothing selects `.prep-offer` any more. The rule
- * stays only because `test/ui-look.test.mjs` (#144's file in the same batch)
- * lists `.prep-offer` among the data lines it expects; delete this rule and
- * that entry together.
- */
-.prep-offer {
-  border-top: 1px solid var(--line);
-}
-
 .prep-note {
   margin: 10px 2px 0;
   font-size: 0.7rem;

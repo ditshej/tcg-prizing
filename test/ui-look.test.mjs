@@ -87,7 +87,7 @@ test('no solid px border but the data lines: the group title on Details and the 
   const lines = [...code.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .filter(([, , body]) => /border(?:-top|-bottom|-left|-right)?:\s*(?!none|0\b)[^;]*\d+px solid (?!transparent)/.test(body))
     .map(([, selector]) => selector.trim());
-  assert.deepEqual(lines.sort(), ['.prep-offer', '.prep-step', '.sheet-group-head'].sort());
+  assert.deepEqual(lines.sort(), ['.prep-step', '.sheet-group-head'].sort());
 });
 
 test('Details draws the line over every group title (#15, prototype `.grouphead`)', () => {
