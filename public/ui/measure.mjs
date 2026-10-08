@@ -10,7 +10,7 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { chipIntoView, diagramCap, diagramFits, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, pillStep, raffleCover, raffleLift, raffleScrollPadding, rowScrollEnds, tileColumnsFor } from './geometry.mjs';
+import { chipIntoView, diagramCap, diagramFits, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, pillStep, PULSE_MS, pulseClip, pulseReach, raffleCover, raffleLift, raffleScrollPadding, rowScrollEnds, tileColumnsFor } from './geometry.mjs';
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -182,8 +182,8 @@ export function showChipInRow(listEl, rank) {
  * the tile — into the middle of the free strip, and not at all when it is
  * already in it — and the tile lifts out briefly.
  *
- * **Fleeting on purpose, and nowhere written down.** The class is put on for
- * the length of one animation and taken off again at `animationend`, so the
+ * **Fleeting on purpose, and nowhere written down.** The pulse lives for the
+ * length of one animation and is taken away again at `animationend`, so the
  * mark lives in the running animation and in no field of the component. A
  * lasting mark would be the provenance the model deliberately does not keep
  * (CONTEXT.md, `WinnerRaffle`).
@@ -201,12 +201,123 @@ export function showRaffleHit(gridEl, barEl, rank) {
   );
   if (delta !== 0) gridEl.scrollTo({ top: gridEl.scrollTop + delta, behavior: 'smooth' });
 
-  /* Taken off and put back on with a reflow in between, or a second hit on
-     the same tile would find the class already there and run nothing. */
-  tileEl.classList.remove('tile-hit');
-  void tileEl.offsetWidth;
-  tileEl.classList.add('tile-hit');
-  tileEl.addEventListener('animationend', () => tileEl.classList.remove('tile-hit'), { once: true });
+  startPulse(gridEl, barEl, tileEl);
+}
+
+/* The one pulse on screen; a new hit ends the one before it. */
+let running = null;
+
+/** Alpine's directives, which a copy of the tile must not carry (see below). */
+const DIRECTIVE = /^(x-|:|@)/;
+
+/**
+ * Copies the tile's face onto `face`: its classes, its open state and its
+ * content, without `data-rank` (nothing that looks for the tile may find the
+ * copy) and without Alpine's attributes and templates — the copy stands
+ * inside the component, and Alpine would otherwise start evaluating
+ * `tile(row)` on it with no `row` in scope.
+ */
+function copyFace(tileEl, face) {
+  face.className = `${tileEl.className.replace(/\btile-pulsing\b/g, ' ').trim()} tile-hit`;
+  const open = tileEl.getAttribute('aria-expanded');
+  if (open == null) face.removeAttribute('aria-expanded');
+  else face.setAttribute('aria-expanded', open);
+  const content = tileEl.cloneNode(true);
+  for (const template of content.querySelectorAll('template')) template.remove();
+  for (const el of content.querySelectorAll('*')) {
+    for (const { name } of Array.from(el.attributes)) if (DIRECTIVE.test(name)) el.removeAttribute(name);
+  }
+  face.replaceChildren(...Array.from(content.childNodes));
+}
+
+/**
+ * The pulse, drawn **outside the grid's clip** (#168, decision K1,
+ * https://github.com/ditshej/tcg-prizing/issues/168#issuecomment-6068726592).
+ *
+ * The pulse reaches 9.48 px past the tile at its apex (`scale(1.14)` with a
+ * 5 px ring) and the grid is a scroller: it clipped the pulse of the top row
+ * and of the outer columns, and no padding the stage can give (≤ 8) holds it.
+ * `z-index` cannot help — a scroller clips its descendants whatever their
+ * stacking. So the pulse runs on a copy of the tile in a layer of its own,
+ * beside the grid rather than in it: in the top layer as a manual popover
+ * where the browser has one, `position: fixed` where not. The layer stands on
+ * the tile's box and is moved there again every frame, so it follows the
+ * grid's smooth scroll, a scrolled page and a resize alike; the tile itself
+ * is only made transparent meanwhile (`.tile-pulsing`), so a tap still finds
+ * it. The layer goes at `animationend`, with a timeout behind it, or when the
+ * next hit starts.
+ *
+ * The values stay the app's own, a deliberate departure from the prototype's
+ * hitpulse (proto:741-747) — see `@keyframes tile-hit` in `plan.css`.
+ */
+function startPulse(gridEl, barEl, tileEl) {
+  if (running) running.end();
+  const host = gridEl.parentElement;
+  if (!host) return;
+
+  const layer = document.createElement('div');
+  layer.className = 'tile-pulse';
+  layer.setAttribute('aria-hidden', 'true');
+  layer.inert = true;
+  const face = document.createElement(tileEl.tagName.toLowerCase());
+  if (face.tagName === 'BUTTON') face.type = 'button';
+  face.tabIndex = -1;
+  copyFace(tileEl, face);
+  layer.appendChild(face);
+
+  const place = () => {
+    const r = tileEl.getBoundingClientRect();
+    const box = gridEl.getBoundingClientRect();
+    const win = {
+      top: box.top + gridEl.clientTop,
+      left: box.left + gridEl.clientLeft,
+      bottom: box.top + gridEl.clientTop + gridEl.clientHeight,
+      right: box.left + gridEl.clientLeft + gridEl.clientWidth,
+    };
+    const barTop = barEl ? barEl.getBoundingClientRect().top : Infinity;
+    const clip = pulseClip(r, win, barTop, pulseReach(r.width, r.height));
+    layer.style.left = `${r.left}px`;
+    layer.style.top = `${r.top}px`;
+    layer.style.width = `${r.width}px`;
+    layer.style.height = `${r.height}px`;
+    layer.style.visibility = clip ? '' : 'hidden';
+    if (clip) layer.style.clipPath = `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px)`;
+  };
+
+  /* The tile can change while it pulses — a hit puts its winner mark on it —
+     and the copy follows, without restarting its animation. */
+  const observer = typeof MutationObserver === 'undefined' ? null
+    : new MutationObserver(() => copyFace(tileEl, face));
+
+  let frame = 0;
+  let timer = 0;
+  const pulse = {
+    layer,
+    end() {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+      if (observer) observer.disconnect();
+      if (layer.matches?.(':popover-open')) layer.hidePopover();
+      layer.remove();
+      tileEl.classList.remove('tile-pulsing');
+      if (running === pulse) running = null;
+    },
+  };
+  running = pulse;
+
+  place();
+  host.appendChild(layer);
+  if (typeof layer.showPopover === 'function') {
+    layer.popover = 'manual';
+    layer.showPopover();
+  }
+  tileEl.classList.add('tile-pulsing');
+  if (observer) observer.observe(tileEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'aria-expanded'] });
+
+  const follow = () => { place(); frame = requestAnimationFrame(follow); };
+  frame = requestAnimationFrame(follow);
+  face.addEventListener('animationend', () => pulse.end(), { once: true });
+  timer = setTimeout(() => pulse.end(), PULSE_MS + 300);
 }
 
 /* ── The fold (#71) ──────────────────────────────────────────────────────── */

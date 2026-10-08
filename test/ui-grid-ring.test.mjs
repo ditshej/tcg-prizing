@@ -5,14 +5,15 @@ import { readFileSync } from 'node:fs';
 import { fadeHeight, hitScrollDelta } from '../public/ui/geometry.mjs';
 
 /*
- * The open tile's ring and the raffle hit's pulse lie outside the tile, and
- * the tile grid is a scroller: it clips at its padding box. With no padding
+ * The open tile's ring lies outside the tile, and the tile grid is a
+ * scroller: it clips at its padding box. With no padding
  * at the top and the sides, the ring of the top row and of the outer columns
  * was cut (#168, measured in WebKit and Chromium: 3 px missing at the top,
  * and at the sides too at 360). The prototype's answer (`.gridwin`,
  * proto:748-755): the padding moves onto the scroller itself, with a negative
  * margin against it — the tiles stand where they stood, only the clip edge
- * lies further out.
+ * lies further out. (The raffle hit's pulse reaches further than any padding
+ * could hold; it is drawn outside the scroller, `ui-hit-pulse.test.mjs`.)
  */
 
 const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');

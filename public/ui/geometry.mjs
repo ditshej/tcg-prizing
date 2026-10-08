@@ -224,8 +224,8 @@ export function raffleLift(barHeight) {
  * run, and the tile is seen sliding to the edge rather than arriving in the
  * middle (the prototype's Runde 16, repaired in Runde 17).
  *
- * `paddingTop` is the scroller's own top padding (#168): the room the pulse
- * needs at the top, not room a tile counts as seen in. The strip starts below
+ * `paddingTop` is the scroller's own top padding (#168): the room the open
+ * tile's ring needs at the top, not room a tile counts as seen in. The strip starts below
  * it, where the scroll window started before the padding came.
  */
 export function hitScrollDelta(windowRect, tileRect, barTop = Infinity, paddingTop = 0) {
@@ -233,6 +233,57 @@ export function hitScrollDelta(windowRect, tileRect, barTop = Infinity, paddingT
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
   return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
+}
+
+/* ── The hit's pulse, drawn outside the grid's clip (#168, K1) ──────────── */
+
+/*
+ * The pulse's own numbers, as `@keyframes tile-hit` in `plan.css` writes them
+ * (held equal by `test/ui-hit-pulse.test.mjs`): the tile grows to 1.14 at the
+ * apex and its ring runs out to 11 px while it fades, once, in 900 ms. Kept
+ * as the app had them, a deliberate departure from the prototype's hitpulse
+ * (proto:741-747: 1.11, .85s, three times) — decision K1,
+ * https://github.com/ditshej/tcg-prizing/issues/168#issuecomment-6068726592
+ */
+export const PULSE_SCALE = 1.14;
+export const PULSE_RING_MAX = 11;
+export const PULSE_MS = 900;
+
+/**
+ * How far the pulse can paint past the tile's edge, at most: the largest ring
+ * at the largest scale, around the centre. An upper bound and not the curve —
+ * scale and ring peak at different moments — so the clip below never cuts
+ * what the pulse actually draws.
+ */
+export function pulseReach(width, height) {
+  const half = Math.max(width, height) / 2;
+  return Math.ceil((half + PULSE_RING_MAX) * PULSE_SCALE - half);
+}
+
+/**
+ * The clip of the pulse overlay, as `clip-path: inset()` offsets from the
+ * tile's own box (negative: past its edge), or `null` where the tile is not in
+ * the grid's window at all and the overlay is not drawn.
+ *
+ * The overlay stands outside the scroller, so the scroller no longer clips
+ * it: the window's edges are pushed out by `reach`, and the pulse draws over
+ * header, diagram, legend and the grid's edge (K1). Two edges stay: a tile
+ * scrolled out of the window shows no more than `reach` of itself past the
+ * edge, and an open raffle bar (`barTop`) still covers the tiles that scroll
+ * behind it — the bar stands over the grid, and the pulse stays under it as
+ * the tile itself does.
+ */
+export function pulseClip(tileRect, windowRect, barTop = Infinity, reach = 0) {
+  const visibleBottom = Math.min(windowRect.bottom, barTop);
+  const seen = tileRect.right > windowRect.left && tileRect.left < windowRect.right
+    && tileRect.bottom > windowRect.top && tileRect.top < visibleBottom;
+  if (!seen) return null;
+  return {
+    top: windowRect.top - reach - tileRect.top,
+    right: tileRect.right - (windowRect.right + reach),
+    bottom: tileRect.bottom - Math.min(windowRect.bottom + reach, barTop),
+    left: windowRect.left - reach - tileRect.left,
+  };
 }
 
 /* ── The retraction list as one sideways row (#129, run 15, K5) ─────────── */
@@ -303,8 +354,8 @@ export function fadeShown({ scrollHeight, clientHeight, scrollTop, paddingBottom
  * the second row — the row the first height exists for.
  *
  * The window is the scroller's height less its top padding (#168): that
- * padding is room for the open tile's ring and the hit's pulse above the top
- * row, and it gives the band no extra height.
+ * padding is room for the open tile's ring above the top row, and it gives
+ * the band no extra height.
  */
 export function fadeHeight(clientHeight, paddingTop = 0) {
   return Math.min(FADE_HEIGHT, Math.round((clientHeight - paddingTop) / 4));
