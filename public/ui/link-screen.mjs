@@ -1,12 +1,15 @@
 /**
  * The SetupLink on screen (#72): the two places where the encoding of #47
- * becomes visible — the Share button in the plan head (#143), and the
- * `LinkMigration` report as the app's one overlay.
+ * becomes visible — Share in the plan head (#143) with its two branches,
+ * the system's share sheet wherever `navigator.share` exists and the bubble
+ * with `Copy link` where it does not (#155, K3), and the `LinkMigration`
+ * report as the app's one overlay.
  *
  * Everything here is on the proven side of the seam (ADR 0004): what the
  * button copies and what the report says are pure answers to plain inputs.
- * The rind in `plan.mjs` only hands in what a browser has — the page's own
- * address, the clipboard, the button element — and nothing here reads a
+ * The rind in `plan.mjs` only hands in what a browser has —
+ * `navigator.share`, the page's own address, the clipboard, the document for
+ * the `execCommand` fallback, the button element — and nothing here reads a
  * global itself. This file writes no word of the wire format either: the copy
  * form is `encode()`'s, the report is #51's data structure, read as it is.
  */
@@ -25,30 +28,79 @@ export function linkAddress(query, page) {
 }
 
 /**
- * Puts `text` on `clipboard` and answers what happened: `'copied'`, or
- * `'manual'` when there is no clipboard interface or it refused. The second
- * answer is the field with the address preselected (#72 AC 4) — the button
- * never claims a success the browser did not grant.
+ * Which way Share goes (#155, F3 c as refined by K3): `'system'` — straight
+ * into the system's share sheet, no bubble — on every device that has a
+ * `navigator.share` to call, Safari on the Mac, tablets and Edge on Windows
+ * included; `'bubble'` — the bubble with `Copy link` — only where there is
+ * none (plain http in the LAN is no secure context, so it has none). The
+ * pointer plays no part: K3 dropped the `(pointer: coarse)` condition.
  */
-export async function copyText(text, clipboard) {
-  if (typeof clipboard?.writeText !== 'function') return 'manual';
+export function shareBranch({ share }) {
+  return typeof share === 'function' ? 'system' : 'bubble';
+}
+
+/**
+ * Puts `text` on `clipboard` and answers what happened: `'copied'`, or
+ * `'manual'` when nothing could take it. The second answer is the field with
+ * the address preselected (#72 AC 4) — the button never claims a success the
+ * browser did not grant.
+ *
+ * Where there is no clipboard interface (plain http is no secure context) or
+ * it refused, `fallback` — `execCopy()` at the rind — is tried before the
+ * field (#155). It reports honestly, so only its `true` is a copy; `false`
+ * or a throw is not.
+ */
+export async function copyText(text, clipboard, fallback) {
+  if (typeof clipboard?.writeText === 'function') {
+    try {
+      await clipboard.writeText(text);
+      return 'copied';
+    } catch {
+      // Refused: the fallback below gets its chance.
+    }
+  }
+  if (typeof fallback !== 'function') return 'manual';
   try {
-    await clipboard.writeText(text);
-    return 'copied';
+    return fallback(text) === true ? 'copied' : 'manual';
   } catch {
     return 'manual';
   }
 }
 
-/** How long the bubble at Share says `Link copied` before it runs out —
- *  "rund 2 s" (#143, decision 4). */
+/**
+ * The old way onto the clipboard, and it works without a secure context:
+ * a throwaway field holding `text`, selected, `execCommand('copy')`, gone
+ * again. Answers what the browser answered — `true` only if it says it
+ * copied (#155; #72 AC 4).
+ */
+export function execCopy(text, doc) {
+  if (typeof doc?.createElement !== 'function' || typeof doc.execCommand !== 'function') return false;
+  const field = doc.createElement('textarea');
+  field.value = text;
+  field.setAttribute('readonly', '');
+  field.style.position = 'fixed';
+  field.style.opacity = '0';
+  doc.body.append(field);
+  try {
+    field.select();
+    return doc.execCommand('copy') === true;
+  } catch {
+    return false;
+  } finally {
+    field.remove();
+  }
+}
+
+/** How long `Copy link` is called `Copied` before it falls back — "rund
+ *  2 s" (#143, decision 4; since #155 on the button in Share's bubble). */
 export const COPIED_MS = 2000;
 
 /**
  * The confirmation, and it is **fleeting** — the raffle hit's kind, not a
- * state (#72 AC 3; #61, "Copy link"). It lives on an element — since #143 the
- * bubble at the Share button — as a data attribute for one moment and is
- * taken off again; nothing in the component remembers that a copy happened.
+ * state (#72 AC 3; #61, "Copy link"). It lives on an element — since #155
+ * the `Copy link` button in the bubble at Share, which reads `Copied` while
+ * it carries the mark — as a data attribute for one moment and is taken off
+ * again; nothing in the component remembers that a copy happened.
  * A second copy inside the moment restarts it rather than stacking a second
  * fall-back on the first.
  */

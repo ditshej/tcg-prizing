@@ -54,9 +54,11 @@
       18; `askDrop()`); it carries the count of what it would drop — the pin
       counter, the length of the list the question reads out (#67 AC 6) — and
       is gone while nothing is set by hand, as the chip it replaces was: a
-      reach over nothing is not an offer. Share copies the complete
-      `SetupLink` (story 48). Neither stands in fullscreen, whose head is
-      only "where you are, and how to get out".
+      reach over nothing is not an offer. Share (#155) opens the system's
+      share sheet with the complete `SetupLink` wherever `navigator.share`
+      exists, and only where it does not the bubble below with `Copy link`
+      (`share()`; K3 — the pointer plays no part). Neither stands in
+      fullscreen, whose head is only "where you are, and how to get out".
     -->
     <header class="col-head plan-head" x-ref="head">
       <div class="col-titleline">
@@ -71,26 +73,36 @@
                 :aria-expanded="!!dropQuestion" :aria-label="dropAllLabel" :title="dropAllLabel"
                 @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })"><?= icon('rotate-ccw') ?><span
                 class="plan-reset-count" aria-hidden="true" x-text="pinCount"></span></button>
-        <button type="button" class="plan-share" data-share aria-label="Copy link" title="Copy link"
-                @click="copyLink($el)"><?= icon('share') ?></button>
+        <button type="button" class="plan-share" data-share aria-label="Share" title="Share"
+                :aria-expanded="shareOpen" @click="share()"><?= icon('share') ?></button>
       </div>
     </header>
 
     <!--
-      The bubble at Share (#143, decision 4): `Link copied` for about 2 s after
-      a copy, on the bubble layer and not in the NoticeStack — that one carries
-      statements about the plan and covers tiles (story 23). Fleeting: the
-      element carries it as `data-link-copied` for the moment
-      (`flashCopied()`), the component keeps nothing. Without a clipboard the
-      same bubble opens with the address in a preselected field instead of
-      claiming a success (#72 AC 4). Placed by `placeShare()`, fixed in the
-      viewport like the drop question.
+      The bubble at Share (#155, the branch without `navigator.share`; K3:
+      wherever `navigator.share` exists, whatever the pointer, the system's
+      sheet is the whole answer and this opens only when the sheet fails
+      with something other than a cancel). A press at Share opens it and copies nothing; it says in one
+      sentence what travels and carries `Copy link`, which copies the complete
+      `SetupLink` and is called `Copied` for `COPIED_MS` — fleeting, as
+      `data-link-copied` on the button (`flashCopied()`), the component keeps
+      nothing (#72 AC 3). Without a clipboard `execCommand('copy')` is tried;
+      only if that fails too does the address open here in a preselected
+      field, and `Copied` does not appear (#72 AC 4). The same press at Share,
+      Escape, or a press beside it closes it — the press at Share is left to
+      the toggle, or it would close and reopen in one go. Placed by
+      `placeShare()` (#154), fixed in the viewport like the drop question;
+      `keepShare()` closes it when its anchor is gone (#66), which fullscreen
+      and the phone's other pages do.
     -->
-    <div class="share-bubble" data-share-bubble role="status"
-         :class="{ 'has-field': linkField !== null }"
-         x-effect="if (linkField !== null) $nextTick(() => placeShare())"
-         @resize.window="placeShare()" @keydown.escape.window="closeLinkField()">
-      <span class="share-bubble-done">Link copied</span>
+    <div class="share-bubble" data-share-bubble role="dialog" aria-label="Share"
+         :class="{ 'is-open': shareOpen }"
+         x-effect="void [shareOpen, linkField, activePage, fullscreen]; if (shareOpen) $nextTick(() => keepShare())"
+         @resize.window="if (shareOpen) placeShare()" @keydown.escape.window="closeShare()"
+         @click.outside="if (!$event.target.closest('[data-share]')) closeShare()">
+      <p class="share-bubble-note">Share the plan as it stands — everything you set by hand travels in the link.</p>
+      <button type="button" class="share-copy" @click="copyLink($el)"><span
+              class="share-copy-idle">Copy link</span><span class="share-copy-done">Copied</span></button>
       <div class="link-field" x-show="linkField !== null">
         <input class="link-field-input" type="text" readonly aria-label="Link to copy"
                :value="linkField ?? ''"

@@ -288,8 +288,10 @@ body {
   .pin-reset,
   .plan-reset,
   .plan-share,
+  .share-copy,
   .link-field-close,
   .set-info a,
+  .about a,
   .legend-handle,
   .raffle-trigger,
   .raffle-close,
@@ -320,8 +322,10 @@ body {
   .pin-reset,
   .plan-reset,
   .plan-share,
+  .share-copy,
   .link-field-close,
   .set-info a,
+  .about a,
   .legend-handle,
   .raffle-trigger,
   .raffle-close,
@@ -760,34 +764,69 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
-/* The bubble at Share (#143): `Link copied` while the element carries
-   `data-link-copied`, the link field while there is no clipboard. Hidden
-   otherwise; placed by `placeShare()` in the viewport, like the drop
-   question. */
+/* The bubble at Share (#155, the desktop branch): a sentence and `Copy link`,
+   and below them the link field when no copy could be made. Hidden while
+   `shareOpen` is false; placed by `placeShare()` in the visible viewport, like
+   the drop question. The width is set rather than shrunk to fit, as the ⓘ
+   bubble's is (#154): a fixed box shrinks to the room right of where it last
+   stood, and the first placing would measure the width of the previous
+   place — measured on #154 at 87 instead of 92, 5 px over the visible edge. */
 .share-bubble {
   position: fixed;
   z-index: 40;
   display: none;
-  padding: 7px 10px;
+  width: min(292px, calc(100vw - 16px));
+  padding: 9px 10px;
   border-radius: var(--r-tile);
   background: var(--paper);
   box-shadow: var(--tile-shadow), var(--panel-shadow);
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.share-bubble.is-open {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.share-bubble-note {
+  margin: 0;
+}
+
+/* `Copy link` in the accent, and `Copied` in its place while the button
+   carries `data-link-copied` (`flashCopied()`, #72 AC 3). Both words sit in
+   one grid cell, so the button keeps the width of the longer one and does
+   not jump under the pointer. */
+.share-copy {
+  display: inline-grid;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
   color: var(--accent);
-  font-size: 0.8rem;
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.share-bubble[data-link-copied],
-.share-bubble.has-field {
-  display: block;
+.share-copy > span {
+  grid-area: 1 / 1;
+  align-self: center;
 }
 
-.share-bubble-done {
-  display: none;
+.share-copy-done {
+  visibility: hidden;
 }
 
-.share-bubble[data-link-copied] .share-bubble-done {
-  display: inline;
+.share-copy[data-link-copied] .share-copy-done {
+  visibility: visible;
+}
+
+.share-copy[data-link-copied] .share-copy-idle {
+  visibility: hidden;
 }
 
 .plan-output {
@@ -2351,7 +2390,7 @@ textarea {
 /* No clipboard: the address in a preselected field, in the Share bubble. */
 .link-field {
   display: flex;
-  width: min(292px, calc(100vw - 32px));
+  width: 100%;
   gap: 6px;
   align-items: center;
 }
@@ -2813,4 +2852,40 @@ textarea {
    the counters the bar stood side by side. */
 .app .rail-probe .controls-hot {
   grid-template-columns: var(--rail-cells);
+}
+
+/*
+ * The about block (#159): the very bottom of `Details`, after the last group.
+ * Set quietly — muted, small, the size of a group's foot line — and without a
+ * line, since a line separates data and this is none (#15). The space above
+ * it is a group's (26), so it reads as the page's end, not as a group.
+ *
+ * Each of the two lines is 44 high and centres its text: the links take
+ * their 44 from the hit rule's `::after` (in the `:where` lists above), and
+ * with the lines 44 apart no link's area reaches over the other line's link.
+ * In the by-line the two links stand on either side of the bar with a gap
+ * that keeps them 44 apart from centre to centre, so neither area lies over
+ * the other's word (#142).
+ */
+.about {
+  margin-top: 26px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.about p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.3em;
+  min-height: var(--hit);
+  margin: 0;
+}
+
+.about a {
+  color: inherit;
+}
+
+.about-bar {
+  margin-inline: 4px;
 }

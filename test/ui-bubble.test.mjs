@@ -215,6 +215,61 @@ test('Share\'s bubble is placed inside the visible window, not the layout one', 
   assert.equal(bubble.style.top, `${340 + GAP}px`);
 });
 
+/**
+ * #155 N3: zooming and panning reach the bubbles through `visualViewport`
+ * alone (#154), and Share's must go through `keepShare()` there — the half
+ * that closes it when its anchor leaves the visible frame (#66) and caps it
+ * to the visible width — not through `placeShare()`, which only places.
+ * The listener is the one `init()` registers, called as iOS would call it.
+ */
+function viewListener(app) {
+  const listeners = {};
+  const saved = { window: globalThis.window, document: globalThis.document };
+  globalThis.window = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    visualViewport: { addEventListener: (type, fn) => { listeners[type] = fn; }, removeEventListener: () => {} },
+    Alpine: { effect: () => ({}), release: () => {} },
+  };
+  globalThis.document = { addEventListener: () => {}, removeEventListener: () => {} };
+  try {
+    Object.assign(app, {
+      $refs: {},
+      $root: { addEventListener: () => {}, removeEventListener: () => {} },
+      $watch: () => {},
+      $nextTick: () => {},
+    });
+    app.init();
+  } finally {
+    for (const key of ['window', 'document']) {
+      if (saved[key] === undefined) delete globalThis[key];
+      else globalThis[key] = saved[key];
+    }
+  }
+  assert.equal(listeners.resize, listeners.scroll, 'one listener for zoom and pan');
+  return listeners.scroll;
+}
+
+test('a zoom or pan closes Share\'s bubble once its button is out of the visible frame (#155 N3)', () => {
+  const app = shell();
+  const onView = viewListener(app);
+  app.shareOpen = true;
+  const bubble = element(box(0, 0, 292, 90), { width: 292, height: 90 });
+  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(360, 20, 24, 24)) }, onView);
+  assert.equal(app.shareOpen, false, 'its anchor lies right of 150…350 and above 300…700');
+});
+
+test('a zoom caps Share\'s open bubble to the visible width and places it inside (#155 N3)', () => {
+  const app = shell();
+  const onView = viewListener(app);
+  app.shareOpen = true;
+  const bubble = element(box(0, 0, 292, 90), { width: 184, height: 90 });
+  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(330, 320, 20, 20)) }, onView);
+  assert.equal(app.shareOpen, true);
+  assert.equal(bubble.style.maxWidth, `${ZOOMED.width - 16}px`, 'the visible frame is 200 wide');
+  assert.equal(bubble.style.left, `${350 - 184 - MARGIN}px`);
+});
+
 test('the reset question is placed inside the visible window, and closes when its button is panned out of it', () => {
   const details = element(box(0, 0, 400, 800));
   const bubble = element(box(0, 0, 180, 120), { width: 180, height: 120 });
@@ -384,7 +439,7 @@ test('each ⓘ is the anchor of its own bubble, placed by placeInfo()', () => {
 });
 
 test('the content of the ⓘ is unchanged, the Discord link included', () => {
-  assert.match(SHEET, /<a href="https:\/\/discord\.com\/users\/428891117220659241" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
+  assert.match(SHEET, /<a href="<\?= htmlspecialchars\(require __DIR__ \. '\/discord-profile\.php'\) \?>" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
   assert.match(SHEET, /built for One Piece, other games welcome/);
   assert.match(SHEET, /<strong>Tournament type<\/strong>/);
   assert.match(SHEET, /Values you set by\s+hand stay where you put them\./);
