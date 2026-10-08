@@ -1030,3 +1030,39 @@ PR: #130 (#129), head `6b78f10`, the only branch, with no merge order to get
 wrong. Open at G: 674×399 keeps 31 px after the first throw (the list still
 grows there per #69), and 435×380 keeps 5.6 px, the price of the cramped
 exception.
+
+### Run 16 · 2026-10-08 · #142, #145 · `/round`, six agents, three cards, no deaths
+
+**The conductor's context: about 85k at its peak**, read off the harness's
+remaining-token counter rather than the transcript. The base before the first
+phase was about 33k, so the round itself cost about 52k, level with run 15. The
+`/round` command was not expanded by the harness — `disable-model-invocation`
+kept it out of the conductor's skill list — so the conductor read
+`SKILL.md` once instead; that read is in the base. Phase E again ran Stages 2–5
+in an agent, the conductor only started the server, and it read the chosen
+`optionId`s, not the cards.
+
+**All three candidates went to cards, and all three came back on an offered
+way.** K1 `44-px-gehen-vor` (the free row of #129 holds landscape only before
+the first throw), K2 `zwei-zaehler-nebeneinander` (number field 44 instead of
+54, two counters per row down to 360), K3 `ausnahme-unter-348`. The three are
+one conflict seen three times: #142's 44 px against space promised earlier.
+The skeptic added three ways, struck one dominated way, and proposed folding
+K3 into K1; the cards were linked instead.
+
+**The merge order was set by the conductor, not found.** N2 was filed as „the
+second PR to land carries it", which leaves the builder nothing to build. The
+conductor fixed #147 before #148, so #148 carries N2, measured against a
+throwaway merge probe. A filing that hinges on an order nobody has chosen yet
+should choose it.
+
+**Counts.** 14 findings from A (1 blocking, 3 to decide, 10 notes), 5 more from
+B (0 blocking, 2 to decide, 3 notes), 0 refuted, 2 weakened. Gates: 19 in,
+3 candidates, 16 dropped, 4 of them repairs. Phase D: 0 answered, 3 cards.
+Phase E: 3 answered, all by an offered way. Suite after F: 622 on #148, 601 on
+#147, 623 on the merge probe. Decisions filed to #142 (three comments, ⚠︎ in
+the body), #143, #129 (⚠︎ on AC 1) and #69; repairs to #142 and #145. No ADR,
+`CONTEXT.md` › `Fold` updated on #148. PRs: #147 (#145) head `189874f`, #148
+(#142) head `73a9622`; merge #147 first. Open at G: 320 wide still scrolls
+(rail 229), and `MEASURED_RAIL` in `test/ui-fold.test.mjs` still holds the
+2026-10-02 readings, left because it tests the mechanism.
