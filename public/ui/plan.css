@@ -1654,12 +1654,75 @@ textarea {
   background: currentColor;
 }
 
+/*
+ * The app's one checkbox, `Handout` (#170): its own box and check from the
+ * tokens, not the system's blue one. Off is the form of a button (paper,
+ * the button's shadow — `--line` is no edge); on is the pressed form of the
+ * chips (accent, glow), with Lucide `check` in on-accent.
+ *
+ * The native input stays the control: clipped out of sight, but focusable
+ * and in the accessibility tree — never `display: none` or
+ * `visibility: hidden`, or the label's tap, Space and `:focus-visible` break.
+ * Since the box is CSS alone, the first paint already shows it, before
+ * Alpine binds `:checked` (#158, 10b: no flash of the system look).
+ *
+ * The box stands on the first line of the label, also where the label wraps:
+ * its margins pull it to one line's height, centred on it (`1lh`, the
+ * label's own line), and the label's padding centres that line in the 44 px
+ * hit height when it is one line only.
+ */
 .sheet-check {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-height: var(--hit);
+  padding-block: calc((var(--hit) - 1lh) / 2);
   font-size: 0.78rem;
+}
+
+.sheet-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  appearance: none;
+}
+
+.sheet-box {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-block: calc((1lh - 20px) / 2);
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+}
+
+.sheet-box .icon {
+  width: 14px;
+  height: 14px;
+  visibility: hidden;
+}
+
+.sheet-check input:checked + .sheet-box {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
+}
+
+.sheet-check input:checked + .sheet-box .icon {
+  visibility: visible;
+}
+
+.sheet-check input:focus-visible + .sheet-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /*
