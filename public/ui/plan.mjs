@@ -61,7 +61,7 @@ import {
   reservedDisplaysAfter,
   typedValueAfter,
 } from './controls.mjs';
-import { anchorVisible, bubblePosition } from './bubble.mjs';
+import { anchorVisible, placeInFrame, visibleBox, visibleFrame } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
 import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
@@ -94,6 +94,30 @@ const SEAM = { read: readLocation, write: writeLocation };
 
 /** The bubble at the Share button in the plan head (#143). */
 const SHARE_BUBBLE = '[data-share-bubble]';
+
+/**
+ * The one frame every bubble is placed in (#154), read at the rind: the
+ * layout viewport — the box `position: fixed` and `getBoundingClientRect()`
+ * measure from — and the part of it that can be **seen**, off
+ * `visualViewport`. They differ once the page is zoomed: iOS zooms on a quick
+ * double tap and on a pinch (#146 keeps pinch open), and a bubble clamped into
+ * the layout viewport then hangs over the visible edge. Every `place*` hands
+ * both to `placeInFrame()` and converts nothing itself.
+ *
+ * The layout viewport is `documentElement`'s client box rather than
+ * `innerWidth`/`innerHeight`: Safari has reported those for the *visual*
+ * viewport while zoomed, which would cut the frame down twice.
+ */
+function seenFrame() {
+  const root = document.documentElement;
+  const layout = {
+    left: 0,
+    top: 0,
+    width: root?.clientWidth || window.innerWidth,
+    height: root?.clientHeight || window.innerHeight,
+  };
+  return { layout, visible: visibleBox(window.visualViewport, layout) };
+}
 
 /**
  * What the app opens with, out of the address it was opened at.
@@ -491,9 +515,60 @@ export function planApp(seam = SEAM) {
       return resolveSettings({ game: GAME, type: this.currentType, pins });
     },
 
-    /** One ⓘ per level, each with its own sentence — the same handle closes it. */
+    /**
+     * One ⓘ per level, each with its own sentence — the same handle closes it.
+     * Its sentence opens in **the** bubble, floating at the ⓘ, not in the flow
+     * under the row (#154; the prototype renders `infoGame()`/`infoType()`
+     * into its one `.pop`): one bubble at a time, so it puts out the tile's
+     * and answers an open question with no, as any other press beside it does.
+     */
     toggleInfo(id) {
+      this.openTile = null;
+      this.confirmDrop = null;
       this.openInfo = this.openInfo === id ? null : id;
+    },
+
+    closeInfo() {
+      this.openInfo = null;
+    },
+
+    /**
+     * The measuring rind of the ⓘ bubble — the drop question's form, because
+     * it is the same case: the anchor sits in `Details`, which scrolls itself,
+     * so the bubble is `fixed` and placed in the viewport, and its anchor is
+     * judged against the `[data-bubble-frame]` it can scroll out of. One rule
+     * for all the bubble's inhabitants (#41, #66): it closes when its anchor
+     * is no longer visible.
+     */
+    placeInfo() {
+      if (!this.openInfo || typeof document === 'undefined') return;
+      const bubbleEl = document.querySelector(`[data-info-bubble="${this.openInfo}"]`);
+      if (!bubbleEl) return;
+      /* Alpine shows an `x-show` beside a `@click.outside` one tick late, so
+         the click that opened it is not taken for one outside it — and a box
+         not shown yet measures 0 wide. Measured on the first try: the bubble
+         stood centred on a width of nothing, 53 px past the right edge at
+         393. So it waits for the frame in which it is there. */
+      if (!bubbleEl.offsetWidth && typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => this.placeInfo());
+        return;
+      }
+      const anchorEl = document.querySelector(`[data-info="${this.openInfo}"]`);
+      const { layout, visible } = seenFrame();
+      const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, visibleFrame(frameEl ? frameEl.getBoundingClientRect() : layout, visible))) {
+        this.openInfo = null;
+        return;
+      }
+      const at = placeInFrame({
+        anchor,
+        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        box: layout,
+        visible,
+      });
+      bubbleEl.style.left = `${at.left}px`;
+      bubbleEl.style.top = `${at.top}px`;
     },
 
     /* ── The seventeen controls (#64) ─────────────────────────────────── */
@@ -675,6 +750,8 @@ export function planApp(seam = SEAM) {
     /** A grip at the tile opens the bubble, the same grip closes it. The
      *  placing is not called here: it runs after every drawing (see `init()`). */
     toggleTile(rank) {
+      this.openInfo = null;
+      this.confirmDrop = null;
       this.openTile = this.openTile === rank ? null : rank;
     },
 
@@ -732,6 +809,10 @@ export function planApp(seam = SEAM) {
      * The frame the anchor is judged against is the **grid**, not the stage:
      * the grid is what scrolls, so that is where a tile goes out of sight
      * while the stage stays exactly where it was.
+     *
+     * Both are cut down to what can be seen (#154): the bubble is `absolute`
+     * inside the stage, so it is placed in the stage's visible part and
+     * answered in the stage's own coordinates.
      */
     placeBubble() {
       const stageEl = this.$refs.stage;
@@ -740,14 +821,16 @@ export function planApp(seam = SEAM) {
       if (this.openTile == null || !stageEl || !popEl || !gridEl) return;
       const tileEl = gridEl.querySelector(`.tile[data-rank="${this.openTile}"]`);
       const anchor = tileEl ? tileEl.getBoundingClientRect() : null;
-      if (!anchorVisible(anchor, gridEl.getBoundingClientRect())) {
+      const { visible } = seenFrame();
+      if (!anchorVisible(anchor, visibleFrame(gridEl.getBoundingClientRect(), visible))) {
         this.openTile = null;
         return;
       }
-      const at = bubblePosition({
+      const at = placeInFrame({
         anchor,
         bubble: { width: popEl.offsetWidth, height: popEl.offsetHeight },
-        stage: stageEl.getBoundingClientRect(),
+        box: stageEl.getBoundingClientRect(),
+        visible,
       });
       popEl.style.left = `${at.left}px`;
       popEl.style.top = `${at.top}px`;
@@ -811,6 +894,23 @@ export function planApp(seam = SEAM) {
          changing, and the same one rule is what it calls. */
       this._onResize = () => this.placeBubble();
       window.addEventListener('resize', this._onResize);
+      /* Zooming and panning move the visible frame and fire no `resize` on
+         the window (#154): iOS reports them on `visualViewport` alone. Every
+         bubble is placed again there — the one frame, all four placings. */
+      this._onView = () => {
+        this.placeBubble();
+        this.placeConfirm();
+        this.placeInfo();
+        this.placeShare();
+      };
+      window.visualViewport?.addEventListener('resize', this._onView);
+      window.visualViewport?.addEventListener('scroll', this._onView);
+      /* The ⓘ bubble's anchor scrolls with `Details` and the bubble does not,
+         so a scroll anywhere places it again — and closes it once its ⓘ has
+         left the page (#154). `scroll` does not bubble; captured, one listener
+         sees every scroller, whichever column `Details` stands in. */
+      this._onScroll = () => this.placeInfo();
+      document.addEventListener('scroll', this._onScroll, { capture: true, passive: true });
       /* "Erst bestätigen" (K4 of run 12): a press outside a field with an
          unconfirmed number confirms it and activates nothing else. On the
          document, so it covers every control there is and every one a later
@@ -839,6 +939,11 @@ export function planApp(seam = SEAM) {
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
+      if (this._onView) {
+        window.visualViewport?.removeEventListener('resize', this._onView);
+        window.visualViewport?.removeEventListener('scroll', this._onView);
+      }
+      if (this._onScroll) document.removeEventListener('scroll', this._onScroll, { capture: true });
     },
 
     /* ── The WinnerRaffle (#69) ───────────────────────────────────────── */
@@ -1286,7 +1391,7 @@ export function planApp(seam = SEAM) {
      * - The **anchor is found by selector**, handed in with the question. A
      *   second trigger site is then a second selector and not a second
      *   handler.
-     * - The **frame is the viewport**, and the bubble is placed in it. The
+     * - The **frame is the viewport** — its visible part (#154) — and the bubble is placed in it. The
      *   scrolling box the anchor can leave is its own `[data-bubble-frame]`,
      *   which is what the visibility is judged against — `Details` scrolls
      *   itself, so an absolutely placed bubble inside it would scroll away
@@ -1298,16 +1403,17 @@ export function planApp(seam = SEAM) {
       if (!bubbleEl) return;
       const anchorEl = document.querySelector(this.confirmDrop.anchor);
       const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
-      const viewport = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+      const { layout, visible } = seenFrame();
       const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
-      if (!anchorVisible(anchor, frameEl ? frameEl.getBoundingClientRect() : viewport)) {
+      if (!anchorVisible(anchor, visibleFrame(frameEl ? frameEl.getBoundingClientRect() : layout, visible))) {
         this.confirmDrop = null;
         return;
       }
-      const at = bubblePosition({
+      const at = placeInFrame({
         anchor,
         bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
-        stage: viewport,
+        box: layout,
+        visible,
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;
@@ -1412,7 +1518,7 @@ export function planApp(seam = SEAM) {
 
     /**
      * The measuring rind of the Share bubble: the bubble layer's arithmetic
-     * (`bubble.mjs`), the viewport as its frame, the Share button as its
+     * (`bubble.mjs`), the visible part of the viewport as its frame (#154), the Share button as its
      * anchor — the same placing as the drop question's. It runs when the
      * bubble shows: at a copy, and when the link field opens.
      */
@@ -1421,10 +1527,12 @@ export function planApp(seam = SEAM) {
       const bubbleEl = document.querySelector(SHARE_BUBBLE);
       const anchorEl = document.querySelector('[data-share]');
       if (!bubbleEl || !anchorEl) return;
-      const at = bubblePosition({
+      const { layout, visible } = seenFrame();
+      const at = placeInFrame({
         anchor: anchorEl.getBoundingClientRect(),
         bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
-        stage: { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight },
+        box: layout,
+        visible,
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;
