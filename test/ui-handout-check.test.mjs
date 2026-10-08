@@ -82,6 +82,16 @@ test('the keyboard\'s focus draws a ring at the box, in a token', () => {
   assert.match(declared(body, 'outline'), /^2px solid var\(--accent\)$/);
 });
 
+test('that ring is the only one: no other focus rule draws a ring of its own (K2, #158 AC 10b)', () => {
+  const ringed = [...CSS.matchAll(/(?:^|})\s*([^{}]*:focus(?:-visible|-within)?\b[^{}]*)\{([^}]*)\}/g)]
+    .filter(([, , body]) => ['outline', 'box-shadow'].some((name) => {
+      const value = declared(body, name);
+      return value !== undefined && value !== 'none';
+    }))
+    .map(([, selector]) => selector.trim());
+  assert.deepEqual(ringed, ['.sheet-check input:focus-visible + .sheet-box']);
+});
+
 test('the box stands centred on the first line of the label, also when it wraps', () => {
   const labelBody = rule('.sheet-check');
   assert.equal(declared(labelBody, 'align-items'), 'flex-start');
