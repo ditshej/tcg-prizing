@@ -886,6 +886,11 @@
      Orte — Fuss, solange die Seite eine Seite ist, Kopf, sobald sie eine
      Spalte ist —, und immer genau einer davon da. `Details` hatte als einzige
      Spalte keinen, darum klebte dort der erste Regler titellos an der Kante.
+     ÜBERHOLT durch #156 (Gesamt-Review 2026-10-08, F1 a): „immer genau einer
+     davon da“ gilt nicht mehr — die Köpfe tragen Titel und Fakten in jeder
+     Faltung, auch am Telefon; der Seitenname steht in Kopf und Fuss, der
+     Plan-Kopf heisst wie sein TournamentType. Verbindlich ist #156.
+
 
      Stillstehen tun alle drei, auf zwei Wegen: der Plan-Kopf steht *ausserhalb*
      seines Scrollers (`flex: none`), die zwei scrollenden Spalten tragen ihren
@@ -1018,6 +1023,9 @@
   .navbtn .ico { font-size: 18px; line-height: 1; opacity: .85;
                  padding: 3px 16px; border-radius: var(--r-ctl); }
   .navbtn:active { transform: translateY(1px); }
+  /* ÜBERHOLT durch #158, nur die Markierung: das Feld deckt den ganzen Eintrag und
+     gleitet beim Wechsel (F4 a); Farbe und „Tiefe, kein Strich“ gelten weiter.
+     Verbindlich ist #158. */
   /* Aktiv heisst Farbe *und* ein weiches Feld unter dem Icon. Die Farbe allein
      war zu leise — gemessen rgb(122,106,85) gegen rgb(140,90,43), auf 56 px
      Fusshöhe nicht zu sehen. Ein Strich unter dem aktiven Eintrag wäre die
@@ -3214,6 +3222,9 @@ function screen(plan, sugg, off) {
     - (cols >= 3 ? COLW.prep : 0);
   stage.classList.toggle('wideplan', planW >= 620);
   stage.classList.toggle('widesheet', stage.clientWidth >= 700);
+  // ÜBERHOLT durch #157, nur der Split: Das Diagramm nimmt höchstens ein Drittel
+  // der Fläche, die es mit den Kacheln teilt (min(stripMax, (Rest − Überlappung) / 3)),
+  // und fällt weg, wo dieses Drittel unter 60 liegt. Verbindlich ist #157.
   // Das Diagramm darf nicht die halbe Fläche nehmen: flach im Querformat,
   // mittelhoch, wo Höhe da ist, und im Hochformat darf es wachsen.
   const h = stage.clientHeight;
@@ -3247,6 +3258,11 @@ function screen(plan, sugg, off) {
      · Rangtotal). Ohne Diagramm steht es als eigene Zeile unter dem Raster,
      über der Rangmeldung; unter einer offenen Leiste liegt es, wie die
      Rangmeldung, unter ihr. Verbindlich ist der Kommentar „Entscheide des Maintainers — die Stelle des Rangtotals ohne Diagramm" an #132. */
+  // ÜBERHOLT durch #157, nur der Split: stripMax ist nur noch die zweite Obergrenze
+  // (96/96/190/280); `Math.max(60, …)` gilt nicht, und der Block unten mit
+  // `flex:3 1 122px;min-height:78px` auch nicht — das Diagramm ist höchstens ein
+  // Drittel der Fläche, die es mit den Kacheln teilt, und unter einem Drittel von
+  // 60 ist es weg. Verbindlich ist #157.
   const stripMax = isFlat()
     ? Math.max(60, Math.min(96, h - CHROME0 - GRID2))
     : h < 460 ? 96 : cols >= 2 ? 190 : 280;
