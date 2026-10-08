@@ -606,10 +606,11 @@ import { searchesFor, conflictStands } from '../public/ui/notices.mjs';
  * Weekend at 32 carries an Offer (Rank 1, one display) and three WinnerPacks,
  * two of them by rank. One goes on Rank 32 by hand, then `winnerPacks` drops
  * to 2: one over. The core still offers — `offerFor()` knows nothing of the
- * overhang — and the NoticeStack must not.
+ * overhang — and the NoticeStack must not. Like `sheet()`, it lays
+ * `MEASURED_ON.weekend` over the type, so the stand is the one measured.
  */
 function overhangStand(extra = {}) {
-  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  const weekend = { ...TOURNAMENT_TYPES.find((t) => t.id === 'weekend'), ...MEASURED_ON.weekend };
   return resolveSettings({ game: GAME, type: weekend, pins: { manualWinner: { 32: 1 }, winnerPacks: 2, ...extra } });
 }
 
