@@ -113,7 +113,8 @@ einer Ausnahme, dem Modus unter `theme` in `localStorage`. Was beide über den
 den Turnierstand verworfen —, steht unverändert. Darum `Teilweise überholt`
 und nicht `Ergänzt`: ein Satz dort ist falsch geworden, nicht nur unvollständig.
 
-**Der Begriff fehlt noch im Glossar.** `CONTEXT.md` kennt den Modus nicht als
-Eintrag, und sein Satz unter `SetupLink` („Accounts, Storage und Caching bleiben
-ausgeschlossen") gilt jetzt mit der Ausnahme dieses ADR. Nachzutragen von der
-Sitzung, die `CONTEXT.md` als nächste anfasst.
+**Der Begriff steht im Glossar als `Theme`.** `CONTEXT.md` führt den Modus
+unter dem Namen, den der Code trägt (`theme.mjs`, Schlüssel `theme`), mit
+`_Label_`-Zeile für das Wort **Mode** am Knopf. Sein Satz unter `SetupLink`
+(„Accounts, Storage und Caching bleiben ausgeschlossen") nennt die Ausnahme
+dieses ADR (nachgetragen im selben PR, #144, B4).

@@ -539,6 +539,26 @@ Verlosungsleiste liegt dort weiter fest am unteren Rand über der Seite; ihr wei
 das Diagramm (Lauf 15, K4), und die Kacheln stehen über ihr, so weit der Platz reicht.
 _Avoid_: Breakpoint als gewählte Zahl, Layout-Modus, Responsive-Stufe
 
+**Theme**:
+Der Modus, in dem der eine Entwurf gezeichnet wird — hell (Bronze) oder dunkel
+(Foil), #142 — und die Wahl zwischen ihnen: **System**, **hell**, **dunkel**, am
+Knopf oben rechts im Kopf von `Details` in dieser Reihenfolge durchgeklickt
+(#144). System ist das Fehlen einer Wahl: nichts gespeichert, kein `data-theme`
+an `<html>`, das Stylesheet folgt `prefers-color-scheme`. Eine Wahl steht als
+`data-theme="light"` oder `"dark"` an `<html>` (`public/ui/theme.mjs`).
+**Gerätezustand, kein Turnierzustand** (ADR 0011): es beschreibt, wie dieser
+Bildschirm in diesem Raum zu lesen ist, nicht was am `Tournament` eingestellt
+ist. Darum steht es im `localStorage` unter `theme` — der einzige Zustand der
+App, der eine Sitzung überdauert — und **nie im `SetupLink`**; ein geteilter
+Link öffnet sich im `Theme` des Empfängers. Ein Speicher, der wirft (privates
+Fenster), liest sich als System; der Modus wechselt dann für die Seite und wird
+nur nicht behalten. Keine Eingabe in `distribute()`.
+_Label_: **Mode** — der Knopf sagt „Mode: System / Light / Dark". *Theme* klingt
+am Schirm nach einem auswechselbaren Farbschema; es gibt aber nur den einen
+Entwurf in zwei Modi. Der Term bleibt, weil `theme` zugleich der Schlüssel im
+`localStorage` ist — ihn umzubenennen hiesse, gemerkte Wahlen zu verlieren.
+_Avoid_: Farbschema, Skin, Dark Mode als Name des Ganzen (dunkel ist nur einer der drei Stände)
+
 **NoticeStack**:
 Die Schicht, auf der alle Meldungen liegen — `ConflictNotice`, `Offer`,
 `CarryOverNotice`, dazu in deren Form die Meldung beim Ausschalten von
@@ -1058,8 +1078,10 @@ nennt, ist nicht `pinned` und zieht mit der Spielerzahl nach. Ein Bit je Regler
 genügt dafür, weil der Wert selbst die Aussage ist; dass die genannten Regler
 meist auch abweichen, ist Folge und nicht Definition. Sie schreibt sich beim Ziehen
 mit, ohne Browser-Historie zu erzeugen; Neuladen ändert nichts. Eingabe, nicht
-Persistenz: die App schreibt nichts weg, sie liest einen Link — Accounts, Storage
-und Caching bleiben ausgeschlossen.
+Persistenz: die App schreibt vom `Tournament` nichts weg, sie liest einen Link —
+Accounts, Storage und Caching bleiben ausgeschlossen. Die eine Ausnahme ist kein
+Turnierzustand: das `Theme` steht im `localStorage` unter `theme` und nie im Link
+(ADR 0011).
 Sie wird als **Lesezeichen** abgelegt und Monate später wieder geöffnet, also ist
 ihre Kodierung eine Schnittstelle: sie trägt eine **Formatversion**, und was nicht
 mehr passt, richtet eine `LinkMigration`. `Game` und `TournamentType` stehen darin
