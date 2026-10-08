@@ -20,7 +20,7 @@ const VIEWS = new URL('../views/', import.meta.url);
 const LISTED = [
   'shopping-cart', 'layout-grid', 'menu', 'dices', 'rotate-ccw', 'x', 'chevron-down',
   'chevron-left', 'chevron-right', 'maximize-2', 'minimize-2', 'triangle-alert', 'info',
-  'share', 'sun', 'moon', 'sun-moon',
+  'share', 'sun', 'moon', 'sun-moon', 'check',
 ];
 
 const view = (name) => readFileSync(new URL(name, VIEWS), 'utf8');
