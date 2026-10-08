@@ -180,12 +180,19 @@
  * page carries them as a transparent border, so the strip is the page's own
  * surface (Prepare and Details paper, Plan the ground), and the foot as
  * padding in its own paper. `attachStage()` (`measure.mjs`) reads the same
- * three properties and takes them off the app's box before the fold sees it.
- * They are registered as lengths so that read gives pixels, and they live on
- * `:root`, where a test can set them — Chromium reports every inset as 0.
+ * four properties: the sides and the top come off the app's box before the
+ * fold sees it, the bottom goes to `fold()` as `insetBottom`. They are
+ * registered as lengths so that read gives pixels, and they live on `:root`,
+ * where a test can set them — Chromium reports every inset as 0.
  *
- * The bottom inset is not applied (open at #158): the home indicator stays
- * over the foot and the lowest tile row, as before `cover`.
+ * The bottom inset is applied **upright only** (#158, K4): a strip in the
+ * foot's paper under the foot, so the home indicator lies below its entries
+ * and not over them. It is the foot's own bottom padding, and the turned foot
+ * of the flat stage sets it back to 0 — on the flat stage the pages run to
+ * the bottom edge as before and lose no height. The flat stage is the fold's
+ * word (`data-flat`), so no script reads which way the phone is turned; the
+ * fold reckons the same strip into `stripBottom` (`fold.mjs`). Fullscreen
+ * hides the foot, and its strip with it.
  */
 @property --inset-top {
   syntax: '<length>';
@@ -205,10 +212,17 @@
   initial-value: 0px;
 }
 
+@property --inset-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 :root {
   --inset-top: env(safe-area-inset-top, 0px);
   --inset-right: env(safe-area-inset-right, 0px);
   --inset-left: env(safe-area-inset-left, 0px);
+  --inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -1634,9 +1648,12 @@ textarea {
   position: relative;
   z-index: 2;
   display: flex;
-  /* Its paper runs to the screen's edge; the entries keep off it (#158). */
+  /* Its paper runs to the screen's edge; the entries keep off it (#158).
+     Upright the paper also runs under the home indicator, a strip of the
+     bottom inset below the entries (K4); the turned foot sets it back. */
   padding-left: var(--inset-left);
   padding-right: var(--inset-right);
+  padding-bottom: var(--inset-bottom);
   background: var(--paper);
   box-shadow: var(--panel-shadow);
 }
@@ -2643,9 +2660,10 @@ textarea {
  */
 .app[data-columns='2'] .foot,
 .app[data-columns='3'] .foot {
-  height: 48px;
+  /* The strip's 48 above the bottom inset it continues into (#158, K4). */
+  height: calc(48px + var(--inset-bottom));
   align-items: center;
-  padding: 0 calc(8px + var(--inset-right)) 0 calc(8px + var(--inset-left));
+  padding: 0 calc(8px + var(--inset-right)) var(--inset-bottom) calc(8px + var(--inset-left));
 }
 
 .app[data-columns='2'] .foot-item,
@@ -2669,7 +2687,8 @@ textarea {
  * behind the navigation. Its three entries spread over the whole height.
  */
 .app[data-flat] .foot {
-  /* The strip's 48 plus the right inset it continues into (#158). */
+  /* The strip's 48 plus the right inset it continues into (#158). No bottom
+     inset: turned, the foot runs to the bottom edge like the pages (K4). */
   flex: 0 0 calc(var(--strip-width) + var(--inset-right));
   padding: var(--inset-top) var(--inset-right) 0 0;
   flex-direction: column;

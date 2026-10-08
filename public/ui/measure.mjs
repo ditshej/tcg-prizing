@@ -222,15 +222,27 @@ export function showRaffleHit(gridEl, barEl, rank) {
  * it is, the fold would reckon with a stage up to 2 × 59 px wider than the
  * pages get. So the insets come off here, read from the same custom
  * properties the stylesheet insets with — one source, and one a test can set
- * where the browser reports 0 (`test/ui-shell-insets.test.mjs`). The bottom
- * inset is not applied anywhere and so comes off nothing.
+ * where the browser reports 0 (`test/ui-shell-insets.test.mjs`).
+ *
+ * The **bottom inset** does not come off here: it is applied upright only, as
+ * a strip under the foot (#158, K4), and whether the foot stands at the bottom
+ * is what the fold decides out of this very stage. Taken off by the last
+ * fold's `data-flat`, a stage at the edge would be read with the strip the
+ * new fold drops, or without the one it adds. So it is handed on as
+ * `insetBottom`, and `fold()` reckons it into the bottom foot exactly where
+ * the stylesheet paints it — the flat stage keeps its full height.
  */
 export function attachStage(appEl, onSize, railEl = null) {
   if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
   const run = () => {
     const inset = safeInsets(appEl);
     const width = appEl.clientWidth - inset.left - inset.right;
-    onSize({ width, height: appEl.clientHeight - inset.top, railHeight: measureRail(appEl, railEl, width) });
+    onSize({
+      width,
+      height: appEl.clientHeight - inset.top,
+      insetBottom: inset.bottom,
+      railHeight: measureRail(appEl, railEl, width),
+    });
   };
   run();
   const observer = new ResizeObserver(run);
@@ -243,15 +255,17 @@ export function attachStage(appEl, onSize, railEl = null) {
 }
 
 /**
- * The safe-area insets as the stylesheet applies them: `--inset-top`,
- * `--inset-right`, `--inset-left` on `:root`, registered as lengths so the
- * computed value is pixels and not the `env()` it was written with. A browser
- * without them reads 0, and the box is the stage as it was before #158.
+ * The safe-area insets as the stylesheet reads them: `--inset-top`,
+ * `--inset-right`, `--inset-bottom`, `--inset-left` on `:root`, registered as
+ * lengths so the computed value is pixels and not the `env()` it was written
+ * with. A browser without them reads 0, and the box is the stage as it was
+ * before #158. The one source for the stage (`attachStage()`) and for the
+ * bubbles' frame (`seenFrame()` in `plan.mjs`, #158 B1).
  */
-function safeInsets(el) {
+export function safeInsets(el) {
   const style = getComputedStyle(el);
   const read = (name) => parseFloat(style.getPropertyValue(name)) || 0;
-  return { top: read('--inset-top'), right: read('--inset-right'), left: read('--inset-left') };
+  return { top: read('--inset-top'), right: read('--inset-right'), bottom: read('--inset-bottom'), left: read('--inset-left') };
 }
 
 /**

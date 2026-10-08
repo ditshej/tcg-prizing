@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { attachMeasuring, attachStage } from '../public/ui/measure.mjs';
+import { FOOT_HEIGHT, STRIP_HEIGHT, fold, foldProperties } from '../public/ui/fold.mjs';
 
 /**
  * The shell's safe areas and the stage it hands the fold (#158, points 9, 12
@@ -88,6 +89,65 @@ test('every resize reads the insets again — a turned phone moves them to the o
   assert.deepEqual(sizes.map(({ width, height }) => [width, height]), [[393, 793], [734, 393]]);
 });
 
+/* ── The bottom inset: upright only, under the foot (K4) ──────────────────── */
+
+/**
+ * #158, "Entscheid K4": as a home-screen app the foot gets
+ * `env(safe-area-inset-bottom)` **upright only**, as a strip in its paper
+ * under it; turned flat the stage runs to the bottom edge as built and loses
+ * no height. Whether the foot stands at the bottom is the fold's own verdict,
+ * so `attachStage()` hands the inset on rather than taking it off by the last
+ * fold's `data-flat`, and `fold()` reckons it in exactly where the foot is.
+ */
+
+test('the stage hands the bottom inset on and keeps it in the height — the fold decides where it goes', () => {
+  installObserver();
+  installStyle({ '--inset-top': '59px', '--inset-bottom': '34px' });
+  const sizes = [];
+  attachStage(appBox(393, 852), (size) => sizes.push(size));
+  assert.deepEqual({ width: sizes[0].width, height: sizes[0].height, insetBottom: sizes[0].insetBottom },
+    { width: 393, height: 793, insetBottom: 34 });
+});
+
+test('upright, the foot stands on the strip: 56 + 34 off the Plan, the fixed layers above both', () => {
+  const without = fold({ width: 393, height: 793 });
+  const upright = fold({ width: 393, height: 793, insetBottom: 34 });
+  assert.equal(upright.flat, false);
+  assert.equal(upright.footInset, 34);
+  assert.equal(upright.stripBottom, FOOT_HEIGHT + 34);
+  assert.equal(upright.planHeight, without.planHeight - 34);
+  const props = foldProperties(upright);
+  assert.equal(props['--strip-bottom'], `${FOOT_HEIGHT + 34}px`, 'the raffle bar and the notices stand above the strip');
+  assert.equal(props['--chip-bottom'], `${FOOT_HEIGHT + 34 + 8}px`);
+});
+
+test('from two columns on the strip carries it too, and the chips stay centred in its 48', () => {
+  const f = fold({ width: 1180, height: 820, insetBottom: 20 });
+  assert.equal(f.columns, 3);
+  assert.equal(f.stripBottom, STRIP_HEIGHT + 20);
+  const props = foldProperties(f);
+  assert.equal(props['--chip-bottom'], `${20 + (STRIP_HEIGHT - 34) / 2}px`);
+  assert.equal(props['--chip-lift'], '0px');
+});
+
+test('turned flat, nothing changes: the stage keeps its full height and there is no strip', () => {
+  const without = fold({ width: 718, height: 375 });
+  const turned = fold({ width: 718, height: 375, insetBottom: 21 });
+  assert.equal(turned.flat, true);
+  assert.equal(turned.footInset, 0);
+  assert.equal(turned.stripBottom, 0);
+  assert.equal(turned.planHeight, without.planHeight);
+  assert.equal(turned.diagramMax, without.diagramMax);
+  assert.deepEqual(foldProperties(turned), foldProperties(without));
+});
+
+test('fullscreen hides the foot, and its strip with it', () => {
+  const f = fold({ width: 393, height: 793, insetBottom: 34, fullscreen: true });
+  assert.equal(f.footInset, 0);
+  assert.equal(f.stripBottom, 0);
+  assert.equal(f.planHeight, 793);
+});
+
 /* ── A hidden Plan is not measured (10a) ─────────────────────────────────── */
 
 /**
@@ -161,9 +221,9 @@ function ruleBody(head) {
 const declared = (body, name) => [...`;${body}`.matchAll(new RegExp(`[;{\\s]${name}:\\s*([^;]+);`, 'g'))]
   .map(([, value]) => value.trim());
 
-const SIDES = ['top', 'right', 'left'];
+const SIDES = ['top', 'right', 'bottom', 'left'];
 
-test('the three insets are registered lengths, so the rind reads pixels and not env()', () => {
+test('the four insets are registered lengths, so the rind reads pixels and not env()', () => {
   for (const side of SIDES) {
     const block = code.match(new RegExp(`@property --inset-${side}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
     assert.match(block, /syntax:\s*'<length>'/, `--inset-${side} is a length`);
@@ -213,16 +273,24 @@ test('the fixed columns grow by the inset they carry, so their content keeps its
     ['0 0 calc(var(--col-prepare) + var(--inset-left))']);
 });
 
-test('the foot continues to the edge in its own colour: sides upright, right and top when turned', () => {
+test('the foot continues to the edge in its own colour: sides and bottom upright, right and top when turned', () => {
   const foot = ruleBody('.foot');
   assert.deepEqual(declared(foot, 'background'), ['var(--paper)']);
   assert.deepEqual(declared(foot, 'padding-left'), ['var(--inset-left)']);
   assert.deepEqual(declared(foot, 'padding-right'), ['var(--inset-right)']);
-  assert.deepEqual(declared(ruleBody(".app[data-columns='2'] .foot, .app[data-columns='3'] .foot"), 'padding'),
-    ['0 calc(8px + var(--inset-right)) 0 calc(8px + var(--inset-left))']);
+  // K4: upright, the strip under the entries is the foot's own paper.
+  assert.deepEqual(declared(foot, 'padding-bottom'), ['var(--inset-bottom)']);
+  const strip = ruleBody(".app[data-columns='2'] .foot, .app[data-columns='3'] .foot");
+  assert.deepEqual(declared(strip, 'padding'),
+    ['0 calc(8px + var(--inset-right)) var(--inset-bottom) calc(8px + var(--inset-left))']);
+  assert.deepEqual(declared(strip, 'height'), ['calc(48px + var(--inset-bottom))']);
+  // Turned, the foot sets the bottom back to 0: no strip, the stage to the edge.
   const flat = ruleBody('.app[data-flat] .foot');
   assert.deepEqual(declared(flat, 'flex'), ['0 0 calc(var(--strip-width) + var(--inset-right))']);
   assert.deepEqual(declared(flat, 'padding'), ['var(--inset-top) var(--inset-right) 0 0']);
+  // Nothing else applies the bottom inset: no page, no `.app`.
+  const users = rules.filter((r) => /--inset-bottom\)/.test(r.body)).map((r) => r.selectors.join(', '));
+  assert.deepEqual(users, ['.foot', ".app[data-columns='2'] .foot, .app[data-columns='3'] .foot"]);
 });
 
 test('the fixed layers count from the screen edge, so they add the insets the pages carry', () => {
