@@ -914,6 +914,10 @@ Leisten).
 Entscheid: Body von #156 (Gesamt-Review 2026-10-08, F1 a und Punkt 7). Die drei Köpfe tragen
 Titel und Fakten in der Form von `colHead()` in jeder Faltung, auch am Telefon; der Plan heisst
 im Kopf wie sein `TournamentType`, `Prepare` nennt `Weekly · 40` vor *everything the pool holds*.
+Nachtrag **K2** (Entscheid an #156, Weg b): neben dem Titel des Plans steht nur noch
+`<Spielerzahl> players`; `120 boosters` steht einmal, vorne in der Ausgabezeile darunter. Die
+Messungen der Plan-Fakten unten sind nach K2 neu genommen (Server `php -S localhost:8851`,
+gleicher Browser und gleiche Messmittel).
 
 - **Stand:** Zweig `feat/156-seitenkoepfe`, geschnitten von `main` bei `f9d5b3d`.
 - **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8782 -t public` aus der Worktree-Wurzel
@@ -934,13 +938,13 @@ in der Spalte (#143: „42 mit Titel"), und `Prepare` / `Details` massen 38 stat
 
 | Leinwand | Modus | Plan-Kopf | Titelzeile | Titel | Fakten |
 |---|---|---|---|---|---|
-| 393 × 830 | hell · dunkel | 8–48 = **40** | **22** | `Weekly` 58,4 | `40 players · 120 boosters` 151 |
+| 393 × 830 | hell · dunkel | 8–48 = **40** | **22** | `Weekly` 58,4 | `40 players` 62,6 (vor K2 `40 players · 120 boosters` 151) |
 | 375 × 553 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
 | 360 × 580 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
 | 320 × 900 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
 | 812 × 375 (flach) | hell · dunkel | **40** | **22** | `Weekly` | ganz |
-| 674 × 760 · 1280 × 760 | hell · dunkel | **40** (vorher 42) | **22** (vorher 24) | `Weekly` | ganz |
-| Vollbild 393 × 830 · 1280 × 760 | hell | 22 (nur die Titelzeile) | **22** | — | `Weekly · 40 players` (`shead`) |
+| 674 × 760 · 1280 × 760 | hell · dunkel | **40** (vorher 42) | **22** (vorher 24) | `Weekly` | ganz (nach K2 62,6) |
+| Vollbild 393 × 830 · 674 × 760 · 1280 × 760 | hell | 22 (nur die Titelzeile) | **22** | — | `Weekly · 40 players` (`shead`, 116,6; von K2 nicht berührt) |
 
 `Prepare` und `Details`: Kopf **36** an 393 × 830, 320 × 900 und als Spalte bei 674 × 760 und
 1280 × 760 (vorher 38 als Spalte), Titelzeile 22. `Prepare` 393 × 830:
@@ -955,33 +959,39 @@ Diagramm 80–270 (190, an der Obergrenze), Raster 307–654 = 347 (vorher 309�
 
 ### Die Titelzeile des Plans neben Share und Reset — Soll und Ist
 
-Soll: neben beiden Knöpfen (1 Pin, `rankFloor=3`) wird gekürzt, nie überdeckt. Gemessen: rechter
-Rand der Titelzeile gegen linken Rand der Knöpfe, und ob Titel oder Fakten gekürzt sind.
+Soll: neben beiden Knöpfen wird gekürzt, nie überdeckt. Gemessen: rechter Rand der Titelzeile
+gegen linken Rand der Knöpfe, und ob Titel oder Fakten gekürzt sind. Nach K2 mit
+`?players=40&boosterRate=4` (Reset zählt 2), je Typ; Fakten überall `40 players` (62,6 breit).
 
-| Leinwand | Titelzeile → Knöpfe | Weekly | Weekend | Release (64) | langer Titel |
+| Leinwand | Titelzeile → Knöpfe | Weekly (58,4) | Weekend (74) | Release (62,6) | langer Titel |
 |---|---|---|---|---|---|
-| 393 × 830 | 8–301 → 309, Abstand **8** | ganz | ganz | ganz | Titel ganz (260), Fakten auf 25 gekürzt |
-| 375 × 553 | 8–283 → 291, **8** | ganz | ganz | ganz | — |
-| 360 × 580 | 8–268 → 276, **8** | ganz | ganz | ganz | Titel auf 252 gekürzt (…), Fakten 0 |
-| 320 × 900 | 8–228 → 236, **8** | ganz (58 + 8 + 151 = 217 von 220) | Fakten 151 → 138 gekürzt | Fakten 153 → 149 gekürzt | Titel auf 212 gekürzt, Fakten 0 |
+| 393 × 830 | 8–301 → 309, Abstand **8** | ganz, Fakten enden 137 (172 frei) | ganz, 152,7 (156) | ganz, 141,3 (168) | Titel ganz (260), Fakten auf 25 gekürzt |
+| 375 × 800 | 8–283 → 291, **8** | ganz (154 frei) | ganz (138) | ganz (150) | — |
+| 360 × 800 | 8–268 → 276, **8** | ganz (139 frei) | ganz (123) | ganz (135) | Titel auf 252 gekürzt (…), Fakten 0 |
+| 320 × 800 | 8–228 → 236, **8** | ganz (99 frei) | ganz (83) | ganz (95) | Titel auf 212 gekürzt, Fakten 0 |
 
-Release mit 128 Spielern bei 360 × 580: `Release` + `128 players · 1152 boosters` (162) ganz.
-In keinem Fall bricht etwas um (je eine Zeile), und nirgends reicht die Titelzeile unter die
-Knöpfe. Die Fakten weichen zuerst (`flex-shrink` 1000 gegen 1), der Titel erst, wenn sie weg
-sind. Hell und dunkel messen gleich (320 × 900, langer Titel). `Prepare` bei 320 × 900: Weekly
-ganz, Weekend (`Weekend · 40 …`, 241 auf 233) und Release mit 128 Spielern (238 auf 233)
-gekürzt.
+Vor K2 wurden bei 320 die Fakten von Weekend (151 → 138) und Release mit 64 Spielern (153 → 149)
+gekürzt; nach K2 steht bei 320 jeder Typ ganz, auch Release mit 64 Spielern (`64 players`, 62,7)
+und mit 128 Spielern (`128 players`, 68,1, bei 360 wie bei 320). In keinem Fall bricht etwas um
+(je eine Zeile), und nirgends reicht die Titelzeile unter die Knöpfe. Die Fakten weichen zuerst
+(`flex-shrink` 1000 gegen 1), der Titel erst, wenn sie weg sind — am langen Titel nach K2 gleich
+gemessen wie vorher. Hell und dunkel messen gleich (393 × 830). `Prepare` bei 320 × 900 (von K2
+nicht berührt): Weekly ganz, Weekend (`Weekend · 40 …`, 241 auf 233) und Release mit 128 Spielern
+(238 auf 233) gekürzt.
 
 Die Ausgabezeile darunter ist nicht berührt: 293 / 275 / 260 breit bei 393 / 375 / 360 wie in
-#143, und `120 boosters` steht jetzt **zweimal** im Kopf — in den Fakten und vorne in der
-Ausgabezeile (s. Bericht an #156).
+#143. `120 boosters` stand vor K2 **zweimal** im Kopf — in den Fakten und vorne in der
+Ausgabezeile; nach K2 nur noch in der Ausgabezeile, die ganz bleibt
+(`120 boosters · 40 packs · 4 winner packs`, Kopf bei 393 × 830 weiter 40 hoch).
 
 ### Tests
 
 `test/views-heads.test.mjs`: die drei Köpfe aus den Views gelesen und ihre `x-show`/`x-text`
 gegen `planApp()` ausgewertet — am Telefon (393 × 830) und bei drei Spalten (1280 × 760), je
 Typ des Katalogs, im Vollbild; `.col-titleline` mit `height: 22px`, Titel und Fakten mit Ellipse;
-kein Kommentar sagt mehr „genau eine davon".
+kein Kommentar sagt mehr „genau eine davon". K2: die Plan-Fakten sind `<Spielerzahl> players`, ein
+eigener Test wird rot, sobald in der Titelzeile wieder `booster` steht, und hält die Ausgabezeile
+ganz.
 
 ## #158 · Hülle: Safe Areas, Seitenwechsel, Fussmarkierung
 
