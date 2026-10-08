@@ -336,18 +336,60 @@ function planHead() {
  * #143, decisions 1 and 2 (overruling #72 AC 1 and the place from #67): Share
  * and Reset-all stand in the plan head, top right, in every fold, as icons
  * alone — the word is the `aria-label` and the tooltip. `Details` carries
- * neither any more.
+ * neither any more. Since #155 the icon is called Share, because it no
+ * longer copies: `Copy link` is the button in its bubble.
  */
-test('Share sits in the plan head as an icon, its word the label and tooltip; Details has no Copy link (#143)', () => {
+test('Share sits in the plan head as an icon, its word the label and tooltip; Details has no Copy link (#143, #155)', () => {
   const head = planHead();
   const share = head.slice(head.indexOf('class="plan-share"'));
-  assert.match(share, /^class="plan-share"[^>]*aria-label="Copy link"[^>]*title="Copy link"/);
-  assert.match(share, /@click="copyLink\(\$el\)"/);
-  assert.match(share.slice(0, share.indexOf('</button>')), /icon\('share'\)/);
-  assert.doesNotMatch(share.slice(0, share.indexOf('</button>')), />\s*Copy link\s*</, 'no word on screen');
+  const button = share.slice(0, share.indexOf('</button>'));
+  assert.match(button, /^class="plan-share"[^>]*aria-label="Share"[^>]*title="Share"/);
+  assert.match(button, /@click="share\(\)"/);
+  assert.match(button, /:aria-expanded="shareOpen"/);
+  assert.match(button, /icon\('share'\)/);
+  assert.doesNotMatch(button, />\s*Share\s*</, 'no word on screen');
   const sheet = view('controls-sheet.php');
   assert.doesNotMatch(sheet, /link-copy|copyLink|link-field/);
-  assert.ok(view('plan.php').includes('Link copied'), 'the bubble says it in words');
+});
+
+/** The bubble at Share: from its opening tag to the participation line after it. */
+function shareBubble() {
+  const plan = view('plan.php');
+  const start = plan.indexOf('<div class="share-bubble"');
+  assert.ok(start > 0, 'the bubble exists');
+  return plan.slice(start, plan.indexOf('<div class="plan-participation"', start));
+}
+
+/**
+ * #155, desktop branch: the bubble says in one sentence what is shared and
+ * carries `Copy link`, which is called `Copied` while it carries the
+ * fleeting mark. It closes on Escape and on a press beside it — not on the
+ * press at Share itself, which is the toggle.
+ */
+test('the bubble carries the sentence and Copy link → Copied, and closes on Escape and beside it (#155)', () => {
+  const bubble = shareBubble();
+  assert.ok(bubble.includes(SHARE_SENTENCE), 'the sentence');
+  const copy = bubble.slice(bubble.indexOf('class="share-copy"'));
+  const button = copy.slice(0, copy.indexOf('</button>'));
+  assert.match(button, /@click="copyLink\(\$el\)"/);
+  assert.match(button, />Copy link</);
+  assert.match(button, />Copied</);
+  assert.match(bubble, /@keydown\.escape\.window="closeShare\(\)"/);
+  assert.match(bubble, /@click\.outside="if \(!\$event\.target\.closest\('\[data-share\]'\)\) closeShare\(\)"/);
+  assert.match(bubble, /keepShare\(\)/, 'placed by placeShare() through keepShare(), which closes it when its anchor is gone');
+  assert.match(bubble, /class="link-field"/, 'the field stands in the same bubble');
+  assert.doesNotMatch(view('plan.php'), /Link copied/, 'the old note is gone');
+});
+
+/** The `Copied` word shows only while the button carries the mark. */
+test('Copied shows only while the button carries data-link-copied, and the bubble has a set width (#155)', () => {
+  const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
+  assert.match(css, /\.share-copy-done \{\s*visibility: hidden;/);
+  assert.match(css, /\.share-copy\[data-link-copied\] \.share-copy-done \{\s*visibility: visible;/);
+  assert.match(css, /\.share-copy\[data-link-copied\] \.share-copy-idle \{\s*visibility: hidden;/);
+  const rule = css.slice(css.indexOf('.share-bubble {'));
+  assert.match(rule.slice(0, rule.indexOf('}')), /width: min\(292px, calc\(100vw - 16px\)\);/,
+    'a fixed box shrinks to the room right of where it last stood — so it gets a width');
 });
 
 test('the report is a dialog with exactly one exit, required after the foot (#72 AC 6)', () => {
@@ -459,6 +501,8 @@ function shareEnv({ coarse = false, share = undefined, clipboard = undefined, ex
     },
   };
 }
+
+const SHARE_SENTENCE = 'Share the plan as it stands — everything you set by hand travels in the link.';
 
 const WHOLE = 'https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5';
 

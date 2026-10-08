@@ -230,6 +230,7 @@ body {
   .pin-reset,
   .plan-reset,
   .plan-share,
+  .share-copy,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -262,6 +263,7 @@ body {
   .pin-reset,
   .plan-reset,
   .plan-share,
+  .share-copy,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -637,34 +639,69 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
-/* The bubble at Share (#143): `Link copied` while the element carries
-   `data-link-copied`, the link field while there is no clipboard. Hidden
-   otherwise; placed by `placeShare()` in the viewport, like the drop
-   question. */
+/* The bubble at Share (#155, the desktop branch): a sentence and `Copy link`,
+   and below them the link field when no copy could be made. Hidden while
+   `shareOpen` is false; placed by `placeShare()` in the visible viewport, like
+   the drop question. The width is set rather than shrunk to fit, as the ⓘ
+   bubble's is (#154): a fixed box shrinks to the room right of where it last
+   stood, and the first placing would measure the width of the previous
+   place — measured on #154 at 87 instead of 92, 5 px over the visible edge. */
 .share-bubble {
   position: fixed;
   z-index: 40;
   display: none;
-  padding: 7px 10px;
+  width: min(292px, calc(100vw - 16px));
+  padding: 9px 10px;
   border-radius: var(--r-tile);
   background: var(--paper);
   box-shadow: var(--tile-shadow), var(--panel-shadow);
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.share-bubble.is-open {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.share-bubble-note {
+  margin: 0;
+}
+
+/* `Copy link` in the accent, and `Copied` in its place while the button
+   carries `data-link-copied` (`flashCopied()`, #72 AC 3). Both words sit in
+   one grid cell, so the button keeps the width of the longer one and does
+   not jump under the pointer. */
+.share-copy {
+  display: inline-grid;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
   color: var(--accent);
-  font-size: 0.8rem;
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.share-bubble[data-link-copied],
-.share-bubble.has-field {
-  display: block;
+.share-copy > span {
+  grid-area: 1 / 1;
+  align-self: center;
 }
 
-.share-bubble-done {
-  display: none;
+.share-copy-done {
+  visibility: hidden;
 }
 
-.share-bubble[data-link-copied] .share-bubble-done {
-  display: inline;
+.share-copy[data-link-copied] .share-copy-done {
+  visibility: visible;
+}
+
+.share-copy[data-link-copied] .share-copy-idle {
+  visibility: hidden;
 }
 
 .plan-output {
@@ -2193,7 +2230,7 @@ textarea {
 /* No clipboard: the address in a preselected field, in the Share bubble. */
 .link-field {
   display: flex;
-  width: min(292px, calc(100vw - 32px));
+  width: 100%;
   gap: 6px;
   align-items: center;
 }
