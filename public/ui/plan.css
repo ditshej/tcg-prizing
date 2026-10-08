@@ -490,41 +490,49 @@ textarea {
 }
 
 /*
- * The mode button (#144): top right in the head of `Details`, icon only, drawn
- * as quietly as the ⓘ beside a control. It lies over the head's right end
- * rather than in the title line, which clips; the head is sticky and so
- * already the box it is placed in. The facts give way to it on the right.
+ * The mode button (#144): top right in the head of `Details`, icon only. It is
+ * one of the three head buttons — Share, Reset, mode — and they are one family
+ * with one form (#144, K-B1): a raised card drawn 32 × 32 on paper with the
+ * button shadow, the icon in ink at 17 px, as `.plan-share` has it (#143). It
+ * lies over the head's right end rather than in the title line, which clips;
+ * the head is sticky and so already the box it is placed in. It is inset from
+ * the edge by the head's own padding and centred on the head's height, which
+ * it leaves as it was (38 / 36). The facts give way to it on the right: its 32
+ * plus the inset plus a gap of 8.
  *
- * Its drawing is the head's full height (36) and 44 wide, flush with the
- * page's top and right edge — the page scrolls, and a scroller clips
- * whatever reaches past it, so a hit area centred on a smaller drawing would
- * lose its outer rim there. What the rule above adds is only the missing
- * 8 px downward, over the head's lower edge.
+ * Its hit area is the rule above's 44, centred across but not down: the page
+ * scrolls, and a scroller clips whatever reaches past it, so an area centred
+ * on the drawing would lose its top rows above the head's edge. The drawing
+ * sits 2–3 px below that edge, so the area starts 2 px above the drawing and
+ * takes the rest downward, over the head's lower edge.
  */
 .page-details > .col-head {
-  padding-right: 44px;
+  padding-right: 48px;
 }
 
 .theme-toggle {
   position: absolute;
   top: 0;
-  right: 0;
-  width: var(--hit);
-  height: 100%;
-  display: grid;
+  bottom: 0;
+  right: 8px;
+  margin-block: auto;
+  display: inline-grid;
   place-items: center;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
-  background: none;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  font-size: 17px;
   cursor: pointer;
 }
 
 .theme-toggle::after {
-  top: 0;
-  bottom: min(0px, calc(100% - var(--hit)));
+  top: -2px;
+  bottom: calc(100% + 2px - var(--hit));
 }
 
 .plan-stage {
