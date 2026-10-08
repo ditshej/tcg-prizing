@@ -287,6 +287,20 @@ body {
   right: min(0px, calc(50% - var(--hit) / 2));
 }
 
+/*
+ * No double-tap zoom on anything that can be pressed (#154). iOS zooms on a
+ * quick second tap unless `touch-action` says otherwise — at the ± of a
+ * counter, at a head button pressed twice — and a zoomed page is what left
+ * the bubbles hanging over the visible edge. `manipulation` keeps panning and
+ * **pinch** zoom, which #146 leaves open on purpose; it only drops the
+ * double tap. Every control is real markup (#61, "Keyboard and focus"), so
+ * the elements are the list; the counter and the bubbles are added because a
+ * second tap that misses its ± by a hair lands on them.
+ */
+:where(button, a, input, select, label, .counter, .bubble, .drop-bubble, .share-bubble, .set-info) {
+  touch-action: manipulation;
+}
+
 .counter > button:first-child::after {
   left: min(0px, calc(100% - var(--hit)));
   right: 0;
@@ -1173,12 +1187,30 @@ textarea {
   cursor: pointer;
 }
 
+/*
+ * The ⓘ's sentence is **the** bubble, floating at its ⓘ (#154; prototype
+ * `.pop`, z 38, `max-width: 292px`) — out of the flow, so opening it moves
+ * nothing under it. `fixed`, like the drop question, because `Details`
+ * scrolls itself; `placeInfo()` writes its `left`/`top` into the visible
+ * viewport. The width is set rather than shrunk to fit: a fixed box shrinks
+ * to the room right of where it last stood, and the placing would measure
+ * the width of the previous place.
+ */
 .set-info {
-  margin: 6px 0 0;
-  padding: 8px 10px;
-  border-radius: var(--r-ctl);
-  background: var(--accent-soft);
+  position: fixed;
+  z-index: 38;
+  width: min(292px, calc(100vw - 16px));
+  max-width: 292px;
+  padding: 9px 10px;
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
   font-size: 0.78rem;
+}
+
+.set-info .bubble-close {
+  float: right;
+  margin: -6px -6px 0 6px;
 }
 
 .set-info p {
@@ -1372,6 +1404,17 @@ textarea {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: var(--field-size);
+}
+
+/*
+ * In the tile's bubble the number is a `<span>`, not a field (#154): an
+ * `<input>` centres its text by itself, a flex child sets it at the top of
+ * its 34 px box. Centred here on both axes, in the content box the field rule
+ * leaves it.
+ */
+.bubble .counter-value {
+  display: grid;
+  place-items: center;
 }
 
 .counter-value:focus {

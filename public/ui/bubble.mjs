@@ -74,3 +74,45 @@ export function anchorVisible(anchor, stage) {
   if (anchor.left >= stage.left + stage.width) return false;
   return true;
 }
+
+/**
+ * What can be seen of the page, as a box in the layout viewport's coordinates
+ * — the ones `getBoundingClientRect()` and `position: fixed` use (#154).
+ *
+ * `viewport` is a `VisualViewport` or anything with its four numbers. Zoomed
+ * in — iOS on a quick double tap, anyone on a pinch (#146 keeps pinch open) —
+ * it is a smaller window shifted by `offsetLeft`/`offsetTop`; without one, what
+ * is laid out is what is seen.
+ */
+export function visibleBox(viewport, layout) {
+  if (!viewport) return layout;
+  return { left: viewport.offsetLeft, top: viewport.offsetTop, width: viewport.width, height: viewport.height };
+}
+
+/**
+ * The part of `box` that can be seen: its overlap with `visible`. Frames that
+ * do not meet leave a box of no size, and nothing is visible inside it.
+ */
+export function visibleFrame(box, visible) {
+  const left = Math.max(box.left, visible.left);
+  const top = Math.max(box.top, visible.top);
+  const right = Math.min(box.left + box.width, visible.left + visible.width);
+  const bottom = Math.min(box.top + box.height, visible.top + visible.height);
+  return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+/**
+ * `bubblePosition()` against the **visible** part of the bubble's positioning
+ * box, answered in that box's own coordinates (#154).
+ *
+ * `box` is what `left`/`top` are measured from: the stage for the tile bubble
+ * (`position: absolute` inside it), the layout viewport for the fixed ones.
+ * The bubble flips and clamps against `box` cut down to `visible`, so at
+ * `scale > 1` it stands wholly in the visible window and not merely in the
+ * laid-out one.
+ */
+export function placeInFrame({ anchor, bubble, box, visible, gap = GAP, margin = MARGIN }) {
+  const frame = visibleFrame(box, visible);
+  const at = bubblePosition({ anchor, bubble, stage: frame, gap, margin });
+  return { left: at.left + frame.left - box.left, top: at.top + frame.top - box.top, flipped: at.flipped };
+}
