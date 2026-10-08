@@ -1594,6 +1594,12 @@ export function planApp(seam = SEAM) {
         this.closeShare();
         return;
       }
+      /* The CSS width answers the layout viewport; zoomed in, the visible
+         part is narrower (#154), and at 1.5 the 292 stood 38 past its edge.
+         Capped to what can be seen, the first placing measures a box that
+         fits. */
+      const bubbleEl = document.querySelector(SHARE_BUBBLE);
+      if (bubbleEl) bubbleEl.style.maxWidth = `${Math.max(0, visible.width - 16)}px`;
       this.placeShare();
     },
 
