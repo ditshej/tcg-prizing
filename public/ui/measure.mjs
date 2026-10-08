@@ -197,6 +197,7 @@ export function showRaffleHit(gridEl, barEl, rank) {
     gridEl.getBoundingClientRect(),
     tileEl.getBoundingClientRect(),
     barEl ? barEl.getBoundingClientRect().top : Infinity,
+    parseFloat(getComputedStyle(gridEl).paddingTop) || 0,
   );
   if (delta !== 0) gridEl.scrollTo({ top: gridEl.scrollTop + delta, behavior: 'smooth' });
 
@@ -338,13 +339,18 @@ export function attachFades(rootEl, selectors) {
         bands.set(selector, band);
       }
       const visible = box && box.getClientRects().length > 0;
-      const paddingBottom = visible ? parseFloat(getComputedStyle(box).paddingBottom) || 0 : 0;
+      const boxStyle = visible ? getComputedStyle(box) : null;
+      const paddingBottom = visible ? parseFloat(boxStyle.paddingBottom) || 0 : 0;
       if (!visible || !fadeLeft({
         scrollHeight: box.scrollHeight, clientHeight: box.clientHeight, scrollTop: box.scrollTop, paddingBottom,
       })) { band.style.display = 'none'; continue; }
       const root = rootEl.getBoundingClientRect();
       const r = box.getBoundingClientRect();
-      const height = fadeHeight(box.clientHeight);
+      /* Sized off the window less its top padding: the tile grid's is room
+         for the ring above its top row (#168) and gives the band nothing.
+         The pages' 8 comes off too; they stand above 248 px wherever they
+         scroll, so their band stays at the full 60. */
+      const height = fadeHeight(box.clientHeight, parseFloat(boxStyle.paddingTop) || 0);
       band.style.display = 'block';
       band.style.left = `${r.left - root.left + box.clientLeft}px`;
       band.style.width = `${box.clientWidth}px`;

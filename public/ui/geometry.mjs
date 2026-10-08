@@ -223,9 +223,13 @@ export function raffleLift(barHeight) {
  * `nearest` first and nudged afterwards, a set `scrollTop` cancels the smooth
  * run, and the tile is seen sliding to the edge rather than arriving in the
  * middle (the prototype's Runde 16, repaired in Runde 17).
+ *
+ * `paddingTop` is the scroller's own top padding (#168): the room the pulse
+ * needs at the top, not room a tile counts as seen in. The strip starts below
+ * it, where the scroll window started before the padding came.
  */
-export function hitScrollDelta(windowRect, tileRect, barTop = Infinity) {
-  const top = windowRect.top;
+export function hitScrollDelta(windowRect, tileRect, barTop = Infinity, paddingTop = 0) {
+  const top = windowRect.top + paddingTop;
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
   return tileRect.top + tileRect.height / 2 - (top + (bottom - top) / 2);
@@ -297,7 +301,11 @@ export function fadeShown({ scrollHeight, clientHeight, scrollTop, paddingBottom
  * quarter of the window it lies on. The tile window is two rows high next to
  * an elastic diagram (`diagramCap()`), and a 60 px band there covered half of
  * the second row — the row the first height exists for.
+ *
+ * The window is the scroller's height less its top padding (#168): that
+ * padding is room for the open tile's ring and the hit's pulse above the top
+ * row, and it gives the band no extra height.
  */
-export function fadeHeight(clientHeight) {
-  return Math.min(FADE_HEIGHT, Math.round(clientHeight / 4));
+export function fadeHeight(clientHeight, paddingTop = 0) {
+  return Math.min(FADE_HEIGHT, Math.round((clientHeight - paddingTop) / 4));
 }

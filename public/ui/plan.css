@@ -902,8 +902,10 @@ textarea {
   gap: 4px;
 }
 
+/* Not positioned (#168): the grid reaches 8 px up into the stage gap with its
+   top padding, and a positioned wrap would paint it over the legend's hit
+   areas, which reach down into that same gap (#142). */
 .plan-grid-wrap {
-  position: relative;
   flex: 1 1 auto;
   min-height: 113px; /* the two-row master floor, MIN_ROWS in geometry.mjs */
   display: flex;
@@ -924,7 +926,23 @@ textarea {
   gap: 5px;
   justify-content: center;
   align-content: start;
+  /* The scroller clips at its padding box, and the open tile's ring (3 px) and
+     the hit's pulse lie outside the tile: with no padding they were cut at the
+     top row and the outer columns (#168). So the padding sits on the scroller
+     with a negative margin against it, the prototype's `.gridwin`
+     (proto:748-755) — the tiles stand where they stood, only the clip edge
+     lies further out. As far as the stage gives: 8 up into the stage gap, 8
+     into the stage's side padding, which lies inside the safe-area border
+     (#158) — the prototype's 12 would reach past the stage. The bottom keeps
+     its own 4 and no margin: its edge is what the raffle bar's sums read.
+     Longhands, because `applyRafflePadding()` writes `padding-bottom` inline. */
+  margin-top: -8px;
+  margin-right: -8px;
+  margin-left: -8px;
+  padding-top: 8px;
+  padding-right: 8px;
   padding-bottom: 4px;
+  padding-left: 8px;
 }
 
 /* At the end of the legend row (prototype `slotBlock()`, #73 B5), and no
