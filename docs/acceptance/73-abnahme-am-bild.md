@@ -598,7 +598,7 @@ mindestens 44 × 44 und Lucide statt Zeichen und Emoji.
 > ⚠︎ **Ergänzt durch #157** (Gesamt-Review 2026-10-08, Punkt 4 und F2 a): Der Deckel bleibt, dazu
 > kommt eine zweite Obergrenze, ein Drittel der geteilten Fläche; unter einem Drittel von 60 ist das
 > Diagramm weg. Die Spalte „Diagramm zu" unten ist damit überholt (am Master 158,3 statt 280, bei
-> 1280 × 760 178,3 statt 190, bei 674 × 399 weg statt 61). Neu gemessen unter
+> 1280 × 760 179 statt 190 (mit dem Kopf von #156), bei 674 × 399 weg statt 61). Neu gemessen unter
 > „#157 · Das Diagramm nimmt höchstens ein Drittel".
 
 Soll (Prototyp, nachgeschlagen): flach 60–96, unter 460 Höhe 96, ab zwei Spalten 190, einspaltig
@@ -752,7 +752,12 @@ Drittel der Fläche, die es mit den Kacheln teilt; die Kacheln haben immer mehr 
 Drittel unter 60, ist es weg. `DIAGRAM_MAX` bleibt als zweite Obergrenze, Ersthöhe 399 und
 `PLAN_FLOOR` 351 bleiben.
 
-- **Stand:** Zweig `feat/157-diagramm-drittel` bei `cd09ffe`.
+- **Stand:** Zweig `feat/157-diagramm-drittel` bei `cd09ffe`. Die Spalten-Zeilen (zwei und drei
+  Spalten) sind nachgemessen auf #157 (`525a58e`) + #160 (`feat/156-seitenkoepfe` bei `de76938`),
+  weil #161 nach #160 gemergt wird: #156 macht den Plan-Kopf überall 40 hoch statt 42, der feste
+  Teil in den Spalten misst damit 175 statt 177, der Rest ist 2 px grösser (Gegenprobe B3). Die
+  Telefon- und Flach-Zeilen haben sich dabei nicht bewegt (Master und flach hatten den Kopf schon
+  auf 40).
 - **Server:** `php -S localhost:8783 -t public` aus der Worktree-Wurzel.
 - **Browser:** Chrome headless über Playwright (aus dem npx-Cache, `channel: 'chrome'`), je
   Leinwand ein eigener Kontext mit diesem Viewport, ohne Link (Weekly, 40 Spielende), hell. Der
@@ -775,15 +780,15 @@ Drittel unter 60, ist es weg. `DIAGRAM_MAX` bleibt als zweite Obergrenze, Ersth�
 | 375 × 553 | Master (iPhone SE Safari) | 198 | 0 | min(280, 66) = 66 | **66** | 132 | 2,0 |
 | 812 × 375 | flach | 200 | 0 | min(96, 66,7) = 66,7 | **66,7** | 133,3 | 2,0 |
 | 673 × 760 | einspaltig | 405 | 0 | min(280, 135) = 135 | **135** | 270 | 2,0 |
-| 674 × 760 | zwei Spalten | 535 | 0 | min(190, 178,3) = 178,3 | **178,3** | 356,7 | 2,0 |
-| 900 × 700 | zwei Spalten | 475 | 0 | min(190, 158,3) = 158,3 | **158,3** | 316,7 | 2,0 |
-| 1280 × 760 | drei Spalten | 535 | 0 | min(190, 178,3) = 178,3 | **178,3** | 356,7 | 2,0 |
-| 1597 × 900 | drei Spalten | 675 | 0 | min(190, 225) = 190 | **190** | 485 | 2,6 |
-| 1280 × 450 | drei Spalten, unter 460 | 225 | 0 | min(96, 75) = 75 | **75** | 150 | 2,0 |
+| 674 × 760 | zwei Spalten | 537 | 0 | min(190, 179) = 179 | **179** | 358 | 2,0 |
+| 900 × 700 | zwei Spalten | 477 | 0 | min(190, 159) = 159 | **159** | 318 | 2,0 |
+| 1280 × 760 | drei Spalten | 537 | 0 | min(190, 179) = 179 | **179** | 358 | 2,0 |
+| 1597 × 900 | drei Spalten | 677 | 0 | min(190, 225,7) = 190 | **190** | 487 | 2,6 |
+| 1280 × 450 | drei Spalten, unter 460 | 227 | 0 | min(96, 75,7) = 75,7 | **75,7** | 151,3 | 2,0 |
 | 600 × 493 | flach | 318 | 0 | min(96, 106) = 96 | **96** | 222 | 2,3 |
 | 673 × 469 | flach | 294 | 0 | min(96, 98) = 96 | **96** | 198 | 2,1 |
-| 900 × 399 | zwei Spalten, Ersthöhe | 174 | 0 | 58 < 60 → weg | **weg** | 182 | — |
-| 674 × 399 | zwei Spalten, Ersthöhe | 174 | 0 | 58 < 60 → weg | **weg** | 182 | — |
+| 900 × 399 | zwei Spalten, Ersthöhe | 176 | 0 | 58,7 < 60 → weg | **weg** | 184 | — |
+| 674 × 399 | zwei Spalten, Ersthöhe | 176 | 0 | 58,7 < 60 → weg | **weg** | 184 | — |
 | 420 × 450 | eng (`data-cramped`) | 105 | 0 | weg (Boden 351: 173 / 3 = 57,7) | **weg** | 113 | — |
 
 ### Leiste offen (vor dem ersten Wurf)
@@ -793,11 +798,11 @@ Drittel unter 60, ist es weg. `DIAGRAM_MAX` bleibt als zweite Obergrenze, Ersth�
 | 393 × 830 | Master | 475 | 0 | 158,3 | **158,3** | 316,7 | 2,0 |
 | 812 × 375 | flach | 200 | 104 | 32 < 60 → weg | **weg** | 104 | — |
 | 600 × 493 | flach | 318 | 104 | min(96, 71,3) = 71,3 | **71,3** | 142,7 | 2,0 |
-| 674 × 760 | zwei Spalten | 535 | 104 | min(190, 143,7) = 143,7 | **143,7** | 287,3 | 2,0 |
-| 900 × 700 | zwei Spalten | 475 | 104 | min(190, 123,7) = 123,7 | **123,7** | 247,3 | 2,0 |
-| 1280 × 760 | drei Spalten | 535 | 104 | min(190, 143,7) = 143,7 | **143,7** | 287,3 | 2,0 |
-| 1280 × 450 | drei Spalten, unter 460 | 225 | 104 | 40,3 < 60 → weg | **weg** | 129 | — |
-| 1597 × 900 | drei Spalten | 675 | 104 | min(190, 190,3) = 190 | **190** | 381 | 2,0 |
+| 674 × 760 | zwei Spalten | 537 | 104 | min(190, 144,3) = 144,3 | **144,3** | 288,7 | 2,0 |
+| 900 × 700 | zwei Spalten | 477 | 104 | min(190, 124,3) = 124,3 | **124,3** | 248,7 | 2,0 |
+| 1280 × 760 | drei Spalten | 537 | 104 | min(190, 144,3) = 144,3 | **144,3** | 288,7 | 2,0 |
+| 1280 × 450 | drei Spalten, unter 460 | 227 | 104 | 41 < 60 → weg | **weg** | 131 | — |
+| 1597 × 900 | drei Spalten | 677 | 104 | min(190, 191) = 190 | **190** | 383 | 2,0 |
 
 Am Master liegt die Leiste unter der Schiene, sie deckt kein Fenster (gedeckt 0, wie in Lauf 14).
 Wo das Diagramm weg ist, bekommt das Fenster seinen Platz samt Lücke (Rest + 8).
@@ -805,7 +810,8 @@ Wo das Diagramm weg ist, bekommt das Fenster seinen Platz samt Lücke (Rest + 8)
 ### Gegen die Vorhersage im Ticket
 
 Das Ticket rechnete mit `PLAN_FIXED` 178. Gemessen ist der feste Teil am Master 175 (650 − 475),
-in den Spalten 177 (712 − 535); der Rest ist darum 3 px grösser als vorhergesagt:
+in den Spalten nach #156 ebenfalls 175 (712 − 537; vor #156 waren es 177); der Rest ist darum
+3 px grösser als vorhergesagt:
 
 | Vorhersage (#157) | gemessen |
 |---|---|
@@ -826,7 +832,7 @@ Die Abweichung kommt aus der Annahme, nicht aus dem Bau: 178 ist die aufgerundet
   420 × 450 jetzt 280 (fester Teil + 113). Die frei gewordenen 68 px nimmt nicht das Raster, die
   Schiene rückt hoch (offen, im Bericht an die Eltern-Session).
 - **iPhone SE in Safari (375 × 553) behält das Diagramm**, knapp: Rest 198, ein Drittel 66.
-- **Unter dem Deckel gemessen statt am Deckel**: 1280 × 450 hat 75 statt 96 (Lauf 17), 600 × 493 bei offener
+- **Unter dem Deckel gemessen statt am Deckel**: 1280 × 450 hat 75,7 statt 96 (Lauf 17), 600 × 493 bei offener
   Leiste 71,3; flach bei geschlossener Leiste (600 × 493, 673 × 469) bleibt es am Deckel 96.
 
 ### Tests
