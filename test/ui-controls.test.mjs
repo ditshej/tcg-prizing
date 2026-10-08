@@ -26,9 +26,24 @@ import {
 } from '../public/ui/controls.mjs';
 import { planApp } from '../public/ui/plan.mjs';
 
+/**
+ * The stand this file was measured on: the sheets as #21 and #25 decided them
+ * — 32 Players, the top 8 served, Weekly `mild`, Weekend `steep`. #145 moved
+ * those start values (40 / `topThird` / `moderate`, Weekend `firm`, Release
+ * 64); the subject of this file is the controls' reach over a stand, not
+ * today's start values, so the scenarios set their values themselves. They are
+ * laid into the TournamentType layer rather than handed over as pins, so a
+ * value set here is still an inherited one and not a hand-set one.
+ */
+const MEASURED_ON = {
+  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
+  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  release: { players: 32 },
+};
+
 /** The sheet's own reading of a stand: settings resolved, plan computed. */
 function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
-  const settings = resolveSettings({ game: GAME, type, pins });
+  const settings = resolveSettings({ game: GAME, type: { ...type, ...MEASURED_ON[type.id] }, pins });
   return { settings, plan: distribute(settings) };
 }
 
