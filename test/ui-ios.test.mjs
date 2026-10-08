@@ -83,7 +83,7 @@ test('no rule that styles a field sets its type to anything but the token', () =
 });
 
 test('the rules that used to shrink a field are among those checked', () => {
-  for (const head of ['.counter-value', '.controls-hot .counter-value', '.plan-control select', '.link-field-input']) {
+  for (const head of ['.counter-value', '.controls-hot .counter-value', '.link-field-input']) {
     assert.ok(rules.some((r) => r.selectors.includes(head) && /font(-size)?:/.test(r.body)), head);
   }
 });

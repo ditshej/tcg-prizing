@@ -817,7 +817,7 @@ textarea {
 }
 
 /*
- * The four hot sliders themselves (#63): pulled out of `plan.php` into
+ * The hot controls themselves (#63): pulled out of `plan.php` into
  * `controls-hot.php`, which was then shared by the fixed rail under `Plan` and
  * `Details`'s Grundform body. Since #64 filled that page from
  * `controls-sheet.php`, this grid is the rail's alone — `.plan-controls` (the
@@ -825,6 +825,7 @@ textarea {
  * controls are `.sheet-control` below and do not use this grid.
  */
 .controls-hot {
+  --rail-cells: repeat(auto-fit, minmax(164px, 1fr));
   display: grid;
   /* One row where the width allows it, two where it doesn't — the same rule
      that keeps the tile grid from needing an `if` on the fold, applied to
@@ -836,61 +837,45 @@ textarea {
      The rail's field is 44, not the sheet's 54, so two cells stand side by
      side down to a 360 stage (2 × 164 + 16 + 2 × 8); below it they stack
      (round 142·145, K2). */
-  grid-template-columns: repeat(auto-fit, minmax(164px, 1fr));
+  grid-template-columns: var(--rail-cells);
   /* 10 between the rows: a counter's field reaches 5 past its drawing, so a
      row below must not start inside that (#142). */
   gap: 10px 16px;
 }
 
-.plan-control {
+/*
+ * The curve on the rail (#143, decision 6): the sheet's chips over the
+ * rail's full width, under a head of title and state word. The chips are
+ * 34 high and 44 to the finger (#142), so the row is as high as a counter's:
+ * title line, then 34. Under a 348 stage seven chips at 44 no longer fit
+ * (7 × 44 + 6 × 4 = 332 for the rail's content) and they break 4 + 3, as on
+ * `Details` (round 142·145, K2: "+44 Höhe" at 320). The rail is the query
+ * container for that, named, so the sheet's own query (`Details`' column)
+ * does not answer for it.
+ */
+.plan-controls {
+  container: rail / inline-size;
+}
+
+.hot-curve {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
   gap: 2px;
 }
 
-.plan-control input,
-.plan-control select {
-  width: 100%;
+.controls-hot .curve-steps {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-/* The curve's select, drawn like the counter's field: 34 high, 44 to the
-   finger through a transparent border the background does not paint (#142).
-   Its own arrow is gone with `appearance`, so the Lucide chevron stands in
-   for it, laid over the right end and not in the way of a tap. */
-.plan-control-select {
-  position: relative;
-  display: block;
-}
-
-.plan-control select {
-  appearance: none;
-  display: block;
-  height: var(--hit);
-  margin: -5px 0;
-  padding: 0 28px 0 8px;
-  border: none;
-  border-block: 5px solid transparent;
-  border-radius: var(--r-ctl);
-  background: var(--accent-soft);
-  background-clip: padding-box;
-  color: var(--ink);
-  font-size: var(--field-size);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.plan-control-select .icon {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  font-size: 14px;
+@container rail (max-width: 331px) {
+  .controls-hot .curve-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /*
- * The rail's three numbers are the sheet's row (`control_row()`, #113), so
+ * The rail's two numbers are the sheet's row (`control_row()`, #113), so
  * their form is `.sheet-control-head` below; what is the rail's alone is the
  * cell they sit in. A grid cell is narrower than the sheet's column, and
  * where title and counter do not fit side by side the counter goes under the
@@ -2524,6 +2509,10 @@ textarea {
   overflow: visible;
 }
 
+/* The bar's own cells, by the same property, so the probe cannot go on
+   measuring a cell the bar no longer has: until #143 it said 176 here while
+   the bar had 164 since K2 (round 142·145), and at 360–392 the probe stacked
+   the counters the bar stood side by side. */
 .app .rail-probe .controls-hot {
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  grid-template-columns: var(--rail-cells);
 }

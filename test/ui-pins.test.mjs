@@ -646,7 +646,8 @@ const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), '
 test('the sheet labels and the question labels are the same words', () => {
   const pattern = /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
   const calls = [...SHEET.matchAll(pattern), ...RAIL.matchAll(pattern)];
-  assert.ok(calls.length >= 17, 'sheet and rail compose their numbers through the shared row');
+  // Fourteen on the sheet and two on the rail (#143 took RankFloor off it).
+  assert.ok(calls.length >= 16, 'sheet and rail compose their numbers through the shared row');
   for (const [, key, label] of calls) {
     assert.equal(PIN_LABELS[key], label.replace(/\\'/g, "'"), `${key} is called the same in both places`);
   }
@@ -677,13 +678,13 @@ test('every control on the sheet carries its state word and its own way back', (
   }
 });
 
-test('the rail under the plan marks its four the same way', () => {
-  // Three through the shared row, which carries the word; the curve select
-  // marks itself as it did (#104).
-  for (const key of ['players', 'depth', 'rankFloor']) {
+test('the rail under the plan marks its three the same way', () => {
+  // Two through the shared row, which carries the word; the curve chips carry
+  // their own head (#143).
+  for (const key of ['players', 'depth']) {
     assert.ok(RAIL.includes(`control_row('${key}'`), `${key} is marked on the rail too`);
   }
-  assert.ok(RAIL.includes(`stateWord('curve')`), 'curve is marked on the rail too');
+  assert.ok(RAIL.includes(`sheet_pin_head('curve')`), 'curve is marked on the rail too');
 });
 
 test('the full reach hangs off the type row and asks before it acts', () => {

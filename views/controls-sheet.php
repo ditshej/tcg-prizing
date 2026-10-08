@@ -280,16 +280,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
     </div>
     <p class="sheet-desc">How steeply the boosters drop from one rank to the next. It only
       shapes what is left over the floor.</p>
-    <div class="curve-steps">
-      <template x-for="step in curveSteps" :key="step.id">
-        <button type="button" class="curve-step" :aria-pressed="settings.curve === step.id"
-                :title="`${step.id} · ×${step.ratio}`" @click="setSlider('curve', step.id)">
-          <template x-for="(height, i) in curveBars(step)" :key="i">
-            <i :style="`height:${height}px`"></i>
-          </template>
-        </button>
-      </template>
-    </div>
+    <?php curve_steps(); ?>
     <p class="sheet-foot" x-text="`${settings.curve} — each rank gets ${Math.round(curveRatio * 100)}% of the rank above`"></p>
   </div>
 
