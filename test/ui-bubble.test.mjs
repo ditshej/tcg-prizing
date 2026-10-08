@@ -179,18 +179,25 @@ function element(rect, { width = 0, height = 0, frame = null, children = {} } = 
   };
 }
 
-/** Runs `fn` with `window` and `document` stubbed, then puts them back. */
-function inBrowser(elements, fn) {
-  const saved = { window: globalThis.window, document: globalThis.document };
-  globalThis.window = { ...LAYOUT, visualViewport: ZOOMED };
+/**
+ * Runs `fn` with `window`, `document` and `getComputedStyle` stubbed, then
+ * puts them back. `insets` are the `--inset-*` custom properties as `:root`
+ * would compute them (#158); Chromium reports 0, so they are set by hand.
+ */
+function inBrowser(elements, fn, { layout = LAYOUT, viewport = ZOOMED, insets = {} } = {}) {
+  const saved = { window: globalThis.window, document: globalThis.document, getComputedStyle: globalThis.getComputedStyle };
+  globalThis.window = { ...layout, visualViewport: viewport };
   globalThis.document = {
-    documentElement: { clientWidth: 400, clientHeight: 800 },
+    documentElement: { clientWidth: layout.innerWidth, clientHeight: layout.innerHeight },
     querySelector: (selector) => elements[selector] ?? null,
   };
+  globalThis.getComputedStyle = () => ({
+    getPropertyValue: (name) => (name.startsWith('--inset-') ? `${insets[name.slice(8)] ?? 0}px` : ''),
+  });
   try {
     return fn();
   } finally {
-    for (const key of ['window', 'document']) {
+    for (const key of ['window', 'document', 'getComputedStyle']) {
       if (saved[key] === undefined) delete globalThis[key];
       else globalThis[key] = saved[key];
     }
@@ -264,6 +271,49 @@ test('the ⓘ bubble closes when its button scrolls out of Details', () => {
     '[data-info="type"]': element(box(200, 260, 22, 22), { frame: details }),
   }, () => app.placeInfo());
   assert.equal(app.openInfo, null);
+});
+
+/*
+ * The safe areas (#158, B1). With `viewport-fit=cover` the layout viewport
+ * runs under the notch, and a fixed bubble clamped 8 px from its edge stood in
+ * the inset: turned at 812 × 375 with 47 a side, the Reset question measured
+ * 503…795 and the Share bubble 512…804 against a safe 47…765. The frame is
+ * cut down by the same `--inset-*` the stylesheet insets with.
+ */
+
+const TURNED = { innerWidth: 812, innerHeight: 375 };
+const TURNED_VIEW = { offsetLeft: 0, offsetTop: 0, width: 812, height: 375, scale: 1 };
+const TURNED_INSETS = { top: 20, right: 47, bottom: 21, left: 47 };
+
+test('turned, the Reset question stays inside the safe area, not in the right inset (B1)', () => {
+  const bubble = element(box(0, 0, 292, 152), { width: 292, height: 152 });
+  const app = shell();
+  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
+  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(633, 30, 32, 32)) }, () => {
+    app.placeConfirm();
+  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
+  // Right edge at 812 − 47 − 8 = 757, not at 812 − 8 = 804.
+  assert.equal(bubble.style.left, `${812 - 47 - MARGIN - 292}px`);
+  assert.notEqual(app.confirmDrop, null);
+});
+
+test('turned, the Share bubble stays inside the safe area too (B1)', () => {
+  const bubble = element(box(0, 0, 312, 58), { width: 312, height: 58 });
+  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(740, 30, 32, 32)) }, () => {
+    shell().placeShare();
+  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
+  assert.equal(bubble.style.left, `${812 - 47 - MARGIN - 312}px`);
+});
+
+test('a bubble keeps off the notch at the left and off the home indicator below (B1)', () => {
+  const bubble = element(box(0, 0, 200, 120), { width: 200, height: 120 });
+  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(20, 200, 32, 32)) }, () => {
+    shell().placeShare();
+  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
+  assert.equal(bubble.style.left, `${47 + MARGIN}px`, 'not 8 px from the screen edge');
+  // Below the button it would reach 238 + 120 = 358: inside the screen's
+  // 375 − 8, but past the home indicator's 375 − 21 − 8. So it flips above.
+  assert.equal(bubble.style.top, `${200 - GAP - 120}px`);
 });
 
 test('one bubble at a time: the ⓘ, the tile and the question put each other out', () => {
