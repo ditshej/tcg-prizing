@@ -1081,6 +1081,7 @@ select {
   flex: none;
   display: flex;
   align-items: center;
+  gap: 6px; /* with the way back's 10: 16 between `+` and it */
   margin-left: auto;
 }
 
