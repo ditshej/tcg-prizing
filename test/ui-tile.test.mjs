@@ -6,9 +6,24 @@ import { distribute } from '../public/core/distribute.mjs';
 import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
 import { tileGrip, tileView } from '../public/ui/tile.mjs';
 
+/**
+ * The stand this file was written against: the sheets as #21 and #25 decided
+ * them — 32 Players, the top 8 served, Weekly `mild`, Weekend `steep`. #145
+ * moved those start values (40 / `topThird` / `moderate`, Weekend `firm`,
+ * Release 64); the subject here is the tile over a stand, and the decided
+ * examples below (#70, K-B2) name Ranks of a 32-Player field. So the
+ * scenarios set their values themselves, in the TournamentType layer, where
+ * they stay inherited rather than pinned.
+ */
+const MEASURED_ON = {
+  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
+  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  release: { players: 32 },
+};
+
 /** The tile's own reading of a stand: settings resolved, plan computed. */
 function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
-  const settings = resolveSettings({ game: GAME, type, pins });
+  const settings = resolveSettings({ game: GAME, type: { ...type, ...MEASURED_ON[type.id] }, pins });
   return { settings, plan: distribute(settings) };
 }
 
