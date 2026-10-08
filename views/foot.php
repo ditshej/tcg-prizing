@@ -4,7 +4,7 @@
  * icon and word on every one — never icon alone (#61, #15: "ein Schirm, kein
  * Ablauf", the order is granularity, not the evening's flow). A second tap on
  * the already-active entry is a no-op (`setPage()` in `plan.mjs`); the active
- * entry is read by depth (`.foot-active`), never by a rule — a line is only
+ * entry is read by depth (`.foot-active` and the field under it), never by a rule — a line is only
  * allowed where it separates data, and this doesn't.
  *
  * Hidden entirely in fullscreen, at every width (#63 AC 5): fullscreen is a
@@ -19,9 +19,20 @@
  * while the `Plan` stands, `Plan` while `Prepare` has taken its place. At
  * three columns none is left. On the flat stage the strip turns to the right
  * edge and carries all three again, because only one page is in front.
+ *
+ * The active entry is marked by one field laid under the entries
+ * (`.foot-mark`), as big as the whole entry, and it slides to the new one on a
+ * page switch (#158, F4 a; `public/ui/foot.mjs`). `footMark` is a component
+ * of its own nested in `planApp()`'s scope, so it reads `activePage` from
+ * there. The pages themselves do not slide; they fade.
+ *
+ * The entry is not the page's only label: every column head carries its title
+ * on every fold (#156, F1 a), so on the phone the word stands in foot and head
+ * at once — `Plan` here, the `TournamentType`'s title in the Plan head.
  */
 ?>
-<footer class="foot" x-show="!fullscreen">
+<footer class="foot" x-show="!fullscreen" x-data="footMark">
+  <span class="foot-mark" aria-hidden="true"></span>
   <button type="button" class="foot-item" x-show="footEntry('prepare')" :class="{ 'foot-active': activePage === 'prepare' }"
           @click="setPage('prepare')" :aria-current="activePage === 'prepare' ? 'page' : null">
     <?= icon('shopping-cart', 'foot-icon') ?>

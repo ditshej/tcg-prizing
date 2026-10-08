@@ -544,6 +544,14 @@ nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 5
 aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117, seit #142 mit
 den 44-px-Zählern 124 bis 229 — #73, Lauf 17 —, seit #143 mit drei Reglern und den
 Curve-Chips 124 bis 212).
+Die Bühne ist das Feld der App **ohne die sicheren Bereiche** (#158): mit
+`viewport-fit=cover` läuft die App unter Notch, Ecken und Home-Indikator, die
+Randkinder rücken ihren Inhalt um die Insets ein, und die seitlichen und der obere
+Inset gehen von der Bühne ab, bevor die Faltung rechnet. Der **untere Inset gilt nur
+hochkant** (#158, K4): als Streifen im Papier des Fusses unter seinen Einträgen, der
+Fuss ist dann 56 + Inset hoch (gemessen 90 bei 34) und die Schwelle oben zählt den
+Inset mit. Auf der flachen Bühne gibt es keinen Streifen, sie reicht wie gebaut bis
+an die Unterkante und verliert keine Höhe; im Vollbild geht der Streifen mit dem Fuss.
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
 unter der Zwei-Spalten-Bruchstelle; die heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
@@ -969,7 +977,10 @@ Der Knopf ist darum keine Bedienung, sondern die **Einladung** — angetippt tut
 er nichts, weil er schon gewählt ist. Der Weg zu einem zweiten `Game` steht
 nicht als zweiter Knopf daneben (ein Bedienelement, das nichts bedient),
 sondern im ⓘ der Ebene, zusammen mit dem Kontaktkanal: Discord, mit dem Tag
-sichtbar und hinterlegt. Jede der zwei Ebenen trägt einen **eigenen** ⓘ mit
+sichtbar und hinterlegt. Derselbe Kontaktkanal steht zusätzlich ganz unten auf
+`Details`, unter der Zeile `by ditshej | GitHub` (#159) — derselbe Link, kein
+zweiter: die Profil-URL steht im Code an einer Stelle und wird an beiden Orten
+gelesen. Jede der zwei Ebenen trägt einen **eigenen** ⓘ mit
 einem eigenen Satz — was sie unterscheidet (vollständiges Blatt oben, nur
 Abweichungen unten), ist genau das, was erklärt werden muss, und ein Satz über
 „die Sets" sagte es nicht.
@@ -1002,6 +1013,12 @@ kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
 wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
 weiter im ⓘ der Ebene.
+Der **Titel** des Typs (`Weekly`, `Weekend`, `Release`) ist ein Bildschirmwort
+aus dem Katalog (`public/sets/onepiece.mjs`), nachgeschlagen, nie hergeleitet.
+Er ist der Titel des Plan-Kopfs, in jeder Faltung — der Plan heisst im Kopf
+wie sein Typ, nicht „Plan" (#156); das Fusswort bleibt `Plan`. Im Kopf von
+`Prepare` steht er vorne in den Fakten (`Weekly · 40`), damit am Bild zu sehen
+ist, warum etwa beim Release zwei Envelopes stehen.
 _Avoid_: Format (bezeichnet im TCG die Kartenpool-Regel), Preset
 
 **DefaultSet**:
@@ -1061,7 +1078,7 @@ Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
 Der Ort ist seit #143 der **Plan-Kopf oben rechts**, in jeder Faltung ausser im Vollbild, als Icon
 (`rotate-ccw`) mit dem Wort als `aria-label` und Tooltip und mit der Zahl dessen,
 was fällt, an seiner Ecke; ohne einen von Hand gesetzten Posten steht er nicht da.
-Neben ihm steht Share (der Knopf, der den `SetupLink` kopiert). Das überstimmt den
+Neben ihm steht Share, der Knopf, der den `SetupLink` teilt (#155): wo das System-Teilen (`navigator.share`) vorhanden ist — auf jedem Gerät, auch Safari am Mac, Tablets und Edge unter Windows; die Art des Zeigers spielt keine Rolle (K3) — öffnet er direkt das System-Teilen mit der vollständigen Form; nur wo es fehlt, etwa ohne sicheren Kontext über http im LAN, eine Blase mit einem Satz und `Copy link`, und erst dieser Knopf kopiert und heisst danach flüchtig `Copied`. Das überstimmt den
 Ort „neben dem `TournamentType`-Titel" (#41, #67), den die Details-Spalte mit
 ihrem Scrollen bezahlt hatte; davor sass der Knopf schon einmal im Kopf des Plans,
 damals nicht aus einem Entscheid, sondern weil es den Titel am Schirm noch nicht gab

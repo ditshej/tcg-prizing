@@ -88,10 +88,16 @@ test('the rules that used to shrink a field are among those checked', () => {
   }
 });
 
-test('the viewport meta is unchanged: no maximum-scale, no user-scalable', () => {
+/*
+ * #146 decided the viewport meta stays as it was; #158 (9b, F5 a) extended it
+ * by `viewport-fit=cover` and by nothing else: the backgrounds run to the
+ * screen's edge, the content is inset by `env(safe-area-inset-*)`
+ * (`test/ui-shell-insets.test.mjs`), and pinch zoom stays for everyone.
+ */
+test('the viewport meta is #146\'s plus viewport-fit=cover: no maximum-scale, no user-scalable', () => {
   const shell = Object.fromEntries(views)['shell.php'];
   const metas = [...shell.matchAll(/<meta name="viewport" content="([^"]*)">/g)].map(([, content]) => content);
-  assert.deepEqual(metas, ['width=device-width, initial-scale=1']);
+  assert.deepEqual(metas, ['width=device-width, initial-scale=1, viewport-fit=cover']);
   for (const [name, source] of views) assert.doesNotMatch(source, /maximum-scale|user-scalable/, name);
 });
 

@@ -39,7 +39,7 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, readRowEnds, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, hasBox, readRowEnds, safeInsets, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -61,10 +61,10 @@ import {
   reservedDisplaysAfter,
   typedValueAfter,
 } from './controls.mjs';
-import { anchorVisible, bubblePosition } from './bubble.mjs';
+import { anchorVisible, placeInFrame, visibleBox, visibleFrame } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
-import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
+import { copyText, execCopy, flashCopied, linkAddress, reportView, shareBranch } from './link-screen.mjs';
 import { dismiss, expand, foldStep, freshFold, minimize, noticeStack, searchesFor } from './notices.mjs';
 import { attachConfirmFirst } from './confirm-first.mjs';
 
@@ -94,6 +94,46 @@ const SEAM = { read: readLocation, write: writeLocation };
 
 /** The bubble at the Share button in the plan head (#143). */
 const SHARE_BUBBLE = '[data-share-bubble]';
+
+/**
+ * The one frame every bubble is placed in (#154), read at the rind: the
+ * layout viewport — the box `position: fixed` and `getBoundingClientRect()`
+ * measure from — and the part of it that can be **seen**, off
+ * `visualViewport`. They differ once the page is zoomed: iOS zooms on a quick
+ * double tap and on a pinch (#146 keeps pinch open), and a bubble clamped into
+ * the layout viewport then hangs over the visible edge. Every `place*` hands
+ * both to `placeInFrame()` and converts nothing itself.
+ *
+ * The layout viewport is `documentElement`'s client box rather than
+ * `innerWidth`/`innerHeight`: Safari has reported those for the *visual*
+ * viewport while zoomed, which would cut the frame down twice.
+ *
+ * **Less the safe areas** (#158, B1). With `viewport-fit=cover` the layout
+ * viewport runs under the notch, the rounded corners and the home indicator,
+ * and a bubble clamped 8 px from its edge stood in them — the Reset question
+ * 30 px into the right inset, turned. So what can be seen is cut down by the
+ * same `--inset-*` the stylesheet insets with (`safeInsets()`, one source),
+ * all four of them: a bubble's button belongs above the home indicator in
+ * either direction, whatever the foot does there. `layout` stays the whole
+ * viewport — it is what `left`/`top` are counted from.
+ */
+function seenFrame() {
+  const root = document.documentElement;
+  const layout = {
+    left: 0,
+    top: 0,
+    width: root?.clientWidth || window.innerWidth,
+    height: root?.clientHeight || window.innerHeight,
+  };
+  const inset = root ? safeInsets(root) : { top: 0, right: 0, bottom: 0, left: 0 };
+  const safe = {
+    left: inset.left,
+    top: inset.top,
+    width: layout.width - inset.left - inset.right,
+    height: layout.height - inset.top - inset.bottom,
+  };
+  return { layout, visible: visibleFrame(visibleBox(window.visualViewport, layout), safe) };
+}
 
 /**
  * What the app opens with, out of the address it was opened at.
@@ -314,9 +354,17 @@ export function planApp(seam = SEAM) {
       return this.fold.columns === 1 || !this.shows(page);
     },
 
-    /** The column head carries the word exactly when the foot does not. */
+    /**
+     * Whether `page`'s head carries its title. On every fold, the phone
+     * included (#156, F1 a, overruling #61 and #71's "immer genau eine
+     * davon"): the page's word may stand in head and foot at once. Only
+     * fullscreen goes without — its head is the prototype's `shead`, "where
+     * you are, and how to get out", and the other two pages are not on screen
+     * there at all. `page` stays in the signature, so the views keep naming
+     * whose head they ask about.
+     */
     titled(page) {
-      return !this.fullscreen && !this.footEntry(page);
+      return !this.fullscreen;
     },
 
     /** The fold's sizes as CSS custom properties on the app root. */
@@ -483,9 +531,60 @@ export function planApp(seam = SEAM) {
       return resolveSettings({ game: GAME, type: this.currentType, pins });
     },
 
-    /** One ⓘ per level, each with its own sentence — the same handle closes it. */
+    /**
+     * One ⓘ per level, each with its own sentence — the same handle closes it.
+     * Its sentence opens in **the** bubble, floating at the ⓘ, not in the flow
+     * under the row (#154; the prototype renders `infoGame()`/`infoType()`
+     * into its one `.pop`): one bubble at a time, so it puts out the tile's
+     * and answers an open question with no, as any other press beside it does.
+     */
     toggleInfo(id) {
+      this.openTile = null;
+      this.confirmDrop = null;
       this.openInfo = this.openInfo === id ? null : id;
+    },
+
+    closeInfo() {
+      this.openInfo = null;
+    },
+
+    /**
+     * The measuring rind of the ⓘ bubble — the drop question's form, because
+     * it is the same case: the anchor sits in `Details`, which scrolls itself,
+     * so the bubble is `fixed` and placed in the viewport, and its anchor is
+     * judged against the `[data-bubble-frame]` it can scroll out of. One rule
+     * for all the bubble's inhabitants (#41, #66): it closes when its anchor
+     * is no longer visible.
+     */
+    placeInfo() {
+      if (!this.openInfo || typeof document === 'undefined') return;
+      const bubbleEl = document.querySelector(`[data-info-bubble="${this.openInfo}"]`);
+      if (!bubbleEl) return;
+      /* Alpine shows an `x-show` beside a `@click.outside` one tick late, so
+         the click that opened it is not taken for one outside it — and a box
+         not shown yet measures 0 wide. Measured on the first try: the bubble
+         stood centred on a width of nothing, 53 px past the right edge at
+         393. So it waits for the frame in which it is there. */
+      if (!bubbleEl.offsetWidth && typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => this.placeInfo());
+        return;
+      }
+      const anchorEl = document.querySelector(`[data-info="${this.openInfo}"]`);
+      const { layout, visible } = seenFrame();
+      const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchorVisible(anchor, visibleFrame(frameEl ? frameEl.getBoundingClientRect() : layout, visible))) {
+        this.openInfo = null;
+        return;
+      }
+      const at = placeInFrame({
+        anchor,
+        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        box: layout,
+        visible,
+      });
+      bubbleEl.style.left = `${at.left}px`;
+      bubbleEl.style.top = `${at.top}px`;
     },
 
     /* ── The seventeen controls (#64) ─────────────────────────────────── */
@@ -667,6 +766,8 @@ export function planApp(seam = SEAM) {
     /** A grip at the tile opens the bubble, the same grip closes it. The
      *  placing is not called here: it runs after every drawing (see `init()`). */
     toggleTile(rank) {
+      this.openInfo = null;
+      this.confirmDrop = null;
       this.openTile = this.openTile === rank ? null : rank;
     },
 
@@ -724,6 +825,10 @@ export function planApp(seam = SEAM) {
      * The frame the anchor is judged against is the **grid**, not the stage:
      * the grid is what scrolls, so that is where a tile goes out of sight
      * while the stage stays exactly where it was.
+     *
+     * Both are cut down to what can be seen (#154): the bubble is `absolute`
+     * inside the stage, so it is placed in the stage's visible part and
+     * answered in the stage's own coordinates.
      */
     placeBubble() {
       const stageEl = this.$refs.stage;
@@ -732,14 +837,16 @@ export function planApp(seam = SEAM) {
       if (this.openTile == null || !stageEl || !popEl || !gridEl) return;
       const tileEl = gridEl.querySelector(`.tile[data-rank="${this.openTile}"]`);
       const anchor = tileEl ? tileEl.getBoundingClientRect() : null;
-      if (!anchorVisible(anchor, gridEl.getBoundingClientRect())) {
+      const { visible } = seenFrame();
+      if (!anchorVisible(anchor, visibleFrame(gridEl.getBoundingClientRect(), visible))) {
         this.openTile = null;
         return;
       }
-      const at = bubblePosition({
+      const at = placeInFrame({
         anchor,
         bubble: { width: popEl.offsetWidth, height: popEl.offsetHeight },
-        stage: stageEl.getBoundingClientRect(),
+        box: stageEl.getBoundingClientRect(),
+        visible,
       });
       popEl.style.left = `${at.left}px`;
       popEl.style.top = `${at.top}px`;
@@ -770,7 +877,7 @@ export function planApp(seam = SEAM) {
          after Alpine has applied the `x-show`s, or the grid would keep the
          column count and diagram height of the layout it just left. */
       this.$watch('fullscreen', () => {
-        requestAnimationFrame(() => this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
+        requestAnimationFrame(() => hasBox(this.$refs.stage) && this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
       });
       /*
          The bubble is placed — and closed — after **every drawing**, not at
@@ -803,6 +910,26 @@ export function planApp(seam = SEAM) {
          changing, and the same one rule is what it calls. */
       this._onResize = () => this.placeBubble();
       window.addEventListener('resize', this._onResize);
+      /* Zooming and panning move the visible frame and fire no `resize` on
+         the window (#154): iOS reports them on `visualViewport` alone. Every
+         bubble is placed again there — the one frame, all four placings.
+         Share's goes through `keepShare()`, not `placeShare()` alone: the
+         others close inside their placing, Share's closes — and is capped
+         to the visible width — only there (#66, #155 N3). */
+      this._onView = () => {
+        this.placeBubble();
+        this.placeConfirm();
+        this.placeInfo();
+        this.keepShare();
+      };
+      window.visualViewport?.addEventListener('resize', this._onView);
+      window.visualViewport?.addEventListener('scroll', this._onView);
+      /* The ⓘ bubble's anchor scrolls with `Details` and the bubble does not,
+         so a scroll anywhere places it again — and closes it once its ⓘ has
+         left the page (#154). `scroll` does not bubble; captured, one listener
+         sees every scroller, whichever column `Details` stands in. */
+      this._onScroll = () => this.placeInfo();
+      document.addEventListener('scroll', this._onScroll, { capture: true, passive: true });
       /* "Erst bestätigen" (K4 of run 12): a press outside a field with an
          unconfirmed number confirms it and activates nothing else. On the
          document, so it covers every control there is and every one a later
@@ -831,6 +958,11 @@ export function planApp(seam = SEAM) {
       if (this._detachMeasuring) this._detachMeasuring();
       if (this._placing) window.Alpine.release(this._placing);
       if (this._onResize) window.removeEventListener('resize', this._onResize);
+      if (this._onView) {
+        window.visualViewport?.removeEventListener('resize', this._onView);
+        window.visualViewport?.removeEventListener('scroll', this._onView);
+      }
+      if (this._onScroll) document.removeEventListener('scroll', this._onScroll, { capture: true });
     },
 
     /* ── The WinnerRaffle (#69) ───────────────────────────────────────── */
@@ -1083,7 +1215,7 @@ export function planApp(seam = SEAM) {
           const verdict = this.diagramFits;
           /* First the diagram yields to the bar (K1), or goes where it has no
              room (#129). */
-          if (this._fixed) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
+          if (this._fixed && hasBox(this.$refs?.stage)) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
           const flipped = this.diagramFits !== verdict;
           frame(() => {
             if (round < 4 && (flipped || boxes() !== seen)) { pass(round + 1); return; }
@@ -1278,7 +1410,7 @@ export function planApp(seam = SEAM) {
      * - The **anchor is found by selector**, handed in with the question. A
      *   second trigger site is then a second selector and not a second
      *   handler.
-     * - The **frame is the viewport**, and the bubble is placed in it. The
+     * - The **frame is the viewport** — its visible part (#154) — and the bubble is placed in it. The
      *   scrolling box the anchor can leave is its own `[data-bubble-frame]`,
      *   which is what the visibility is judged against — `Details` scrolls
      *   itself, so an absolutely placed bubble inside it would scroll away
@@ -1290,16 +1422,17 @@ export function planApp(seam = SEAM) {
       if (!bubbleEl) return;
       const anchorEl = document.querySelector(this.confirmDrop.anchor);
       const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
-      const viewport = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+      const { layout, visible } = seenFrame();
       const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
-      if (!anchorVisible(anchor, frameEl ? frameEl.getBoundingClientRect() : viewport)) {
+      if (!anchorVisible(anchor, visibleFrame(frameEl ? frameEl.getBoundingClientRect() : layout, visible))) {
         this.confirmDrop = null;
         return;
       }
-      const at = bubblePosition({
+      const at = placeInFrame({
         anchor,
         bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
-        stage: viewport,
+        box: layout,
+        visible,
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;
@@ -1349,33 +1482,94 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The address, open in a preselected field, when the clipboard could not
-     * take it — or `null`. Session state like an open bubble, and in the
-     * `SetupLink` as little (#61, "Session state").
+     * Whether the bubble at Share stands open — the branch without
+     * `navigator.share` (#155, K3).
+     * Session state like every open bubble, and in the `SetupLink` as little
+     * (#61, "Session state").
+     */
+    shareOpen: false,
+
+    /**
+     * The address, open in a preselected field inside that bubble, when no
+     * copy could be made — or `null`. Session state as well.
      */
     linkField: null,
 
     /**
-     * The Share button's one handling (#72; #143). `env` is what a browser
-     * has — the clipboard, the page's own address, a timer, and the bubble
-     * at the button with the way to place it — handed in so `node --test` can
-     * hand in its own; the defaults are read only here, at the rind.
+     * The Share button's one handling (#155, F3 c as refined by K3; the
+     * place and form are #143's). `env` is what a browser has —
+     * `navigator.share`, the page's own address — handed in so `node --test`
+     * can hand in its own; the defaults are read only here, at the rind
+     * (`shareEnv()`).
      *
-     * The confirmation is the bubble saying `Link copied` for a moment
-     * (`flashCopied()` on the bubble element, #143 decision 4) — not in the
-     * NoticeStack, and not a member of this component. Without a clipboard
-     * the same bubble opens with the address in a preselected field.
+     * - **System** (`shareBranch()`, wherever `navigator.share` exists — the
+     *   pointer plays no part): straight into the system's share sheet with
+     *   the complete `SetupLink` (#47). No bubble, no copy — the sheet is the
+     *   whole answer. A cancel (`AbortError`) shows nothing; any other
+     *   failure falls back to the bubble.
+     * - **Bubble** (no `navigator.share`): the press opens the bubble with
+     *   its sentence and `Copy link` and copies nothing; the same press
+     *   closes it again.
+     *
+     * The call into the sheet is the first thing the handling does, before
+     * any `await`: browsers grant `navigator.share` only inside the press.
+     * An unconfirmed number in a field locks it as every control
+     * (`confirm-first.mjs`): the press only confirms the number.
      */
-    async copyLink(button, env = this.linkEnv(button)) {
+    async share(env = this.shareEnv()) {
+      if (shareBranch(env) === 'system') {
+        try {
+          await env.share({ url: linkAddress(this.linkQuery, env.page) });
+          return 'shared';
+        } catch (error) {
+          if (error?.name === 'AbortError') return 'cancelled';
+          this.openShare();
+          return 'bubble';
+        }
+      }
+      if (this.shareOpen) {
+        this.closeShare();
+        return 'closed';
+      }
+      this.openShare();
+      return 'bubble';
+    },
+
+    /** One bubble at a time: Share's puts out the tile's, the ⓘ's and an
+     *  open question, as any of them does to the others. */
+    openShare() {
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = null;
+      this.linkField = null;
+      this.shareOpen = true;
+    },
+
+    /** Second press, Escape, a press beside it, or its anchor gone. */
+    closeShare() {
+      this.shareOpen = false;
+      this.linkField = null;
+    },
+
+    /**
+     * `Copy link` in the bubble (#155): copies the complete form as Share
+     * used to (#47, "Die Kopierform ist immer vollständig"). On a copy the
+     * button is called `Copied` for `COPIED_MS` and falls back — fleeting,
+     * on the element (`flashCopied()`), not a member of this component
+     * (#72 AC 3). Without a clipboard `execCommand('copy')` is tried first;
+     * only if that too reports no success does the preselected field open
+     * in the same bubble, and `Copied` does not appear (#72 AC 4).
+     */
+    async copyLink(button, env = this.linkEnv()) {
       const address = linkAddress(this.linkQuery, env.page);
-      const outcome = await copyText(address, env.clipboard);
+      const outcome = await copyText(address, env.clipboard, env.exec);
       if (outcome === 'copied') {
         this.linkField = null;
-        flashCopied(env.note, env);
-        env.place?.();
+        flashCopied(button, env);
       } else {
         this.linkField = address;
       }
+      env.place?.();
       return outcome;
     },
 
@@ -1384,27 +1578,65 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * What the Share handling needs from a browser: the clipboard, if there
-     * is one, the page's own address to resolve the copy form against, a
-     * timer, and the bubble at the button (`[data-share-bubble]`) with its
-     * placing. `document.baseURI` rather than the address bar's own object:
-     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page
-     * address is all that is needed here — its query is replaced anyway.
+     * What the branch choice needs from a browser: `navigator.share` if
+     * there is one — called on `navigator`, which it needs as `this` — and
+     * the page's own address. No pointer query: K3 (#155) made the branch
+     * depend on `navigator.share` alone.
+     */
+    shareEnv() {
+      const nav = globalThis.navigator;
+      return {
+        share: typeof nav?.share === 'function' ? (data) => nav.share(data) : undefined,
+        page: globalThis.document?.baseURI,
+      };
+    },
+
+    /**
+     * What `Copy link` needs from a browser: the clipboard, if there is one,
+     * the `execCommand` fallback, the page's own address to resolve the copy
+     * form against, a timer, and the bubble's placing. `document.baseURI`
+     * rather than the address bar's own object: that one is
+     * `link/location.mjs`'s alone (#50 AC 6), and the page address is all
+     * that is needed here — its query is replaced anyway.
      */
     linkEnv() {
+      const doc = globalThis.document;
       return {
         clipboard: globalThis.navigator?.clipboard,
-        page: globalThis.document?.baseURI,
+        exec: (text) => execCopy(text, doc),
+        page: doc?.baseURI,
         later: setTimeout,
         cancel: clearTimeout,
-        note: globalThis.document?.querySelector(SHARE_BUBBLE) ?? null,
         place: () => this.placeShare(),
       };
     },
 
     /**
+     * Closes the bubble when its anchor is gone — fullscreen hides the head
+     * buttons, the phone's other pages hide `Plan` (#66: one rule for every
+     * bubble). `placeShare()` (#154) only places; this is the half it leaves.
+     */
+    keepShare() {
+      if (!this.shareOpen || typeof document === 'undefined') return;
+      const anchorEl = document.querySelector('[data-share]');
+      const { layout, visible } = seenFrame();
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchor || !anchor.width || !anchorVisible(anchor, visibleFrame(layout, visible))) {
+        this.closeShare();
+        return;
+      }
+      /* The CSS width answers the layout viewport; zoomed in, the visible
+         part is narrower (#154), and at 1.5 the 292 stood 38 past its edge.
+         Capped to what can be seen, the first placing measures a box that
+         fits. */
+      const bubbleEl = document.querySelector(SHARE_BUBBLE);
+      if (bubbleEl) bubbleEl.style.maxWidth = `${Math.max(0, visible.width - 16)}px`;
+      this.placeShare();
+    },
+
+    /**
      * The measuring rind of the Share bubble: the bubble layer's arithmetic
-     * (`bubble.mjs`), the viewport as its frame, the Share button as its
+     * (`bubble.mjs`), the visible part of the viewport as its frame (#154), the Share button as its
      * anchor — the same placing as the drop question's. It runs when the
      * bubble shows: at a copy, and when the link field opens.
      */
@@ -1413,10 +1645,12 @@ export function planApp(seam = SEAM) {
       const bubbleEl = document.querySelector(SHARE_BUBBLE);
       const anchorEl = document.querySelector('[data-share]');
       if (!bubbleEl || !anchorEl) return;
-      const at = bubblePosition({
+      const { layout, visible } = seenFrame();
+      const at = placeInFrame({
         anchor: anchorEl.getBoundingClientRect(),
         bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
-        stage: { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight },
+        box: layout,
+        visible,
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;

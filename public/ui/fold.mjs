@@ -187,10 +187,13 @@ export const DIAGRAM_LOW_HEIGHT = 460;
  * side. Phone, two columns, three columns, flat and fullscreen all come out
  * of them with no `if` on the surface; the fullscreen sets both to zero.
  */
-export function fold({ width, height = Infinity, fullscreen = false, railHeight = RAIL_AT_MASTER }) {
+export function fold({ width, height = Infinity, fullscreen = false, railHeight = RAIL_AT_MASTER, insetBottom = 0 }) {
   const stage = Math.min(width, DECK);
   const wide = stage >= THREE_COLUMNS ? 3 : stage >= TWO_COLUMNS ? 2 : 1;
-  const low = height < (wide === 1 ? firstHeightOneColumn(railHeight) : FIRST_HEIGHT);
+  // The form that is asked about stands on a bottom foot, and that foot
+  // carries the strip over the home indicator (#158, K4) — so it is asked
+  // with the strip. Turned flat, the strip goes and the height comes back.
+  const low = height - insetBottom < (wide === 1 ? firstHeightOneColumn(railHeight) : FIRST_HEIGHT);
   // Flat means too little height for columns but width enough that it has to
   // go somewhere: the turned strip takes 48 px off the side, and the `Plan`
   // must keep its first width beside it. From 436 on, not only from the
@@ -210,11 +213,15 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
 
   const planLeft = fullscreen ? 0 : prepareWidth;
   const planRight = fullscreen ? 0 : detailsWidth + stripWidth;
-  const stripBottom = fullscreen || flat ? 0 : columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT;
+  // The bottom inset is the foot's, upright only (#158, K4): where the foot
+  // stands at the bottom it carries it as a strip in its paper (`plan.css`,
+  // `.foot`); turned flat or hidden in fullscreen, there is no strip.
+  const footInset = fullscreen || flat ? 0 : insetBottom;
+  const stripBottom = fullscreen || flat ? 0 : (columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT) + footInset;
   const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
   const planHeight = cramped ? PLAN_FLOOR : height - stripBottom - (rail === 'bar' ? railHeight : 0);
 
-  const diagramMax = flat || height < DIAGRAM_LOW_HEIGHT
+  const diagramMax = flat || height - footInset < DIAGRAM_LOW_HEIGHT
     ? (flat ? DIAGRAM_MAX.flat : DIAGRAM_MAX.low)
     : columns >= 2 ? DIAGRAM_MAX.columns : DIAGRAM_MAX.oneColumn;
 
@@ -228,6 +235,7 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
     planLeft,
     planRight,
     stripBottom,
+    footInset,
     stripWidth,
     planWidth,
     planHeight,
@@ -276,7 +284,9 @@ export const CHIP_AIR = 8;
  * also rise above an open raffle bar with the stack (`--chip-raffle`).
  */
 export function foldProperties(f) {
-  const chipsInStrip = f.stripBottom === STRIP_HEIGHT;
+  // The strip from two columns on — measured without the inset strip under
+  // it, which the chips sit above (#158, K4).
+  const chipsInStrip = f.stripBottom - (f.footInset ?? 0) === STRIP_HEIGHT;
   const px = (n) => `${n}px`;
   return {
     '--deck': px(DECK),
@@ -293,7 +303,7 @@ export function foldProperties(f) {
     '--plan-right': px(f.planRight),
     '--strip-bottom': px(f.stripBottom),
     '--chip-right': px(f.stripWidth),
-    '--chip-bottom': px(chipsInStrip ? (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
+    '--chip-bottom': px(chipsInStrip ? (f.footInset ?? 0) + (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
     '--chip-lift': px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
     // Whether the chips share the open raffle bar's corner and rise above it
     // with the stack (`--raffle-lift`, measured by the rind): everywhere but

@@ -62,7 +62,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
                 @click="setGame(game.id)" x-text="game.title"></button>
       </template>
     </span>
-    <button type="button" class="info" @click="toggleInfo('game')"
+    <button type="button" class="info" data-info="game" @click="toggleInfo('game')"
             :aria-expanded="openInfo === 'game'" aria-label="About the game level"><?= icon('info') ?></button>
   </div>
 
@@ -70,8 +70,22 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
     One ⓘ per level, each with its own sentence: what tells the two apart — a
     complete sheet above, deviations only below — is exactly what has to be
     explained, and a sentence about "the sets" would not say it (#26, #41).
+
+    Each opens as **the** bubble, floating at its ⓘ and pushing nothing below
+    it (#154): the prototype renders `infoGame()`/`infoType()` into its one
+    `.pop`, and #41 and #66 give the bubble one rule for all its inhabitants —
+    it closes when its anchor is no longer visible. The form is the drop
+    question's below, for the same reason: `Details` scrolls itself, so the
+    bubble is `fixed` and `placeInfo()` places it in the visible viewport. It
+    was built into the flow once (#64), which no decision ever asked for.
+    The content is unchanged; the ✕ is the bubble's, as the tile's has one.
   -->
-  <div class="set-info" x-cloak x-show="openInfo === 'game'">
+  <div class="set-info" data-info-bubble="game" role="dialog" aria-label="About the game level"
+       x-cloak x-show="openInfo === 'game'"
+       x-effect="void [openInfo, activePage, fullscreen, fold]; $nextTick(() => placeInfo())"
+       @click.outside="if (!$event.target.closest('[data-info]')) closeInfo()"
+       @keydown.escape.window="closeInfo()" @resize.window="placeInfo()">
+    <button type="button" class="bubble-close" aria-label="Close" @click="closeInfo()"><?= icon('x') ?></button>
     <p>The card game this tournament runs for. It carries a full sheet of starting
       values — every value below starts somewhere here.</p>
     <p class="set-info-muted">One Piece is the only one set up so far. The address names
@@ -88,7 +102,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         the robust form. The tag therefore stays visible beside it — where the
         link goes nowhere, it has to be typeable.
       -->
-      <a href="https://discord.com/users/428891117220659241" target="_blank"
+      <a href="<?= htmlspecialchars(require __DIR__ . '/discord-profile.php') ?>" target="_blank"
          rel="noreferrer"><strong>ditshej</strong></a></p>
   </div>
 
@@ -101,7 +115,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
                   @click="setType(type.id)" x-text="type.title"></button>
         </template>
       </span>
-      <button type="button" class="info" @click="toggleInfo('type')"
+      <button type="button" class="info" data-info="type" @click="toggleInfo('type')"
               :aria-expanded="openInfo === 'type'" aria-label="About the tournament type level"><?= icon('info') ?></button>
     </div>
 
@@ -114,7 +128,12 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       (CONTEXT.md, `TournamentType`). Without this opening the label would be a
       shortening of nothing on screen.
     -->
-    <div class="set-info" x-cloak x-show="openInfo === 'type'">
+    <div class="set-info" data-info-bubble="type" role="dialog" aria-label="About the tournament type level"
+         x-cloak x-show="openInfo === 'type'"
+         x-effect="void [openInfo, activePage, fullscreen, fold]; $nextTick(() => placeInfo())"
+         @click.outside="if (!$event.target.closest('[data-info]')) closeInfo()"
+         @keydown.escape.window="closeInfo()" @resize.window="placeInfo()">
+      <button type="button" class="bubble-close" aria-label="Close" @click="closeInfo()"><?= icon('x') ?></button>
       <p><strong>Tournament type</strong> — the format inside the game, and a Weekly is
         set up differently from a weekend event. A type carries only what it does
         differently; the rest it takes from the game above.</p>

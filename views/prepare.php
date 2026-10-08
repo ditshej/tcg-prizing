@@ -29,7 +29,8 @@
   <header class="col-head">
     <div class="col-titleline">
       <h1 class="col-title" x-show="titled('prepare')">Prepare</h1>
-      <span class="col-facts">everything the pool holds</span>
+      <span class="col-facts"><span class="col-facts-type" x-text="`${typeTitle} · ${plan.players}`"></span>
+        everything the pool holds</span>
     </div>
   </header>
 
