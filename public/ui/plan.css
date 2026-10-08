@@ -433,13 +433,21 @@ textarea {
 }
 
 /*
- * The column head (#71): one form, used three times. A title line — the word
+ * The column head (#71): one form, used three times. A title line — the title
  * at 17px and beside it the column's facts, small and still — and for the
  * `Plan` alone a second line (`.col-sub`), because its output line is a fact
  * and not a caption (#61, "The Plan page"). The common measure of the three is
- * the title line, which is why it carries a fixed height: the word stands in
- * the foot while the page is a page and here once it is a column, and the
- * head keeps its shape in both.
+ * the title line, which is why it carries a fixed height of 22: the title
+ * stands on every fold, the phone included, beside the foot's word where
+ * there is one (#156, F1 a), and only fullscreen goes without — the head
+ * keeps its shape in both. `height`, not `min-height`: the title (17px) and
+ * the facts (0.8rem) sit on one baseline, and with a minimum only the line
+ * box grew past it, to 24, as soon as the title stood (#156, measured 42
+ * for the `Plan` head with it, 40 without).
+ *
+ * Nothing in it wraps, ever: where the line runs out, the facts give way
+ * first and the title after them, each cut with an ellipsis (#156, at 320
+ * and beside Share and Reset at 360–393).
  *
  * The two scrolling columns hold their head inside the scroller and stick it
  * to the top; the `Plan`'s stands outside its scroller anyway. Same form, same
@@ -453,24 +461,37 @@ textarea {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  min-height: 22px;
+  height: 22px;
   line-height: 22px;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .col-title {
+  flex: 0 1 auto;
+  min-width: 0;
   margin: 0;
   font-size: 17px;
   line-height: 22px;
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .col-facts {
+  flex: 0 1000 auto; /* gives way long before the title does */
+  min-width: 0;
   font-size: 0.8rem;
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* `Weekly · 40` before *everything the pool holds* on `Prepare` (#156,
+   proto:2257): two facts the prototype sets 8 apart, as its bar's gap. Here
+   they are one cut line, so the second is spaced off by its margin. */
+.col-facts-type {
+  margin-right: 4px;
 }
 
 .col-sub {

@@ -314,9 +314,17 @@ export function planApp(seam = SEAM) {
       return this.fold.columns === 1 || !this.shows(page);
     },
 
-    /** The column head carries the word exactly when the foot does not. */
+    /**
+     * Whether `page`'s head carries its title. On every fold, the phone
+     * included (#156, F1 a, overruling #61 and #71's "immer genau eine
+     * davon"): the page's word may stand in head and foot at once. Only
+     * fullscreen goes without — its head is the prototype's `shead`, "where
+     * you are, and how to get out", and the other two pages are not on screen
+     * there at all. `page` stays in the signature, so the views keep naming
+     * whose head they ask about.
+     */
     titled(page) {
-      return !this.fullscreen && !this.footEntry(page);
+      return !this.fullscreen;
     },
 
     /** The fold's sizes as CSS custom properties on the app root. */
