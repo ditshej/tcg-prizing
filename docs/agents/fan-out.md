@@ -1103,3 +1103,40 @@ three header buttons is possible only after the merge. F added a `Theme`
 glossary entry with a `_Label_` line „Mode“ that nobody asked for. That is the
 fallback AGENTS.md says to avoid if either side can move, so it is put to the
 maintainer at G.
+
+### Run 18 · 2026-10-08 · #154–#159 · `/round`, five agents, no cards, one quota death
+
+**The round came out of a whole-app review, not a map.** The maintainer
+reviewed on device and named points one at a time. The conductor wrote them to
+`review/2026-10-08-gesamt-review-punkte.md`, because the conversation does not
+survive a break. One agent drafted six tickets from them, five open questions
+(F1–F5) went to the terminal, and a second agent filed the answers into the
+ticket bodies and put ⚠︎ stamps on the nine tickets whose decisions were
+overturned. Only then did Phase A start. The pre-round cost one interaction and
+no cards. It is the shape for "collect, then process".
+
+**An agent's choice in a ticket body is not a decision.** The filing agent had
+set two values itself: what counts as a "phone" for Share (#155) and a head on
+Details (#156). The conductor named both when it handed the batch to B. B found
+that the builds treated both as decided, and C put both in front of the
+maintainer as K3 and K1. He overturned K3. A filing agent that has to fill a gap
+says so in its report, and the conductor carries it to the gates.
+
+**The deny rule on `git push --force*` also blocks `--force-with-lease`.** F
+could not rebase stacked #165 onto the new head of #160. It merged that head
+into #165 instead, and merged #162's branch too, because a repair needed
+`seenFrame()`. #165 now stacks on two PRs. The merge order still covers that,
+but a stacked branch in this repo grows by merge, never by rebase.
+
+**Counts.** 20 findings from A (0 blocking, 6 to decide, 14 notes), 6 more from
+B (3 to decide, 3 notes). B confirmed 17 of A's findings, corrected 3 and
+refuted none. Gates: 4 candidates, 22 dropped. Phase D: 4 answered, 0 cards. B
+died once on the session limit and a lens agent got a 403 after a `/login`;
+`SendMessage` resumed B, and nothing was rebuilt. Suite on the merge probe:
+738/738. PRs: #162 (#154) `03819d3`, #164 (#155) `e80ffcf`, #163 (#159)
+`a51364c`, #160 (#156) `de76938`, #165 (#158) `ef69890`, #161 (#157)
+`5de689e`. Merge order: #162 → #164 → #163 → #160 → #165 → #161.
+
+**The conductor's context: not measured cleanly; an estimate of 25–30k for the
+round.** The counter restarted at `/login` and at the limit reset, so only the
+segments can be added up, and they give no peak.
