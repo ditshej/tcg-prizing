@@ -28,9 +28,31 @@ import {
  * the numbers finds nothing wrong with a plan in which nobody gets anything.
  */
 
+/**
+ * The stand the notice scenarios below were written against: the sheets as
+ * #21 and #25 decided them — 32 Players, the top 8 served, Weekly `mild`,
+ * Weekend `steep`. #145 moved those start values; the subject here is the
+ * NoticeStack over a stand, not today's start values, so `sheet()` sets them
+ * itself before a scenario's overrides.
+ */
+const MEASURED_ON = {
+  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
+  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  release: { players: 32 },
+};
+
 function sheet(id, overrides = {}) {
   const type = TOURNAMENT_TYPES.find((t) => t.id === id);
-  return { ...GAME, ...type, tournamentPacks: null, depth: null, ranked: null, winnerPacks: null, ...overrides };
+  return {
+    ...GAME,
+    ...type,
+    ...MEASURED_ON[id],
+    tournamentPacks: null,
+    depth: null,
+    ranked: null,
+    winnerPacks: null,
+    ...overrides,
+  };
 }
 
 /** A fit Weekly — no notice of any kind, no Offer either — and a Weekend
@@ -504,8 +526,12 @@ test('the CarryOverNotice asks the same question as the type title, and closes w
 });
 
 test('the Offer is taken with one click and pins the reservation', () => {
+  // The stand of `offerAt(2)` above, set at the controls: Weekend at 32
+  // Players — the sheet's own count until #145 moved it to 40 — the top 8
+  // served, `steep`.
   const { a } = app();
   a.setType('weekend');
+  a.setSlider('players', 32);
   a.setSlider('depth', 8);
   a.setSlider('curve', 'steep');
   a.refreshNotices();
@@ -580,10 +606,11 @@ import { searchesFor, conflictStands } from '../public/ui/notices.mjs';
  * Weekend at 32 carries an Offer (Rank 1, one display) and three WinnerPacks,
  * two of them by rank. One goes on Rank 32 by hand, then `winnerPacks` drops
  * to 2: one over. The core still offers — `offerFor()` knows nothing of the
- * overhang — and the NoticeStack must not.
+ * overhang — and the NoticeStack must not. Like `sheet()`, it lays
+ * `MEASURED_ON.weekend` over the type, so the stand is the one measured.
  */
 function overhangStand(extra = {}) {
-  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  const weekend = { ...TOURNAMENT_TYPES.find((t) => t.id === 'weekend'), ...MEASURED_ON.weekend };
   return resolveSettings({ game: GAME, type: weekend, pins: { manualWinner: { 32: 1 }, winnerPacks: 2, ...extra } });
 }
 

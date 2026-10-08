@@ -100,12 +100,16 @@ test('the second press activates', () => {
 });
 
 test('the guard is generic: − and + of the same row, and of any other, are swallowed alike', () => {
+  // The typed number has to be a change, or there is nothing to confirm. It
+  // was 40 while the sheet started at 32; #145 moved the sheet to 40, so the
+  // test types 48 and says first that it differs from what the field shows.
+  assert.notEqual(opened().value('players'), 48, 'the typed number is a change');
   for (const [key, delta] of [['players', 1], ['players', -1], ['boosterRate', 1]]) {
-    const { app, guard } = typing('players', '40');
+    const { app, guard } = typing('players', '48');
     const before = app.value(key === 'players' ? 'boosterRate' : key);
     const log = press(guard, element(), () => app.step(key, delta));
     assert.equal(log.activated, false, `${key} ${delta}`);
-    assert.equal(app.value('players'), 40);
+    assert.equal(app.value('players'), 48);
     if (key !== 'players') assert.equal(app.value(key), before);
   }
 });

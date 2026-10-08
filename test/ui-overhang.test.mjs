@@ -20,7 +20,22 @@ import { overhangWaysOut, winnerPackOverhang } from '../public/ui/overhang.mjs';
  * whose cap is `open`), and then a second value that drops.
  */
 
-const type = (id) => TOURNAMENT_TYPES.find((t) => t.id === id);
+/**
+ * The stand these scenarios were written against: the sheets as #21 and #25
+ * decided them, at 32 Players for every type. #145 moved the start values —
+ * Weekly to 40 Players (4 WinnerPacks), Release to 64 (4 WinnerPacks) — and
+ * with them the Set switch Weekly → Release stopped dropping a WinnerPack at
+ * all. The subject here is the overhang that switch leaves, so the scenarios
+ * set their stand themselves, in the TournamentType layer so it stays
+ * inherited rather than pinned.
+ */
+const MEASURED_ON = {
+  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
+  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  release: { players: 32 },
+};
+
+const type = (id) => ({ ...TOURNAMENT_TYPES.find((t) => t.id === id), ...MEASURED_ON[id] });
 const resolved = (typeId, pins) => resolveSettings({ game: GAME, type: type(typeId), pins });
 
 /** Places one `manual` WinnerPack at the tile of `rank`, the way the ± does —
@@ -182,9 +197,13 @@ const conflictOf = (a) => {
  *  way the stand was reached. */
 const said = (notice) => ({ lines: notice.lines, ways: notice.actions.map((x) => x.way), chip: notice.chip });
 
-/** By the Set switch: a pack placed by hand on Rank 20 at Weekly, then Release. */
+/** By the Set switch: a pack placed by hand on Rank 20 at Weekly, then Release
+ *  — both at 32 Players. Since #145 the sheets start at 40 and 64, where the
+ *  switch drops no WinnerPack, so the count is set at the control first; a
+ *  pinned count is carried over by the switch (ADR 0003, Nachtrag #26). */
 function bySwitch() {
   const a = app();
+  a.setSlider('players', 32);
   a.setManualWinner(20, 1);
   assert.deepEqual(a.settings.manualWinner, { 20: 1 }, 'the tile placed the pack');
   assert.equal(conflictOf(a), null);
@@ -192,9 +211,11 @@ function bySwitch() {
   return a;
 }
 
-/** By the player count: a pack placed by hand on Rank 16 at 32 players, then 16. */
+/** By the player count: a pack placed by hand on Rank 16 at 32 players, then 16.
+ *  The 32 is set at the control, since the sheet starts at 40 since #145. */
 function byPlayers() {
   const a = app();
+  a.setSlider('players', 32);
   a.setManualWinner(16, 1);
   assert.equal(conflictOf(a), null);
   a.setSlider('players', 16);
@@ -204,7 +225,7 @@ function byPlayers() {
 test('the overhang is reached by a Set switch, and by a SetupLink naming the same stand, alike', () => {
   const switched = conflictOf(bySwitch());
   assert.ok(switched, 'the Set switch raises the ConflictNotice');
-  const linked = conflictOf(app(encode({ game: 'onepiece', type: 'release', pins: { manualWinner: { 20: 1 } } })));
+  const linked = conflictOf(app(encode({ game: 'onepiece', type: 'release', pins: { players: 32, manualWinner: { 20: 1 } } })));
   assert.ok(linked, 'the SetupLink raises the ConflictNotice');
   assert.deepEqual(said(linked), said(switched));
   assert.match(switched.lines.join(' '), /rank 20/);

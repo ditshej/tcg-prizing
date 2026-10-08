@@ -64,7 +64,10 @@ test('the procurement number rounds up and names the broken unit', () => {
 });
 
 test('Release comes out even: 288 boosters in 12 displays and one Promo-Envelope', () => {
-  const { list } = stand('release');
+  // #65's criterion stand is Release at 32 Players — the sheet's count until
+  // #145 gave Release 64 of its own. At 64 the same sheet gives 576 boosters
+  // and two envelopes, and the singular this test is for would be gone.
+  const { list } = stand('release', { players: 32 });
 
   assert.equal(list.displays.total, '288 boosters');
   assert.equal(list.displays.fetch, 12);

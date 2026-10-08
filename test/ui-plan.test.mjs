@@ -49,6 +49,18 @@ test('the cold start is the state a fresh app has always shown', () => {
 });
 
 /**
+ * #145: the cold start shows the Game sheet's player count, and that count is
+ * decided — 40, in the table of #145 — so it is named here, not read off the
+ * sheet. The typed-field tests read the count off the field because their
+ * subject is the typing; this one is the guard for the number itself.
+ */
+test('a cold start shows 40 players, the count #145 decided', () => {
+  const { app } = opened('');
+  assert.equal(app.value('players'), 40);
+  assert.equal(app.plan.players, 40);
+});
+
+/**
  * #89 AC 2 and AC 3: the first pin writes the whole base with it, every
  * further one writes the address on. The strings are the register's order
  * (#48), not the order the pins were set in — a link is compared by eye.

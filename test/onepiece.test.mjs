@@ -41,10 +41,13 @@ const TRAILING_SLIDERS = ['tournamentPacks', 'depth', 'ranked', 'winnerPacks'];
 /**
  * The Game sheet's values, transcribed from the resolution comment of #21 —
  * which spells the sheet out in full precisely so the next session reads it
- * back instead of recomputing it from plan numbers.
+ * back instead of recomputing it from plan numbers — with the three values
+ * #145's table decided anew on 2026-10-08: `players` 40, `depthStep`
+ * `topThird`, `curve` `moderate`. #145 is the source of those three now; #21
+ * carries a note pointing at it.
  */
 const EXPECTED_GAME = {
-  players: 32,
+  players: 40,
   boosterRate: 3,
   envelopeSize: 9,
   envelopeYield: 1,
@@ -54,23 +57,28 @@ const EXPECTED_GAME = {
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
-  depthStep: 'top8',
-  curve: 'mild',
+  depthStep: 'topThird',
+  curve: 'moderate',
   combinedHandout: false,
 };
 
 /**
  * The deviations of each TournamentType, transcribed from #21 (weekend) and
- * the resolution comment of #25 (release). `release` inherits `players`,
+ * the resolution comment of #25 (release), with #145's table on top: weekend's
+ * curve is `firm` (was `steep`), and release carries `players: 64` as a
+ * deviation of its own (it inherited 32 before). `release` still inherits
  * `rankFloor`, `displaySize` and `combinedHandout` — #25 point 6 is explicit
- * that a Release does not carry the CombinedHandout preset.
+ * that a Release does not carry the CombinedHandout preset. Weekend inherits
+ * the Game's `players: 40` and `depthStep: 'topThird'`; #145 records that the
+ * maintainer accepted that knowingly.
  */
 const EXPECTED_TYPES = [
   { id: 'weekly', title: 'Weekly' },
-  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'steep' },
+  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'firm' },
   {
     id: 'release',
     title: 'Release',
+    players: 64,
     boosterRate: 9,
     participationBooster: 6,
     envelopeSize: 32,
@@ -98,7 +106,7 @@ test('the Game sheet names every presettable variable from #46, in the order the
   assert.deepEqual(Object.keys(fieldsOf(GAME)), PRESETTABLE_FIELDS);
 });
 
-test('the Game sheet carries the values #21 wrote down, not values computed back from a plan', () => {
+test('the Game sheet carries the values #21 wrote down and #145 decided anew, not values computed back from a plan', () => {
   assert.deepEqual(fieldsOf(GAME), EXPECTED_GAME);
 });
 
@@ -114,7 +122,7 @@ test('the Game sheet carries its own id, and it is the name a SetupLink writes',
   assert.equal(Object.keys(GAME)[0], 'id', 'the name leads the sheet');
 });
 
-test('each TournamentType carries the deviations #21 and #25 wrote down, and nothing else', () => {
+test('each TournamentType carries the deviations #21, #25 and #145 wrote down, and nothing else', () => {
   assert.deepEqual(TOURNAMENT_TYPES, EXPECTED_TYPES);
 });
 
@@ -158,15 +166,17 @@ test('weekend deviates from the Game sheet in exactly two values', () => {
 });
 
 /**
- * #54's acceptance criterion says seven. It is a miscount: #25's table lists
- * `davon RankPool 3` as a row of its own, but that is `boosterRate` minus
- * `participationBooster`, a derived number and not a Settings field. The six
- * deviating fields are `boosterRate`, `participationBooster`, `envelopeSize`,
- * `envelopeYield`, `depthStep` and `curve`.
+ * Seven since #145. Before it, #54's acceptance criterion also said seven, and
+ * that was a miscount: #25's table lists `davon RankPool 3` as a row of its
+ * own, but that is `boosterRate` minus `participationBooster`, a derived
+ * number and not a Settings field. That correction still holds — the seventh
+ * value now is `players: 64`, a deviation #145 added, not the derived row. The
+ * seven deviating fields are `players`, `boosterRate`, `participationBooster`,
+ * `envelopeSize`, `envelopeYield`, `depthStep` and `curve`.
  */
-test('release deviates from the Game sheet in exactly six values', () => {
+test('release deviates from the Game sheet in exactly seven values', () => {
   const release = TOURNAMENT_TYPES.find((t) => t.id === 'release');
-  assert.equal(deviationCount(release), 6);
+  assert.equal(deviationCount(release), 7);
 });
 
 /**
@@ -185,25 +195,38 @@ function servedBoosters(plan) {
 }
 
 /**
- * The measured plans of #46 (`## Tests`) and #21's resolution comment. These
- * numbers were measured on the prototype and worked out by hand, so they are
- * an independent standard: they say what the sheets are *for*, where the field
- * lists above only say what shape they have. Without this test a sheet of
- * freely invented values passes everything else — which is exactly what
- * happened.
+ * The measured plans of the three sheets. Until #145 these were the numbers of
+ * #46 (`## Tests`) and #21's resolution comment, measured on the prototype and
+ * worked out by hand. #145 decided new sheet values and no new plans, so the
+ * rows below are re-measured: the real `distribute()` run on #145's sheets on
+ * 2026-10-08, never computed from the old rows. They still say what the sheets
+ * are *for*, where the field lists above only say what shape they have —
+ * without this test a sheet of freely invented values passes everything else.
+ *
+ * Weekly, 40 Players: RankPool 40, depth ⌈40/3⌉ = 14, floor 2 · 14 + 1 = 29,
+ * ShapedRemainder 11 — the curve runs out at Rank 5.
+ * Weekend, 40 Players: RankPool 80, depth 14, ShapedRemainder 51.
+ * Release, 64 Players: RankPool 192, all 64 Ranks served, ShapedRemainder 63 —
+ * the curve runs out at Rank 19.
  */
-test('weekly at 32 players distributes the measured 7·5·4·4·3·3·3·3', () => {
-  assert.deepEqual(servedBoosters(distribute(settingsFor('weekly'))), [7, 5, 4, 4, 3, 3, 3, 3]);
+test('weekly at 40 players distributes the measured 7·5·4·3·3 over nine floors of 2', () => {
+  assert.deepEqual(
+    servedBoosters(distribute(settingsFor('weekly'))),
+    [7, 5, 4, 3, 3, ...new Array(9).fill(2)],
+  );
 });
 
-test('weekend at 32 players distributes the measured 29·14·7·4·3·3·2·2', () => {
-  assert.deepEqual(servedBoosters(distribute(settingsFor('weekend'))), [29, 14, 7, 4, 3, 3, 2, 2]);
+test('weekend at 40 players distributes the measured 26·15·9·6·4·3·3 over seven floors of 2', () => {
+  assert.deepEqual(
+    servedBoosters(distribute(settingsFor('weekend'))),
+    [26, 15, 9, 6, 4, 3, 3, ...new Array(7).fill(2)],
+  );
 });
 
-test('release at 32 players serves all ranks, the curve running out at Rank 15', () => {
+test('release at 64 players serves all ranks, the curve running out at Rank 19', () => {
   assert.deepEqual(
     servedBoosters(distribute(settingsFor('release'))),
-    [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, ...new Array(17).fill(2)],
+    [13, 10, 9, 8, 7, 6, 6, 5, 5, 4, 4, 4, ...new Array(7).fill(3), ...new Array(45).fill(2)],
   );
 });
 

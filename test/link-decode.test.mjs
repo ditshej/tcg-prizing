@@ -195,13 +195,18 @@ test('what resolveSettings treats as trailing and neutral is what the register c
  * with `d` = (1) is `24·16·9·5·3·3·2·2`. Read there, never computed from what
  * the core happens to return today (AGENTS.md).
  *
+ * That row was measured on Weekend as #21 decided it — the top 8 served,
+ * `steep`. #145 moved both start values, so the link names them itself: the
+ * subject is the read path, and a link that pins the stand is exactly what
+ * that path exists to read.
+ *
  * It is also the guard against the string trap: were `players` handed on as
  * `'32'`, the core would read it with `Number.isFinite`, fall to 2 and hand
  * back a perfectly plausible plan for two players — and this row would be the
  * only thing to notice.
  */
 test('a link of Weekend 32 with one Display on Rank 1 comes out as the measured row', () => {
-  const plan = distribute(settingsFrom('?v=1&game=onepiece&type=weekend&players=32&displays=1'));
+  const plan = distribute(settingsFrom('?v=1&game=onepiece&type=weekend&players=32&depthStep=top8&curve=steep&displays=1'));
   assert.deepEqual(
     plan.rows.slice(0, 8).map((row) => row.booster),
     [24, 16, 9, 5, 3, 3, 2, 2],

@@ -25,6 +25,14 @@
  * back instead of computing them from plan numbers — the drift that made #20
  * and #21's body come out wrong.
  *
+ * Five of them were decided anew on 2026-10-08, and #145's table is their
+ * source now: the Game sheet's `players` 40, `depthStep` `topThird` and
+ * `curve` `moderate`; weekend's `curve` `firm`; and release's `players` 64, a
+ * deviation of its own. The weekly values go into the Game sheet so that
+ * weekly keeps carrying nothing but its title (ADR 0003) — which means weekend
+ * inherits `players: 40` and `depthStep: 'topThird'` too, accepted knowingly
+ * by the maintainer (#145).
+ *
  * `TOURNAMENT_TYPES` is a list, not an object: its order is meaningful (ADR
  * 0003) and is not a surface sort. Each entry carries only its deviation from
  * `GAME` — the first entry is the starting choice and carries nothing besides
@@ -63,7 +71,7 @@ export const GAME_TITLE = 'One Piece';
  */
 export const GAME = {
   id: 'onepiece',
-  players: 32,
+  players: 40,
   boosterRate: 3,
   envelopeSize: 9,
   envelopeYield: 1,
@@ -73,17 +81,18 @@ export const GAME = {
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
-  depthStep: 'top8',
-  curve: 'mild',
+  depthStep: 'topThird',
+  curve: 'moderate',
   combinedHandout: false,
 };
 
 export const TOURNAMENT_TYPES = [
   { id: 'weekly', title: 'Weekly' },
-  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'steep' },
+  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'firm' },
   {
     id: 'release',
     title: 'Release',
+    players: 64,
     boosterRate: 9,
     participationBooster: 6,
     envelopeSize: 32,

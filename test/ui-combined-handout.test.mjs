@@ -18,13 +18,31 @@ import { planApp } from '../public/ui/plan.mjs';
 
 const view = (name) => readFileSync(new URL(`../views/${name}`, import.meta.url), 'utf8');
 
-/** A fresh app on the Weekend sheet — 32 Players, the top 8 served. */
+/** A fresh app on the Weekend sheet, nothing pinned. */
 function app() {
   const written = [];
   const a = planApp({ read: () => '', write: (url) => written.push(url) });
   a.setType('weekend');
   a.refreshNotices();
   return { a, written };
+}
+
+/**
+ * A fresh app on Weekend at 32 Players with the top 8 served — the stand the
+ * handout's conflict below was written against.
+ *
+ * Until #145 that was the Weekend sheet as it stood; #145 moved its start
+ * values to 40 Players and `topThird`. The subject here is the conflict at
+ * "8 of 32", not today's start values, so this app opens on a SetupLink that
+ * names the stand itself. The two values arrive pinned — the app has no other
+ * way to set one — and the `depthStep` pin counts under `Served ranks`, which
+ * is why only the scenarios that need "8 of 32" open here: the plain `app()`
+ * above keeps the stand on which no handout pin stands at the switch.
+ */
+function eightOfThirtyTwo() {
+  const a = planApp({ read: () => '?v=1&game=onepiece&type=weekend&players=32&depthStep=top8', write: () => {} });
+  a.refreshNotices();
+  return { a };
 }
 
 const open = (a, id) => a.notices.open.find((notice) => notice.id === id);
@@ -61,7 +79,7 @@ test('every sheet control asks whether it is shown', () => {
 /* ── The ConflictNotice of `combinedHandoutDepth` (E3) ─────────────────── */
 
 test('switching the handout on with the top 8 served raises the ConflictNotice with its way out', () => {
-  const { a } = app();
+  const { a } = eightOfThirtyTwo();
   a.setSlider('combinedHandout', true);
   a.refreshNotices();
   assert.equal(conflictKind(a.plan), 'combinedHandoutDepth');
@@ -72,7 +90,7 @@ test('switching the handout on with the top 8 served raises the ConflictNotice w
 });
 
 test('the way out pins both values it sets, and the plan is fit afterwards', () => {
-  const { a } = app();
+  const { a } = eightOfThirtyTwo();
   a.setSlider('rankFloor', 0);
   a.setSlider('combinedHandout', true);
   a.refreshNotices();
@@ -93,7 +111,7 @@ test('the way out pins both values it sets, and the plan is fit afterwards', () 
 
 /** On, its way out taken, off again: the two pins stand beside the participation Boosters. */
 function switchedBack() {
-  const { a } = app();
+  const { a } = eightOfThirtyTwo();
   a.setSlider('rankFloor', 0);
   a.setSlider('combinedHandout', true);
   a.refreshNotices();

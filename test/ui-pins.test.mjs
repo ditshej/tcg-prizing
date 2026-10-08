@@ -537,9 +537,14 @@ test('the step grid has no title of its own — it is a member of Served ranks',
  */
 test('typing marks the field and moves nothing until the commit', () => {
   const { app, written } = opened();
+  // The count the cold start shows — the sheet's, which #145 moved from 32 to
+  // 40. A cold start is the subject, and setting the count would pin it, so
+  // the test reads it off the field instead of naming the sheet's number.
+  const shown = app.value('players');
+  assert.notEqual(shown, 128, 'the typed number has to be a change');
   app.draft('players', '128');
   assert.equal(app.isDraft('players'), true, 'the field says it is not yet valid');
-  assert.equal(app.plan.players, 32, 'the plan stands still');
+  assert.equal(app.plan.players, shown, 'the plan stands still');
   assert.deepEqual(app.pins, {});
   assert.deepEqual(written, []);
 
@@ -552,10 +557,14 @@ test('typing marks the field and moves nothing until the commit', () => {
 
 test('a field typed back to its own value is not marked, and committing it writes and pins nothing', () => {
   const { app, written } = opened();
-  app.draft('tournamentPacks', '32');
+  // The values the cold start shows, read off the fields: "its own value" is
+  // the subject, not the sheet's number (#145 moved it from 32 to 40).
+  const packs = String(app.value('tournamentPacks'));
+  const players = String(app.value('players'));
+  app.draft('tournamentPacks', packs);
   assert.equal(app.isDraft('tournamentPacks'), false, 'the auto value, typed again, is no draft');
-  app.commitTyped('tournamentPacks', '32');
-  app.commitTyped('players', ' 32');
+  app.commitTyped('tournamentPacks', packs);
+  app.commitTyped('players', ` ${players}`);
   assert.deepEqual(app.pins, {});
   assert.equal(app.isPinned('tournamentPacks'), false);
   assert.deepEqual(written, []);
@@ -586,8 +595,11 @@ test('an entry that is not a number writes nothing and drops the draft', () => {
 
 test('minus and plus write and pin at once, on an auto value too', () => {
   const { app } = opened();
+  // One above the auto value the cold start shows (the sheet's player count,
+  // 40 since #145), read off the field rather than named.
+  const packs = app.value('tournamentPacks');
   app.step('tournamentPacks', 1);
-  assert.equal(app.pins.tournamentPacks, 33);
+  assert.equal(app.pins.tournamentPacks, packs + 1);
   app.step('rankFloor', -1);
   assert.equal(app.pins.rankFloor, 1);
 });
