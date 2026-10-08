@@ -6,14 +6,124 @@
  * `--diagram-height`.
  */
 
+/*
+ * The look (#142, decided at #15): one design in two modes — **light is
+ * Bronze** (parchment, bronze), **dark is Foil** (black, gold) — and without a
+ * choice the mode follows the device. The tokens are the prototype's
+ * (`prototypes/cockpit.prototype.html` on `prototype/rank-distribution`,
+ * `:root` and `body[data-mode="dark"]`), taken over as values, not as code.
+ *
+ * The form language is the same in both modes and lives in `:root` alone:
+ * sharp corners (2 px, the round button 3), **no borders** on tile, button
+ * and counter — the edge comes from the shadow, and in the dark a thin gold
+ * glow lies over it as an inner rim, or it would be black on black. What is
+ * chosen glows harder. A line remains only where it separates **data**: the
+ * derivation steps and the line over each group title on `Details`.
+ *
+ * Every colour in this file is one of these tokens. Only colours and depth
+ * turn with the mode.
+ */
 :root {
   color-scheme: light dark;
-  /* The raised paper the two scrolling columns stand on (prototype, `--paper`). */
-  --paper: light-dark(#fffdf8, #1e1b16);
+
+  --accent: #8c5a2b;
+  --accent-soft: #f0e4d1;
+  --on-accent: #fff8ee;
+  --ink: #241c12;
+  --muted: #7a6a55;
+  --line: #e2d5be; /* data separators only, never an edge */
+  --bg: #ece1cb;
+  --paper: #fffdf8; /* the raised surface: tile, button, sheet */
+  --warn: #96140f;
+  --warn-soft: #ffe1dd;
+  --pin: #7a4a8c;
+  --pin-soft: #f1e7f3;
+  --gold: #b8860b;
+  --on-gold: #4a3600;
+  --pack: #46617a;
+  --on-pack: #fff;
+  --unserved: #ded2bb;
+  --floorfill: #c2a271;
+  --reserve: #8a5f9c;
+  --reserve-soft: #f3ecf6;
+  --reserve-ink: #6b3f80;
+  --shape: #b08a55;
+  --scrim: rgba(36, 28, 18, 0.35); /* behind the one overlay */
+
+  /* Depth instead of edges: a drop shadow in the light; in the dark the same
+     shadow plus a glow as a hairline inner rim. */
+  --tile-shadow: 0 1px 2px rgba(58, 42, 22, 0.16), 0 6px 16px rgba(58, 42, 22, 0.16);
+  --btn-shadow: 0 1px 2px rgba(58, 42, 22, 0.22);
+  --panel-shadow: 0 8px 24px rgba(58, 42, 22, 0.18);
+  --chip-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --glow: 0 1px 3px rgba(90, 56, 20, 0.45), 0 3px 14px rgba(140, 90, 43, 0.42);
+  --tile-fill: var(--paper);
+
+  /* ── The form language, the same in both modes ─────────────────────── */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-head: var(--font);
+  --font-mono: ui-monospace, monospace;
+  --r-tile: 2px;
+  --r-ctl: 2px;
+  --r-pill: 2px;
+  --r-fab: 3px;
+  --head-tr: uppercase;
+  --head-ls: 0.14em;
+  --slot-num: 600;
+
+  /* The smallest hit area of anything that can be pressed (#142): 44 × 44,
+     the area and not necessarily the drawing (`.hit` below). */
+  --hit: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #c9992e;
+    --accent-soft: #2a2620;
+    --on-accent: #14110c;
+    --ink: #f2ece0;
+    --muted: #9a9384;
+    --line: #35312a;
+    --bg: #131210;
+    --paper: #1e1b16;
+    --warn: #ff9f90;
+    --warn-soft: #3d1b18;
+    --pin: #b48ee8;
+    --pin-soft: #2b2338;
+    --gold: #e8c352;
+    --pack: #7ea6d4;
+    --unserved: #3a362e;
+    --floorfill: #6b5f3c;
+    --reserve: #a888c8;
+    --reserve-soft: #2a2338;
+    --reserve-ink: #c8aee4;
+    --shape: #8a7a4a;
+    --scrim: rgba(0, 0, 0, 0.55);
+
+    /* The glow: an inner rim of gold, far too faint to be called a line — it
+       is what makes the edge visible in the dark at all. */
+    --tile-shadow: inset 0 0 0 1px rgba(214, 168, 58, 0.3), 0 8px 20px rgba(0, 0, 0, 0.6);
+    --btn-shadow: inset 0 0 0 1px rgba(214, 168, 58, 0.34), 0 2px 6px rgba(0, 0, 0, 0.5);
+    --panel-shadow: 0 10px 28px rgba(0, 0, 0, 0.62);
+    --chip-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    --glow: 0 0 0 1px rgba(240, 205, 100, 0.75), 0 0 16px rgba(201, 153, 46, 0.55);
+    --tile-fill: linear-gradient(#221e18, #1a1713);
+  }
 }
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  /* The prototype's family; size and line height stay the browser's, since
+     the fold's measured sums (`PLAN_FIXED` 178, the foot's 56) stand on them. */
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
 }
 
 /*
@@ -33,13 +143,116 @@
   display: contents;
 }
 
-html,
-body {
-  height: 100%;
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  background: light-dark(#f6f4ef, #14120f);
-  color: light-dark(#14120f, #f0ece2);
+/*
+ * Hit areas (#142, decision 4): everything that can be pressed takes at least
+ * 44 × 44 — the **area**, not necessarily the drawing. A target drawn smaller
+ * gets an invisible `::after` that grows it to 44 on each axis where it is
+ * smaller, centred, so the layout and the fold's measured sums do not move.
+ * Neighbours keep a pitch of at least 44 (their gaps say so where they are),
+ * so no area lies over another target's drawing.
+ *
+ * The counter's ± grow outward only, never over the field between them, and
+ * the field itself takes its 44 from a transparent border (`.counter-value`).
+ */
+:where(
+  .grid-fullscreen-toggle,
+  .bubble-close,
+  .counter > button,
+  .step-chip,
+  .curve-step,
+  .set-chip,
+  .info,
+  .pin-reset,
+  .pin-chip,
+  .link-copy,
+  .link-field-close,
+  .set-info a,
+  .legend-handle,
+  .raffle-trigger,
+  .raffle-close,
+  .raffle-range,
+  .raffle-scroller button,
+  .raffle-chip,
+  .drop-go,
+  .drop-no,
+  .notice-fold,
+  .notice-close,
+  .notice-action,
+  .notice-chip,
+  .prep-offer button,
+  .link-report-exit,
+  .sheet-check
+) {
+  position: relative;
+}
+
+:where(
+  .grid-fullscreen-toggle,
+  .bubble-close,
+  .counter > button,
+  .step-chip,
+  .curve-step,
+  .set-chip,
+  .info,
+  .pin-reset,
+  .pin-chip,
+  .link-copy,
+  .link-field-close,
+  .set-info a,
+  .legend-handle,
+  .raffle-trigger,
+  .raffle-close,
+  .raffle-range,
+  .raffle-scroller button,
+  .raffle-chip,
+  .drop-go,
+  .drop-no,
+  .notice-fold,
+  .notice-close,
+  .notice-action,
+  .notice-chip,
+  .prep-offer button,
+  .link-report-exit,
+  .sheet-check
+)::after {
+  content: '';
+  position: absolute;
+  top: min(0px, calc(50% - var(--hit) / 2));
+  bottom: min(0px, calc(50% - var(--hit) / 2));
+  left: min(0px, calc(50% - var(--hit) / 2));
+  right: min(0px, calc(50% - var(--hit) / 2));
+}
+
+.counter > button:first-child::after {
+  left: min(0px, calc(100% - var(--hit)));
+  right: 0;
+}
+
+.counter > button:last-child::after {
+  left: 0;
+  right: min(0px, calc(100% - var(--hit)));
+}
+
+/* A bubble's ✕ sits in its top corner over the first counter: its hit area
+   grows up, out of the bubble, and not down onto the `+` below it. */
+.bubble-close::after {
+  top: auto;
+  bottom: 0;
+  height: var(--hit);
+}
+
+/* The legend row is lower than 44 and stands 8 above the tile grid: its two
+   targets reach down to the grid's edge and no further, and take the rest
+   from the diagram's side (the `.plan-stage` gap). */
+.plan-legend :where(.legend-handle, .grid-fullscreen-toggle)::after {
+  top: min(0px, calc(100% + 8px - var(--hit)));
+  bottom: -8px;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
 }
 
 /*
@@ -54,6 +267,10 @@ body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  /* A hit area at the screen's edge reaches past it (`.hit` rules above);
+     past the edge there is nothing to touch, and it must not make the page
+     scroll sideways. Fixed layers are not clipped by this. */
+  overflow-x: clip;
   max-width: var(--deck, none);
   margin: 0 auto;
   /* What the window has beside the deck, on either side. The layer is fixed
@@ -84,12 +301,14 @@ body {
 .app[data-columns='2'] .page-details,
 .app[data-columns='3'] .page-details {
   flex: 0 0 var(--col-details);
-  box-shadow: 0 0 18px light-dark(rgba(58, 42, 22, 0.14), rgba(0, 0, 0, 0.55));
+  box-shadow: var(--panel-shadow);
+  /* The curve's seven steps measure their width against this column (#142). */
+  container-type: inline-size;
 }
 
 .app[data-columns='3'] .page-prepare {
   flex: 0 0 var(--col-prepare);
-  box-shadow: 0 0 18px light-dark(rgba(58, 42, 22, 0.14), rgba(0, 0, 0, 0.55));
+  box-shadow: var(--panel-shadow);
 }
 
 /* The fullscreen is the fold the other way: the `Plan` alone, and it takes
@@ -168,7 +387,7 @@ body {
 
 .col-facts {
   font-size: 0.8rem;
-  opacity: 0.75;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -233,7 +452,7 @@ body {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  opacity: 0.85;
+  color: var(--muted);
 }
 
 .plan-diagram {
@@ -257,22 +476,22 @@ body {
 }
 
 .seg-reservation {
-  background: light-dark(#8a5cf6, #a98bff);
+  background: var(--reserve);
 }
 
 .seg-floor {
-  background: light-dark(#c9a24b, #e0bd6a);
+  background: var(--floorfill);
 }
 
 .seg-shaped {
-  background: light-dark(#3f7a5e, #5fae87);
+  background: var(--accent);
 }
 
 .plan-legend {
   display: flex;
   gap: 16px;
   font-size: 0.75rem;
-  opacity: 0.8;
+  color: var(--muted);
 }
 
 .plan-legend .legend-item {
@@ -319,9 +538,10 @@ body {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
-  background: light-dark(rgba(255, 255, 255, 0.85), rgba(35, 32, 25, 0.85));
-  color: inherit;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
@@ -333,10 +553,11 @@ body {
   position: relative;
   width: 100%; /* the column's, at most 54 px (K3) */
   height: 54px;
-  border-radius: 6px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  color: inherit;
+  border: none;
+  border-radius: var(--r-tile);
+  background: var(--tile-fill);
+  box-shadow: var(--tile-shadow);
+  color: var(--ink);
   font: inherit;
   padding: 0;
   cursor: pointer;
@@ -347,7 +568,7 @@ body {
 }
 
 .tile[aria-expanded='true'] {
-  outline: 2px solid light-dark(#3f7a5e, #5fae87);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
@@ -371,23 +592,23 @@ body {
 }
 
 .tile-reserved .tile-booster {
-  font-size: 1.6rem;
+  font-size: 30px;
 }
 
 .tile-displays {
   font-size: 0.65rem;
   font-weight: 600;
-  color: light-dark(#8a5cf6, #a98bff);
+  color: var(--reserve);
 }
 
 /* Settled: the Rank falls out of the curve and gets exactly its Displays. The
    tone says it without needing a word for it. */
 .tile-settled {
-  background: light-dark(#f1ecff, #241f33);
+  background: var(--reserve-soft);
 }
 
 .tile-settled .tile-displays {
-  color: light-dark(#5b3bb0, #c9b6ff);
+  color: var(--reserve-ink);
 }
 
 /*
@@ -397,61 +618,74 @@ body {
  * claim a valid plan (#61, ADR 0002).
  */
 .tile-flagged {
-  border-color: light-dark(#b3261e, #f2b8b5);
-  box-shadow: inset 0 0 0 2px light-dark(#b3261e, #f2b8b5);
+  box-shadow: var(--tile-shadow), inset 0 0 0 2px var(--warn);
 }
 
 .tile-flagged .tile-rank {
-  opacity: 1;
   font-weight: 700;
-  color: light-dark(#b3261e, #f2b8b5);
+  background: var(--warn);
+  color: var(--warn-soft);
 }
 
 .tile-rank {
   position: absolute;
-  top: 2px;
-  left: 4px;
-  font-size: 0.6rem;
-  opacity: 0.6;
+  top: 3px;
+  left: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .tile-booster {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: var(--slot-num);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .mark {
   position: absolute;
-  font-size: 0.55rem;
+  font-size: 10.5px;
+  font-weight: 700;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .mark.dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
 .mark.circle {
-  min-width: 13px;
-  height: 13px;
-  border-radius: 50%;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
 }
 
 .mark-winner {
-  top: 3px;
-  right: 3px;
-  background: #c9a24b;
+  top: 4px;
+  right: 4px;
+  background: var(--gold);
+  color: var(--on-gold);
 }
 
 .mark-pack {
-  bottom: 3px;
-  right: 3px;
-  background: #3f7a5e;
+  bottom: 4px;
+  right: 4px;
+  background: var(--pack);
+  color: var(--on-pack);
 }
 
 /*
@@ -470,32 +704,37 @@ body {
   min-width: 190px;
   max-width: 292px;
   padding: 9px 10px;
-  border-radius: 8px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  box-shadow: 0 6px 18px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.55));
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
 }
 
 .bubble-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 7px;
+  margin-bottom: 12px; /* the ✕ is drawn 6 past the head; the `+` reaches 5 up */
   font-size: 0.75rem;
 }
 
 .bubble-by {
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 .bubble-close {
-  margin-left: auto;
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 28px;
+  margin: -6px -6px -6px auto; /* drawn 28 for the finger, laid out as before */
+  padding: 0;
   border: none;
   background: none;
-  color: inherit;
+  color: var(--muted);
   font: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
   cursor: pointer;
-  opacity: 0.7;
 }
 
 /* Title left, counter right, both rows on the same edge — otherwise the two
@@ -517,7 +756,7 @@ body {
   margin: 3px 0 8px;
   font-size: 0.7rem;
   line-height: 1.35;
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .bubble-note:last-child {
@@ -530,7 +769,7 @@ body {
                 via the fullscreen state, which removes the opaque controls
                 bar that had been painting over the resulting overflow */
   font-size: 0.8rem;
-  opacity: 0.8;
+  color: var(--muted);
 }
 
 .plan-rest {
@@ -542,9 +781,11 @@ body {
 
 .plan-controls {
   flex: 0 0 auto;
+  position: relative; /* its shadow lies over the grid's edge, not under it */
+  z-index: 1;
   padding: 6px 8px;
-  border-top: 1px solid light-dark(#ddd6c8, #37322a);
-  background: light-dark(#efece3, #1b1812);
+  background: var(--paper);
+  box-shadow: var(--panel-shadow);
 }
 
 /*
@@ -562,8 +803,12 @@ body {
      the one other place this ticket's own fixed strip is taller than the
      footer nav the spec's flat-stage math assumed (that nav is later
      tickets' work; these are four real controls). */
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 4px 16px;
+  /* 176: title above, then counter (38 + field + 38) and the way back (16 +
+     28) side by side — at 150 the way back fell under the counter (#142). */
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  /* 10 between the rows: a counter's field reaches 5 past its drawing, so a
+     row below must not start inside that (#142). */
+  gap: 10px 16px;
 }
 
 .plan-control {
@@ -576,6 +821,41 @@ body {
 .plan-control input,
 .plan-control select {
   width: 100%;
+}
+
+/* The curve's select, drawn like the counter's field: 34 high, 44 to the
+   finger through a transparent border the background does not paint (#142).
+   Its own arrow is gone with `appearance`, so the Lucide chevron stands in
+   for it, laid over the right end and not in the way of a tap. */
+.plan-control-select {
+  position: relative;
+  display: block;
+}
+
+.plan-control select {
+  appearance: none;
+  display: block;
+  height: var(--hit);
+  margin: -5px 0;
+  padding: 0 28px 0 8px;
+  border: none;
+  border-block: 5px solid transparent;
+  border-radius: var(--r-ctl);
+  background: var(--accent-soft);
+  background-clip: padding-box;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plan-control-select .icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 14px;
 }
 
 /*
@@ -620,16 +900,17 @@ body {
   align-items: center;
   flex-wrap: wrap; /* the row may wrap, the chip group may not — a lone third
                       type on its own line makes the level look broken */
-  gap: 8px;
+  gap: 14px 8px; /* a wrapped line keeps its hit areas off the one above */
   min-height: 28px;
 }
 
 /* Beside the buttons, never above them: two lines per level measured 148px,
    40% of the height in phone landscape (#41). */
 .set-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.7;
+  font: 700 11px/1 var(--font-head);
+  letter-spacing: var(--head-ls);
+  text-transform: var(--head-tr);
+  color: var(--muted);
   min-width: 40px;
 }
 
@@ -640,33 +921,36 @@ body {
 }
 
 .set-chip {
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
+  padding: 5px 9px;
+  min-height: 30px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
 }
 
 .set-chip[aria-pressed='true'] {
-  background: light-dark(#3f7a5e, #5fae87);
-  border-color: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
 }
 
 .info {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
   background: none;
-  color: inherit;
-  font: inherit;
-  font-size: 0.7rem;
-  font-style: italic;
+  color: var(--muted);
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
 }
@@ -674,8 +958,8 @@ body {
 .set-info {
   margin: 6px 0 0;
   padding: 8px 10px;
-  border-radius: 6px;
-  background: light-dark(#ffffff, #232019);
+  border-radius: var(--r-ctl);
+  background: var(--accent-soft);
   font-size: 0.78rem;
 }
 
@@ -688,36 +972,39 @@ body {
 }
 
 .set-info-muted {
-  opacity: 0.75;
+  color: var(--muted);
 }
 
 .set-info-foot {
-  opacity: 0.9;
+  color: var(--ink);
 }
 
 .set-sub {
   /* The indent, and nothing else — it subordinates, it does not separate. */
   padding-left: 18px;
-  margin-top: 8px;
+  margin-top: 14px; /* 30-high chips, 7 of hit area each way (#142) */
 }
 
 .sheet-group {
-  margin-top: 18px;
+  margin-top: 26px;
 }
 
 .sheet-group-head {
+  /* The line over each group title (#15, #142; prototype `.grouphead`): it
+     separates data from data, so it is one of the two places a line is
+     allowed. With it no single section needs a box to set itself apart. */
   margin: 0 0 2px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.6;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font: 700 11px/1.3 var(--font-head);
+  letter-spacing: var(--head-ls);
+  text-transform: var(--head-tr);
+  color: var(--muted);
 }
 
 .sheet-subhead {
   margin: 0 0 2px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font: 700 0.8rem/1.3 var(--font-head);
 }
 
 /* The explanation text stands only here, never at the rail under the plan
@@ -726,13 +1013,13 @@ body {
   margin: 0 0 8px;
   font-size: 0.75rem;
   line-height: 1.35;
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .sheet-foot {
   margin: 4px 0 0;
   font-size: 0.7rem;
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 .sheet-control {
@@ -742,7 +1029,12 @@ body {
 .sheet-control-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* Where the title line and the counter with its way back do not fit side
+     by side — `Details` at its first width 286, since the counter is drawn
+     for the finger (#142) — the counter goes under the title as a whole,
+     right-aligned, rather than the title line breaking: `cap N` stays on it. */
+  flex-wrap: wrap;
+  gap: 4px 8px;
   min-height: 26px;
 }
 
@@ -766,7 +1058,7 @@ body {
 
 .sheet-control-note {
   font-size: 0.7rem;
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 /* The number stands in the counter and nowhere else — twice the same number
@@ -779,8 +1071,17 @@ body {
 .sheet-control-unit {
   font-weight: 400;
   font-size: 0.7rem;
-  opacity: 0.6;
+  color: var(--muted);
   white-space: nowrap;
+}
+
+/* The counter and its way back are one group: where the head wraps, they
+   go under the title together, never the way back alone (#142). */
+.sheet-control-act {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 /* `flex: none`: a long title ("Tournament Packs per Promo-Envelope") may
@@ -791,18 +1092,22 @@ body {
   margin-left: auto;
   display: flex;
   align-items: stretch;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 6px;
-  overflow: hidden;
-  background: light-dark(#ffffff, #232019);
+  height: 34px;
+  border-radius: var(--r-ctl);
+  box-shadow: var(--btn-shadow);
+  background: var(--paper);
 }
 
 .counter button {
-  width: 26px;
+  position: relative;
+  width: 38px;
+  padding: 0;
   border: none;
-  background: none;
-  color: inherit;
+  background: var(--paper);
+  color: var(--ink);
   font: inherit;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -814,56 +1119,72 @@ body {
   cursor: default;
 }
 
+.counter button:first-child {
+  border-radius: var(--r-ctl) 0 0 var(--r-ctl);
+}
+
+.counter button:last-child {
+  border-radius: 0 var(--r-ctl) var(--r-ctl) 0;
+}
+
 /* The number is a field one types into (#113). Wide enough for four digits —
    1152 boosters is a real pool — and framed by the ± on either side, so it
    reads as the counter's middle and not as a form field beside it. */
 .counter-value {
   width: 4.2em;
   min-width: 0;
-  padding: 3px 2px;
+  /* Drawn 34 high, hit 44: the transparent border is part of the field, the
+     background is not, and the negative margin gives the layout its 34 back
+     (#142). An input carries no `::after`, so it cannot use `.hit`'s way. */
+  margin: -5px 0;
+  padding: 0 2px;
   border: none;
-  border-left: 1px solid light-dark(#ddd6c8, #37322a);
-  border-right: 1px solid light-dark(#ddd6c8, #37322a);
-  background: none;
-  color: inherit;
+  border-block: 5px solid transparent;
+  position: relative; /* the border reaches over the line below; it must win */
+  z-index: 1;
+  background: var(--accent-soft);
+  background-clip: padding-box;
+  color: var(--ink);
   text-align: center;
   font: inherit;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.85rem;
 }
 
 .counter-value:focus {
   outline: none;
-  background: light-dark(#f6f1e6, #2c2820);
+  background-color: var(--bg);
 }
 
 /* Typed and not yet committed: the plan has not moved, and the field says so
    — dashed and pale, until Enter or leaving the field makes it count (#113). */
 .counter.is-draft {
-  border-style: dashed;
-  border-color: light-dark(#b07a1e, #e0b45c);
+  outline: 1px dashed var(--accent);
+  outline-offset: 1px;
 }
 
 .counter.is-draft .counter-value {
   font-style: italic;
-  color: light-dark(#8a5d10, #e0b45c);
+  color: var(--accent);
 }
 
 .step-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 10px 4px; /* rows 34 + 10: each step's hit area is 44 high (#142) */
   margin: 6px 0 2px;
 }
 
 .step-chip,
 .curve-step {
+  min-height: 34px;
   padding: 4px 2px;
-  border-radius: 6px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.65rem;
   cursor: pointer;
@@ -871,25 +1192,33 @@ body {
 
 .step-chip[aria-pressed='true'],
 .curve-step[aria-pressed='true'] {
-  background: light-dark(#3f7a5e, #5fae87);
-  border-color: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
 }
 
 /* A DistributionCurve step is a slope, so it is shown as one (ADR 0001). */
 .curve-steps {
-  display: flex;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px 4px;
+}
+
+/* Seven steps at 44 need 7 × 44 + 6 × 4 = 332 px; the `Details` column
+   has 286 at its first width, so there they go into two rows (#142). */
+@container (max-width: 347px) {
+  .curve-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .curve-step {
-  flex: 1 1 0;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: 1px;
-  height: 26px;
-  padding: 4px 3px;
+  height: 34px;
+  padding: 6px 3px;
 }
 
 .curve-step i {
@@ -902,6 +1231,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: var(--hit);
   font-size: 0.78rem;
 }
 
@@ -927,9 +1257,11 @@ body {
  */
 .foot {
   flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
   display: flex;
-  border-top: 1px solid light-dark(#ddd6c8, #37322a);
-  background: light-dark(#efece3, #1b1812);
+  background: var(--paper);
+  box-shadow: var(--panel-shadow);
 }
 
 .foot-item {
@@ -937,42 +1269,46 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 10px 0;
+  gap: 4px;
+  padding: 7px 0;
   border: none;
   background: none;
-  color: inherit;
-  font: inherit;
+  color: var(--muted);
+  font: 700 10px/12px var(--font-head);
+  letter-spacing: var(--head-ls);
+  text-transform: var(--head-tr);
   cursor: pointer;
 }
 
 .foot-icon {
+  /* 20 + 2 × 3 field = 26; with the 4 gap, the 12 label line and 7 + 7
+     padding the foot is its 56 (`FOOT_HEIGHT`), out of its content. */
   display: block;
+  box-sizing: content-box;
   width: 20px;
   height: 20px;
+  padding: 3px 16px;
+  border-radius: var(--r-ctl);
 }
 
 .foot-label {
   display: block;
   font-size: 10px;
   line-height: 12px;
-  opacity: 0.75;
 }
 
 /*
- * The active entry reads by depth, never by a stroke (#63 AC 3, #15): an
- * inset shadow reads as "pressed in", not as an underline separating data
- * from data, which is the one place a line is allowed here (CONTEXT.md,
- * `NoticeStack`'s own rule extended to this nav).
+ * The active entry reads by colour **and** a soft field under the icon, never
+ * by a stroke (#63 AC 3, #15; prototype `.navbtn[aria-current]`): colour alone
+ * was too quiet on 56 px, and a line under it would be a line that separates
+ * no data. A field is depth, not a stroke.
  */
 .foot-active {
-  box-shadow: inset 0 2px 5px light-dark(rgba(20, 18, 15, 0.18), rgba(0, 0, 0, 0.45));
-  border-radius: 6px;
+  color: var(--accent);
 }
 
-.foot-active .foot-label {
-  opacity: 1;
-  font-weight: 700;
+.foot-active .foot-icon {
+  background: var(--accent-soft);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -994,12 +1330,13 @@ body {
 .legend-handle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
   border: none;
-  border-radius: 999px;
-  background: light-dark(rgba(20, 18, 15, 0.07), rgba(255, 255, 255, 0.09));
-  color: inherit;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -1007,11 +1344,13 @@ body {
 }
 
 .legend-handle[aria-expanded='true'] {
-  background: light-dark(rgba(20, 18, 15, 0.16), rgba(255, 255, 255, 0.2));
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
 }
 
 .legend-dice {
-  font-size: 0.8rem;
+  font-size: 13px;
 }
 
 /* The counter of still-open winner packs. It is absent at zero rather than
@@ -1020,8 +1359,8 @@ body {
   min-width: 15px;
   padding: 0 4px;
   border-radius: 999px;
-  background: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  background: var(--gold);
+  color: var(--on-gold);
   font-weight: 700;
   text-align: center;
 }
@@ -1040,25 +1379,30 @@ body {
   bottom: calc(var(--strip-bottom, 56px) + 8px);
   z-index: 40;
   padding: 10px 12px 12px;
-  border-radius: 8px;
-  background: light-dark(#ffffff, #232019);
-  box-shadow: 0 6px 20px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.6));
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
 }
 
 .raffle-top {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-bottom: 9px;
+  margin-bottom: 16px; /* the trigger's and the steps' hit areas meet here (#142) */
 }
 
 .raffle-trigger {
   flex: 0 0 auto;
-  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
   border: none;
-  border-radius: 6px;
-  background: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  border-radius: var(--r-ctl);
+  background: var(--accent);
+  box-shadow: var(--btn-shadow);
+  color: var(--on-accent);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -1076,32 +1420,37 @@ body {
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.3;
-  opacity: 0.8;
+  color: var(--muted);
 }
 
 /* The one thing the RafflePot ever shows: that it is empty. It is the reason
    beside a locked button, not a count. */
 .raffle-empty {
   display: block;
-  color: light-dark(#a8541f, #eab27a);
-  opacity: 1;
+  color: var(--warn);
 }
 
 .raffle-close {
   flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 28px;
   margin-left: auto;
+  padding: 0;
   border: none;
   background: none;
-  color: inherit;
+  color: var(--muted);
   font: inherit;
-  opacity: 0.6;
+  font-size: 1rem;
+  line-height: 1;
   cursor: pointer;
 }
 
 .raffle-ranges {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 16px; /* rows 28 + 16: each step's hit area is 44 high (#142) */
 }
 
 .raffle-range-row {
@@ -1115,11 +1464,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1px;
+  min-height: 28px;
   padding: 4px 5px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 5px;
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
@@ -1132,9 +1483,9 @@ body {
 }
 
 .raffle-range[aria-pressed='true'] {
-  background: light-dark(#3f7a5e, #5fae87);
-  border-color: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--glow);
 }
 
 .raffle-arrow {
@@ -1153,7 +1504,7 @@ body {
 }
 
 .raffle-hit-said {
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .raffle-takeback-head {
@@ -1166,7 +1517,7 @@ body {
 }
 
 .raffle-takeback-head > span:first-child {
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 /* The arrows of the sideways row (#129, run 15, K5). They sit in the head
@@ -1180,12 +1531,13 @@ body {
 }
 
 .raffle-scroller button {
+  display: inline-grid;
+  place-items: center;
   padding: 0 6px;
   border: none;
   background: none;
-  color: inherit;
+  color: var(--ink);
   font: inherit;
-  font-weight: 700;
   line-height: inherit;
   cursor: pointer;
 }
@@ -1198,7 +1550,7 @@ body {
 .raffle-takeback-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 16px 4px; /* rows 28 + 16 (#142) */
 }
 
 /* Flat and cramped, the list is one row that scrolls sideways and never
@@ -1210,6 +1562,10 @@ body {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+  /* The scroller would clip its pills' hit areas (`.hit`) above and below;
+     the padding takes them in, the negative margin keeps the bar's height. */
+  padding-block: 8px;
+  margin-block: -8px;
 }
 
 .raffle-takeback-row::-webkit-scrollbar {
@@ -1224,11 +1580,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 28px;
   padding: 3px 8px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 999px;
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.7rem;
   cursor: pointer;
@@ -1244,15 +1602,15 @@ body {
 @keyframes tile-hit {
   0% {
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--tile-shadow), 0 0 0 0 var(--accent);
   }
   35% {
     transform: scale(1.14);
-    box-shadow: 0 6px 16px light-dark(rgba(20, 18, 15, 0.35), rgba(0, 0, 0, 0.7));
+    box-shadow: var(--tile-shadow), 0 0 0 5px var(--accent);
   }
   100% {
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--tile-shadow), 0 0 0 11px transparent;
   }
 }
 
@@ -1280,18 +1638,18 @@ body {
   letter-spacing: 0.04em;
   text-transform: lowercase;
   padding: 1px 5px;
-  border-radius: 6px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
 }
 
 .pin-state.is-pinned {
-  color: light-dark(#7b3fb5, #d5b9f0);
-  background: light-dark(#f2ebfa, #2c2036);
+  color: var(--pin);
+  background: var(--pin-soft);
   font-weight: 700;
 }
 
 .pin-state.is-auto {
-  opacity: 0.5;
+  color: var(--muted);
 }
 
 .sheet-control.is-pinned .sheet-control-label,
@@ -1311,13 +1669,21 @@ body {
    appears on the first drag moves the counter beside it — and live rather
    than `disabled`, which would read as broken where it is merely idle. */
 .pin-reset {
+  display: inline-grid;
+  place-items: center;
+  /* 28 wide and 10 further from the counter: its hit area (8 each side) and
+     the `+`'s (6 outward) fit into the 16–18 between them, and at the
+     column's edge it ends on the edge (#142). */
+  min-width: 28px;
+  min-height: 28px;
+  margin-left: 10px;
   border: none;
   background: none;
-  padding: 2px 4px;
-  border-radius: 6px;
-  color: light-dark(#7b3fb5, #d5b9f0);
+  padding: 0;
+  border-radius: var(--r-ctl);
+  color: var(--pin);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -1334,11 +1700,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 7px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 999px;
-  background: light-dark(#ffffff, #232019);
-  color: light-dark(#7b3fb5, #d5b9f0);
+  min-height: 30px;
+  padding: 2px 9px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--pin-soft);
+  box-shadow: var(--glow);
+  color: var(--pin);
   font: inherit;
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
@@ -1368,10 +1736,9 @@ body {
   min-width: 210px;
   max-width: 292px;
   padding: 9px 10px;
-  border-radius: 8px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
-  box-shadow: 0 6px 18px light-dark(rgba(20, 18, 15, 0.22), rgba(0, 0, 0, 0.55));
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
 }
 
 .drop-head {
@@ -1405,11 +1772,11 @@ body {
 }
 
 .drop-item-label {
-  color: light-dark(#7b3fb5, #d5b9f0);
+  color: var(--pin);
 }
 
 .drop-item-arrow {
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 .drop-item-to {
@@ -1421,7 +1788,7 @@ body {
   margin: 0 0 9px;
   font-size: 0.7rem;
   line-height: 1.35;
-  opacity: 0.75;
+  color: var(--muted);
 }
 
 /* Declining has a named place beside confirming — that is the whole reason
@@ -1434,24 +1801,27 @@ body {
 .drop-go,
 .drop-no {
   flex: 1;
-  padding: 5px 8px;
-  border-radius: 6px;
+  min-height: 34px;
+  padding: 5px 11px;
+  border: none;
+  border-radius: var(--r-pill);
+  box-shadow: var(--btn-shadow);
   font: inherit;
   font-size: 0.72rem;
   cursor: pointer;
 }
 
 .drop-go {
-  border: 1px solid light-dark(#7b3fb5, #d5b9f0);
-  background: light-dark(#7b3fb5, #d5b9f0);
-  color: light-dark(#ffffff, #14120f);
+  /* The destructive one, named first and still not the calm one (prototype
+     `.popask .go`). */
+  background: var(--warn);
+  color: var(--warn-soft);
   font-weight: 700;
 }
 
 .drop-no {
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  background: none;
-  color: inherit;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 /* On the rail the word is the same word, in the compact form the strip is:
@@ -1502,9 +1872,9 @@ body {
 
 .prep-item {
   padding: 10px 12px;
-  border-radius: 8px;
-  background: light-dark(#ffffff, #232019);
-  border: 1px solid light-dark(#ddd6c8, #37322a);
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--panel-shadow);
 }
 
 .prep-bar {
@@ -1529,7 +1899,7 @@ body {
 .prep-aside {
   margin-left: auto;
   font-size: 0.72rem;
-  opacity: 0.65;
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -1543,7 +1913,7 @@ body {
   align-items: baseline;
   gap: 8px;
   padding: 3px 0;
-  border-top: 1px solid light-dark(#ece7db, #2d2921);
+  border-top: 1px solid var(--line); /* separates data from data */
 }
 
 .prep-step:first-child {
@@ -1551,7 +1921,7 @@ body {
 }
 
 .prep-sub {
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 .prep-value {
@@ -1561,16 +1931,16 @@ body {
 }
 
 .prep-muted {
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 .prep-keep {
-  color: light-dark(#8a5a14, #e0a752);
+  color: var(--accent);
   font-weight: 600;
 }
 
 .prep-keep .prep-sub {
-  opacity: 0.8;
+  color: inherit;
 }
 
 /*
@@ -1586,24 +1956,28 @@ body {
   gap: 8px;
   margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px solid light-dark(#ece7db, #2d2921);
+  border-top: 1px solid var(--line);
+  color: var(--accent);
 }
 
 .prep-offer button {
+  position: relative;
+  min-height: 30px;
   border: 0;
-  border-radius: 6px;
-  padding: 5px 10px;
+  border-radius: var(--r-ctl);
+  padding: 4px 10px;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  background: light-dark(#8a5a14, #e0a752);
-  color: light-dark(#fdfbf6, #1b1812);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--btn-shadow);
 }
 
 .prep-note {
   margin: 10px 2px 0;
   font-size: 0.7rem;
-  opacity: 0.6;
+  color: var(--muted);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1614,11 +1988,14 @@ body {
    only while the chip is gone — two `auto` margins would split it. */
 .link-copy {
   display: inline-grid;
+  align-items: center;
+  min-height: 30px;
   padding: 2px 9px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 999px;
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
   font: inherit;
   font-size: 0.72rem;
   cursor: pointer;
@@ -1641,8 +2018,8 @@ body {
 }
 
 .link-copy[data-link-copied] {
-  border-color: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#3f7a5e, #5fae87);
+  color: var(--accent);
+  box-shadow: var(--glow);
 }
 
 .link-copy[data-link-copied] .link-copy-word {
@@ -1664,19 +2041,24 @@ body {
 .link-field-input {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: var(--hit);
   padding: 4px 6px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 6px;
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
-  font: 0.75rem ui-monospace, monospace;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  font: 0.75rem var(--font-mono);
 }
 
 .link-field-close {
+  display: inline-grid;
+  place-items: center;
   border: 0;
   background: none;
-  color: inherit;
+  color: var(--muted);
   font: inherit;
+  font-size: 1rem;
   cursor: pointer;
 }
 
@@ -1685,15 +2067,15 @@ body {
 .link-report {
   max-width: min(420px, calc(100vw - 32px));
   padding: 16px 18px 14px;
-  border: 1px solid light-dark(#ddd6c8, #37322a);
-  border-radius: 10px;
-  background: light-dark(#ffffff, #232019);
-  color: inherit;
-  box-shadow: 0 10px 28px light-dark(rgba(20, 18, 15, 0.25), rgba(0, 0, 0, 0.6));
+  border: none;
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--panel-shadow);
 }
 
 .link-report::backdrop {
-  background: light-dark(rgba(20, 18, 15, 0.35), rgba(0, 0, 0, 0.55));
+  background: var(--scrim);
 }
 
 .link-report-title {
@@ -1709,7 +2091,7 @@ body {
 }
 
 .link-wire {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.92em;
 }
 
@@ -1722,11 +2104,13 @@ body {
 .link-report-exit {
   display: block;
   margin-left: auto;
+  min-height: 34px;
   padding: 5px 14px;
-  border: 1px solid light-dark(#3f7a5e, #5fae87);
-  border-radius: 999px;
-  background: light-dark(#3f7a5e, #5fae87);
-  color: light-dark(#ffffff, #14120f);
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  box-shadow: var(--btn-shadow);
+  color: var(--on-accent);
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
@@ -1788,27 +2172,27 @@ body {
 
 .notice {
   pointer-events: auto;
-  border-radius: 8px;
+  border-radius: var(--r-ctl);
   padding: 8px 10px;
   font-size: 0.8rem;
-  box-shadow: 0 8px 24px light-dark(rgba(58, 42, 22, 0.18), rgba(0, 0, 0, 0.62));
+  box-shadow: var(--panel-shadow);
 }
 
 .notice-conflict {
-  background: light-dark(#ffe1dd, #3d1b18);
-  color: light-dark(#96140f, #ff9f90);
+  background: var(--warn-soft);
+  color: var(--warn);
 }
 
 .notice-offer {
-  background: light-dark(#f3ecf6, #2a2338);
-  color: light-dark(#6b3f80, #c8aee4);
+  background: var(--reserve-soft);
+  color: var(--reserve-ink);
 }
 
 /* The notice of a switched-off handout is the CarryOverNotice's form (#103, E4). */
 .notice-carryOver,
 .notice-handoutOff {
-  background: light-dark(#f0e4d1, #2a2620);
-  color: light-dark(#241c12, #f2ece0);
+  background: var(--accent-soft);
+  color: var(--ink);
 }
 
 .notice-head {
@@ -1836,46 +2220,61 @@ body {
 
 .notice-fold,
 .notice-close {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 28px;
+  margin: -6px -4px -6px 0; /* drawn 28 for the finger, laid out as before */
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 14px;
-  padding: 2px 5px;
+  font-size: 16px;
+  padding: 0;
   cursor: pointer;
   opacity: 0.8;
+}
+
+/* Fold and dismiss side by side: 16 between them, where their hit areas
+   (8 each) meet (#142). */
+.notice-close {
+  margin-left: 10px;
 }
 
 .notice-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 10px 4px; /* rows 34 + 10: 44 a hit area (#142) */
   margin-top: 6px;
 }
 
 .notice-action {
+  min-height: 34px;
   font: inherit;
   font-size: 0.75rem;
-  border: 1px solid currentColor;
-  background: light-dark(#fffdf8, #1e1b16);
+  border: none;
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
   color: inherit;
-  border-radius: 999px;
-  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
   cursor: pointer;
 }
 
 .notice-chips {
   position: fixed;
   right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px));
-  /* Above an open raffle bar wherever the chips share its corner (#73). */
-  bottom: calc(var(--chip-bottom, 64px) + var(--raffle-lift, 0px) * var(--chip-raffle, 1));
+  /* Above an open raffle bar wherever the chips share its corner (#73). The
+     5 px padding above and below takes in the chips' hit areas, which the
+     row's own scroller would clip (#142); the bottom gives them back. */
+  bottom: calc(var(--chip-bottom, 64px) - 5px + var(--raffle-lift, 0px) * var(--chip-raffle, 1));
   z-index: 37;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   max-width: calc(100% - var(--chip-right, 0px));
   overflow-x: auto;
-  padding: 0 12px;
+  padding: 5px 12px;
   pointer-events: none;
 }
 
@@ -1887,35 +2286,37 @@ body {
  */
 .notice-chip {
   pointer-events: auto;
+  position: relative;
   height: 34px;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 13px;
   border: 0;
-  border-radius: 999px;
-  background: light-dark(#fffdf8, #1e1b16);
-  font: 600 0.78rem/1 system-ui, sans-serif;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  font: 600 0.78rem/1 var(--font);
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: inset 0 0 0 2px currentColor, 0 4px 12px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 2px currentColor, var(--chip-shadow);
 }
 
 .notice-chip-conflict {
-  color: light-dark(#96140f, #ff9f90);
+  color: var(--warn);
 }
 
 .notice-chip-offer {
-  color: light-dark(#8a5f9c, #a888c8);
+  color: var(--reserve);
 }
 
 .notice-chip-carryOver,
 .notice-chip-handoutOff {
-  color: light-dark(#8c5a2b, #c9992e);
+  color: var(--accent);
 }
 
 .notice-glyph {
-  font-size: 13px;
+  display: inline-grid;
+  font-size: 15px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1953,15 +2354,14 @@ body {
 .app[data-columns='3'] .foot-item {
   flex: 0 0 auto;
   flex-direction: row;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 7px;
+  min-height: var(--hit);
+  padding: 0 12px;
 }
 
 .app[data-columns='2'] .foot-label,
 .app[data-columns='3'] .foot-label {
-  font-size: 13px;
   line-height: 20px;
-  opacity: 1;
 }
 
 /*
@@ -1974,8 +2374,6 @@ body {
   flex: 0 0 var(--strip-width);
   flex-direction: column;
   justify-content: space-evenly;
-  border-top: none;
-  border-left: 1px solid light-dark(#ddd6c8, #37322a);
 }
 
 .app[data-flat] .foot-item {
@@ -1987,6 +2385,7 @@ body {
 .app[data-flat] .foot-icon {
   width: 18px;
   height: 18px;
+  padding: 4px 10px;
 }
 
 .app[data-flat] .foot-label {
@@ -2016,8 +2415,6 @@ body {
 .app[data-rail='column'] .plan-controls {
   flex: 0 0 var(--col-details);
   overflow-y: auto;
-  border-top: none;
-  border-left: 1px solid light-dark(#ddd6c8, #37322a);
 }
 
 .app[data-rail='column'] .controls-hot {
@@ -2086,10 +2483,8 @@ body {
   visibility: hidden;
   pointer-events: none;
   overflow: visible;
-  border-left: none;
-  border-top: 1px solid transparent;
 }
 
 .app .rail-probe .controls-hot {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
 }

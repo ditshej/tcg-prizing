@@ -24,7 +24,8 @@ function icon(string $name, string $class = ''): string
             throw new RuntimeException("Lucide icon {$name} is not vendored");
         }
         $svg = preg_replace('/<!--.*?-->\s*/s', '', $svg);
-        $svg = preg_replace('/\s+(class|width|height)="[^"]*"/', '', $svg);
+        // Only the outer tag loses its class and size; a `<rect>` keeps its own.
+        $svg = preg_replace_callback('/^<svg\b[^>]*>/', fn ($tag) => preg_replace('/\s+(class|width|height)="[^"]*"/', '', $tag[0]), $svg);
         $svg = preg_replace('/\s+/', ' ', trim($svg));
         $svg = str_replace('> <', '><', $svg);
         $cache[$name] = $svg;
