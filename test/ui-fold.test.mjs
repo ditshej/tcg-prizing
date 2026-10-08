@@ -287,7 +287,7 @@ test('in the flat mode two full tile rows are visible, not cut', () => {
  * The rail heights the acceptance by image measured after round 142·145, K2
  * (2026-10-08, headless Chrome, `.plan-controls`, every width 320–673 in
  * `plain`, Weekend, Release and Weekly at `depth=32`): 124 from 360 up, 139
- * where `Served ranks` wraps its title at 360–361 and 540–542 (`depth=32`),
+ * at 360–361 and 540–542 where a pinned `Served ranks` wraps its title line,
  * 195 / 212 / 229 below 360. `docs/acceptance/73-abnahme-am-bild.md` › run 17.
  */
 const RAILS_MEASURED = Object.freeze([124, 139, 195, 212, 229]);

@@ -676,8 +676,8 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
   Durchlauf über jede Breite 320–673 (Höhe 900) in `plain`, Weekend, Release und Weekly mit
   `depth=32`: dieselben Stufen, die Grenzen um ± 2 verschoben (Release 320–337 / 338–346;
   `depth=32` 320–346 / 347–350 / 351–359). Mit `depth=32` steht die Schiene bei 360–361 und
-  540–542 auf **139**: dort bricht der Titel von `Served ranks` samt `cap N` um, die Zähler
-  stehen weiter zu zweit, einspaltig ab 546. Gemessene Spanne der Schiene damit **124 bis 229**
+  540–542 auf **139**: ist `Served ranks` gepinnt, passen Titel, `pinned` und `cap N` dort nicht
+  auf eine Zeile (Zelle 66 statt 51), die Zähler stehen weiter zu zweit, einspaltig ab 546. Gemessene Spanne der Schiene damit **124 bis 229**
   (vor #142: 62 bis 117); `RAIL_AT_MASTER` 124, der Durchlauf in `test/ui-fold.test.mjs` rechnet
   mit 124, 139, 195, 212 und 229 (B2, N5 der Runde 142·145).
   Die Anordnung kippt bei **360** genau: zwei Zellen zu 164 + Lücke 16 + Rand 2 × 8 = 360; bei
