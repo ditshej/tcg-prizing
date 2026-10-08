@@ -29,12 +29,16 @@
     -->
     <!--
       The column head (#71), in the one form all three columns share: a title
-      line — the word, and beside it the column's facts, small and quiet — and,
-      for the `Plan` alone, a second line, because its output line is a fact
-      and not a caption. The word stands in exactly one of two places: in the
-      foot while the page is a page, here once it is a column (`titled()`).
-      The title line keeps its height either way, so the head is the same
-      shape whether the word is there or in the foot.
+      line — the title, and beside it the column's facts, small and quiet —
+      and, for the `Plan` alone, a second line, because its output line is a
+      fact and not a caption. The head is the prototype's `colHead()` whole, on
+      every fold and on the phone too (#156, F1 a): the title stands here
+      whether or not the foot carries the page's word as well. The `Plan` is
+      titled by its `TournamentType` — the catalog title, `Weekly` — not by the
+      word `Plan`, which stays the foot's; its facts are the player count alone
+      (#156, K2): the booster total stands once, at the head of the output line
+      below, and not a second time beside the title. The title line is 22 high with the title in it or not
+      (`.col-titleline`), so the head keeps its 40 and `PLAN_FIXED` its 178.
     -->
     <!--
       Share and Reset-all, top right (#143, decisions 1–3, overruling #72 AC 1
@@ -58,8 +62,9 @@
     -->
     <header class="col-head plan-head" x-ref="head">
       <div class="col-titleline">
-        <h1 class="col-title" x-show="titled('plan')">Plan</h1>
-        <span class="col-facts plan-type" x-text="`${typeTitle} · ${plan.players} players`"></span>
+        <h1 class="col-title" x-show="titled('plan')" x-text="typeTitle"></h1>
+        <span class="col-facts plan-type"
+              x-text="fullscreen ? `${typeTitle} · ${plan.players} players` : `${plan.players} players`"></span>
       </div>
       <p class="col-sub plan-output" x-show="!fullscreen"
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} packs · ${plan.pool.winners} winner packs`"></p>

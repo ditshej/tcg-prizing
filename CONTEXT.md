@@ -990,6 +990,12 @@ kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
 wie `Raffle` für die `WinnerRaffle`. Der volle Name steht zwei Zentimeter
 weiter im ⓘ der Ebene.
+Der **Titel** des Typs (`Weekly`, `Weekend`, `Release`) ist ein Bildschirmwort
+aus dem Katalog (`public/sets/onepiece.mjs`), nachgeschlagen, nie hergeleitet.
+Er ist der Titel des Plan-Kopfs, in jeder Faltung — der Plan heisst im Kopf
+wie sein Typ, nicht „Plan" (#156); das Fusswort bleibt `Plan`. Im Kopf von
+`Prepare` steht er vorne in den Fakten (`Weekly · 40`), damit am Bild zu sehen
+ist, warum etwa beim Release zwei Envelopes stehen.
 _Avoid_: Format (bezeichnet im TCG die Kartenpool-Regel), Preset
 
 **DefaultSet**:

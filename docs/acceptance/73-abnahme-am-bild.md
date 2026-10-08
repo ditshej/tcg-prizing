@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -908,6 +908,90 @@ Leiste), `test/ui-pins.test.mjs` (Reset im Plan-Kopf mit Zähler, fragt zuerst; 
 `test/ui-plan.test.mjs` (die Frage nimmt die Blase im Bild; kein `takeOffer()`),
 `test/ui-prepare.test.mjs` (kein Angebot bei 0–100 Packs), `test/ui-fold.test.mjs` (gemessene
 Leisten).
+
+## #156 · Seitenköpfe
+
+Entscheid: Body von #156 (Gesamt-Review 2026-10-08, F1 a und Punkt 7). Die drei Köpfe tragen
+Titel und Fakten in der Form von `colHead()` in jeder Faltung, auch am Telefon; der Plan heisst
+im Kopf wie sein `TournamentType`, `Prepare` nennt `Weekly · 40` vor *everything the pool holds*.
+Nachtrag **K2** (Entscheid an #156, Weg b): neben dem Titel des Plans steht nur noch
+`<Spielerzahl> players`; `120 boosters` steht einmal, vorne in der Ausgabezeile darunter. Die
+Messungen der Plan-Fakten unten sind nach K2 neu genommen (Server `php -S localhost:8851`,
+gleicher Browser und gleiche Messmittel).
+
+- **Stand:** Zweig `feat/156-seitenkoepfe`, geschnitten von `main` bei `f9d5b3d`.
+- **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8782 -t public` aus der Worktree-Wurzel
+  `tcg-prizing-156`.
+- **Browser:** Google Chrome (headless) über Playwright, eigener Kontext je Leinwand,
+  `colorScheme` light und dark.
+- **Messmittel:** `getBoundingClientRect` von `.col-head`, `.col-titleline`, `.col-title`,
+  `.col-facts`, `.plan-head-actions`; Kürzung über `scrollWidth` gegen `clientWidth` mit
+  `text-overflow: ellipsis`; Umbruch über die Zahl der `getClientRects()`.
+- **Langer Titel:** der Katalogtitel von `weekly` im Browser auf „Regional Championship
+  Qualifier" gesetzt (31 Zeichen, 260 breit); kein Katalogeintrag ist so lang.
+
+**Die Titelzeile war mit Titel nicht 22, sondern 24.** `.col-titleline` hatte `min-height: 22px`;
+Titel (17 px) und Fakten (0,8 rem) stehen auf einer Grundlinie, und sobald der Titel stand, schob
+die Grundlinie die Fakten 2 px tiefer und den Zeilenkasten auf 24. Daher kam die 42 des Plan-Kopfs
+in der Spalte (#143: „42 mit Titel"), und `Prepare` / `Details` massen 38 statt 36. Jetzt
+`height: 22px`: die Zeile ist mit und ohne Titel 22, der Plan-Kopf überall **40**.
+
+| Leinwand | Modus | Plan-Kopf | Titelzeile | Titel | Fakten |
+|---|---|---|---|---|---|
+| 393 × 830 | hell · dunkel | 8–48 = **40** | **22** | `Weekly` 58,4 | `40 players` 62,6 (vor K2 `40 players · 120 boosters` 151) |
+| 375 × 553 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
+| 360 × 580 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
+| 320 × 900 | hell · dunkel | **40** | **22** | `Weekly` | ganz |
+| 812 × 375 (flach) | hell · dunkel | **40** | **22** | `Weekly` | ganz |
+| 674 × 760 · 1280 × 760 | hell · dunkel | **40** (vorher 42) | **22** (vorher 24) | `Weekly` | ganz (nach K2 62,6) |
+| Vollbild 393 × 830 · 674 × 760 · 1280 × 760 | hell | 22 (nur die Titelzeile) | **22** | — | `Weekly · 40 players` (`shead`, 116,6; von K2 nicht berührt) |
+
+`Prepare` und `Details`: Kopf **36** an 393 × 830, 320 × 900 und als Spalte bei 674 × 760 und
+1280 × 760 (vorher 38 als Spalte), Titelzeile 22. `Prepare` 393 × 830:
+`Prepare` + `Weekly · 40 everything the pool holds` (229); Release: `Release · 64 …` (233).
+
+**Fester Teil des `Plan`s**, 674 × 760, `players=64&depth=32` (Plan 388 breit): 8 + Kopf **40** +
+`Participation` 16 + Legende 21 + Rangtotal 15 + Rangmeldung 27 + 6 × 8 = **175** (vorher 177),
+unter `PLAN_FIXED` 178; die Konstante bleibt. Am Telefon unverändert gegenüber #143 (Kopf 40):
+Diagramm 393 × 830 80–360, 375 × 553 80–165 (85), 360 × 580 80–192 (112), Raster 202–315 bzw.
+229–342 = zwei Reihen. In der Spalte gewinnt das Raster die 2 px: 674 × 760 und 1280 × 760
+Diagramm 80–270 (190, an der Obergrenze), Raster 307–654 = 347 (vorher 309–654 = 345).
+
+### Die Titelzeile des Plans neben Share und Reset — Soll und Ist
+
+Soll: neben beiden Knöpfen wird gekürzt, nie überdeckt. Gemessen: rechter Rand der Titelzeile
+gegen linken Rand der Knöpfe, und ob Titel oder Fakten gekürzt sind. Nach K2 mit
+`?players=40&boosterRate=4` (Reset zählt 2), je Typ; Fakten überall `40 players` (62,6 breit).
+
+| Leinwand | Titelzeile → Knöpfe | Weekly (58,4) | Weekend (74) | Release (62,6) | langer Titel |
+|---|---|---|---|---|---|
+| 393 × 830 | 8–301 → 309, Abstand **8** | ganz, Fakten enden 137 (172 frei) | ganz, 152,7 (156) | ganz, 141,3 (168) | Titel ganz (260), Fakten auf 25 gekürzt |
+| 375 × 800 | 8–283 → 291, **8** | ganz (154 frei) | ganz (138) | ganz (150) | — |
+| 360 × 800 | 8–268 → 276, **8** | ganz (139 frei) | ganz (123) | ganz (135) | Titel auf 252 gekürzt (…), Fakten 0 |
+| 320 × 800 | 8–228 → 236, **8** | ganz (99 frei) | ganz (83) | ganz (95) | Titel auf 212 gekürzt, Fakten 0 |
+
+Vor K2 wurden bei 320 die Fakten von Weekend (151 → 138) und Release mit 64 Spielern (153 → 149)
+gekürzt; nach K2 steht bei 320 jeder Typ ganz, auch Release mit 64 Spielern (`64 players`, 62,7)
+und mit 128 Spielern (`128 players`, 68,1, bei 360 wie bei 320). In keinem Fall bricht etwas um
+(je eine Zeile), und nirgends reicht die Titelzeile unter die Knöpfe. Die Fakten weichen zuerst
+(`flex-shrink` 1000 gegen 1), der Titel erst, wenn sie weg sind — am langen Titel nach K2 gleich
+gemessen wie vorher. Hell und dunkel messen gleich (393 × 830). `Prepare` bei 320 × 900 (von K2
+nicht berührt): Weekly ganz, Weekend (`Weekend · 40 …`, 241 auf 233) und Release mit 128 Spielern
+(238 auf 233) gekürzt.
+
+Die Ausgabezeile darunter ist nicht berührt: 293 / 275 / 260 breit bei 393 / 375 / 360 wie in
+#143. `120 boosters` stand vor K2 **zweimal** im Kopf — in den Fakten und vorne in der
+Ausgabezeile; nach K2 nur noch in der Ausgabezeile, die ganz bleibt
+(`120 boosters · 40 packs · 4 winner packs`, Kopf bei 393 × 830 weiter 40 hoch).
+
+### Tests
+
+`test/views-heads.test.mjs`: die drei Köpfe aus den Views gelesen und ihre `x-show`/`x-text`
+gegen `planApp()` ausgewertet — am Telefon (393 × 830) und bei drei Spalten (1280 × 760), je
+Typ des Katalogs, im Vollbild; `.col-titleline` mit `height: 22px`, Titel und Fakten mit Ellipse;
+kein Kommentar sagt mehr „genau eine davon". K2: die Plan-Fakten sind `<Spielerzahl> players`, ein
+eigener Test wird rot, sobald in der Titelzeile wieder `booster` steht, und hält die Ausgabezeile
+ganz.
 
 ## Abnahmekriterien von #73
 
