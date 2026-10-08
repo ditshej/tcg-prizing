@@ -514,7 +514,10 @@ nicht mit ihm** (#132): Die Summenprobe hat auf jeder Bühne drei Stellen
 Rangtotal als eigene Zeile unter dem Raster stehen. Es steckt im festen Teil (178),
 kostet also keine Kachelreihe. Unter einer offenen Verlosungsleiste liegt es,
 wie die Rangmeldung, unter der Leiste: Die Summenprobe liest man bei
-geschlossener Leiste (Maintainer, 2026-10-05). Unter `CombinedHandout` sind es zwei Stellen,
+geschlossener Leiste (Maintainer, 2026-10-05). **Nach oben ist es gedeckelt** (#142, Prototyp
+`stripMax`, nachgeschlagen): 96 auf der flachen Bühne und unter 460 Höhe, 190 ab zwei
+Spalten, 280 einspaltig (`fold().diagramMax`). Was es darüber nähme, bekommt das
+Kachelraster; der Boden 60, das Wegfallen und die zwei Reihen bleiben, wie sie sind. Unter `CombinedHandout` sind es zwei Stellen,
 weil die Zeile `Participation` ausgeblendet ist; „to the ranks" trägt dann den
 ganzen Anteil ohne den `JudgePool` (#103, Map-Closure Durchgang 2). Die Faltung selbst
 rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält

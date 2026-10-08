@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -37,7 +37,9 @@ und **1597 × 900** (ein üblicher Laptop-Schirm).
 
 ## Zustände und wie man sie herstellt
 
-Basis-Adresse `http://localhost:8773/`. Ein Zustand ist eine Adresse plus Griffe:
+Basis-Adresse `http://localhost:8773/`. Ein Zustand ist eine Adresse plus Griffe.
+Seit #142 sind die Griffe Lucide-Icons statt Zeichen: ▾ = `chevron-down`, 🎲 = `dices`,
+⤢ = `maximize-2` (die Klassen in der Tabelle gelten unverändert):
 
 | Zustand | Adresse | Griffe danach |
 |---|---|---|
@@ -569,6 +571,133 @@ A6 (#121).
 with fullscreen (#132)“, wertet das `x-show` des Markups gegen die Komponente aus: Diagramm da, weg, Leiste
 offen, Vollbild, zurück. Zwei Mutationen (`diagramShown` zurück, `true` statt `!fullscreen`) gingen rot.
 `node --test`: 580 grün.
+
+## Lauf 17 · #142 — Bronze/Foil, Obergrenze des Diagramms, 44-px-Ziele, Lucide
+
+Entscheid: Body von #142 (Maintainer, 2026-10-08, Durchklicken). Übernommen ist der Look des
+Prototyps (Tokens, Schatten statt Rahmen, 2-px-Ecken, Goldglanz im Dunkeln, Linie über jedem
+Gruppentitel), die Obergrenze des Diagramms (`stripMax`, proto:3217–3253), Trefferflächen von
+mindestens 44 × 44 und Lucide statt Zeichen und Emoji.
+
+- **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8142 -t public` aus der Worktree-Wurzel
+  `tcg-prizing-142`, Zweig `feat/142-bronze-foil-look`.
+- **Browser:** Google Chrome (headless) über Playwright, `colorScheme` light / dark. Der
+  Playwright-MCP-Browser war von einer anderen Sitzung belegt; Messmittel und Viewports sind
+  dieselben.
+- **Messmittel:** wie oben; dazu die **Trefferfläche** je bedienbarem Ziel (`button`, `input`,
+  `select`, `a[href]`, `label.sheet-check`): von der Mitte aus waagrecht und senkrecht die
+  Strecke, über die `elementFromPoint` das Ziel (oder ein Kind) trifft, Kante auf 1/4096 px
+  halbiert. Beurteilt wird nur, wessen ganzes 44er-Feld frei im Rahmen seines Scrollers liegt;
+  ein halb weggescrolltes oder unter dem klebenden Kopf liegendes Ziel ist Sache des Scrollens.
+  Hit-Testing in Chrome rundet auf ganze Pixel, ± 1 ist Messrauschen.
+- **Bilder:** `review/73-bilder/l17-<w>x<h>-<modus>-<zustand>.png` (gitignoriert).
+- *frei* wie oben (Oberkante Leiste − 10).
+
+### Obergrenze des Diagramms — Soll und Ist
+
+Soll (Prototyp, nachgeschlagen): flach 60–96, unter 460 Höhe 96, ab zwei Spalten 190, einspaltig
+280. Darunter unverändert: Boden 60, weg statt geklemmt (#129), zwei Reihen.
+
+| Leinwand | Faltung | Deckel (`--diagram-max`) | Diagramm zu | vorher (Lauf 15/16) | Fenster | Reihen Platz |
+|---|---|---|---|---|---|---|
+| 393 × 830 | Master | 280 | **280** | 398,1 | 397–592 = 195 | 3 |
+| 812 × 375 | flach | 96 | 87 | 86,1 | 204–317 = 113 | 2 |
+| 673 × 760 | einspaltig | 280 | **280** | 353 | 397–522 = 125 | 2 |
+| 674 × 760 | zwei Spalten | 190 | **190** | 422 | 309–654 = 345 | 5 |
+| 900 × 700 | zwei Spalten | 190 | **190** | 282,6 offen | 309–594 = 285 | 4 |
+| 1280 × 760 | drei Spalten | 190 | **190** | 422 | 309–654 = 345 | 5 |
+| 1597 × 900 | drei Spalten | 190 | **190** | 482,6 offen | 309–794 = 485 | 8 |
+| 1280 × 450 | drei Spalten, unter 460 | 96 | 96 | 111,6 | — | — |
+| 600 × 493 · 673 × 469 | flach | 96 | 96 · 96 | 204,1 · 179,1 | — | — |
+| 674 × 399 | zwei Spalten, unter 460 | 96 | 61 | 60,6 | — | — |
+
+Wo das Diagramm den Deckel erreicht, geht der Rest an das Raster: am Master hat das Fenster jetzt
+Platz für drei Reihen statt zwei. Die zwei Reihen halten auf allen Leinwänden; unter
+`node --test` steht dieselbe Zusicherung als Durchlauf über Bühnen 357–2000 × 351–1400 mit dem
+Deckel (`test/ui-fold.test.mjs`). Hell und dunkel sind im Layout gleich (72 Läufe, zwei
+Abweichungen, beide aus dem Zufall des Wurfs: andere Trefferkachel, andere Rangmeldung).
+
+### Die sieben Leinwände, Soll und Ist
+
+Zustände `plain`, `conflictOpen`, `conflictChip`, `raffle`, `raffleThrown` (ein Wurf), `fs`, hell und dunkel.
+
+| Leinwand | Fuss / Streifen | Chip (`conflictChip`) | offene Meldung | Leiste offen / nach dem Wurf, frei | Vollbild | Trefferflächen < 44 |
+|---|---|---|---|---|---|---|
+| 393 × 830 | 774–830 = **56**, drei Einträge | 268–381 × 732–766, R 12 · B 64 | 12–381 × 604–766 | 622–766 / 542–766; 215 / 135 | Fuss weg, Diagramm weg, Fenster 67–795 | **0** |
+| 812 × 375 | `.foot` 48 breit × 375 | 639–752 × 333–367, R 60 · B 8 | 12–752 × 264–367 | 223–367 / **143–367**; 104 / **24** | Fenster 67–340 | 0 ausser der Schiene unter der Leiste (s. u.) |
+| 673 × 760 | 704–760 = **56** | 548–661 × 662–696 | 12–661 × 593–696 | 552–696 / 472–696; 145 / 113 | Fenster 67–725 | **0** |
+| 674 × 760 | 712–760 = **48**, ein Eintrag | 549–662 × 719–753 (mittig im 48er) | 12–376 (Reglerspalte ab 388) | 560–704 / 480–704; 241 / 161 | Fenster 67–725 | **0** |
+| 900 × 700 | 652–700 = 48 | 775–888 × 659–693 | 12–602 | 500–644 / 420–644; 181 / 113 | Fenster 67–665 | **0** |
+| 1280 × 760 | 712–760 = 48, null Einträge | 1155–1268 × 719–753 | 368–982 | 364–986 × 560–704 / 480–704; 241 / 161 | Fenster 67–725 | **0** |
+| 1597 × 900 | 852–900 = 48 | 1472–1585 × 859–893 | 368–1299 | 364–1303 × 700–844 / 620–844; 381 / 301 | Fenster 67–865 | **0** |
+
+Geprüft wurden in den 72 Läufen 2623 Ziele. Dazu `Details` ganz durchgescrollt: 393 × 830
+(Weekly hell 157, Release 64 dunkel 146), 812 × 375 (Weekly, 140), 674 × 760 (Weekend mit
+stehendem `Offer`, 225) und 1280 × 760 (Release, 375); `Prepare` bei 393 × 830 und 812 × 375
+(Release) — **null** unter 44. Die Blase an der Kachel (393, 812, 674, 1280):
+null. Kein Lauf scrollt seitlich. Kein Regler steht doppelt im Bild (alle Leinwände: jedes
+Zählwerk, jedes `<select>` einmal).
+
+Der feste Teil des `Plan`s bei 388 (674 × 760, `players=64&depth=32`): 8 + Kopf 42 +
+`Participation` 16 + Legende 21 + Rangtotal 15 + Rangmeldung 27 + 6 × 8 = **177** — unter
+`PLAN_FIXED` 178, die Ersthöhe 399 steht. Fuss am Handy **56** (7 + 26 Icon mit Feld + 4 + 12 + 7).
+
+### Farbe
+
+Die Tokens sind die Werte, die Lauf 14 schon gemessen hat: Flächen `#ffe1dd` / `#f3ecf6` /
+`#f0e4d1` hell, `#3d1b18` / `#2a2338` / `#2a2620` dunkel, Ringe `#96140f` / `#8a5f9c` / `#8c5a2b`
+bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(255, 225, 221)` /
+`rgb(150, 20, 15)` hell, `rgb(61, 27, 24)` / `rgb(255, 159, 144)` dunkel für die
+`ConflictNotice`). Die ΔE- und Kontrastzahlen unter „Farbe" gelten unverändert. Neu: Grund
+`#ece1cb` / `#131210`, Kachel mit Schatten statt Rahmen, im Dunkeln mit Goldrand
+(`inset 0 0 0 1px rgba(214, 168, 58, 0.3)`), Ecken 2 px, Linie über jedem Gruppentitel
+`1px #e2d5be` / `#35312a`.
+
+### Was sich verschoben hat — und wo es ein früheres Soll trifft
+
+- **Die Schiene ist höher.** Das Zählwerk ist jetzt 38 × 34 (Prototyp) statt 26 × ~25, und ein
+  Zählwerk mit Rückweg braucht 176 Breite: Schiene am Master **124** (650–774) statt 87, bei
+  673 ebenfalls 124. Die einspaltige Schwelle (351 + 56 + gemessene Schiene, K2) wandert mit:
+  am Master **531** statt 494. 673 × 469 und 600 × 493 sind darum jetzt **flach** (vorher
+  einspaltig). Nichts davon ist gesetzt, alles gemessen.
+- **Die Verlosungsleiste ist höher**: offen **144** statt 119, nach dem Wurf **224** statt 190,5,
+  nach sieben Würfen bei 674 × 399 **268** statt 216. Grund: 13 Stufen in zwei Reihen und der
+  Auslöser darüber brauchen je 44 Abstand (Stufen 28 hoch + 16 Lücke, Auslöser 34 + 16).
+- **Damit hält #129 „eine Reihe frei nach dem Wurf" auf der flachen Bühne nicht mehr:**
+
+  | Leinwand | Faltung | offen: frei | 1. Wurf: Leiste / frei | vorher (Lauf 15) |
+  |---|---|---|---|---|
+  | 812 × 375 | flach | 104 | 224 / **24** | 56,6 |
+  | 436 × 380 | flach | 109 | 224 / **29** | 61,6 |
+  | 600 × 493 | flach | 118 | 224 / 142 | 174,6 |
+  | 673 × 469 | flach (neu) | 113 | 224 / 118 | 94,6 |
+  | 1280 × 450 | drei Spalten | 129 | 224 / **49** | 82,1 |
+  | 674 × 399 | zwei Spalten | 78 | 224 / **−2**; 7. Wurf 268 / −46 | 31,1 / 5,6 |
+  | 435 × 380 | `cramped` | 53 | 224 / **−27** | 5,6 |
+  | 393 × 830 | Master | 215 | 224 / 135; 7. Wurf 268 / 113 | 113 |
+
+  Die zwei Entscheide stehen gegeneinander: 44 px „überall" (#142, 4) und eine freie Reihe über
+  der Leiste nach dem Wurf (#129). Kleinere Zeichnung bei gleicher Trefferfläche bringt
+  höchstens rund 14 px zurück (Stufen 24 statt 28, Auslöser 30); eine Reihe (54) wird bei
+  812 × 375 so nicht frei. **Offen, Entscheid beim Maintainer.**
+- **Unter 352 Leistenbreite** (Bühnen unter rund 392 Breite) sind die sieben Stufen je Reihe
+  schmaler als 44: bei 320 × 700 **40,4 × 44**. Sieben Stufen zu 44 brauchen 308 + Lücken; die
+  Reihen sind „ungekürzt und ungefaltet" entschieden (#61, #69). **Offen.**
+- **Flach mit Spalte der heissen Vier (812 × 375)** liegt die offene Leiste über dem unteren
+  Regler der Spalte (`Min boosters per rank`, Fläche 39 statt 44 hoch). Die Lage ist alt (Lauf 15:
+  Leiste 8–756 über der Spalte 478–764); neu ist nur, dass es jetzt gemessen ist.
+- **`Details` bei 286**: Titelzeile und Zählwerk mit Rückweg passen nicht mehr nebeneinander;
+  das Zählwerk geht samt Rückweg unter den Titel, `cap N` bleibt auf der Titelzeile. Die Spalte
+  läuft nicht über (`scrollWidth` 286 = `clientWidth`). Die Kurve steht dort in zwei Reihen
+  (4 + 3), weil sieben Stufen zu 44 erst ab 332 nebeneinander passen.
+
+### Tests
+
+`node --test`: `test/ui-fold.test.mjs` (Obergrenze je Bühne mit den Zahlen des Prototyps,
+`--diagram-max`, zwei Reihen mit Deckel), `test/ui-geometry.test.mjs` (`diagramCap` mit Deckel,
+Boden gewinnt, `diagramFits` unberührt), `test/ui-look.test.mjs` (Tokens hell und dunkel,
+Farben nur über Tokens, Linien nur zwischen Daten, Ecken), `test/ui-icons.test.mjs` (Lucide
+vendort samt Lizenz, keine Glyphe und kein Emoji im Markup, Chip-Glyphe als Schlüssel).
 
 ## Abnahmekriterien von #73
 
