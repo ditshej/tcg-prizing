@@ -16,6 +16,23 @@
   box-sizing: border-box;
 }
 
+/*
+ * The icons (#142): Lucide, inlined by `icon()` in `views/icon.php`. As big as
+ * the text they stand in and its colour, so a button keeps the size its
+ * glyph gave it; the few that are drawn at a fixed size say so where they are.
+ */
+.icon {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}
+
+.icon-swap {
+  display: contents;
+}
+
 html,
 body {
   height: 100%;
@@ -931,8 +948,8 @@ body {
 
 .foot-icon {
   display: block;
-  font-size: 20px;
-  line-height: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 .foot-label {
@@ -1968,8 +1985,8 @@ body {
 }
 
 .app[data-flat] .foot-icon {
-  font-size: 16px;
-  line-height: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .app[data-flat] .foot-label {

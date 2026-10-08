@@ -93,7 +93,7 @@
               title="Winner raffle" @click="toggleRaffle()">
         <span class="mark mark-winner circle" style="position:static">N</span>
         <span>winner</span>
-        <span class="legend-dice" aria-hidden="true">🎲</span>
+        <?= icon('dices', 'legend-dice') ?>
         <span class="legend-open" x-show="raffle.open > 0" x-text="raffle.open"></span>
       </button>
       <!--
@@ -108,7 +108,8 @@
       <button type="button" class="grid-fullscreen-toggle"
               @click="fullscreen ? closeFullscreen() : openFullscreen()"
               :aria-label="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
-        <span aria-hidden="true" x-text="fullscreen ? '⤡' : '⤢'"></span>
+        <span class="icon-swap" x-show="!fullscreen"><?= icon('maximize-2') ?></span>
+        <span class="icon-swap" x-show="fullscreen" x-cloak><?= icon('minimize-2') ?></span>
       </button>
     </div>
 
@@ -191,7 +192,7 @@
           <div class="bubble-head">
             <strong x-text="`Rank ${grip.rank}`"></strong>
             <span class="bubble-by">by hand</span>
-            <button type="button" class="bubble-close" aria-label="Close" @click="closeTile()">✕</button>
+            <button type="button" class="bubble-close" aria-label="Close" @click="closeTile()"><?= icon('x') ?></button>
           </div>
 
           <div class="bubble-row">
@@ -269,7 +270,7 @@
     <div class="raffle-top">
       <button type="button" class="raffle-trigger" :disabled="!raffle.canRaffle"
               @click="throwRaffle()">
-        <span aria-hidden="true">🎲</span> Raffle
+        <?= icon('dices') ?> Raffle
       </button>
       <p class="raffle-stand">
         <span x-text="raffle.stand"></span>
@@ -277,7 +278,7 @@
           <span class="raffle-empty" x-text="raffle.potEmptyNote"></span>
         </template>
       </p>
-      <button type="button" class="raffle-close" aria-label="Close" @click="closeRaffle()">✕</button>
+      <button type="button" class="raffle-close" aria-label="Close" @click="closeRaffle()"><?= icon('x') ?></button>
     </div>
 
     <!--
@@ -323,9 +324,9 @@
           <span>Placed by hand — tap to take back:</span>
           <span class="raffle-scroller" x-show="takeBackEnds.overflow">
             <button type="button" aria-label="Scroll the list back" :disabled="takeBackEnds.atStart"
-                    @click="stepTakeBack(-1)">‹</button>
+                    @click="stepTakeBack(-1)"><?= icon('chevron-left') ?></button>
             <button type="button" aria-label="Scroll the list on" :disabled="takeBackEnds.atEnd"
-                    @click="stepTakeBack(1)">›</button>
+                    @click="stepTakeBack(1)"><?= icon('chevron-right') ?></button>
           </span>
         </div>
         <div class="raffle-takeback-list" :class="{ 'raffle-takeback-row': takeBackScrolls }"
@@ -335,7 +336,7 @@
                     :data-rank="entry.rank" :aria-label="`Take back ${entry.label}`">
               <span x-text="entry.label"></span>
               <span x-show="entry.count > 1" x-text="`×${entry.count}`"></span>
-              <span aria-hidden="true">✕</span>
+              <?= icon('x') ?>
             </button>
           </template>
         </div>

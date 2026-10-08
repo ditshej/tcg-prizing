@@ -419,14 +419,16 @@ function words(markup) {
  * could change — or go back to the `winner packs` / `tournament packs` #69
  * replaced — and every probe would stay green.
  */
-test('the legend says `pack`, then `winner` 🎲 with the open count on the pill (#69, #61)', () => {
+test('the legend says `pack`, then `winner` and the die with the open count on the pill (#69, #61)', () => {
   const legend = element(view('plan.php'), '<div class="plan-legend"', '</div>');
   const grip = element(legend, '<button type="button" class="legend-handle"', '</button>');
   const flat = legend.slice(0, legend.indexOf('<button'));
 
   const [, first] = flat.split('<span class="legend-item">');
   assert.equal(words(first ?? ''), 'pack', 'the flat entry in front is not `pack`');
-  assert.equal(words(grip), 'winner 🎲', 'the pill does not read `winner` with the die');
+  // The die is the Lucide `dices` since #142, inlined by PHP — an icon, not a word.
+  assert.equal(words(grip), 'winner', 'the pill does not read `winner`');
+  assert.match(grip, /icon\('dices'/, 'the pill carries the die');
   assert.equal(/\bpacks\b/.test(words(legend)), false, 'the legend went back to plural pack words');
 
   // #69, run 11, phase G: `one of either` is gone — the flat part is `pack`

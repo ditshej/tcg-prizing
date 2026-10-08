@@ -54,7 +54,7 @@ function sheet_pin_reset(string $key, string $label): void
     ?>
       <button type="button" class="pin-reset" :class="{ 'is-idle': !isPinned('<?= $k ?>') }"
               @click="resetSlider('<?= $k ?>')"
-              aria-label="<?= $l ?>, back to the chosen type">&#8634;</button>
+              aria-label="<?= $l ?>, back to the chosen type"><?= icon('rotate-ccw') ?></button>
     <?php
 }
 

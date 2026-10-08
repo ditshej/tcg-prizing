@@ -37,10 +37,10 @@
             </template>
           </div>
           <button type="button" class="notice-fold" aria-label="Minimize"
-                  @click="minimizeNotice(notice.id)">&#9662;</button>
+                  @click="minimizeNotice(notice.id)"><?= icon('chevron-down') ?></button>
           <template x-if="notice.closable">
             <button type="button" class="notice-close" aria-label="Dismiss"
-                    @click="dismissNotice(notice.id)">&#10005;</button>
+                    @click="dismissNotice(notice.id)"><?= icon('x') ?></button>
           </template>
         </div>
         <div class="notice-actions" x-show="notice.actions.length">
@@ -59,8 +59,8 @@
   <div class="notice-chips">
     <template x-for="chip in notices.chips" :key="chip.id">
       <button type="button" class="notice-chip" :class="`notice-chip-${chip.id}`"
-              @click="expandNotice(chip.id)"><template x-if="chip.glyph"><span
-              class="notice-glyph" aria-hidden="true" x-text="chip.glyph"></span></template><span
+              @click="expandNotice(chip.id)"><template x-if="chip.glyph === '⚠'"><span
+              class="notice-glyph"><?= icon('triangle-alert') ?></span></template><span
               x-text="chip.word"></span></button>
     </template>
   </div>
@@ -83,7 +83,7 @@
       <div class="drop-head">
         <strong x-text="dropQuestion.headline"></strong>
         <button type="button" class="bubble-close" aria-label="Keep them"
-                @click="cancelDrop()">&#10005;</button>
+                @click="cancelDrop()"><?= icon('x') ?></button>
       </div>
       <ul class="drop-items">
         <template x-for="item in dropQuestion.items" :key="item.key">

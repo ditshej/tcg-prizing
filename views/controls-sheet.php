@@ -63,7 +63,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       </template>
     </span>
     <button type="button" class="info" @click="toggleInfo('game')"
-            :aria-expanded="openInfo === 'game'" aria-label="About the game level">i</button>
+            :aria-expanded="openInfo === 'game'" aria-label="About the game level"><?= icon('info') ?></button>
   </div>
 
   <!--
@@ -102,7 +102,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         </template>
       </span>
       <button type="button" class="info" @click="toggleInfo('type')"
-              :aria-expanded="openInfo === 'type'" aria-label="About the tournament type level">i</button>
+              :aria-expanded="openInfo === 'type'" aria-label="About the tournament type level"><?= icon('info') ?></button>
 
       <!--
         The second reach: **all** pins at once, and it stands beside the
@@ -129,7 +129,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
               :aria-label="dropAllLabel"
               @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })">
         <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
-        <span aria-hidden="true">&#8634;</span>
+        <?= icon('rotate-ccw') ?>
       </button>
 
       <!--
@@ -152,7 +152,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
                :value="linkField ?? ''"
                x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
         <button type="button" class="link-field-close" aria-label="Close the link field"
-                @click="closeLinkField()">&#10005;</button>
+                @click="closeLinkField()"><?= icon('x') ?></button>
       </div>
     </div>
 
@@ -218,7 +218,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       <div class="drop-head">
         <strong x-text="dropQuestion.headline"></strong>
         <button type="button" class="bubble-close" aria-label="Keep them"
-                @click="cancelDrop()">&#10005;</button>
+                @click="cancelDrop()"><?= icon('x') ?></button>
       </div>
       <ul class="drop-items">
         <template x-for="item in dropQuestion.items" :key="item.key">

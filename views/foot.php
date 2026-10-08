@@ -24,17 +24,17 @@
 <footer class="foot" x-show="!fullscreen">
   <button type="button" class="foot-item" x-show="footEntry('prepare')" :class="{ 'foot-active': activePage === 'prepare' }"
           @click="setPage('prepare')" :aria-current="activePage === 'prepare' ? 'page' : null">
-    <span class="foot-icon" aria-hidden="true">🛒</span>
+    <?= icon('shopping-cart', 'foot-icon') ?>
     <span class="foot-label">Prepare</span>
   </button>
   <button type="button" class="foot-item" x-show="footEntry('plan')" :class="{ 'foot-active': activePage === 'plan' }"
           @click="setPage('plan')" :aria-current="activePage === 'plan' ? 'page' : null">
-    <span class="foot-icon" aria-hidden="true">⊞</span>
+    <?= icon('layout-grid', 'foot-icon') ?>
     <span class="foot-label">Plan</span>
   </button>
   <button type="button" class="foot-item" x-show="footEntry('details')" :class="{ 'foot-active': activePage === 'details' }"
           @click="setPage('details')" :aria-current="activePage === 'details' ? 'page' : null">
-    <span class="foot-icon" aria-hidden="true">☰</span>
+    <?= icon('menu', 'foot-icon') ?>
     <span class="foot-label">Details</span>
   </button>
 </footer>

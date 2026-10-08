@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/ui/plan.css">
 </head>
 <body>
+<?php require_once __DIR__ . '/icon.php'; ?>
 <?php require __DIR__ . '/app.php'; ?>
 <script type="module" src="/ui/app.mjs"></script>
 <script defer src="/vendor/alpine-3.14.9.min.js"></script>
