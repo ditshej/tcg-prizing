@@ -53,8 +53,14 @@ liesse, ob das besser oder schlechter ist als der Ausgangszustand.
 Dasselbe Verfahren deckt drei Fälle ab, die vorher wie drei Mechanismen aussahen:
 den Widerspruch zweier `pinned` Regler, die Überholung ohne Verlierer, und die
 verpasste Gelegenheit (den `WinnerPack`-Hinweis, wo die `TournamentPack`-Zahl
-nach oben variiert wird, bis die Schwelle fällt). Beispiel für den zweiten Fall,
-Weekend mit 96 `Booster` im `RankPool`, `DisplayReservation` 1 `Display` für
+nach oben variiert wird, bis die Schwelle fällt).
+
+> ⚠︎ **Beispiel entfernt durch #143 (Entscheid 7).** Den `WinnerPack`-Hinweis
+> „Set packs to …" auf `Prepare` gibt es seit #143 nicht mehr, Satz und Knopf;
+> die totale Funktion selbst bleibt davon unberührt.
+
+Beispiel für den zweiten Fall, Weekend mit 96 `Booster` im `RankPool`,
+`DisplayReservation` 1 `Display` für
 `Rank` 1, Tiefe 8, `RankFloor` 2, Kurve `severe`: `Rank` 1 hat 24, `Rank` 2
 bekommt 40. Zurückgerechnet sind es drei Wege — Kurve auf `moderate` (`Rank` 2
 fällt auf 23), Reservation auf 2 `Display`s (`Rank` 1 auf 48), oder Reservation
