@@ -9,9 +9,10 @@ import { chipIntoView, pillStep, rowScrollEnds } from '../public/ui/geometry.mjs
 /**
  * The raffle bar where room is short (#129, decided in run 15 on the cards):
  *
- * 1. The diagram is an extra. It stands only where, after the two tile rows
- *    and the open bar's measured cover, its 60 px floor is left
- *    (`diagramFits()` in `geometry.mjs`, under its own tests); elsewhere it is
+ * 1. The diagram is an extra. It stands only where a third of the area it
+ *    shares with the tiles, less the open bar's measured cover, reaches its
+ *    60 px floor (#157; `diagramFits()` in `geometry.mjs`, under its own
+ *    tests); elsewhere it is
  *    gone, on every fold. The rind measures, the component only holds the
  *    verdict (`applyDiagramRoom()`). The rank total does not leave with it
  *    (#132): the sum check has three places on every stage.

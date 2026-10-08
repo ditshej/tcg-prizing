@@ -51,45 +51,53 @@ test('columnsFor grows past the floor once the stage is wide enough for a 16-col
   assert.equal(columnsFor(939), 16);
 });
 
-test('diagramCap gives the leftover, after the two guaranteed tile rows, to the diagram', () => {
-  // leftover 313 = 200 for the diagram + 113 for the two rows.
-  assert.equal(diagramCap(313), 200);
+/*
+ * The diagram takes at most a third of the area it shares with the tiles, and
+ * the tiles always have more than it (#157, overall review 2026-10-08, point 4
+ * and F2 a). The shared area is the leftover less what an open raffle bar
+ * covers. The worked numbers are the ticket's own table, iPhone portrait at
+ * 844 and ~664 — leftover 486 and 306.
+ */
+test('diagramCap gives the diagram a third of the shared area (#157)', () => {
+  assert.equal(diagramCap(486), 162); // 844 standalone: 162 diagram, 324 tiles
+  assert.equal(diagramCap(306), 102); // ~664 Safari with bars: 102 / 204
 });
 
-// Below a leftover of 173px, the floor gives the diagram its 60px anyway and
-// the grid gets less than the two rows' 113px. The fold (#71) keeps that from
-// happening on a real stage: its first height is the Plan's fixed part plus
-// exactly these 173px plus the strip (`FIRST_HEIGHT` in fold.mjs), and the
-// master-floor sweep in test/ui-fold.test.mjs runs `diagramCap` over it.
-test('diagramCap floors at 60px, even when that leaves less than the two tile rows', () => {
-  assert.equal(diagramCap(173), 60); // 173 - 113 = 60, the exact boundary
-  assert.equal(diagramCap(100), 60); // would go negative without the floor
-  assert.equal(diagramCap(0), 60);
+test('diagramCap stops at the upper bound too, the smaller of the two wins (#142, #157)', () => {
+  assert.equal(diagramCap(486, 0, 280), 162); // the third is the tighter bound
+  assert.equal(diagramCap(674, 0, 190), 190); // 1597 × 900: a third would be 224.7
+  assert.equal(diagramCap(600, 0, 96), 96);
 });
 
-test('diagramCap accepts a custom floor for a differently-tuned stage', () => {
-  assert.equal(diagramCap(100, 40), 40);
-  assert.equal(diagramCap(200, 40), 87);
+test('an open bar\'s cover is not shared area: the third is taken of what is left above it', () => {
+  assert.equal(diagramCap(486, 66), 140); // (486 − 66) / 3
+  assert.equal(diagramCap(486, 66, 96), 96);
 });
 
 /*
- * The diagram's upper bound (#142): the prototype caps it per stage —
- * `stripMax` at proto:3217–3253, "Das Diagramm darf nicht die halbe Fläche
- * nehmen". The bound only ever takes height from the diagram, never from the
- * two rows, and the floor still stands above it.
+ * Whether it stands: only where that third reaches the floor of 60, so from
+ * 180 px of shared area on (F2 a: "Fällt ein Drittel unter den Boden 60, fällt
+ * das Diagramm weg"). The ticket's edge cases, 179 and 180.
  */
-test('diagramCap stops at an upper bound, and what is left over goes to the tiles', () => {
-  assert.equal(diagramCap(600, undefined, 0, 280), 280); // 487 would be left for it
-  assert.equal(diagramCap(313, undefined, 0, 280), 200); // under the bound, unchanged
-  assert.equal(diagramCap(313, undefined, 0, 96), 96);
+test('the diagram stands from 180 px of shared area on, and is gone at 179 (#157, F2 a)', () => {
+  assert.equal(diagramFits(180), true);
+  assert.equal(diagramFits(179), false);
+  assert.equal(diagramFits(179.9), false);
+  assert.equal(diagramFits(180 + 79, 79), true);
+  assert.equal(diagramFits(179 + 79, 79), false);
 });
 
-test('the upper bound never takes the diagram under its floor', () => {
-  assert.equal(diagramCap(150, undefined, 0, 96), 60);
+test('where it stands, it is never drawn under its floor and never as tall as the tiles', () => {
+  for (let shared = 180; shared <= 2000; shared += 0.5) {
+    const diagram = diagramCap(shared);
+    assert.ok(diagram >= MIN_DIAGRAM_HEIGHT, `${shared}: ${diagram}`);
+    assert.ok(shared - diagram > diagram, `${shared}: tiles ${shared - diagram}, diagram ${diagram}`);
+    assert.ok(shared - diagram >= rowsHeight(MIN_ROWS), `${shared}: two rows hold`);
+  }
 });
 
 test('the upper bound does not decide whether the diagram stands', () => {
-  // `diagramFits` reads the leftover, not the bounded height.
+  // `diagramFits` reads the shared area, not the bounded height.
   assert.equal(diagramFits(600), true);
   assert.equal(diagramFits(172), false);
 });
@@ -229,43 +237,29 @@ test('the bar covers the window from its top edge less the clearance down, and n
   assert.equal(raffleCover(window, null), 0);
 });
 
-test('the diagram pays for the cover, so two full rows stand above the bar', () => {
+test('the open bar\'s cover comes off the shared area, so the tiles keep twice the diagram above the bar', () => {
+  // 674 × 760 at the acceptance (protocol A3): a cover of 79.
   const leftover = 600;
   const covered = 79;
-  const diagram = diagramCap(leftover, undefined, covered);
-  assert.equal(diagram, leftover - rowsHeight(MIN_ROWS) - covered);
-  // What is left of the window above the bar is exactly the two rows.
-  assert.equal(leftover - diagram - covered, rowsHeight(MIN_ROWS));
-  assert.equal(diagramCap(leftover, undefined, 0), diagramCap(leftover));
+  const diagram = diagramCap(leftover, covered);
+  assert.ok(leftover - covered - diagram >= 2 * diagram);
+  assert.ok(leftover - covered - diagram >= rowsHeight(MIN_ROWS));
+  assert.equal(diagramCap(leftover, 0), diagramCap(leftover));
 });
 
-test('the diagram never yields under its floor — where that is not enough, it goes away instead (#129)', () => {
-  // 812 × 375 at the acceptance: diagram 86 over two rows, the bar 119 high.
-  const leftover = 86 + rowsHeight(MIN_ROWS);
-  assert.equal(diagramCap(leftover, undefined, 79), 60);
-  assert.equal(diagramFits(leftover, 79), false);
+test('the diagram never yields under its floor — where a third is less, it goes away instead (#129, #157)', () => {
+  // 812 × 375 at the acceptance: 199 shared, the bar covering 79 of it.
+  assert.equal(diagramFits(199, 79), false);
+  // Closed, the same stage keeps it: 199 / 3 = 66.3.
+  assert.equal(diagramFits(199), true);
 });
 
 /*
- * "Enough room" (#129, run 15, K3/K4 — the maintainer delegated what it means):
- * the diagram stands where, after the two tile rows and the open bar's measured
- * cover, its 60 px floor is still left. Under that it is gone, not clamped.
- * Both sides of the edge, to the tenth of a pixel the browser measures in.
+ * The floor the first height was decided with (#71, K-B8) is no longer enough
+ * for a diagram: 173 shared at the fold edge and on the cramped stage is a
+ * third of 57.7 (#157, F2 a — kept 399 and 351, the diagram goes there).
  */
-test('the diagram stands exactly where two rows and the cover leave its floor, and is gone a tenth below', () => {
-  const edge = rowsHeight(MIN_ROWS) + MIN_DIAGRAM_HEIGHT; // 173
-  assert.equal(diagramFits(edge), true);
-  assert.equal(diagramFits(edge - 0.1), false);
-  assert.equal(diagramFits(edge + 79, 79), true);
-  assert.equal(diagramFits(edge + 79, 79.1), false);
-  // Where it stands, it gets what diagramCap gives, never less than the floor.
-  assert.equal(diagramCap(edge + 79, undefined, 79), MIN_DIAGRAM_HEIGHT);
-});
-
-test('a closed bar covers nothing, so the rule is the first height’s own floor', () => {
-  // 812 × 375 closed: diagram 86.1 over two rows, so it stands.
-  assert.equal(diagramFits(86.1 + rowsHeight(MIN_ROWS)), true);
-  // A flat stage too low for two rows and 60 — the diagram gives way to the tiles.
-  assert.equal(diagramFits(59 + rowsHeight(MIN_ROWS)), false);
+test('at the Plan\'s floor — 60 + two rows — the diagram no longer stands (#157)', () => {
+  assert.equal(diagramFits(rowsHeight(MIN_ROWS) + MIN_DIAGRAM_HEIGHT), false);
 });
 

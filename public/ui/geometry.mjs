@@ -1,7 +1,7 @@
 /**
  * The pure derivations of the shell's tile window: how many tile columns fit
- * a measured width, and how much height the diagram gets once the two
- * guaranteed tile rows are set aside. No DOM here — the measuring rind
+ * a measured width, and how much height the diagram gets of the area it shares
+ * with the tile grid (a third at most, #157). No DOM here — the measuring rind
  * (`measure.mjs`) reads `clientWidth`/`clientHeight` and hands the numbers in;
  * this module only does the arithmetic (#62, same seam as ADR 0004's
  * `readLocation`/`writeLocation` precedent for #47).
@@ -79,42 +79,47 @@ export function tileColumnsFor(width) {
 /**
  * What the diagram gets of `leftoverHeight` — the height already measured as
  * available to (diagram + tile grid) once every other fixed part of the Plan
- * column has been subtracted by the rind. The two guaranteed tile rows come
- * off first; what remains goes to the diagram, never under `floor`.
+ * column has been subtracted by the rind. That is the area the diagram
+ * **shares** with the tiles, and it takes **at most a third** of it: the tiles
+ * always have more room than the diagram (#157, overall review 2026-10-08,
+ * point 4 — the maintainer).
  *
  * `covered` is how much of the tile window's bottom an open raffle bar lies
- * over (`raffleCover()`): the diagram pays for it too, so the two rows stand
- * **above** the bar (#73, run 14, K1 `diagramm-weicht`). The diagram is the
- * one elastic size of the column, and the sentence "the bar covers no tile"
- * (#69, #61) now rests on it rather than on an overlap of zero.
+ * over (`raffleCover()`). What the bar covers is not free, so the third is
+ * taken of `leftoverHeight − covered`, and the diagram pays its share of the
+ * overlap (#73, run 14, K1 `diagramm-weicht`, carried into #157). The
+ * sentence "the bar covers no tile" (#69, #61) rests on that.
  *
- * Where that would take it under its floor, the diagram does not stand at the
- * floor any more: it is gone (`diagramFits()` below, #129, run 15). So the
- * floor in this cap only keeps a diagram that fits from being drawn shorter
- * than the one it was decided to be.
+ * `max` is the diagram's other upper bound on this stage (`diagramMax` out of
+ * `fold()`, #142, the prototype's `stripMax`). Both are upper bounds and meet
+ * as their minimum: at 1597 × 900 the third would be 224.7, the bound 190
+ * wins; at 393 × 844 the bound 280 would leave the tiles less, the third 162
+ * wins.
  *
- * `max` is the diagram's upper bound on this stage (`diagramMax` out of
- * `fold()`, #142): above it the diagram stops growing and the tile grid gets
- * the rest. It only ever takes height from the diagram, so the two rows hold
- * as before, and the floor still wins over it.
+ * No floor here any more: where the third is under 60, the diagram is not
+ * drawn at all (`diagramFits()` below), so a cap under the floor is never
+ * seen. The two tile rows hold by themselves — from 180 px of shared area on,
+ * a third is never more than `shared − 113`.
  */
-export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0, max = Infinity) {
-  return Math.max(floor, Math.min(max, leftoverHeight - rowsHeight(MIN_ROWS) - covered));
+export function diagramCap(leftoverHeight, covered = 0, max = Infinity) {
+  return Math.max(0, Math.min(max, (leftoverHeight - covered) / 3));
 }
 
 /**
- * Whether the diagram stands at all: only where, after the two tile rows and
- * the open bar's `covered`, its `floor` is still left. Under that it is gone,
- * and the tiles get its place.
+ * Whether the diagram stands at all: only where its third of the shared area
+ * (`diagramCap()` without the upper bound) reaches its `floor` of 60 — so from
+ * 180 px of `leftoverHeight − covered` on. Under that it is gone, and the
+ * tiles get its place (#157, F2 a: "Fällt ein Drittel unter den Boden 60,
+ * fällt das Diagramm weg").
  *
  * The diagram is an extra, not part of the work (the maintainer, run 15 on
  * #129: "nur ein 'nice-to-have' … nur dazu kommt, wenn wirklich genug platz
- * ist"). What "enough room" means he left to the session, and it is this: no
- * new number, but the floor taken seriously — 60 is the smallest diagram the
- * first height 399 was decided with (#71, K-B8), two rows are the master's
- * assurance. Under its floor a diagram is no diagram; before run 15 it stood at
- * 60 anyway and the rows paid (812 × 375 flat after the first throw: −11.4 px
- * free with it, 56.6 without; 1280 × 450: 14.1 with it).
+ * ist"). Until #157 "enough room" was the floor left after the two tile rows
+ * (`shared − 113 ≥ 60`, from 173 on); #157 replaced it with the third, from
+ * 180 on. Consequence, decided with it:
+ * at the fold edge (first height 399, 173 shared) and on the cramped stage
+ * (`PLAN_FLOOR` 351, the same 173) there is no diagram, and the first height
+ * and the floor keep their values.
  *
  * `leftoverHeight` must be measured **as if the diagram stood** (the rind
  * does), and `covered` reads the tile window's bottom (`raffleCover()`), never
@@ -122,7 +127,7 @@ export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered =
  * verdict cannot flip itself.
  */
 export function diagramFits(leftoverHeight, covered = 0, floor = MIN_DIAGRAM_HEIGHT) {
-  return leftoverHeight - rowsHeight(MIN_ROWS) - covered >= floor;
+  return (leftoverHeight - covered) / 3 >= floor;
 }
 
 /* ── The WinnerRaffle bar (#69) ──────────────────────────────────────────── */
