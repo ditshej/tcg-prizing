@@ -77,13 +77,30 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
 }
 
 /**
+ * Whether `el` has a box to measure. A page that is not in front is
+ * `display: none`, and its stage reports 0 × 0 (#158, 10a).
+ */
+export function hasBox(el) {
+  return !!el && (el.clientWidth > 0 || el.clientHeight > 0);
+}
+
+/**
  * Wires `applyGeometry` to run once now and again on every resize of
  * `stageEl`, via `ResizeObserver` — the browser's own measuring loop, not a
  * poll this module would have to own.
+ *
+ * **A stage of 0 × 0 is not measured** (#158, 10a). While another page is in
+ * front the `Plan` is hidden, and its box says nothing about the room it will
+ * have: measured, it took the diagram away, and the way back showed one frame
+ * of the plan without it and a second in which the tiles slid. So that
+ * reading is discarded — no verdict, no size written, and `diagramFits()` is
+ * neither asked nor changed. The page comes back to what it left.
  */
 export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null, onRoom = () => {}) {
   if (!stageEl || typeof ResizeObserver === 'undefined') return () => {};
-  const run = () => onRoom(applyGeometry(stageEl, fixedEls, barOf()));
+  const run = () => {
+    if (hasBox(stageEl)) onRoom(applyGeometry(stageEl, fixedEls, barOf()));
+  };
   run();
   const observer = new ResizeObserver(run);
   observer.observe(stageEl);
@@ -197,12 +214,35 @@ export function showRaffleHit(gridEl, barEl, rank) {
  * every resize. The stage is the app, not the window: above the deck the app
  * stops growing (`max-width`), and the fold has to see what the app is, not
  * what the window is. The arithmetic is `fold()` in `fold.mjs`.
+ *
+ * **Less the safe areas** (#158). With `viewport-fit=cover` the app's box
+ * runs under the notch and the rounded corners, and its edge children — the
+ * outermost page, the foot — inset their content by the safe areas
+ * (`plan.css`, `--inset-*`). `clientWidth` counts that inset in; handed on as
+ * it is, the fold would reckon with a stage up to 2 × 59 px wider than the
+ * pages get. So the insets come off here, read from the same custom
+ * properties the stylesheet insets with — one source, and one a test can set
+ * where the browser reports 0 (`test/ui-shell-insets.test.mjs`).
+ *
+ * The **bottom inset** does not come off here: it is applied upright only, as
+ * a strip under the foot (#158, K4), and whether the foot stands at the bottom
+ * is what the fold decides out of this very stage. Taken off by the last
+ * fold's `data-flat`, a stage at the edge would be read with the strip the
+ * new fold drops, or without the one it adds. So it is handed on as
+ * `insetBottom`, and `fold()` reckons it into the bottom foot exactly where
+ * the stylesheet paints it — the flat stage keeps its full height.
  */
 export function attachStage(appEl, onSize, railEl = null) {
   if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
   const run = () => {
-    const width = appEl.clientWidth;
-    onSize({ width, height: appEl.clientHeight, railHeight: measureRail(appEl, railEl, width) });
+    const inset = safeInsets(appEl);
+    const width = appEl.clientWidth - inset.left - inset.right;
+    onSize({
+      width,
+      height: appEl.clientHeight - inset.top,
+      insetBottom: inset.bottom,
+      railHeight: measureRail(appEl, railEl, width),
+    });
   };
   run();
   const observer = new ResizeObserver(run);
@@ -212,6 +252,20 @@ export function attachStage(appEl, onSize, railEl = null) {
      right: the probe below measures it then. */
   if (railEl) observer.observe(railEl);
   return () => observer.disconnect();
+}
+
+/**
+ * The safe-area insets as the stylesheet reads them: `--inset-top`,
+ * `--inset-right`, `--inset-bottom`, `--inset-left` on `:root`, registered as
+ * lengths so the computed value is pixels and not the `env()` it was written
+ * with. A browser without them reads 0, and the box is the stage as it was
+ * before #158. The one source for the stage (`attachStage()`) and for the
+ * bubbles' frame (`seenFrame()` in `plan.mjs`, #158 B1).
+ */
+export function safeInsets(el) {
+  const style = getComputedStyle(el);
+  const read = (name) => parseFloat(style.getPropertyValue(name)) || 0;
+  return { top: read('--inset-top'), right: read('--inset-right'), bottom: read('--inset-bottom'), left: read('--inset-left') };
 }
 
 /**

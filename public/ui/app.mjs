@@ -14,12 +14,17 @@
  * `themeToggle` is the mode button in the head of `Details` (#144), a
  * component of its own: the mode is device state, not plan state. Its first
  * application happens earlier still, in `<head>` (`views/shell.php`).
+ *
+ * `footMark` is the sliding marking of the foot (#158), nested in
+ * `planApp()`'s scope on the `<footer>`.
  */
 
 import { planApp } from './plan.mjs';
 import { themeToggle } from './theme.mjs';
+import { footMark } from './foot.mjs';
 
 document.addEventListener('alpine:init', () => {
   window.Alpine.data('planApp', planApp);
   window.Alpine.data('themeToggle', themeToggle);
+  window.Alpine.data('footMark', footMark);
 });

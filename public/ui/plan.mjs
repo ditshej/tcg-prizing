@@ -39,7 +39,7 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, readRowEnds, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, hasBox, readRowEnds, safeInsets, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -107,6 +107,15 @@ const SHARE_BUBBLE = '[data-share-bubble]';
  * The layout viewport is `documentElement`'s client box rather than
  * `innerWidth`/`innerHeight`: Safari has reported those for the *visual*
  * viewport while zoomed, which would cut the frame down twice.
+ *
+ * **Less the safe areas** (#158, B1). With `viewport-fit=cover` the layout
+ * viewport runs under the notch, the rounded corners and the home indicator,
+ * and a bubble clamped 8 px from its edge stood in them — the Reset question
+ * 30 px into the right inset, turned. So what can be seen is cut down by the
+ * same `--inset-*` the stylesheet insets with (`safeInsets()`, one source),
+ * all four of them: a bubble's button belongs above the home indicator in
+ * either direction, whatever the foot does there. `layout` stays the whole
+ * viewport — it is what `left`/`top` are counted from.
  */
 function seenFrame() {
   const root = document.documentElement;
@@ -116,7 +125,14 @@ function seenFrame() {
     width: root?.clientWidth || window.innerWidth,
     height: root?.clientHeight || window.innerHeight,
   };
-  return { layout, visible: visibleBox(window.visualViewport, layout) };
+  const inset = root ? safeInsets(root) : { top: 0, right: 0, bottom: 0, left: 0 };
+  const safe = {
+    left: inset.left,
+    top: inset.top,
+    width: layout.width - inset.left - inset.right,
+    height: layout.height - inset.top - inset.bottom,
+  };
+  return { layout, visible: visibleFrame(visibleBox(window.visualViewport, layout), safe) };
 }
 
 /**
@@ -861,7 +877,7 @@ export function planApp(seam = SEAM) {
          after Alpine has applied the `x-show`s, or the grid would keep the
          column count and diagram height of the layout it just left. */
       this.$watch('fullscreen', () => {
-        requestAnimationFrame(() => this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
+        requestAnimationFrame(() => hasBox(this.$refs.stage) && this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
       });
       /*
          The bubble is placed — and closed — after **every drawing**, not at
@@ -1199,7 +1215,7 @@ export function planApp(seam = SEAM) {
           const verdict = this.diagramFits;
           /* First the diagram yields to the bar (K1), or goes where it has no
              room (#129). */
-          if (this._fixed) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
+          if (this._fixed && hasBox(this.$refs?.stage)) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
           const flipped = this.diagramFits !== verdict;
           frame(() => {
             if (round < 4 && (flipped || boxes() !== seen)) { pass(round + 1); return; }
