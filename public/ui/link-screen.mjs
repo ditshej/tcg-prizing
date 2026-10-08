@@ -1,12 +1,14 @@
 /**
  * The SetupLink on screen (#72): the two places where the encoding of #47
- * becomes visible — the Share button in the plan head (#143), and the
- * `LinkMigration` report as the app's one overlay.
+ * becomes visible — Share in the plan head (#143) with its two branches,
+ * the system's share sheet on a phone and the bubble with `Copy link` on a
+ * desktop (#155), and the `LinkMigration` report as the app's one overlay.
  *
  * Everything here is on the proven side of the seam (ADR 0004): what the
  * button copies and what the report says are pure answers to plain inputs.
- * The rind in `plan.mjs` only hands in what a browser has — the page's own
- * address, the clipboard, the button element — and nothing here reads a
+ * The rind in `plan.mjs` only hands in what a browser has — the pointer,
+ * `navigator.share`, the page's own address, the clipboard, the document for
+ * the `execCommand` fallback, the button element — and nothing here reads a
  * global itself. This file writes no word of the wire format either: the copy
  * form is `encode()`'s, the report is #51's data structure, read as it is.
  */
@@ -87,15 +89,16 @@ export function execCopy(text, doc) {
   }
 }
 
-/** How long the bubble at Share says `Link copied` before it runs out —
- *  "rund 2 s" (#143, decision 4). */
+/** How long `Copy link` is called `Copied` before it falls back — "rund
+ *  2 s" (#143, decision 4; since #155 on the button in Share's bubble). */
 export const COPIED_MS = 2000;
 
 /**
  * The confirmation, and it is **fleeting** — the raffle hit's kind, not a
- * state (#72 AC 3; #61, "Copy link"). It lives on an element — since #143 the
- * bubble at the Share button — as a data attribute for one moment and is
- * taken off again; nothing in the component remembers that a copy happened.
+ * state (#72 AC 3; #61, "Copy link"). It lives on an element — since #155
+ * the `Copy link` button in the bubble at Share, which reads `Copied` while
+ * it carries the mark — as a data attribute for one moment and is taken off
+ * again; nothing in the component remembers that a copy happened.
  * A second copy inside the moment restarts it rather than stacking a second
  * fall-back on the first.
  */
