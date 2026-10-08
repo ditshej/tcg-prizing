@@ -240,6 +240,19 @@ test('the output line of the plan head keeps to one line and scrolls sideways, s
   assert.match(tagOf('plan-output'), /class="col-sub plan-output"/);
 });
 
+/* ── The output line is worded to fit beside both head buttons (#143, K-B3) ─ */
+
+test('the output line says `packs`, not `tournament packs`, so it stands whole at 393 beside share and reset', () => {
+  const at = markup.indexOf('class="col-sub plan-output"');
+  const tag = markup.slice(at, markup.indexOf('>', at));
+  const text = tag.match(/x-text="`([^`]*)`"/);
+  assert.ok(text, 'the output line is written by x-text');
+  assert.equal(
+    text[1],
+    '${plan.pool.booster} boosters · ${plan.pool.packs} packs · ${plan.pool.winners} winner packs',
+  );
+});
+
 test('a throw leaves its hit to the next measuring pass, which shows it after the bar and the diagram are laid out', () => {
   const it = app();
   it.setStage({ width: 600, height: 493 });

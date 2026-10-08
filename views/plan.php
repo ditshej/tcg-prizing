@@ -60,7 +60,7 @@
         <span class="col-facts plan-type" x-text="`${typeTitle} · ${plan.players} players`"></span>
       </div>
       <p class="col-sub plan-output" x-show="!fullscreen"
-         x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} tournament packs · ${plan.pool.winners} winner packs`"></p>
+         x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} packs · ${plan.pool.winners} winner packs`"></p>
       <div class="plan-head-actions" x-show="!fullscreen">
         <button type="button" class="plan-reset" data-drop-all x-cloak x-show="pinCount > 0"
                 :aria-expanded="!!dropQuestion" :aria-label="dropAllLabel" :title="dropAllLabel"

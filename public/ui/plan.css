@@ -556,10 +556,10 @@ textarea {
   font-size: 0.8rem;
   line-height: 18px;
   font-weight: 600;
-  /* One line at the Plan's first width (388 − 16 = 372px) for the usual
-     numbers: the first height counts this line once (`PLAN_FIXED`). At 16px
-     it wrapped there, and the fixed part grew by a line exactly at the width
-     the first height is measured at. */
+  /* One line, and worded short enough to stand whole at 393 beside both head
+     buttons (#143, K-B3: `packs`, not `tournament packs`): the first height
+     counts this line once (`PLAN_FIXED`). K6 below stays the net for the
+     narrower phones. */
   /* And it never wraps at all (#129, run 15, K6, closes A10): at 320–340 the
      line is wider than the column, and where it wrapped the head grew from 40
      to 58 and the fixed part outgrew its 178. It scrolls sideways instead —
