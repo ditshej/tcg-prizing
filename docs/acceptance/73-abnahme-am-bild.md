@@ -826,8 +826,8 @@ Die Abweichung kommt aus der Annahme, nicht aus dem Bau: 178 ist die aufgerundet
   420 × 450 jetzt 280 (fester Teil + 113). Die frei gewordenen 68 px nimmt nicht das Raster, die
   Schiene rückt hoch (offen, im Bericht an die Eltern-Session).
 - **iPhone SE in Safari (375 × 553) behält das Diagramm**, knapp: Rest 198, ein Drittel 66.
-- **Unter dem Deckel gemessen statt am Deckel**: 1280 × 450 hat 75 statt 96, 600 × 493 bei offener
-  Leiste 71,3 statt 96; flach bei geschlossener Leiste (600 × 493, 673 × 469) bleibt es am Deckel 96.
+- **Unter dem Deckel gemessen statt am Deckel**: 1280 × 450 hat 75 statt 96 (Lauf 17), 600 × 493 bei offener
+  Leiste 71,3; flach bei geschlossener Leiste (600 × 493, 673 × 469) bleibt es am Deckel 96.
 
 ### Tests
 
