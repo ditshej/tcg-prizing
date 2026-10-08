@@ -1327,23 +1327,6 @@ export function planApp(seam = SEAM) {
       return [list.displays, list.envelopes, list.winners];
     },
 
-    /**
-     * The `WinnerPack` hint's button. It is an **opportunity, not a notice**
-     * — it never enters the `NoticeStack` — and the way to another
-     * `WinnerPack` runs over more `TournamentPack`s, so what it sets is
-     * `tournamentPacks` and not `winnerPacks` (the prototype's
-     * `prepContent()`: `data-apply="tournamentPacks"`).
-     *
-     * It goes through `setSlider()` like every other control rather than
-     * writing `settings` itself: taking the offer is an operating gesture, so
-     * it pins the value (ADR 0006) and writes the address bar, and the
-     * `pinned` record the hint then falls silent on stays the one there
-     * already is.
-     */
-    takeOffer(offer) {
-      this.setSlider(offer.key, offer.value);
-    },
-
     // SetupLink on screen (#72)
 
     /**

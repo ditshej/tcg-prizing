@@ -61,25 +61,6 @@
               </template>
             </div>
           </template>
-
-          <!--
-            The `WinnerPack` hint, as the last line of the derivation and with
-            a button on it: whoever says how the 3 came about says with it how
-            one gets to 4 (#61). It is an **opportunity and not a notice**, so
-            it never enters the `NoticeStack` — and it is silent while
-            `winnerPacks` is `pinned`, which `preparationList()` decides off
-            the plan's own record of what was set by hand.
-
-            The button goes through `setSlider()` like every other control, so
-            pressing it pins `tournamentPacks` by the operating gesture (ADR
-            0006) and writes the address bar with the rest of them.
-          -->
-          <template x-if="item.offer">
-            <div class="prep-offer">
-              <span x-text="item.offer.text"></span>
-              <button type="button" @click="takeOffer(item.offer)" x-text="item.offer.button"></button>
-            </div>
-          </template>
         </div>
       </section>
     </template>

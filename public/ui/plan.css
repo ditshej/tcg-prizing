@@ -190,7 +190,6 @@ body {
   .notice-close,
   .notice-action,
   .notice-chip,
-  .prep-offer button,
   .link-report-exit,
   .sheet-check
 ) {
@@ -222,7 +221,6 @@ body {
   .notice-close,
   .notice-action,
   .notice-chip,
-  .prep-offer button,
   .link-report-exit,
   .sheet-check
 )::after {
@@ -1968,34 +1966,14 @@ textarea {
 }
 
 /*
- * The opportunity, and it reads as one: it sits under the last step, carries
- * the one button on this page, and wraps rather than squeezing the button —
- * in portrait the sentence and the button do not fit on one line, and a
- * button pushed to two characters would stop saying what it does.
+ * LEFT ON PURPOSE, TO BE DELETED: the `WinnerPack` hint this dressed is gone
+ * (#143, decision 7), and nothing selects `.prep-offer` any more. The rule
+ * stays only because `test/ui-look.test.mjs` (#144's file in the same batch)
+ * lists `.prep-offer` among the data lines it expects; delete this rule and
+ * that entry together.
  */
 .prep-offer {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 6px;
   border-top: 1px solid var(--line);
-  color: var(--accent);
-}
-
-.prep-offer button {
-  position: relative;
-  min-height: 30px;
-  border: 0;
-  border-radius: var(--r-ctl);
-  padding: 4px 10px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--btn-shadow);
 }
 
 .prep-note {
