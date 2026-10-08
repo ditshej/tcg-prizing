@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { PULSE_MS, PULSE_RING_MAX, PULSE_SCALE, pulseClip, pulseReach } from '../public/ui/geometry.mjs';
-import { showRaffleHit } from '../public/ui/measure.mjs';
+import { attachFades, showRaffleHit } from '../public/ui/measure.mjs';
 
 /*
  * The raffle hit's pulse, and where it is drawn (#168, decision K1,
@@ -16,6 +16,10 @@ import { showRaffleHit } from '../public/ui/measure.mjs';
  * the pulse of the top row and of the outer columns. So the pulse runs on a
  * copy of the tile in a layer outside the scroller, which follows the tile
  * every frame and goes when the animation ends.
+ *
+ * And the wiring of the scroller's top padding into the two measures that
+ * read it (B18, Review 2): the functions are proven in `ui-grid-ring`, these
+ * tests prove the call sites hand the padding in.
  */
 
 const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
@@ -347,4 +351,32 @@ test('pulseClip: null where the tile is out of the window or wholly under the ba
   assert.equal(pulseClip({ top: 510, bottom: 564, left: 22, right: 76 }, window), null);
   assert.equal(pulseClip({ top: 410, bottom: 464, left: 22, right: 76 }, window, 400), null);
   assert.deepEqual(pulseClip({ top: 100, bottom: 154, left: 22, right: 76 }, window, Infinity, 17), { top: -17, right: -318, bottom: -363, left: -39 });
+});
+
+/* ── B18: the padding reaches the two measures that read it ─────────── */
+
+test('showRaffleHit hands the grid\'s top padding to hitScrollDelta: a tile in the padding strip is scrolled to (#168, B18)', () => {
+  // Window 92..500 with 8 px of padding on top: the strip starts at 100. A tile
+  // at 96 sits half in the padding, so it is not in view and the grid moves;
+  // without the padding the same tile counted as in view and nothing moved.
+  const { grid, layer } = scene({ tileRect: { left: 22, top: 96, width: 54, height: 54 } });
+  grid.scrollTop = 200;
+  showRaffleHit(grid, null, 1);
+  assert.deepEqual(grid.scrolledTo, [200 + (96 + 27 - (100 + 400 / 2))]);
+  layer().firstElementChild.dispatch('animationend');
+});
+
+test('attachFades hands the box\'s top padding to fadeHeight: the flat stage\'s band stays 36, not 38 (#168, B18)', () => {
+  scene();
+  globalThis.requestAnimationFrame = (callback) => { callback(); return 0; };
+  const root = new FakeElement('div', { rect: { left: 0, top: 0, width: 852, height: 393 } });
+  const box = new FakeElement('div', { className: 'plan-grid', rect: { left: 400, top: 200, width: 300, height: 152 } });
+  Object.assign(box, { clientTop: 0, clientLeft: 0, clientWidth: 300, clientHeight: 144 + 8, scrollHeight: 900, scrollTop: 0 });
+  root.appendChild(box);
+  const fades = attachFades(root, ['.plan-grid']);
+  fades.paint();
+  const band = root.querySelector('.fade');
+  assert.equal(band.style.height, '36px');
+  assert.equal(band.style.top, `${200 + 152 - 36}px`);
+  fades.detach();
 });
