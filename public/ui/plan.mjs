@@ -64,7 +64,7 @@ import {
 import { anchorVisible, placeInFrame, visibleBox, visibleFrame } from './bubble.mjs';
 import { tileGrip, tileView } from './tile.mjs';
 import { preparationList } from './prepare.mjs';
-import { copyText, flashCopied, linkAddress, reportView } from './link-screen.mjs';
+import { copyText, execCopy, flashCopied, linkAddress, reportView, shareBranch } from './link-screen.mjs';
 import { dismiss, expand, foldStep, freshFold, minimize, noticeStack, searchesFor } from './notices.mjs';
 import { attachConfirmFirst } from './confirm-first.mjs';
 
@@ -888,12 +888,15 @@ export function planApp(seam = SEAM) {
       window.addEventListener('resize', this._onResize);
       /* Zooming and panning move the visible frame and fire no `resize` on
          the window (#154): iOS reports them on `visualViewport` alone. Every
-         bubble is placed again there — the one frame, all four placings. */
+         bubble is placed again there — the one frame, all four placings.
+         Share's goes through `keepShare()`, not `placeShare()` alone: the
+         others close inside their placing, Share's closes — and is capped
+         to the visible width — only there (#66, #155 N3). */
       this._onView = () => {
         this.placeBubble();
         this.placeConfirm();
         this.placeInfo();
-        this.placeShare();
+        this.keepShare();
       };
       window.visualViewport?.addEventListener('resize', this._onView);
       window.visualViewport?.addEventListener('scroll', this._onView);
@@ -1455,33 +1458,94 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * The address, open in a preselected field, when the clipboard could not
-     * take it — or `null`. Session state like an open bubble, and in the
-     * `SetupLink` as little (#61, "Session state").
+     * Whether the bubble at Share stands open — the branch without
+     * `navigator.share` (#155, K3).
+     * Session state like every open bubble, and in the `SetupLink` as little
+     * (#61, "Session state").
+     */
+    shareOpen: false,
+
+    /**
+     * The address, open in a preselected field inside that bubble, when no
+     * copy could be made — or `null`. Session state as well.
      */
     linkField: null,
 
     /**
-     * The Share button's one handling (#72; #143). `env` is what a browser
-     * has — the clipboard, the page's own address, a timer, and the bubble
-     * at the button with the way to place it — handed in so `node --test` can
-     * hand in its own; the defaults are read only here, at the rind.
+     * The Share button's one handling (#155, F3 c as refined by K3; the
+     * place and form are #143's). `env` is what a browser has —
+     * `navigator.share`, the page's own address — handed in so `node --test`
+     * can hand in its own; the defaults are read only here, at the rind
+     * (`shareEnv()`).
      *
-     * The confirmation is the bubble saying `Link copied` for a moment
-     * (`flashCopied()` on the bubble element, #143 decision 4) — not in the
-     * NoticeStack, and not a member of this component. Without a clipboard
-     * the same bubble opens with the address in a preselected field.
+     * - **System** (`shareBranch()`, wherever `navigator.share` exists — the
+     *   pointer plays no part): straight into the system's share sheet with
+     *   the complete `SetupLink` (#47). No bubble, no copy — the sheet is the
+     *   whole answer. A cancel (`AbortError`) shows nothing; any other
+     *   failure falls back to the bubble.
+     * - **Bubble** (no `navigator.share`): the press opens the bubble with
+     *   its sentence and `Copy link` and copies nothing; the same press
+     *   closes it again.
+     *
+     * The call into the sheet is the first thing the handling does, before
+     * any `await`: browsers grant `navigator.share` only inside the press.
+     * An unconfirmed number in a field locks it as every control
+     * (`confirm-first.mjs`): the press only confirms the number.
      */
-    async copyLink(button, env = this.linkEnv(button)) {
+    async share(env = this.shareEnv()) {
+      if (shareBranch(env) === 'system') {
+        try {
+          await env.share({ url: linkAddress(this.linkQuery, env.page) });
+          return 'shared';
+        } catch (error) {
+          if (error?.name === 'AbortError') return 'cancelled';
+          this.openShare();
+          return 'bubble';
+        }
+      }
+      if (this.shareOpen) {
+        this.closeShare();
+        return 'closed';
+      }
+      this.openShare();
+      return 'bubble';
+    },
+
+    /** One bubble at a time: Share's puts out the tile's, the ⓘ's and an
+     *  open question, as any of them does to the others. */
+    openShare() {
+      this.openTile = null;
+      this.openInfo = null;
+      this.confirmDrop = null;
+      this.linkField = null;
+      this.shareOpen = true;
+    },
+
+    /** Second press, Escape, a press beside it, or its anchor gone. */
+    closeShare() {
+      this.shareOpen = false;
+      this.linkField = null;
+    },
+
+    /**
+     * `Copy link` in the bubble (#155): copies the complete form as Share
+     * used to (#47, "Die Kopierform ist immer vollständig"). On a copy the
+     * button is called `Copied` for `COPIED_MS` and falls back — fleeting,
+     * on the element (`flashCopied()`), not a member of this component
+     * (#72 AC 3). Without a clipboard `execCommand('copy')` is tried first;
+     * only if that too reports no success does the preselected field open
+     * in the same bubble, and `Copied` does not appear (#72 AC 4).
+     */
+    async copyLink(button, env = this.linkEnv()) {
       const address = linkAddress(this.linkQuery, env.page);
-      const outcome = await copyText(address, env.clipboard);
+      const outcome = await copyText(address, env.clipboard, env.exec);
       if (outcome === 'copied') {
         this.linkField = null;
-        flashCopied(env.note, env);
-        env.place?.();
+        flashCopied(button, env);
       } else {
         this.linkField = address;
       }
+      env.place?.();
       return outcome;
     },
 
@@ -1490,22 +1554,60 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * What the Share handling needs from a browser: the clipboard, if there
-     * is one, the page's own address to resolve the copy form against, a
-     * timer, and the bubble at the button (`[data-share-bubble]`) with its
-     * placing. `document.baseURI` rather than the address bar's own object:
-     * that one is `link/location.mjs`'s alone (#50 AC 6), and the page
-     * address is all that is needed here — its query is replaced anyway.
+     * What the branch choice needs from a browser: `navigator.share` if
+     * there is one — called on `navigator`, which it needs as `this` — and
+     * the page's own address. No pointer query: K3 (#155) made the branch
+     * depend on `navigator.share` alone.
+     */
+    shareEnv() {
+      const nav = globalThis.navigator;
+      return {
+        share: typeof nav?.share === 'function' ? (data) => nav.share(data) : undefined,
+        page: globalThis.document?.baseURI,
+      };
+    },
+
+    /**
+     * What `Copy link` needs from a browser: the clipboard, if there is one,
+     * the `execCommand` fallback, the page's own address to resolve the copy
+     * form against, a timer, and the bubble's placing. `document.baseURI`
+     * rather than the address bar's own object: that one is
+     * `link/location.mjs`'s alone (#50 AC 6), and the page address is all
+     * that is needed here — its query is replaced anyway.
      */
     linkEnv() {
+      const doc = globalThis.document;
       return {
         clipboard: globalThis.navigator?.clipboard,
-        page: globalThis.document?.baseURI,
+        exec: (text) => execCopy(text, doc),
+        page: doc?.baseURI,
         later: setTimeout,
         cancel: clearTimeout,
-        note: globalThis.document?.querySelector(SHARE_BUBBLE) ?? null,
         place: () => this.placeShare(),
       };
+    },
+
+    /**
+     * Closes the bubble when its anchor is gone — fullscreen hides the head
+     * buttons, the phone's other pages hide `Plan` (#66: one rule for every
+     * bubble). `placeShare()` (#154) only places; this is the half it leaves.
+     */
+    keepShare() {
+      if (!this.shareOpen || typeof document === 'undefined') return;
+      const anchorEl = document.querySelector('[data-share]');
+      const { layout, visible } = seenFrame();
+      const anchor = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      if (!anchor || !anchor.width || !anchorVisible(anchor, visibleFrame(layout, visible))) {
+        this.closeShare();
+        return;
+      }
+      /* The CSS width answers the layout viewport; zoomed in, the visible
+         part is narrower (#154), and at 1.5 the 292 stood 38 past its edge.
+         Capped to what can be seen, the first placing measures a box that
+         fits. */
+      const bubbleEl = document.querySelector(SHARE_BUBBLE);
+      if (bubbleEl) bubbleEl.style.maxWidth = `${Math.max(0, visible.width - 16)}px`;
+      this.placeShare();
     },
 
     /**

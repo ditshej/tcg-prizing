@@ -1046,7 +1046,7 @@ Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
 Der Ort ist seit #143 der **Plan-Kopf oben rechts**, in jeder Faltung ausser im Vollbild, als Icon
 (`rotate-ccw`) mit dem Wort als `aria-label` und Tooltip und mit der Zahl dessen,
 was fällt, an seiner Ecke; ohne einen von Hand gesetzten Posten steht er nicht da.
-Neben ihm steht Share (der Knopf, der den `SetupLink` kopiert). Das überstimmt den
+Neben ihm steht Share, der Knopf, der den `SetupLink` teilt (#155): wo das System-Teilen (`navigator.share`) vorhanden ist — auf jedem Gerät, auch Safari am Mac, Tablets und Edge unter Windows; die Art des Zeigers spielt keine Rolle (K3) — öffnet er direkt das System-Teilen mit der vollständigen Form; nur wo es fehlt, etwa ohne sicheren Kontext über http im LAN, eine Blase mit einem Satz und `Copy link`, und erst dieser Knopf kopiert und heisst danach flüchtig `Copied`. Das überstimmt den
 Ort „neben dem `TournamentType`-Titel" (#41, #67), den die Details-Spalte mit
 ihrem Scrollen bezahlt hatte; davor sass der Knopf schon einmal im Kopf des Plans,
 damals nicht aus einem Entscheid, sondern weil es den Titel am Schirm noch nicht gab
