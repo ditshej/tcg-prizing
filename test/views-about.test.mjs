@@ -103,5 +103,5 @@ test('it is set quietly: muted, small, no line', () => {
 
 test('CONTEXT.md › Game names the second place of the contact channel', () => {
   const game = CONTEXT.slice(CONTEXT.indexOf('**Game**:'), CONTEXT.indexOf('**TournamentType**:'));
-  assert.match(game, /ganz unten auf `Details`/);
+  assert.match(game, /ganz unten auf\s+`Details`/);
 });
