@@ -53,9 +53,46 @@ test('the prototype\'s colour tokens stand in :root, light (Bronze)', () => {
   for (const [name, value] of Object.entries(LIGHT)) assert.equal(declared(root, name), value, name);
 });
 
-test('…and turn to Foil under prefers-color-scheme: dark', () => {
-  const dark = block(block(code, '@media (prefers-color-scheme: dark)'), ':root');
+/*
+ * The dark set stands twice since #144 (ADR 0011): once for a dark device
+ * that has not been told light, once for dark chosen on any device. CSS has
+ * no way to put one rule under "media query or attribute", so the copies are
+ * held equal here — or the two ways into Foil drift on the next token change.
+ */
+const SYSTEM_DARK = ":root:not([data-theme='light'])";
+const FORCED_DARK = ":root[data-theme='dark']";
+const deviceDark = () => block(block(code, '@media (prefers-color-scheme: dark)'), SYSTEM_DARK);
+const chosenDark = () => block(code, FORCED_DARK);
+const squeeze = (body) => body.replace(/\s+/g, ' ').trim();
+
+test('…and turn to Foil under prefers-color-scheme: dark, unless light is chosen', () => {
+  const dark = deviceDark();
   for (const [name, value] of Object.entries(DARK)) assert.equal(declared(dark, name), value, name);
+});
+
+test('…and to Foil when dark is chosen, whatever the device says (#144)', () => {
+  const dark = chosenDark();
+  for (const [name, value] of Object.entries(DARK)) assert.equal(declared(dark, name), value, name);
+});
+
+test('the two dark sets are one set written twice, declaration for declaration', () => {
+  // The chosen one says `color-scheme: dark` besides; the device's needs no
+  // such line, `light dark` on `:root` already follows the device.
+  const chosen = chosenDark().replace(/\s*color-scheme:[^;]+;/, '');
+  assert.notEqual(chosen, chosenDark(), 'the chosen set carries color-scheme');
+  assert.equal(squeeze(chosen), squeeze(deviceDark()));
+});
+
+test('color-scheme follows the choice: light dark for System, light or dark when chosen', () => {
+  assert.equal(declared(block(code, ':root'), 'color-scheme'), 'light dark');
+  const rules = [...code.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, , body]) => /color-scheme:/.test(body))
+    .map(([, selector, body]) => [selector.trim(), declared(body, 'color-scheme')]);
+  assert.deepEqual(rules, [
+    [':root', 'light dark'],
+    [":root[data-theme='light']", 'light'],
+    [":root[data-theme='dark']", 'dark'],
+  ]);
 });
 
 test('the form tokens: 2 px corners (the round button 3), shadows for depth, the head type', () => {
@@ -69,7 +106,7 @@ test('the form tokens: 2 px corners (the round button 3), shadows for depth, the
 });
 
 test('the dark mode glows gold at the edge: an inner rim on tile and button', () => {
-  const dark = block(block(code, '@media (prefers-color-scheme: dark)'), ':root');
+  const dark = deviceDark();
   assert.match(declared(dark, '--tile-shadow'), /^inset 0 0 0 1px rgba\(214, 168, 58/);
   assert.match(declared(dark, '--btn-shadow'), /^inset 0 0 0 1px rgba\(214, 168, 58/);
 });
@@ -77,7 +114,8 @@ test('the dark mode glows gold at the edge: an inner rim on tile and button', ()
 test('outside the token blocks no hex, rgb/hsl/light-dark or common colour name', () => {
   const rest = code
     .replace(`:root {${block(code, ':root')}}`, '')
-    .replace(`@media (prefers-color-scheme: dark) {${block(code, '@media (prefers-color-scheme: dark)')}}`, '');
+    .replace(`@media (prefers-color-scheme: dark) {${block(code, '@media (prefers-color-scheme: dark)')}}`, '')
+    .replace(`${FORCED_DARK} {${chosenDark()}}`, '');
   assert.doesNotMatch(rest, /#[0-9a-f]{3,8}\b/i, 'no hex colour');
   assert.doesNotMatch(rest, /\brgba?\(|\bhsla?\(|light-dark\(/, 'no colour function');
   assert.doesNotMatch(rest, /:\s*(?:white|black|red|green|blue|gray|grey)\b/, 'no named colour');
