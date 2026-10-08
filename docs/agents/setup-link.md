@@ -157,7 +157,7 @@ above), and the start date below the title had not been reached.
 
 What is not set by hand stays out: page, fullscreen, folding, an open bubble,
 the raffle bar (#61, "Session state" — overruled there only for the
-`RaffleRange`, by K1b). The pin chip beside `Copy link` counts the
+`RaffleRange`, by K1b). The reset beside Share in the plan head (#143) counts the
 `RaffleRange` where it is off `all`, and its drop puts it back to `all` (run 12,
 Phase G on #72) — the screen's business; the wire still carries it as a choice,
 never as a pin. Of the WinnerRaffle, the `RaffleRange` is the **only** key that
