@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
+import { confirmFirst } from '../public/ui/confirm-first.mjs';
 import { COPIED_MS, copyText, linkAddress, execCopy, reportView, shareBranch } from '../public/ui/link-screen.mjs';
 
 /**
@@ -161,31 +162,6 @@ test('Copy link puts the whole address on the clipboard', async () => {
   });
   assert.equal(outcome, 'copied');
   assert.deepEqual(taken, ['https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5']);
-});
-
-/**
- * #143, decision 4: after copying, a small bubble at the Share button says
- * `Link copied` and runs out by itself after about 2 s — on the bubble layer,
- * not in the NoticeStack, which carries statements about the plan. Fleeting
- * as #72 AC 3 had it: the bubble element carries it for the moment, and no
- * member of the component remembers that a copy happened.
- */
-test('the confirmation is a bubble at Share that runs out after about 2 s, and the component keeps nothing (#143)', async () => {
-  const { app } = opened();
-  const button = fakeButton();
-  const note = fakeButton();
-  const timer = fakeTimer();
-  let placed = 0;
-  const before = dataOf(app);
-  await app.copyLink(button, { clipboard: { writeText: async () => {} }, page: 'https://a/', note, place: () => { placed += 1; }, ...timer });
-  assert.ok('linkCopied' in note.dataset, 'the bubble says it, for a moment');
-  assert.ok(!('linkCopied' in button.dataset), 'the icon itself does not change');
-  assert.equal(placed, 1, 'the bubble is placed at its anchor');
-  assert.equal(dataOf(app), before, 'no member of the component changed');
-  assert.equal(COPIED_MS, 2000);
-  assert.deepEqual(timer.delays, [COPIED_MS]);
-  timer.fire();
-  assert.ok(!('linkCopied' in note.dataset), 'and runs out');
 });
 
 test('without a clipboard the address opens in a field instead (#72 AC 4)', async () => {
@@ -464,4 +440,157 @@ test('execCopy copies a selected throwaway field and answers what the browser sa
   assert.equal(execCopy('x', thrown.doc), false);
   assert.equal(thrown.log.removed, 1, 'gone even after a throw');
   assert.equal(execCopy('x', undefined), false);
+});
+
+/** What a browser hands the Share handling, recorded: the system sheet,
+ *  the clipboard and the execCommand fallback. */
+function shareEnv({ coarse = false, share = undefined, clipboard = undefined, exec = undefined } = {}) {
+  const log = { shared: [], written: [], execs: [] };
+  return {
+    log,
+    env: {
+      coarse,
+      share: share && ((data) => { log.shared.push(data); return share(data); }),
+      clipboard: clipboard && { writeText: async (t) => { log.written.push(t); return clipboard(t); } },
+      exec: exec && ((t) => { log.execs.push(t); return exec(t); }),
+      page: 'https://prizing.optcg.ch/',
+      place: () => {},
+      ...fakeTimer(),
+    },
+  };
+}
+
+const WHOLE = 'https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5';
+
+test('on a phone, Share calls the system sheet once with the complete SetupLink — no bubble, no copy (#155)', async () => {
+  const { app } = opened();
+  app.setSlider('rankFloor', 5);
+  const { env, log } = shareEnv({ coarse: true, share: async () => {}, clipboard: () => {}, exec: () => true });
+  await app.share(env);
+  assert.deepEqual(log.shared, [{ url: WHOLE }]);
+  assert.equal(app.shareOpen, false, 'no bubble opens');
+  assert.deepEqual(log.written, [], 'nothing is copied');
+  assert.deepEqual(log.execs, []);
+});
+
+test('a cancelled system sheet shows nothing; any other failure falls back to the bubble (#155)', async () => {
+  const abort = Object.assign(new Error('cancelled'), { name: 'AbortError' });
+  const { app } = opened();
+  const cancelled = shareEnv({ coarse: true, share: async () => { throw abort; } });
+  await app.share(cancelled.env);
+  assert.equal(app.shareOpen, false, 'no bubble after a cancel');
+  assert.equal(app.linkField, null, 'no field either');
+
+  for (const name of ['NotAllowedError', 'TypeError', 'DataError']) {
+    const { app: other } = opened();
+    const failed = shareEnv({ coarse: true, share: async () => { throw Object.assign(new Error(name), { name }); } });
+    await other.share(failed.env);
+    assert.equal(other.shareOpen, true, `${name} opens the desktop bubble`);
+  }
+});
+
+test('on a desktop, Share opens the bubble and copies nothing; a second press closes it (#155)', async () => {
+  const { app } = opened();
+  const { env, log } = shareEnv({ clipboard: () => {}, exec: () => true });
+  await app.share(env);
+  assert.equal(app.shareOpen, true);
+  assert.deepEqual(log.written, [], 'opening copies nothing');
+  assert.deepEqual(log.execs, []);
+  await app.share(env);
+  assert.equal(app.shareOpen, false, 'the same press closes it');
+  await app.share(env);
+  app.closeShare();
+  assert.equal(app.shareOpen, false, 'Escape and a press beside it close it too');
+});
+
+test('the bubble is one bubble at a time: opening it puts out the tile, the ⓘ and the drop question (#155)', async () => {
+  const { app } = opened();
+  app.openTile = 1;
+  app.openInfo = 'game';
+  app.confirmDrop = { keys: [] };
+  await app.share(shareEnv().env);
+  assert.equal(app.openTile, null);
+  assert.equal(app.openInfo, null);
+  assert.equal(app.confirmDrop, null);
+});
+
+test('Copy link copies the complete form and is called Copied for COPIED_MS, then nothing remains (#155)', async () => {
+  const { app } = opened();
+  app.setSlider('rankFloor', 5);
+  const button = fakeButton();
+  const { env, log } = shareEnv({ clipboard: () => {} });
+  await app.share(env);
+  const before = dataOf(app);
+  const outcome = await app.copyLink(button, env);
+  assert.equal(outcome, 'copied');
+  assert.deepEqual(log.written, [WHOLE]);
+  assert.ok('linkCopied' in button.dataset, 'the button says Copied, for a moment');
+  assert.deepEqual(env.delays, [COPIED_MS]);
+  assert.equal(COPIED_MS, 2000);
+  assert.equal(dataOf(app), before, 'no member of the component changed');
+  env.fire();
+  assert.ok(!('linkCopied' in button.dataset), 'and falls back to Copy link');
+});
+
+test('without a clipboard, a true execCommand is a copy; a false one opens the field and never says Copied (#155)', async () => {
+  const { app } = opened();
+  app.setSlider('rankFloor', 5);
+  const done = fakeButton();
+  const yes = shareEnv({ exec: () => true });
+  assert.equal(await app.copyLink(done, yes.env), 'copied');
+  assert.deepEqual(yes.log.execs, [WHOLE]);
+  assert.ok('linkCopied' in done.dataset);
+  assert.equal(app.linkField, null);
+
+  const refused = fakeButton();
+  const no = shareEnv({ exec: () => false });
+  assert.equal(await app.copyLink(refused, no.env), 'manual');
+  assert.equal(app.linkField, WHOLE, 'the preselected field, in the same bubble');
+  assert.ok(!('linkCopied' in refused.dataset), 'Copied never appears');
+});
+
+test('closing the bubble takes the field with it (#155)', async () => {
+  const { app } = opened();
+  const { env } = shareEnv();
+  await app.share(env);
+  await app.copyLink(fakeButton(), env);
+  assert.notEqual(app.linkField, null);
+  app.closeShare();
+  assert.equal(app.linkField, null);
+});
+
+/**
+ * CONTEXT.md › `Pinned`: an unconfirmed number in a field locks every
+ * control. For Share on both branches and for `Copy link` that is the same
+ * guard as for every other control — the press only confirms the number,
+ * and the handler under it never runs.
+ */
+test('an unconfirmed number locks Share on both branches and Copy link (#155)', async () => {
+  const target = { closest: () => null };
+  const field = { value: '64', closest: (sel) => (sel === '[data-number-field]' ? field : null) };
+  const pressOnce = (guard, handler) => {
+    let stopped = false;
+    const event = (type) => ({ type, target, preventDefault() {}, stopPropagation() { stopped = true; }, stopImmediatePropagation() { stopped = true; } });
+    guard.pointerdown(event('pointerdown'));
+    guard.mousedown(event('mousedown'));
+    guard.click(event('click'));
+    if (!stopped) return handler();
+    return null;
+  };
+  const cases = [
+    ['phone', (app, env) => app.share(env), { coarse: true, share: async () => {} }],
+    ['desktop', (app, env) => app.share(env), {}],
+    ['Copy link', (app, env) => app.copyLink(fakeButton(), env), { clipboard: () => {} }],
+  ];
+  for (const [name, handle, options] of cases) {
+    const { app } = opened();
+    app.draft('players', '64');
+    const guard = confirmFirst(app, { focused: () => field });
+    const { env, log } = shareEnv(options);
+    await pressOnce(guard, () => handle(app, env));
+    assert.equal(app.value('players'), 64, `${name}: the press confirmed the number`);
+    assert.deepEqual(log.shared, [], `${name}: no system sheet`);
+    assert.deepEqual(log.written, [], `${name}: no copy`);
+    assert.equal(app.shareOpen, false, `${name}: no bubble`);
+  }
 });
