@@ -122,7 +122,7 @@ Reservation sind `a` und die reservierten `Booster` null, und es bleibt der
 frühere Deckel `⌊(Booster im RankPool − 1) / RankFloor⌋` übrig. Dass die
 `DisplayReservation` darin vorkommt, kehrt die Vorrangkette **nicht** um: ein
 Deckel bindet nur den nachziehenden Wert, ein `pinned` Wert wird nach ADR 0006
-nie gekappt (der Stufen-Pin `depthStep` zählt hier als nachziehend, siehe unten), und die `DisplayReservation` wird nie automatisch gesetzt, zieht
+nie gekappt (beim Stufen-Pin `depthStep` ist der `pinned` Wert die Stufe; die Zahl daraus bindet der Deckel wie einen nachziehenden Wert, siehe unten und `Pinned`), und die `DisplayReservation` wird nie automatisch gesetzt, zieht
 also nie nach — die Kette bleibt azyklisch, weil eine ihrer beiden Richtungen
 nie feuert. Der `RankFloor` deckelt
 die Tiefe, nie umgekehrt. An zwei Rändern liefert die Auflösung keine brauchbare
@@ -1036,7 +1036,11 @@ ein Deckel unter ihn, bleibt er stehen und die App zeigt die Lage (ADR 0002).
 Beim Stufen-Pin `depthStep` ist der `pinned` Wert die Stufe, nicht die Zahl: die
 Stufe bleibt gespeichert, die Zahl daraus steht ohne Meldung unter dem Deckel und
 kommt zurück, sobald er steigt — kein Kappen im Sinne von ADR 0006 (siehe oben
-und `RankPoolDepth`; Map-Closure Durchgang 6). Das Gegenteil heisst **`auto`** — der Regler folgt
+und `RankPoolDepth`; Map-Closure Durchgang 6). Ebenso still bleibt ein `pinned`
+`ranked`-Anteil über `min(n, Spielerzahl)`: der Wert bleibt gespeichert, der Kern
+klemmt nur die Zahl im Plan, und sie kommt zurück, sobald die Wand steigt — eine
+Wand, wo der Kern still schneidet (ADR 0002, Nachtrag #113; Map-Closure
+Durchgang 7). Das Gegenteil heisst **`auto`** — der Regler folgt
 noch einer Rechnung. Beide Wörter stehen so auch am Schirm.
 _Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), Touched (beschreibt die Geste, nicht den Zustand), Locked (klingt nach Schutz vor dem Nutzer), Dirty, Manual (ist schon der `manual`-Anteil der `WinnerPackAllocation` — dasselbe Wort für zwei Sachen auf demselben Schirm)
 
@@ -1062,9 +1066,9 @@ angefasst hat: „nur der Unterschied" gilt für Regler, weil ein ungenannter Re
 weiterrechnet — ein ungenannter Typ würde gewählt, und „erster der Liste" ist eine
 stille Entscheidung (Nachtrag zu ADR 0007). Ein Wert aus dem Link ist ein `pinned`
 Wert wie jeder andere: liegt er über einem Deckel, bleibt er stehen und die
-`ConflictNotice` zeigt die Wege heraus. Ein Stufen-Pin `depthStep` aus dem Link
-verhält sich wie ein von Hand gesetzter (siehe `Pinned`). Die App führt nicht mit, dass er aus einer
-URL kam.
+`ConflictNotice` zeigt die Wege heraus. Die App führt bei keinem Wert mit, dass er
+aus einer URL kam. Ein Stufen-Pin `depthStep` aus dem Link verhält sich wie ein von
+Hand gesetzter (siehe `Pinned`).
 **Der Link trägt alles, was von Hand gesetzt ist** — jeden Pin, ohne Ausnahme,
 und die `RaffleRange`, die kein Pin ist (Maintainer, Lauf 12, K1 und K1b an #72;
 ADR 0005, Nachtrag Lauf 12). Darum **zwei**
