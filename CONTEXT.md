@@ -381,7 +381,7 @@ Die `RaffleRange` ist **kein `Regler`**, sondern eine Einstellung des
 Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor und geht in
 `distribute()` nicht ein. Daraus folgt alles Einzelne — keine
 `pinned`/`auto`-Markierung, kein Rückweg am Element, und ein Set-Wechsel lässt
-sie stehen. Der Knopf neben dem `TournamentType`-Titel zählt sie trotzdem mit,
+sie stehen. Der Reset-Knopf im Plan-Kopf zählt sie trotzdem mit,
 wo sie von `all` abweicht, und sein Rückweg in voller Reichweite stellt sie auf
 `all` (Maintainer, Lauf 12, Phase G an #72) — als von Hand gesetzter Posten,
 nicht als Pin; *Drop all N and follow* im `CarryOverNotice` kennt sie nicht. Sie **steht im `SetupLink`**, als
@@ -527,9 +527,10 @@ Die einspaltige Form hat eine eigene Schwelle: 351 + 56 Fuss + die **gemessene**
 Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung kippt je
 nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
 aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117, seit #142 mit
-den 44-px-Zählern 124 bis 229 — #73, Lauf 17).
+den 44-px-Zählern 124 bis 229 — #73, Lauf 17 —, seit #143 mit drei Reglern und den
+Curve-Chips 124 bis 212).
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
-unter der Zwei-Spalten-Bruchstelle; die vier heissen Regler stehen dort erst ab 722
+unter der Zwei-Spalten-Bruchstelle; die heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.
 Bühnen unter 436 Breite **und** unter der einspaltigen Schwelle bleiben die Ausnahme
 vom Hochformat-Boden (`DistributionPlan`): dort hält keine Faltung zwei Reihen im Bild — der `Plan` behält
@@ -794,9 +795,9 @@ Knopf, der alle auf das neue Blatt zieht. Dieser Knopf ist die **dritte
 Reichweite** desselben Rückwegs und keine eigene Handlung. Die dritte Reichweite
 ist eine Form der Handlung, keine Menge: sie lässt die Pins fallen, die ihre
 Meldung aufzählt, und fragt vorher nach. Hier sind das dieselben Pins wie am
-`TournamentType`-Titel, Kachel-Zuteilungen eingeschlossen; der zweite Auslöser,
+Reset-Knopf im Plan-Kopf, Kachel-Zuteilungen eingeschlossen; der zweite Auslöser,
 die `handoutOff`-Meldung (siehe `CombinedHandout`), zählt nur `rankFloor` und
-`depth` auf (Map-Closure Durchgang 2); die `RaffleRange` stellt nur der Titel-Knopf zurück (Lauf 12,
+`depth` auf (Map-Closure Durchgang 2); die `RaffleRange` stellt nur der Reset-Knopf im Plan-Kopf zurück (Lauf 12,
 Phase G an #72). Er fragt darum ebenso vorher nach: dieselbe Frage, in
 derselben Blase, verankert an dem Knopf, den man gedrückt hat.
 Er heisst am Schirm **`Drop all N and follow <Typ>`** (#41), und die Zerstörung
@@ -813,8 +814,8 @@ ist selbst ein `TournamentType`, und ein Etikett, das ein anderer Glossarbegriff
 ist, zeigt auf den falschen Eintrag.
 Wegklickbar und reiner Sitzungszustand,
 nie im `SetupLink`; verschwindet sie ungenutzt, ist nichts
-verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und am
-`TournamentType`-Titel (alle) steht — dort mit der `RaffleRange` dazu.
+verloren, weil dieselbe Handlung dauerhaft am Regler (einzeln) und im
+Plan-Kopf (alle) steht — dort mit der `RaffleRange` dazu.
 Sie ist eine **Ereignismeldung** des `NoticeStack` (die andere ist `handoutOff`): sie beschreibt keinen
 anhaltenden Zustand, sondern den Klick, der gerade geschehen ist. Zweimal
 hintereinander gewechselt heisst zweimal dieselbe Art, aber eine andere Liste
@@ -956,7 +957,7 @@ und kein Strich davor — eine Linie ist nur dort zugelassen, wo sie Daten
 trennt, und hier trennt sie nicht, sie ordnet unter. Zwei gleich aussehende
 Knopfreihen nebeneinander hätten versteckt, dass ein Wechsel auf der oberen
 auch die Liste der unteren ersetzt. Der Block steht **im Körper** der
-Details-Spalte, über den heissen vier Reglern, und scrollt mit ihnen: fest
+Details-Spalte, über den heissen Reglern und `RankFloor`, und scrollt mit ihnen: fest
 im Spaltenkopf hätte er gemessen 101 px dauerhaft gekostet, im
 Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
 anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
@@ -1000,10 +1001,10 @@ und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. Sol
 eine getippte Zahl **unbestätigt** im Feld steht, löst **kein anderes
 Bedienelement** etwas aus: ein Druck ausserhalb des Felds bestätigt nur die Zahl
 und wird dann verschluckt. Das gilt für jedes Bedienelement, auch für `−`/`+`,
-`Copy link`, das `Offer` und *Drop all N and follow*. Ein Feld, das nur den Fokus
+Share (`Copy link`), das `Offer` und *Drop all N and follow*. Ein Feld, das nur den Fokus
 hat, sperrt nichts (Lauf 12, K4 an #113). `−` und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
-zurück, der Knopf neben dem `TournamentType`-Titel **alle** — und dazu die
+zurück, der Reset-Knopf oben rechts im Plan-Kopf **alle** — und dazu die
 `RaffleRange` auf `all`, die kein Pin ist, aber mitgezählt wird (Lauf 12,
 Phase G an #72) —, und derselbe Weg in
 der dritten Reichweite steht momentan im `CarryOverNotice` und in der
@@ -1017,16 +1018,19 @@ ist die eine Ausnahme von „folgt keiner Rechnung mehr“: er hält die Stufe f
 nicht die Zahl, zieht also weiter mit der Spielerzahl nach und bleibt unter dem
 Deckel wie ein `auto`-Regler (siehe `RankPoolDepth`; Map-Closure Durchgang 5). Ein Wechsel von
 `Game` oder `TournamentType` hebt ihn nicht auf. Die zwei Reichweiten
-über mehrere Pins — der Titel-Knopf und die dritte — fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
+über mehrere Pins — der Reset im Plan-Kopf und die dritte — fragen vorher nach — eine kleine, am Knopf verankerte Blase mit
 Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht,
 denn dort steht ein sichtbarer Wert, der mit einem Griff wieder gesetzt ist. Die
 Rückfrage hängt an der **Handlung**, nicht am Ort, und bleibt: ein sitzungsweites
 Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
-Der Ort „neben dem `TournamentType`-Titel" ist seit #41 auch am Schirm wahr; bis
-dahin sass der Knopf im Kopf des Plans, und zwar nicht aus einem Entscheid,
-sondern weil es den Titel am Schirm noch nicht gab. Der Preis ist benannt und
-angenommen: die Details-Spalte scrollt, also scrollt der Rückweg mit — derselbe Preis,
-den die vier heissen Regler in derselben Spalte schon zahlen. Die Blase zählt
+Der Ort ist seit #143 der **Plan-Kopf oben rechts**, in jeder Faltung, als Icon
+(`rotate-ccw`) mit dem Wort als `aria-label` und Tooltip und mit der Zahl dessen,
+was fällt, an seiner Ecke; ohne einen von Hand gesetzten Posten steht er nicht da.
+Neben ihm steht Share (der Knopf, der den `SetupLink` kopiert). Das überstimmt den
+Ort „neben dem `TournamentType`-Titel" (#41, #67), den die Details-Spalte mit
+ihrem Scrollen bezahlt hatte; davor sass der Knopf schon einmal im Kopf des Plans,
+damals nicht aus einem Entscheid, sondern weil es den Titel am Schirm noch nicht gab
+(Maintainer, Durchklicken 2026-10-08). Die Blase zählt
 auf, **welche** Regler fallen, nicht nur wie viele, und sagt dazu, dass es kein
 Zurück gibt. Ein Overlay ist sie nicht und darf sie nicht sein: das eine, das
 die App hat, ist vergeben. Die Markierung sagt deshalb „folgt der Rechnung nicht

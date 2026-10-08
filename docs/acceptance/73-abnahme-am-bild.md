@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -780,6 +780,123 @@ hier nicht.
 
 Die Zahlen dieses Protokolls gelten damit, sobald #147 auf `main` steht.
 
+## #143 · Plan-Kopf und Leiste
+
+Entscheid: Body von #143 (Maintainer, 2026-10-08, Durchklicken) und K2 der Runde 142·145
+([#143](https://github.com/ditshej/tcg-prizing/issues/143), Kommentar K2). Share und Reset-all
+stehen als Icons oben rechts im Plan-Kopf, die Leiste trägt Players, Served ranks und die Curve
+als Chips über die ganze Breite, „Set packs to …" auf `Prepare` ist weg.
+
+- **Stand:** Zweig `feat/143-plan-kopf-leiste`, geschnitten von `feat/146-ios-ohne-gummiband`
+  (PR #150, 16-px-Felder, kein Gummiband) — die Messung schliesst #150 ein.
+- **PHP:** 8.3.33 (`php -v`). Server `php -S localhost:8743 -t public` aus der Worktree-Wurzel
+  `tcg-prizing-143`.
+- **Browser:** Google Chrome (headless) über Playwright, `colorScheme` light, Viewport je Leinwand.
+- **Messmittel:** `getBoundingClientRect` von `.plan-controls` (mit Innenabstand) und
+  `.plan-head`; Trefferfläche wie Lauf 17 (von der Mitte aus waagrecht und senkrecht über
+  `elementFromPoint`, Kante auf 1/64 px halbiert; nur Ziele, deren ganzes 44er-Feld im Bild liegt).
+- **Adressen:** ohne Link (Startwerte nach #145) und mit den alten Startwerten gepinnt
+  (`type=weekly&players=32&depthStep=top8&curve=mild`, dazu `rankFloor=3` für den Reset-Zähler).
+
+### Die Leiste — Soll und Ist
+
+Soll (K2): zwei Zähler nebeneinander ab 360, die Chips der Curve darunter über die ganze Breite;
+375 × 553 und 360 × 580 zeigen Plan, zwei Kachelreihen, Diagramm und Leiste in einem Bild; die
+Karte rechnete mit **124**. Unter 360 untereinander, 320 scrollt (#73 K4); die sieben Chips brechen
+unter 348 4 + 3 um (7 × 44 + 6 × 4 = 332 für den Inhalt der Leiste).
+
+| Leinwand | Leiste | Zähler je Zeile / Chips | Diagramm | Raster | Fuss | Scrollen |
+|---|---|---|---|---|---|---|
+| 320 × 900 | 632–844 = **212** | 1 / 4 + 3 (Chip 73 breit) | 80–360 | 397–574 | 844–900 | nein |
+| 360 × 900 | 720–844 = **124** | 2 / 7 (45,7) | 80–360 | 397–662 | 844–900 | nein |
+| 375 × 900 | 720–844 = **124** | 2 / 7 (47,8) | 80–360 | 397–662 | 844–900 | nein |
+| 393 × 830 (Master) | 650–774 = **124** | 2 / 7 (50,4) | 80–360 | 397–592 | 774–830 | nein |
+| 673 × 900 | 720–844 = **124** | 2 / 7 (90,4) | 80–360 | 397–662 | 844–900 | nein |
+| **375 × 553** (iPhone SE, Safari) | 373–497 = **124** | 2 / 7 | 80–165 (85) | 202–315 = zwei Reihen | 497–553 | **nein** |
+| **360 × 580** | 400–524 = **124** | 2 / 7 | 80–192 (112) | 229–342 = zwei Reihen | 524–580 | **nein** |
+| 360 × 580, `Served ranks` gepinnt | 385–524 = **139** | 2 / 7 | 80–177 (97) | 214–327 = zwei Reihen | 524–580 | nein |
+
+Durchlauf über jede Breite 320–673 (Höhe 900):
+
+| Adresse | Stufen der Leiste |
+|---|---|
+| ohne Link | 320–335: 212 · 336–347: 195 · 348–359: 151 · 360–673: **124** |
+| alte Startwerte gepinnt | 320–347: 212 · 348–350: 168 · 351–359: 151 · 360–361: **139** · 362–539: 124 · 540–542: 139 · 543–673: 124 |
+| `type=weekly&depth=32` | 320–347: 212 · 348–351: 168 · 352–359: 151 · 360–362: **139** · 363–539: 124 · 540–543: 139 · 544–673: 124 |
+| `type=release` · `type=weekend` | 320–337: 212 · 338–347: 195 · 348–359: 151 · 360–673: 124 |
+
+Gemessene Spanne damit **124 bis 212** (vor #143 mit vier Reglern 124 bis 229). Die Chip-Zeile
+ist so hoch wie die Zählerzeile, die sie ersetzt (Titelzeile + 34): am Master bleibt die Leiste
+**124**, `RAIL_AT_MASTER` 124 ist nachgemessen und gilt. Die 4 + 3 kosten bei 320 die erwartete
+eine Chip-Reihe; dass die Leiste dort trotzdem 17 niedriger ist als vorher (212 statt 229), zahlt
+der weggefallene vierte Zähler. Die Durchläufe in `test/ui-fold.test.mjs` rechnen mit 124, 139,
+151, 168, 195 und 212; `MEASURED_RAIL` trägt 212 / 124 / 124 / 124 / 139 / 124 bei
+320 / 360 / 393 / 500 / 540 / 600 (vorher die Lesungen vom 2026-10-02, vor #142).
+
+**Befund, nicht still:** Die Leiste geht bei 360 über 124, sobald `Served ranks` gepinnt ist —
+**139** bei 360–362 (Titel, `pinned` und `cap N` passen nicht auf eine Zeile; dieselbe Stelle wie
+Lauf 17 bei 360–361 und 540–542). 360 × 580 bleibt dabei in einem Bild (Diagramm 97, zwei Reihen,
+kein Scrollen). Bei 375 bleibt sie in allen gemessenen Adressen 124.
+
+Die einspaltige Schwelle (351 + 56 + gemessene Leiste) am Bild bestätigt: 360, 375 und 393 × 531
+einspaltig, × 530 `cramped`; 350 × 558 / 557 (Leiste 151) und 320 × 619 / 618 (Leiste 212) ebenso.
+
+**Die Messprobe hatte noch die alte Zelle.** `.rail-probe .controls-hot` stand seit K2 auf
+`minmax(176px, 1fr)`, die Leiste selbst auf 164: wo die Leiste nicht als Balken steht
+(`Details` vorn, Vollbild, flach), mass die Probe bei 360–392 untereinander stehende Zähler.
+Nachgestellt mit der alten 176 im Bau von #143: `Details` bei 375 × 553 ging auf `cramped`. Jetzt
+lesen Leiste und Probe dieselbe Eigenschaft (`--rail-cells`); 375 × 553 und 360 × 580 bleiben
+auf `Details` einspaltig.
+
+### Der Plan-Kopf — Soll und Ist
+
+Soll: Share und Reset-all oben rechts, je mindestens 44 × 44 Trefferfläche, der Kopf wächst nicht
+(`PLAN_FIXED` 178 mit Kopf 42). Gebaut: die beiden Knöpfe stehen **neben** den zwei Zeilen des
+Kopfs, nicht in `.col-titleline` (die schneidet mit `overflow: hidden` und ist 22 hoch);
+Zeichnung **32 × 32**, Abstand 12, Teilung 44.
+
+| Leinwand | Kopf | Reset (Zeichnung / Fläche) | Share (Zeichnung / Fläche) | Abstand rechts |
+|---|---|---|---|---|
+| 320 × 900 | 8–48 = **40** | 32 × 32 / 44 × 45 | 32 × 32 / 45 × 45 | 8 |
+| 360 × 580 · 375 × 553 · 393 × 830 | **40** | 32 × 32 / 44 × 45 | 32 × 32 / 45 × 45 | 8 |
+| 812 × 375 (flach) | **40** | 32 × 32 / 44 × 45 | 32 × 32 / 45 × 45 | 342 (Spalte der heissen Regler rechts) |
+| 674 × 760 · 1280 × 760 | 8–50 = **42** (Titel `Plan` im Kopf) | 32 × 32 / 44 × 45 | 32 × 32 / 45 × 45 | 294 (`Details` rechts) |
+
+Der Kopf ist gleich hoch wie vorher (40 einspaltig, 42 mit Titel). Fester Teil bei 388
+(674 × 760, `players=64&depth=32`, alte Startwerte): 8 + Kopf 42 + `Participation` 16 +
+Legende 21 + Rangtotal 15 + Rangmeldung 27 + 6 × 8 = **177**, unter `PLAN_FIXED` 178.
+Trefferflächen aller Ziele im Bild auf `Plan` (30 bei 320 × 900, 360 × 580, 375 × 553,
+393 × 830): **0** unter 44. Bei 674 × 760 und 1280 × 760 (47 / 46 Ziele) einzig das Zählwerk
+`Min boosters per rank`, das in der `Details`-Spalte halb unter dem Streifen liegt (Sache des
+Scrollens, wie Lauf 17).
+
+**Folge, gemessen:** die Ausgabezeile verliert die 84 px der zwei Knöpfe. Am Master steht sie
+nicht mehr ganz da („96 boosters · 32 tournament packs · 3 winner p…") und scrollt seitlich, wie
+#129 K6 es für 320–340 entschieden hat — jetzt auch bei 393. Die Höhe bleibt.
+
+### Die Abläufe
+
+- **Share** (393 × 830, 900 × 700, 320 × 900): kopiert die vollständige Adresse
+  (`…?v=1&game=onepiece&type=weekly&players=32&rankFloor=3&depthStep=top8&curve=mild`); die Blase
+  „Link copied" steht 92 × 29 unter dem Knopf, 6 Abstand, am rechten Rand 8 innen, und ist nach
+  2,1 s weg. Ohne Clipboard (Schnittstelle entfernt): dieselbe Blase mit dem Feld (312 × 58),
+  Fokus im Feld, ganze Adresse markiert, ✕ schliesst. Im Vollbild stehen beide Knöpfe nicht.
+- **Reset-all** mit vier Posten (Zähler „4" an der Ecke): 393 × 830 und 320 × 900 fragen in der
+  Blase der Meldungsebene (`[data-notice-drop]`, die des Blatts liegt unter der verborgenen Seite),
+  900 × 700 in der des Blatts; überall „4 values back to Weekly?", Aufzählung mit Zielwerten,
+  „There is no undo". Bestätigt: alle vier fallen, die Adresszeile steht auf
+  `?v=1&game=onepiece&type=weekly`, der Knopf verschwindet.
+
+### Tests
+
+`node --test`: `test/ui-controls.test.mjs` (`HOT_KEYS` drei, `rankFloor` gleich darunter auf dem
+Blatt), `test/views-controls-hot.test.mjs` (kein `<select>`, `curve_steps()` für Blatt und
+Leiste), `test/ui-pins.test.mjs` (Reset im Plan-Kopf mit Zähler, fragt zuerst; nicht mehr auf
+`Details`), `test/ui-link-screen.test.mjs` (Share im Kopf, Icon allein, Blase 2 s ohne Zustand),
+`test/ui-plan.test.mjs` (die Frage nimmt die Blase im Bild; kein `takeOffer()`),
+`test/ui-prepare.test.mjs` (kein Angebot bei 0–100 Packs), `test/ui-fold.test.mjs` (gemessene
+Leisten).
+
 ## Abnahmekriterien von #73
 
 | Kriterium | Urteil | gemessen |
@@ -798,7 +915,7 @@ Die Zahlen dieses Protokolls gelten damit, sobald #147 auf `main` steht.
 ## Für #121 (nur am Gerät prüfbar)
 
 - Touch: Griff an der Kachel (54 px), am 🎲 der Legende, am Chip; Fehlgriff im Daumenbereich.
-- `<select>` der Kurve in der Schiene auf iOS (bereits an #61 vermerkt, nach #121 gewandert).
+- ~~`<select>` der Kurve in der Schiene auf iOS~~ — gegenstandslos seit #143: die Leiste trägt Chips, die App hat kein `<select>` mehr.
 - Echte Schriften auf iOS/Android: ob die Schiene bei 320–360 Breite umbricht (A5 hängt an der Schriftbreite), ob der Kopf bei 320–340 zweizeilig wird (gemessen 58 statt 40).
 - Querformat mit Browserleisten: ob die Bühne unter 349 hoch fällt (A6) und was `100dvh` beim Ein- und Ausblenden der Leisten tut.
 - Sichere Bereiche (Notch) am gedrehten Streifen rechts im Querformat.
