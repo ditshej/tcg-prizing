@@ -1137,6 +1137,6 @@ died once on the session limit and a lens agent got a 403 after a `/login`;
 `a51364c`, #160 (#156) `de76938`, #165 (#158) `ef69890`, #161 (#157)
 `5de689e`. Merge order: #162 → #164 → #163 → #160 → #165 → #161.
 
-**The conductor's context: about 26k for the round itself**, read off the
-counter between the start of the ticket drafts and the end of F. The counter
-restarted again at `/login`, so this is a sum of segments, not a peak.
+**The conductor's context: not measured cleanly; an estimate of 25–30k for the
+round.** The counter restarted at `/login` and at the limit reset, so only the
+segments can be added up, and they give no peak.
