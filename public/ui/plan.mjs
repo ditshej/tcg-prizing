@@ -536,6 +536,15 @@ export function planApp(seam = SEAM) {
       if (!this.openInfo || typeof document === 'undefined') return;
       const bubbleEl = document.querySelector(`[data-info-bubble="${this.openInfo}"]`);
       if (!bubbleEl) return;
+      /* Alpine shows an `x-show` beside a `@click.outside` one tick late, so
+         the click that opened it is not taken for one outside it — and a box
+         not shown yet measures 0 wide. Measured on the first try: the bubble
+         stood centred on a width of nothing, 53 px past the right edge at
+         393. So it waits for the frame in which it is there. */
+      if (!bubbleEl.offsetWidth && typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => this.placeInfo());
+        return;
+      }
       const anchorEl = document.querySelector(`[data-info="${this.openInfo}"]`);
       const { layout, visible } = seenFrame();
       const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync } from 'node:fs';
+
 import { planApp } from '../public/ui/plan.mjs';
 import { GAP, MARGIN, anchorVisible, bubblePosition, placeInFrame, visibleBox, visibleFrame } from '../public/ui/bubble.mjs';
 
@@ -281,4 +283,65 @@ test('one bubble at a time: the ⓘ, the tile and the question put each other ou
   app.toggleInfo('type');
   app.closeInfo();
   assert.equal(app.openInfo, null);
+});
+
+/*
+ * The form, held on the stylesheet and the markup as text (#154). Where it
+ * lands on a screen is the acceptance by image's; what it is made of is
+ * checkable here.
+ */
+
+const CSS = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8').replace(/\/\*[^]*?\*\//g, '');
+const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
+
+/** The declarations of every rule whose selector list is exactly `head`. */
+function declarations(head) {
+  const found = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, h]) => h.split(',').map((x) => x.trim()).join(',') === head)
+    .map(([, , body]) => body);
+  assert.ok(found.length > 0, `${head} is in the stylesheet`);
+  return found.join(';');
+}
+
+test('a double tap zooms no control, and pinch zoom stays', () => {
+  const rule = [...CSS.matchAll(/([^{}]+)\{([^{}]*touch-action[^{}]*)\}/g)];
+  assert.equal(rule.length, 1, 'one rule says it');
+  const [, head, body] = rule[0];
+  assert.match(body, /touch-action:\s*manipulation;/);
+  // Every pressable thing is real markup — the tiles, the ±, the chips and
+  // the head buttons are all <button>s — so the elements are the list.
+  for (const selector of ['button', 'a', 'input', 'select', 'label', '.counter']) {
+    assert.ok(head.includes(selector), selector);
+  }
+  assert.doesNotMatch(CSS, /maximum-scale|user-scalable/);
+});
+
+test('the ⓘ\'s sentence floats as the bubble, at most 292 wide, and pushes nothing', () => {
+  const body = declarations('.set-info');
+  assert.match(body, /position:\s*fixed;/);
+  assert.match(body, /z-index:\s*38;/);
+  assert.match(body, /max-width:\s*292px;/);
+  assert.doesNotMatch(body, /margin/);
+});
+
+test('each ⓘ is the anchor of its own bubble, placed by placeInfo()', () => {
+  for (const id of ['game', 'type']) {
+    assert.match(SHEET, new RegExp(`class="info" data-info="${id}" @click="toggleInfo\\('${id}'\\)"`));
+    assert.match(SHEET, new RegExp(`class="set-info" data-info-bubble="${id}"`));
+  }
+  assert.equal(SHEET.match(/\$nextTick\(\(\) => placeInfo\(\)\)/g).length, 2);
+  assert.equal(SHEET.match(/@keydown\.escape\.window="closeInfo\(\)"/g).length, 2);
+});
+
+test('the content of the ⓘ is unchanged, the Discord link included', () => {
+  assert.match(SHEET, /<a href="https:\/\/discord\.com\/users\/428891117220659241" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
+  assert.match(SHEET, /built for One Piece, other games welcome/);
+  assert.match(SHEET, /<strong>Tournament type<\/strong>/);
+  assert.match(SHEET, /Values you set by\s+hand stay where you put them\./);
+});
+
+test('in the tile\'s bubble the number stands in the middle of its counter', () => {
+  const body = declarations('.bubble .counter-value');
+  assert.match(body, /display:\s*grid;/);
+  assert.match(body, /place-items:\s*center;/);
 });
