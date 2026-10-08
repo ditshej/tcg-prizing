@@ -1,12 +1,13 @@
 /**
  * The SetupLink on screen (#72): the two places where the encoding of #47
  * becomes visible — Share in the plan head (#143) with its two branches,
- * the system's share sheet on a phone and the bubble with `Copy link` on a
- * desktop (#155), and the `LinkMigration` report as the app's one overlay.
+ * the system's share sheet wherever `navigator.share` exists and the bubble
+ * with `Copy link` where it does not (#155, K3), and the `LinkMigration`
+ * report as the app's one overlay.
  *
  * Everything here is on the proven side of the seam (ADR 0004): what the
  * button copies and what the report says are pure answers to plain inputs.
- * The rind in `plan.mjs` only hands in what a browser has — the pointer,
+ * The rind in `plan.mjs` only hands in what a browser has —
  * `navigator.share`, the page's own address, the clipboard, the document for
  * the `execCommand` fallback, the button element — and nothing here reads a
  * global itself. This file writes no word of the wire format either: the copy
@@ -27,14 +28,15 @@ export function linkAddress(query, page) {
 }
 
 /**
- * Which way Share goes (#155, F3 c): `'phone'` — straight into the system's
- * share sheet, no bubble — exactly when the pointer is coarse **and** there
- * is a `navigator.share` to call; `'desktop'` — the bubble with `Copy link`
- * — otherwise. A phone without `navigator.share` (plain http in the LAN is
- * no secure context) therefore lands on the bubble too.
+ * Which way Share goes (#155, F3 c as refined by K3): `'system'` — straight
+ * into the system's share sheet, no bubble — on every device that has a
+ * `navigator.share` to call, Safari on the Mac, tablets and Edge on Windows
+ * included; `'bubble'` — the bubble with `Copy link` — only where there is
+ * none (plain http in the LAN is no secure context, so it has none). The
+ * pointer plays no part: K3 dropped the `(pointer: coarse)` condition.
  */
-export function shareBranch({ coarse, share }) {
-  return coarse === true && typeof share === 'function' ? 'phone' : 'desktop';
+export function shareBranch({ share }) {
+  return typeof share === 'function' ? 'system' : 'bubble';
 }
 
 /**

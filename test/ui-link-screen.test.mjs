@@ -361,7 +361,7 @@ function shareBubble() {
 }
 
 /**
- * #155, desktop branch: the bubble says in one sentence what is shared and
+ * #155, the branch without `navigator.share`: the bubble says in one sentence what is shared and
  * carries `Copy link`, which is called `Copied` while it carries the
  * fleeting mark. It closes on Escape and on a press beside it — not on the
  * press at Share itself, which is the toggle.
@@ -409,19 +409,51 @@ test('no other view opens an overlay (#72 AC 6: the one overlay of the app)', ()
   }
 });
 
-/* ── Share: the system sheet on a phone, the bubble on a desktop (#155) ── */
+/* ── Share: the system sheet wherever navigator.share exists, else the bubble (#155, K3) ── */
 
 /**
- * #155, F3 c: "Telefon" is a coarse pointer **and** a `navigator.share` to
- * call; everything else is the desktop branch — a phone over plain http in
- * the LAN has no `navigator.share` and falls back to the bubble.
+ * #155, F3 c as refined by K3: every device with a `navigator.share` to call
+ * gets the system's sheet — Safari on the Mac, tablets, Edge on Windows —
+ * and only where it is missing (plain http in the LAN) does Share open the
+ * bubble. The pointer plays no part: a coarse or fine one changes nothing.
  */
-test('the branch is the phone only with a coarse pointer and a share function — all four combinations (#155)', () => {
+test('the branch is the system sheet exactly when navigator.share is a function — the pointer changes nothing (#155, K3)', () => {
   const share = () => Promise.resolve();
-  assert.equal(shareBranch({ coarse: true, share }), 'phone');
-  assert.equal(shareBranch({ coarse: true, share: undefined }), 'desktop');
-  assert.equal(shareBranch({ coarse: false, share }), 'desktop');
-  assert.equal(shareBranch({ coarse: false, share: undefined }), 'desktop');
+  for (const coarse of [true, false, undefined]) {
+    assert.equal(shareBranch({ coarse, share }), 'system', `share present, coarse ${coarse}`);
+    assert.equal(shareBranch({ coarse, share: undefined }), 'bubble', `share absent, coarse ${coarse}`);
+    assert.equal(shareBranch({ coarse, share: {} }), 'bubble', `share not callable, coarse ${coarse}`);
+  }
+});
+
+/**
+ * K3 from the rind's side: whatever `matchMedia('(pointer: coarse)')` answers,
+ * `shareEnv()` hands on `navigator.share` alone, so a fine pointer with a
+ * share function is the system branch and a coarse one without is the bubble.
+ */
+test('the browser\'s pointer query does not reach the branch choice (#155, K3)', () => {
+  const saved = { navigator: Object.getOwnPropertyDescriptor(globalThis, 'navigator'), matchMedia: globalThis.matchMedia };
+  const asked = [];
+  try {
+    for (const coarse of [true, false]) {
+      globalThis.matchMedia = (query) => { asked.push(query); return { matches: coarse }; };
+      for (const withShare of [true, false]) {
+        Object.defineProperty(globalThis, 'navigator', {
+          value: withShare ? { share: async () => {} } : {},
+          configurable: true,
+          writable: true,
+        });
+        const { app } = opened();
+        assert.equal(shareBranch(app.shareEnv()), withShare ? 'system' : 'bubble', `coarse ${coarse}, share ${withShare}`);
+      }
+    }
+    assert.deepEqual(asked.filter((q) => /pointer/.test(q)), [], 'no pointer query is made');
+  } finally {
+    if (saved.navigator) Object.defineProperty(globalThis, 'navigator', saved.navigator);
+    else delete globalThis.navigator;
+    if (saved.matchMedia === undefined) delete globalThis.matchMedia;
+    else globalThis.matchMedia = saved.matchMedia;
+  }
 });
 
 /**
@@ -486,12 +518,11 @@ test('execCopy copies a selected throwaway field and answers what the browser sa
 
 /** What a browser hands the Share handling, recorded: the system sheet,
  *  the clipboard and the execCommand fallback. */
-function shareEnv({ coarse = false, share = undefined, clipboard = undefined, exec = undefined } = {}) {
+function shareEnv({ share = undefined, clipboard = undefined, exec = undefined } = {}) {
   const log = { shared: [], written: [], execs: [] };
   return {
     log,
     env: {
-      coarse,
       share: share && ((data) => { log.shared.push(data); return share(data); }),
       clipboard: clipboard && { writeText: async (t) => { log.written.push(t); return clipboard(t); } },
       exec: exec && ((t) => { log.execs.push(t); return exec(t); }),
@@ -506,10 +537,10 @@ const SHARE_SENTENCE = 'Share the plan as it stands — everything you set by ha
 
 const WHOLE = 'https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5';
 
-test('on a phone, Share calls the system sheet once with the complete SetupLink — no bubble, no copy (#155)', async () => {
+test('with navigator.share, Share calls the system sheet once with the complete SetupLink — no bubble, no copy (#155)', async () => {
   const { app } = opened();
   app.setSlider('rankFloor', 5);
-  const { env, log } = shareEnv({ coarse: true, share: async () => {}, clipboard: () => {}, exec: () => true });
+  const { env, log } = shareEnv({ share: async () => {}, clipboard: () => {}, exec: () => true });
   await app.share(env);
   assert.deepEqual(log.shared, [{ url: WHOLE }]);
   assert.equal(app.shareOpen, false, 'no bubble opens');
@@ -520,20 +551,20 @@ test('on a phone, Share calls the system sheet once with the complete SetupLink 
 test('a cancelled system sheet shows nothing; any other failure falls back to the bubble (#155)', async () => {
   const abort = Object.assign(new Error('cancelled'), { name: 'AbortError' });
   const { app } = opened();
-  const cancelled = shareEnv({ coarse: true, share: async () => { throw abort; } });
+  const cancelled = shareEnv({ share: async () => { throw abort; } });
   await app.share(cancelled.env);
   assert.equal(app.shareOpen, false, 'no bubble after a cancel');
   assert.equal(app.linkField, null, 'no field either');
 
   for (const name of ['NotAllowedError', 'TypeError', 'DataError']) {
     const { app: other } = opened();
-    const failed = shareEnv({ coarse: true, share: async () => { throw Object.assign(new Error(name), { name }); } });
+    const failed = shareEnv({ share: async () => { throw Object.assign(new Error(name), { name }); } });
     await other.share(failed.env);
-    assert.equal(other.shareOpen, true, `${name} opens the desktop bubble`);
+    assert.equal(other.shareOpen, true, `${name} opens the bubble`);
   }
 });
 
-test('on a desktop, Share opens the bubble and copies nothing; a second press closes it (#155)', async () => {
+test('without navigator.share, Share opens the bubble and copies nothing; a second press closes it (#155)', async () => {
   const { app } = opened();
   const { env, log } = shareEnv({ clipboard: () => {}, exec: () => true });
   await app.share(env);
@@ -622,8 +653,8 @@ test('an unconfirmed number locks Share on both branches and Copy link (#155)', 
     return null;
   };
   const cases = [
-    ['phone', (app, env) => app.share(env), { coarse: true, share: async () => {} }],
-    ['desktop', (app, env) => app.share(env), {}],
+    ['system', (app, env) => app.share(env), { share: async () => {} }],
+    ['bubble', (app, env) => app.share(env), {}],
     ['Copy link', (app, env) => app.copyLink(fakeButton(), env), { clipboard: () => {} }],
   ];
   for (const [name, handle, options] of cases) {

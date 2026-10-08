@@ -51,8 +51,9 @@
       counter, the length of the list the question reads out (#67 AC 6) — and
       is gone while nothing is set by hand, as the chip it replaces was: a
       reach over nothing is not an offer. Share (#155) opens the system's
-      share sheet with the complete `SetupLink` on a phone, and on a desktop
-      the bubble below with `Copy link` (`share()`). Neither stands in
+      share sheet with the complete `SetupLink` wherever `navigator.share`
+      exists, and only where it does not the bubble below with `Copy link`
+      (`share()`; K3 — the pointer plays no part). Neither stands in
       fullscreen, whose head is only "where you are, and how to get out".
     -->
     <header class="col-head plan-head" x-ref="head">
@@ -73,9 +74,10 @@
     </header>
 
     <!--
-      The bubble at Share (#155, the desktop branch; on a phone with
-      `navigator.share` the system's sheet is the whole answer and this never
-      opens). A press at Share opens it and copies nothing; it says in one
+      The bubble at Share (#155, the branch without `navigator.share`; K3:
+      wherever `navigator.share` exists, whatever the pointer, the system's
+      sheet is the whole answer and this opens only when the sheet fails
+      with something other than a cancel). A press at Share opens it and copies nothing; it says in one
       sentence what travels and carries `Copy link`, which copies the complete
       `SetupLink` and is called `Copied` for `COPIED_MS` — fleeting, as
       `data-link-copied` on the button (`flashCopied()`), the component keeps

@@ -1455,7 +1455,8 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * Whether the bubble at Share stands open — the desktop branch (#155).
+     * Whether the bubble at Share stands open — the branch without
+     * `navigator.share` (#155, K3).
      * Session state like every open bubble, and in the `SetupLink` as little
      * (#61, "Session state").
      */
@@ -1468,17 +1469,20 @@ export function planApp(seam = SEAM) {
     linkField: null,
 
     /**
-     * The Share button's one handling (#155, F3 c; the place and form are
-     * #143's). `env` is what a browser has — the pointer, `navigator.share`,
-     * the page's own address — handed in so `node --test` can hand in its
-     * own; the defaults are read only here, at the rind (`shareEnv()`).
+     * The Share button's one handling (#155, F3 c as refined by K3; the
+     * place and form are #143's). `env` is what a browser has —
+     * `navigator.share`, the page's own address — handed in so `node --test`
+     * can hand in its own; the defaults are read only here, at the rind
+     * (`shareEnv()`).
      *
-     * - **Phone** (`shareBranch()`): straight into the system's share sheet
-     *   with the complete `SetupLink` (#47). No bubble, no copy — the
-     *   sheet is the whole answer. A cancel (`AbortError`) shows nothing;
-     *   any other failure falls back to the desktop bubble.
-     * - **Desktop**: the press opens the bubble with its sentence and
-     *   `Copy link` and copies nothing; the same press closes it again.
+     * - **System** (`shareBranch()`, wherever `navigator.share` exists — the
+     *   pointer plays no part): straight into the system's share sheet with
+     *   the complete `SetupLink` (#47). No bubble, no copy — the sheet is the
+     *   whole answer. A cancel (`AbortError`) shows nothing; any other
+     *   failure falls back to the bubble.
+     * - **Bubble** (no `navigator.share`): the press opens the bubble with
+     *   its sentence and `Copy link` and copies nothing; the same press
+     *   closes it again.
      *
      * The call into the sheet is the first thing the handling does, before
      * any `await`: browsers grant `navigator.share` only inside the press.
@@ -1486,7 +1490,7 @@ export function planApp(seam = SEAM) {
      * (`confirm-first.mjs`): the press only confirms the number.
      */
     async share(env = this.shareEnv()) {
-      if (shareBranch(env) === 'phone') {
+      if (shareBranch(env) === 'system') {
         try {
           await env.share({ url: linkAddress(this.linkQuery, env.page) });
           return 'shared';
@@ -1547,14 +1551,14 @@ export function planApp(seam = SEAM) {
     },
 
     /**
-     * What the branch choice needs from a browser: whether the pointer is
-     * coarse, `navigator.share` if there is one — called on `navigator`,
-     * which it needs as `this` — and the page's own address.
+     * What the branch choice needs from a browser: `navigator.share` if
+     * there is one — called on `navigator`, which it needs as `this` — and
+     * the page's own address. No pointer query: K3 (#155) made the branch
+     * depend on `navigator.share` alone.
      */
     shareEnv() {
       const nav = globalThis.navigator;
       return {
-        coarse: globalThis.matchMedia?.('(pointer: coarse)').matches === true,
         share: typeof nav?.share === 'function' ? (data) => nav.share(data) : undefined,
         page: globalThis.document?.baseURI,
       };

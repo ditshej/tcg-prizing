@@ -1,4 +1,4 @@
-# Abnahme — #155 Share: System-Teilen am Telefon, Blase mit `Copy link` am Desktop
+# Abnahme — #155 Share: System-Teilen wo `navigator.share` vorhanden ist, sonst Blase mit `Copy link`
 
 Gemessen am echten App-Stand, nie „sieht gut aus".
 
@@ -6,30 +6,34 @@ Gemessen am echten App-Stand, nie „sieht gut aus".
 - **Adresse:** `http://localhost:8785/` — **sicherer Kontext** (`window.isSecureContext === true`, gemessen). Nicht über die LAN-Adresse per http geprüft (#155, „Folge für die Abnahme").
 - **Server:** `php -S localhost:8785 -t public` aus der Worktree-Wurzel, PHP 8.3.33
 - **Browser:** Google Chrome 155.0.8059.40 headless über Playwright 1.64 (npx-Cache), Skripte unter `/tmp/m155`, nicht im Repo
-- **Telefon-Zweig:** `isMobile` + `hasTouch` (gemessen: `matchMedia('(pointer: coarse)').matches === true`), `navigator.share` per Init-Skript ersetzt und protokolliert
-- **Desktop-Zweig:** 1280 × 800, feiner Zeiger (`(pointer: coarse)` = `false`), Clipboard-Rechte erteilt; die Zwischenablage wird vor jedem Fall auf `sentinel` gesetzt und danach über `navigator.clipboard.readText()` zurückgelesen
+- **System-Zweig:** `navigator.share` per Init-Skript ersetzt und protokolliert; gemessen mit grobem Zeiger (`isMobile` + `hasTouch`, `matchMedia('(pointer: coarse)').matches === true`) und nach K3 auch mit feinem (1280 × 800)
+- **Blasen-Zweig:** `navigator.share` per Init-Skript entfernt (Chrome headless am Mac hat es über localhost, gemessen: `typeof navigator.share === 'function'`); 1280 × 800, feiner Zeiger, Clipboard-Rechte erteilt; die Zwischenablage wird vor jedem Fall auf `sentinel` gesetzt und danach über `navigator.clipboard.readText()` zurückgelesen
 - **Messmittel:** `getBoundingClientRect`, berechnete Stile, `visualViewport`
 
 ## Zweigwahl
 
+**Regel nach Entscheid K3** (#155, Kommentar „Entscheid K3"): Jedes Gerät, auf dem `navigator.share` vorhanden ist, bekommt beim Druck auf Share direkt das System-Teilen — auch Safari am Mac, Tablets und Edge unter Windows. Nur wo `navigator.share` fehlt, öffnet Share die Blase. Die Art des Zeigers spielt keine Rolle mehr. Die erste Fassung dieser Abnahme hatte noch die Grenze „grober Zeiger **und** `navigator.share`" gemessen; K3 hat sie verworfen, die Tabelle ist nachgeführt.
+
 | Zeiger | `navigator.share` | Zweig | Beleg |
 |---|---|---|---|
-| grob | Funktion | Telefon | Browser (Fall C) und `test/ui-link-screen.test.mjs` |
-| grob | fehlt | Desktop | Browser (Fall B, 393 / 320) und Test |
-| fein | Funktion | Desktop | Test |
-| fein | fehlt | Desktop | Browser (Fall A) und Test |
+| grob | Funktion | System | Browser (Fall C) und `test/ui-link-screen.test.mjs` |
+| grob | fehlt | Blase | Browser (Fall B, 393 / 320) und Test |
+| fein | Funktion | **System** (vor K3: Blase) | Browser, 1280 × 800: ein Aufruf `{ url: "http://localhost:8852/?v=1&game=onepiece&type=weekly" }`, keine Blase; und Test |
+| fein | fehlt | Blase | Browser (Fall A) und Test |
 
-## Telefon-Zweig (393 × 700, grober Zeiger, `navigator.share` vorhanden)
+Der Test hält zusätzlich fest, dass `shareEnv()` keine Zeiger-Abfrage mehr stellt: ein wieder eingeführtes `(pointer: coarse)` in `shareBranch()` oder `shareEnv()` färbt ihn rot (Mutation geprüft).
+
+## System-Zweig (393 × 700, grober Zeiger, `navigator.share` vorhanden)
 
 | Fall | `navigator.share`-Aufrufe | Blase | Zwischenablage danach |
 |---|---|---|---|
 | Teilen gelingt | 1 × `{ url: "http://localhost:8785/?v=1&game=onepiece&type=weekend&players=48" }` | zu | `sentinel` (nichts kopiert) |
 | `AbortError` | 1 × dieselbe Form | zu, keine Meldung | `sentinel` |
-| `NotAllowedError` | 1 × dieselbe Form | **offen** (Rückfall auf den Desktop-Zweig) | `sentinel` |
+| `NotAllowedError` | 1 × dieselbe Form | **offen** (Rückfall auf die Blase) | `sentinel` |
 
 Die geteilte Form ist die vollständige (`v`, `game`, `type` und der Pin `players`), auch wenn die Adresszeile gerade anders aussieht (#47).
 
-## Desktop-Zweig (1280 × 800)
+## Blasen-Zweig (1280 × 800, ohne `navigator.share`)
 
 | Schritt | gemessen | Soll |
 |---|---|---|
@@ -74,4 +78,5 @@ Ohne die Deckelung stand die Blase bei Zoom 1,5 mit 292 **38 px** über dem rech
 ## Für #121 (nur am Gerät prüfbar)
 
 - iPhone und Android über https: Share öffnet die Teilen-Ansicht des Systems, der geteilte Link öffnet den gesetzten Stand.
+- Safari am Mac über https (K3): Share öffnet das System-Teilen, keine Blase.
 - iPhone und Android über http im LAN: Share fällt auf die Blase zurück, `Copy link` kopiert per `execCommand` oder zeigt das Feld.
