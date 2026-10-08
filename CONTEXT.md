@@ -1023,7 +1023,7 @@ Bestätigen und Ablehnen, samt Zahl dessen, was fällt; die einzelne fragt nicht
 denn dort steht ein sichtbarer Wert, der mit einem Griff wieder gesetzt ist. Die
 Rückfrage hängt an der **Handlung**, nicht am Ort, und bleibt: ein sitzungsweites
 Undo, das sie überflüssig gemacht hätte, kommt nicht (ADR 0006).
-Der Ort ist seit #143 der **Plan-Kopf oben rechts**, in jeder Faltung, als Icon
+Der Ort ist seit #143 der **Plan-Kopf oben rechts**, in jeder Faltung ausser im Vollbild, als Icon
 (`rotate-ccw`) mit dem Wort als `aria-label` und Tooltip und mit der Zahl dessen,
 was fällt, an seiner Ecke; ohne einen von Hand gesetzten Posten steht er nicht da.
 Neben ihm steht Share (der Knopf, der den `SetupLink` kopiert). Das überstimmt den
