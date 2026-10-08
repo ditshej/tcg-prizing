@@ -656,14 +656,33 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
 ### Was sich verschoben hat — und wo es ein früheres Soll trifft
 
 - **Die Schiene ist höher.** Das Zählwerk ist jetzt 38 × 34 (Prototyp) statt 26 × ~25, und ein
-  Zählwerk mit Rückweg braucht 176 Breite: Schiene am Master **124** (650–774) statt 87, bei
-  673 ebenfalls 124. Die einspaltige Schwelle (351 + 56 + gemessene Schiene, K2) wandert mit:
-  am Master **531** statt 494. 673 × 469 und 600 × 493 sind darum jetzt **flach** (vorher
-  einspaltig). Nichts davon ist gesetzt, alles gemessen.
-  Unter 393 standen die Zähler einzeln (360/375: 195, 320: 229), iPhone SE in Safari (375 × 553)
-  und 360 × 580 scrollten. **Entschieden in Runde 142·145, K2** ([#142](https://github.com/ditshej/tcg-prizing/issues/142#issuecomment-6059121659)):
-  zwei Zähler nebeneinander bis 360 Breite, das Zahlenfeld 44 statt 54 — erwartet 124, ein Bild ab
-  531. Die Zahlen für 320–392 hier nach diesem Bau nachmessen.
+  Zählwerk mit Rückweg braucht 164 Breite (38 + 44 + 38, Rückweg 16 + 28): Schiene am Master
+  **124** (650–774) statt 87, bei 673 ebenfalls 124. Die einspaltige Schwelle (351 + 56 +
+  gemessene Schiene, K2) wandert mit: am Master **531** statt 494. 673 × 469 und 600 × 493 sind
+  darum jetzt **flach** (vorher einspaltig). Nichts davon ist gesetzt, alles gemessen.
+  Vor K2 standen unter 393 die Zähler einzeln (Zahlenfeld 54, Zelle 176; 360/375: 195, 320: 229),
+  iPhone SE in Safari (375 × 553) und 360 × 580 scrollten. **Entschieden in Runde 142·145, K2**
+  ([#142](https://github.com/ditshej/tcg-prizing/issues/142#issuecomment-6059121659)): zwei
+  Zähler nebeneinander bis 360 Breite, das Zahlenfeld der Schiene 44 statt 54, die
+  Trefferflächen bleiben 44 × 44. **Nach dem Bau gemessen** (Höhe 900, `plain`):
+
+  | Bühnenbreite | Schiene | Zähler je Zeile | einspaltig ab Höhe |
+  |---|---|---|---|
+  | 360–673 (gemessen 360, 361, 365, 375, 380, 392, 393, 412, 430, 673) | **124** | 2 | **531** |
+  | 347–359 | 195 | 1 | 602 |
+  | 336–346 | 212 | 1 | 619 |
+  | 320–335 | 229 | 1 | 636 |
+
+  Die Anordnung kippt bei **360** genau: zwei Zellen zu 164 + Lücke 16 + Rand 2 × 8 = 360; bei
+  359 stehen die Zähler untereinander. Unter 360 entscheidet die Titelzeile, ob ein Zähler neben
+  seinem Titel steht (daher die drei Stufen). Die Schwelle ist am Bild bestätigt: 360 × 531,
+  375 × 531 und 393 × 531 einspaltig, je 530 `cramped`; 350 × 602 / 601, 340 × 619 / 618 und 320 × 636 / 635 ebenso einspaltig / 
+  `cramped`. **375 × 553** (iPhone SE, Safari): einspaltig, Diagramm 80–165, Raster 202–315
+  (zwei Reihen), Schiene 373–497, Fuss 497–553, die Seite scrollt nicht. **360 × 580**:
+  einspaltig, Diagramm 80–192, Raster 229–342, Schiene 400–524, Fuss 524–580, kein Scrollen.
+  Drei Ziffern passen ins 44er-Feld (`players=512`: `scrollWidth` 44 = `clientWidth`).
+  Trefferflächen unter 44 bei 360 × 580, 375 × 553, 360 × 900 und 393 × 830 (`plain`, 26 Ziele):
+  **0**. 320 scrollt wie bisher (#73 K4).
 - **Die Verlosungsleiste ist höher**: offen **144** statt 119, nach dem Wurf **224** statt 190,5,
   nach sieben Würfen bei 674 × 399 **268** statt 216. Grund: 13 Stufen in zwei Reihen und der
   Auslöser darüber brauchen je 44 Abstand (Stufen 28 hoch + 16 Lücke, Auslöser 34 + 16).

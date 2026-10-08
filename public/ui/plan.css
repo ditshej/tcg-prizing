@@ -803,9 +803,12 @@ select {
      the one other place this ticket's own fixed strip is taller than the
      footer nav the spec's flat-stage math assumed (that nav is later
      tickets' work; these are four real controls). */
-  /* 176: title above, then counter (38 + field + 38) and the way back (16 +
-     28) side by side — at 150 the way back fell under the counter (#142). */
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  /* 164: title above, then counter (38 + 44 + 38) and the way back (16 +
+     28) side by side — at 150 the way back fell under the counter (#142).
+     The rail's field is 44, not the sheet's 54, so two cells stand side by
+     side down to a 360 stage (2 × 164 + 16 + 2 × 8); below it they stack
+     (round 142·145, K2). */
+  grid-template-columns: repeat(auto-fit, minmax(164px, 1fr));
   /* 10 between the rows: a counter's field reaches 5 past its drawing, so a
      row below must not start inside that (#142). */
   gap: 10px 16px;
@@ -878,7 +881,11 @@ select {
   font-size: 0.75rem;
 }
 
+/* 44 wide on the rail, where the sheet's field is 4.2em (54 here): three
+   digits fit, and two counters stand side by side down to 360 (round
+   142·145, K2). Only the field narrows — the ± keep their 44 hit areas. */
 .controls-hot .counter-value {
+  width: 44px;
   padding: 1px 2px;
   font-size: 0.8rem;
 }
