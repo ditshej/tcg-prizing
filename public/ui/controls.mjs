@@ -44,15 +44,17 @@ import { distribute } from '../core/distribute.mjs';
 import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
 import { DEFAULT_RANGE, rangeName } from './raffle.mjs';
 
-/** The four hot ones, in the order #61 names them. They carry no group title:
- *  the page head is their title (#64). */
-export const HOT_KEYS = ['players', 'depth', 'curve', 'rankFloor'];
+/** The hot ones — what the rail under the `Plan` carries, in the order they
+ *  stand. Three since #143 (decision 5, overruling #61 story 13): `RankFloor`
+ *  stands on `Details` only. They carry no group title: the page head is
+ *  their title (#64). */
+export const HOT_KEYS = ['players', 'depth', 'curve'];
 
 /**
  * The groups below the hot block, each with the title and the sentence #61
  * gives it. `Rank pool` is absent, and that is a decision, not an omission:
  * its three members — how deep, how flat, how steep — are precisely `depth`,
- * `rankFloor` and `curve`, and those are hoisted into the hot block. A group
+ * `rankFloor` and `curve`, and those are hoisted into the top block. A group
  * whose every member stands elsewhere would be a title over nothing.
  */
 export const GROUPS = [
@@ -76,8 +78,10 @@ export const GROUPS = [
   },
 ];
 
-/** All seventeen, in the order they stand on the sheet. */
-export const SHEET_KEYS = [...HOT_KEYS, 'depthStep', ...GROUPS.flatMap((g) => g.keys)];
+/** All seventeen, in the order they stand on the sheet. `rankFloor` left the
+ *  rail (#143) but not the sheet's top block: it stands right under the three,
+ *  as it did, so the sheet's order and every list read in it are unchanged. */
+export const SHEET_KEYS = [...HOT_KEYS, 'rankFloor', 'depthStep', ...GROUPS.flatMap((g) => g.keys)];
 
 /**
  * Whether a control stands on the sheet at this stand. One does not:

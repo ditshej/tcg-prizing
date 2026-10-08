@@ -74,14 +74,22 @@ test('the sheet carries seventeen controls, and they are exactly the Settings fi
   assert.deepEqual([...SHEET_KEYS].sort(), expected);
 });
 
-test('the four hot ones lead the sheet and carry no group of their own', () => {
-  assert.deepEqual(HOT_KEYS, ['players', 'depth', 'curve', 'rankFloor']);
-  assert.deepEqual(SHEET_KEYS.slice(0, 4), HOT_KEYS);
-  // `depthStep` is the fifth field of the hot block, but not a fifth control:
-  // it is the step grid inside the `Served ranks` control.
+/**
+ * #143, decision 5: the rail carries three — Players, Served ranks, Curve —
+ * and `RankFloor` stands on `Details` only. The first three on `Details` are
+ * the same three (AC 4); `Min boosters per rank` follows them in the sheet's
+ * top block, still without a group title, so the sheet's own order is the
+ * one it had.
+ */
+test('the three hot ones lead the sheet, RankFloor follows them there, and none has a group', () => {
+  assert.deepEqual(HOT_KEYS, ['players', 'depth', 'curve']);
+  assert.deepEqual(SHEET_KEYS.slice(0, 3), HOT_KEYS);
+  assert.equal(SHEET_KEYS[3], 'rankFloor', 'Min boosters per rank: on Details only, right under the three');
+  // `depthStep` is the fifth field of the top block, but not a control of its
+  // own: it is the step grid inside the `Served ranks` control.
   assert.equal(SHEET_KEYS[4], 'depthStep');
   for (const group of GROUPS) {
-    for (const key of HOT_KEYS) assert.ok(!group.keys.includes(key), `${key} is hoisted`);
+    for (const key of [...HOT_KEYS, 'rankFloor']) assert.ok(!group.keys.includes(key), `${key} is hoisted`);
   }
 });
 
