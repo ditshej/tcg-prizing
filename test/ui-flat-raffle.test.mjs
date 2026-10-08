@@ -109,14 +109,14 @@ test('the rank total stays when the diagram goes, and leaves only with fullscree
 
 test('the list scrolls on the flat stage and in the cramped exception, read off the fold — both sides of each edge', () => {
   // [stage, scrolls]: 435/436 at 380 (cramped / flat — both scroll); the
-  // one-column threshold at 600 (rail 87 → 494) and 500 (rail 115 → 522);
+  // one-column threshold at 600 (rail at the master 124 → 531) and 500 (rail 115 → 522);
   // the first height 398/399 at 674; and a cramped stage against the same
   // width over the threshold.
   const cases = [
     [{ width: 435, height: 380 }, true],
     [{ width: 436, height: 380 }, true],
-    [{ width: 600, height: 493 }, true],
-    [{ width: 600, height: 494 }, false],
+    [{ width: 600, height: 530 }, true],
+    [{ width: 600, height: 531 }, false],
     [{ width: 500, height: 521, railHeight: 115 }, true],
     [{ width: 500, height: 522, railHeight: 115 }, false],
     [{ width: 674, height: 398 }, true],

@@ -526,7 +526,8 @@ sondern seitlich scrollt (K6, schliesst A10).
 Die einspaltige Form hat eine eigene Schwelle: 351 + 56 Fuss + die **gemessene**
 Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung kippt je
 nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
-aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117).
+aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117, seit #142 mit
+den 44-px-Zählern 124 bis 229 — #73, Lauf 17).
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
 unter der Zwei-Spalten-Bruchstelle; die vier heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.

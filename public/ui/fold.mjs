@@ -88,18 +88,20 @@ export const STRIP_WIDTH = 48;
 /**
  * The rail of the four hot controls under the `Plan`, while there is one
  * column: its height is **measured**, not assumed (#73, run 14, K2
- * `schiene-gemessen`). The rail wraps with the width — two rows of two, three
- * cells over two rows, one row from 664 — and its height went 62 to 117 px at
- * the acceptance by image; the 87 that #71's K-B10a reckoned with held at the
+ * `schiene-gemessen`). The rail wraps with the width — one cell per row under
+ * 360, two rows from 360 (round 142·145, K2) — and since #142's 44 px
+ * counters its height goes 124 to 229 px (run 17 of the acceptance by image;
+ * 62 to 117 before); the 87 that #71's K-B10a reckoned with held at the
  * master only. The measuring rind (`measureRail()` in `measure.mjs`) reads the
  * rail in its bar form at the stage's width and hands it in as `railHeight`.
  *
  * This value is no rule — it is what `fold()` uses **until the first
  * reading** and under `node --test`, where nothing is measured: the rail at
- * the boot stage, the 393 × 830 master, measured 87 on 2026-10-02 (Chromium,
- * `.plan-controls` with its border and padding).
+ * the boot stage, the 393 × 830 master, measured 124 on 2026-10-08 (headless
+ * Chrome, `.plan-controls` with its border and padding; 87 on 2026-10-02,
+ * before #142).
  */
-export const RAIL_AT_MASTER = 87;
+export const RAIL_AT_MASTER = 124;
 
 /**
  * What the `Plan` column needs to show its fixed part, the diagram at its

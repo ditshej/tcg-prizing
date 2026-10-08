@@ -190,7 +190,7 @@ test('the one-column threshold is the floor, the foot and the measured rail — 
 });
 
 test('until the first reading the fold reckons with the rail measured at the master', () => {
-  assert.equal(RAIL_AT_MASTER, 87);
+  assert.equal(RAIL_AT_MASTER, 124);
   assert.deepEqual(fold({ width: 600, height: 500 }), fold({ width: 600, height: 500, railHeight: RAIL_AT_MASTER }));
 });
 
@@ -280,15 +280,24 @@ test('in the flat mode two full tile rows are visible, not cut', () => {
  * the diagram floor and two rows, cannot show the master in any fold. A stage
  * too narrow to turn the strip aside and too low for the one-column form is in
  * the sweep since K4 of run 14: it is cramped, the `Plan` keeps its floor and
- * the page scrolls (#73). The sweep runs at the smallest, the master's and the
- * largest rail measured (K2), because the threshold moves with it.
+ * the page scrolls (#73). The sweep runs at every rail height measured (K2),
+ * because the threshold moves with it: `RAILS_MEASURED` below.
  */
+/*
+ * The rail heights the acceptance by image measured after round 142·145, K2
+ * (2026-10-08, headless Chrome, `.plan-controls`, every width 320–673 in
+ * `plain`, Weekend, Release and Weekly at `depth=32`): 124 from 360 up, 139
+ * where `Served ranks` wraps its title at 360–361 and 540–542 (`depth=32`),
+ * 195 / 212 / 229 below 360. `docs/acceptance/73-abnahme-am-bild.md` › run 17.
+ */
+const RAILS_MEASURED = Object.freeze([124, 139, 195, 212, 229]);
+
 test('the master is the floor: never fewer than six tile columns and two tile rows', () => {
   const minWidth = 6 * TILE_SIZE + 5 * TILE_GAP + PLAN_PADDING;
   const failures = [];
   for (let width = minWidth; width <= 2000; width += 3) {
     const lowest = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
-    for (let height = lowest; height <= 1400; height += 5) for (const railHeight of [62, 87, 117]) {
+    for (let height = lowest; height <= 1400; height += 5) for (const railHeight of RAILS_MEASURED) {
       const f = fold({ width, height, railHeight });
       const columns = columnsFitting(f.planWidth - PLAN_PADDING);
       const window = f.planHeight - DECIDED.fixed - diagramCap(f.planHeight - DECIDED.fixed);
@@ -329,7 +338,7 @@ test('with the upper bound the master is still the floor: six columns, two rows 
   const failures = [];
   for (let width = minWidth; width <= 2000; width += 7) {
     const lowest = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
-    for (let height = lowest; height <= 1400; height += 7) for (const railHeight of [62, 87, 117]) {
+    for (let height = lowest; height <= 1400; height += 7) for (const railHeight of RAILS_MEASURED) {
       const f = fold({ width, height, railHeight });
       const leftover = f.planHeight - DECIDED.fixed;
       const window = leftover - diagramCap(leftover, undefined, 0, f.diagramMax);

@@ -673,6 +673,13 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
   | 336–346 | 212 | 1 | 619 |
   | 320–335 | 229 | 1 | 636 |
 
+  Durchlauf über jede Breite 320–673 (Höhe 900) in `plain`, Weekend, Release und Weekly mit
+  `depth=32`: dieselben Stufen, die Grenzen um ± 2 verschoben (Release 320–337 / 338–346;
+  `depth=32` 320–346 / 347–350 / 351–359). Mit `depth=32` steht die Schiene bei 360–361 und
+  540–542 auf **139**: dort bricht der Titel von `Served ranks` samt `cap N` um, die Zähler
+  stehen weiter zu zweit, einspaltig ab 546. Gemessene Spanne der Schiene damit **124 bis 229**
+  (vor #142: 62 bis 117); `RAIL_AT_MASTER` 124, der Durchlauf in `test/ui-fold.test.mjs` rechnet
+  mit 124, 139, 195, 212 und 229 (B2, N5 der Runde 142·145).
   Die Anordnung kippt bei **360** genau: zwei Zellen zu 164 + Lücke 16 + Rand 2 × 8 = 360; bei
   359 stehen die Zähler untereinander. Unter 360 entscheidet die Titelzeile, ob ein Zähler neben
   seinem Titel steht (daher die drei Stufen). Die Schwelle ist am Bild bestätigt: 360 × 531,
