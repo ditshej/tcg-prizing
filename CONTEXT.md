@@ -954,7 +954,10 @@ Der Knopf ist darum keine Bedienung, sondern die **Einladung** — angetippt tut
 er nichts, weil er schon gewählt ist. Der Weg zu einem zweiten `Game` steht
 nicht als zweiter Knopf daneben (ein Bedienelement, das nichts bedient),
 sondern im ⓘ der Ebene, zusammen mit dem Kontaktkanal: Discord, mit dem Tag
-sichtbar und hinterlegt. Jede der zwei Ebenen trägt einen **eigenen** ⓘ mit
+sichtbar und hinterlegt. Derselbe Kontaktkanal steht zusätzlich ganz unten auf
+`Details`, unter der Zeile `by ditshej | GitHub` (#159) — derselbe Link, kein
+zweiter: die Profil-URL steht im Code an einer Stelle und wird an beiden Orten
+gelesen. Jede der zwei Ebenen trägt einen **eigenen** ⓘ mit
 einem eigenen Satz — was sie unterscheidet (vollständiges Blatt oben, nur
 Abweichungen unten), ist genau das, was erklärt werden muss, und ein Satz über
 „die Sets" sagte es nicht.
