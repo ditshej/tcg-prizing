@@ -95,6 +95,10 @@ const SEAM = { read: readLocation, write: writeLocation };
 /** The bubble at the Share button in the plan head (#143). */
 const SHARE_BUBBLE = '[data-share-bubble]';
 
+/** How many frames a placing waits for its bubble to be shown (`drawn()`), and who is waiting. */
+const BOX_WAIT_FRAMES = 4;
+const BOX_WAITS = new WeakMap();
+
 /**
  * The one frame every bubble is placed in (#154), read at the rind: the
  * layout viewport — the box `position: fixed` and `getBoundingClientRect()`
@@ -560,15 +564,6 @@ export function planApp(seam = SEAM) {
       if (!this.openInfo || typeof document === 'undefined') return;
       const bubbleEl = document.querySelector(`[data-info-bubble="${this.openInfo}"]`);
       if (!bubbleEl) return;
-      /* Alpine shows an `x-show` beside a `@click.outside` one tick late, so
-         the click that opened it is not taken for one outside it — and a box
-         not shown yet measures 0 wide. Measured on the first try: the bubble
-         stood centred on a width of nothing, 53 px past the right edge at
-         393. So it waits for the frame in which it is there. */
-      if (!bubbleEl.offsetWidth && typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => this.placeInfo());
-        return;
-      }
       const anchorEl = document.querySelector(`[data-info="${this.openInfo}"]`);
       const { layout, visible } = seenFrame();
       const frameEl = anchorEl ? anchorEl.closest('[data-bubble-frame]') : null;
@@ -577,6 +572,7 @@ export function planApp(seam = SEAM) {
         this.openInfo = null;
         return;
       }
+      if (!this.drawn(bubbleEl, () => this.placeInfo())) return;
       const at = placeInFrame({
         anchor,
         bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
@@ -585,6 +581,56 @@ export function planApp(seam = SEAM) {
       });
       bubbleEl.style.left = `${at.left}px`;
       bubbleEl.style.top = `${at.top}px`;
+    },
+
+    /**
+     * Whether a bubble has a box to measure yet — the one wait of all its
+     * placings (#154, #167). Alpine shows an `x-show` in the next animation
+     * frame (`visibilityState === "visible" ? requestAnimationFrame :
+     * setTimeout`), and the placings start from `$nextTick`, which is a timer.
+     * Chromium runs the frame first, WebKit the timer: there the bubble was
+     * still `display: none` and measured 0 wide, and the arithmetic put its
+     * left edge on the anchor's centre — tile 6 at 344 → 554 on a 393 screen,
+     * the Reset question at 325 → 535, the ⓘ 53 px past the edge. So a bubble
+     * without a box is not placed; `again` is asked for in the next frame.
+     *
+     * A few frames, not forever: a bubble that stays hidden while its state
+     * is open (its page hidden, its question withdrawn) has nothing to place,
+     * and would otherwise ask for a frame on every frame.
+     */
+    drawn(el, again) {
+      if (el.offsetWidth) {
+        BOX_WAITS.delete(el);
+        return true;
+      }
+      const waited = BOX_WAITS.get(el) ?? 0;
+      if (waited < BOX_WAIT_FRAMES && typeof requestAnimationFrame === 'function') {
+        BOX_WAITS.set(el, waited + 1);
+        requestAnimationFrame(again);
+      } else {
+        BOX_WAITS.delete(el);
+      }
+      return false;
+    },
+
+    /**
+     * A bubble's size as its content lays it out, not as the place it last
+     * stood squeezed it (#167). The tile bubble and the question have no set
+     * width: a box at `left` shrinks to the room right of it, down to its
+     * `min-width` — at 344 on a 393 screen to 190 + 20, and was then placed by
+     * a width it no longer had once it stood elsewhere.
+     *
+     * The ⓘ and Share set their width instead (`min(292px, calc(100vw - 16px))`,
+     * #154); these two are moved to the frame's left edge for the reading.
+     * Chosen over the set width because their width **is** their content's:
+     * a tile bubble with short notes stands 240 wide (tile 1), and a set 292
+     * would change every bubble that was already right, in every browser. The
+     * reading and the final `left` are written in the same task, so no frame
+     * is drawn at 0.
+     */
+    unshrunk(el) {
+      el.style.left = '0px';
+      return { width: el.offsetWidth, height: el.offsetHeight };
     },
 
     /* ── The seventeen controls (#64) ─────────────────────────────────── */
@@ -842,9 +888,10 @@ export function planApp(seam = SEAM) {
         this.openTile = null;
         return;
       }
+      if (!this.drawn(popEl, () => this.placeBubble())) return;
       const at = placeInFrame({
         anchor,
-        bubble: { width: popEl.offsetWidth, height: popEl.offsetHeight },
+        bubble: this.unshrunk(popEl),
         box: stageEl.getBoundingClientRect(),
         visible,
       });
@@ -1428,9 +1475,10 @@ export function planApp(seam = SEAM) {
         this.confirmDrop = null;
         return;
       }
+      if (!this.drawn(bubbleEl, () => this.placeConfirm())) return;
       const at = placeInFrame({
         anchor,
-        bubble: { width: bubbleEl.offsetWidth, height: bubbleEl.offsetHeight },
+        bubble: this.unshrunk(bubbleEl),
         box: layout,
         visible,
       });
