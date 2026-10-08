@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
-import { COPIED_MS, copyText, linkAddress, reportView } from '../public/ui/link-screen.mjs';
+import { COPIED_MS, copyText, linkAddress, execCopy, reportView, shareBranch } from '../public/ui/link-screen.mjs';
 
 /**
  * The SetupLink on screen (#72): the `Copy link` button and the
@@ -389,4 +389,79 @@ test('no other view opens an overlay (#72 AC 6: the one overlay of the app)', ()
     if (name === 'link-report.php') continue;
     assert.ok(!/<dialog\b|showModal/.test(view(name)), `${name} opens no dialog`);
   }
+});
+
+/* ── Share: the system sheet on a phone, the bubble on a desktop (#155) ── */
+
+/**
+ * #155, F3 c: "Telefon" is a coarse pointer **and** a `navigator.share` to
+ * call; everything else is the desktop branch — a phone over plain http in
+ * the LAN has no `navigator.share` and falls back to the bubble.
+ */
+test('the branch is the phone only with a coarse pointer and a share function — all four combinations (#155)', () => {
+  const share = () => Promise.resolve();
+  assert.equal(shareBranch({ coarse: true, share }), 'phone');
+  assert.equal(shareBranch({ coarse: true, share: undefined }), 'desktop');
+  assert.equal(shareBranch({ coarse: false, share }), 'desktop');
+  assert.equal(shareBranch({ coarse: false, share: undefined }), 'desktop');
+});
+
+/**
+ * #155: without `navigator.clipboard` — plain http is no secure context —
+ * `execCommand('copy')` on a selected field is tried first. It answers
+ * honestly `true` or `false`, so only its `true` counts as a copy (#72 AC 4:
+ * never claim a success); `false`, a throw or no fallback at all leave the
+ * preselected field.
+ */
+test('without a clipboard the execCommand copy is tried first, and only its true counts (#155)', async () => {
+  const tried = [];
+  assert.equal(await copyText('x', undefined, (t) => { tried.push(t); return true; }), 'copied');
+  assert.deepEqual(tried, ['x']);
+  assert.equal(await copyText('x', undefined, () => false), 'manual');
+  assert.equal(await copyText('x', {}, () => { throw new Error('no'); }), 'manual');
+  assert.equal(await copyText('x', undefined), 'manual');
+});
+
+test('a clipboard that takes the text needs no fallback; one that refuses gets it too (#155)', async () => {
+  let tried = 0;
+  const fallback = () => { tried += 1; return true; };
+  assert.equal(await copyText('x', { writeText: async () => {} }, fallback), 'copied');
+  assert.equal(tried, 0);
+  assert.equal(await copyText('x', { writeText: async () => { throw new Error('denied'); } }, fallback), 'copied');
+  assert.equal(tried, 1);
+});
+
+/** A document as far as `execCopy()` touches one. */
+function fakeDocument(answer) {
+  const log = { appended: [], removed: 0, selected: 0, commands: [] };
+  const doc = {
+    body: { append: (el) => log.appended.push(el) },
+    createElement: (tag) => ({
+      tag,
+      style: {},
+      setAttribute() {},
+      select: () => { log.selected += 1; },
+      remove: () => { log.removed += 1; },
+    }),
+    execCommand: (cmd) => {
+      log.commands.push(cmd);
+      if (answer instanceof Error) throw answer;
+      return answer;
+    },
+  };
+  return { doc, log };
+}
+
+test('execCopy copies a selected throwaway field and answers what the browser said (#155)', () => {
+  const yes = fakeDocument(true);
+  assert.equal(execCopy('https://a/', yes.doc), true);
+  assert.equal(yes.log.appended[0].value, 'https://a/');
+  assert.equal(yes.log.selected, 1);
+  assert.deepEqual(yes.log.commands, ['copy']);
+  assert.equal(yes.log.removed, 1, 'the field is gone again');
+  assert.equal(execCopy('x', fakeDocument(false).doc), false);
+  const thrown = fakeDocument(new Error('no'));
+  assert.equal(execCopy('x', thrown.doc), false);
+  assert.equal(thrown.log.removed, 1, 'gone even after a throw');
+  assert.equal(execCopy('x', undefined), false);
 });

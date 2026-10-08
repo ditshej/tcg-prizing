@@ -25,18 +25,65 @@ export function linkAddress(query, page) {
 }
 
 /**
- * Puts `text` on `clipboard` and answers what happened: `'copied'`, or
- * `'manual'` when there is no clipboard interface or it refused. The second
- * answer is the field with the address preselected (#72 AC 4) — the button
- * never claims a success the browser did not grant.
+ * Which way Share goes (#155, F3 c): `'phone'` — straight into the system's
+ * share sheet, no bubble — exactly when the pointer is coarse **and** there
+ * is a `navigator.share` to call; `'desktop'` — the bubble with `Copy link`
+ * — otherwise. A phone without `navigator.share` (plain http in the LAN is
+ * no secure context) therefore lands on the bubble too.
  */
-export async function copyText(text, clipboard) {
-  if (typeof clipboard?.writeText !== 'function') return 'manual';
+export function shareBranch({ coarse, share }) {
+  return coarse === true && typeof share === 'function' ? 'phone' : 'desktop';
+}
+
+/**
+ * Puts `text` on `clipboard` and answers what happened: `'copied'`, or
+ * `'manual'` when nothing could take it. The second answer is the field with
+ * the address preselected (#72 AC 4) — the button never claims a success the
+ * browser did not grant.
+ *
+ * Where there is no clipboard interface (plain http is no secure context) or
+ * it refused, `fallback` — `execCopy()` at the rind — is tried before the
+ * field (#155). It reports honestly, so only its `true` is a copy; `false`
+ * or a throw is not.
+ */
+export async function copyText(text, clipboard, fallback) {
+  if (typeof clipboard?.writeText === 'function') {
+    try {
+      await clipboard.writeText(text);
+      return 'copied';
+    } catch {
+      // Refused: the fallback below gets its chance.
+    }
+  }
+  if (typeof fallback !== 'function') return 'manual';
   try {
-    await clipboard.writeText(text);
-    return 'copied';
+    return fallback(text) === true ? 'copied' : 'manual';
   } catch {
     return 'manual';
+  }
+}
+
+/**
+ * The old way onto the clipboard, and it works without a secure context:
+ * a throwaway field holding `text`, selected, `execCommand('copy')`, gone
+ * again. Answers what the browser answered — `true` only if it says it
+ * copied (#155; #72 AC 4).
+ */
+export function execCopy(text, doc) {
+  if (typeof doc?.createElement !== 'function' || typeof doc.execCommand !== 'function') return false;
+  const field = doc.createElement('textarea');
+  field.value = text;
+  field.setAttribute('readonly', '');
+  field.style.position = 'fixed';
+  field.style.opacity = '0';
+  doc.body.append(field);
+  try {
+    field.select();
+    return doc.execCommand('copy') === true;
+  } catch {
+    return false;
+  } finally {
+    field.remove();
   }
 }
 
