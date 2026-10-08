@@ -66,6 +66,18 @@ Der Fehler aus #154 (`fixed` ohne Breite schrumpft auf den Platz rechts der letz
 
 Ohne die Deckelung stand die Blase bei Zoom 1,5 mit 292 **38 px** über dem rechten sichtbaren Rand. Der Zoom ist gestellt (`visualViewport` per Init-Skript ersetzt): `Emulation.setPageScaleFactor` zoomt zwar, verschiebt den Ausschnitt aber nicht, und Share lag dann ausserhalb — dort schliesst die Blase richtigerweise, weil ihr Anker nicht zu sehen ist (#66).
 
+### Zoom und Verschieben bei offener Blase (#155 N3)
+
+Die Gegenprobe (N3) fand: `_onView` — der Hörer auf `visualViewport` für Zoom und Verschieben — rief `placeShare()` direkt und ging an `keepShare()` vorbei. Eine offene Blase schloss deshalb nicht, wenn Share aus dem sichtbaren Ausschnitt fiel (#66), und wurde nach einem Zoom nicht auf die sichtbare Breite gedeckelt. Jetzt ruft `_onView` `keepShare()`. Gemessen auf `localhost:8852`, 393 × 830, ohne `navigator.share`, Blase bei Zoom 1 geöffnet (93–385, 292):
+
+| Fall | sichtbarer Ausschnitt | vor der Reparatur | nach der Reparatur |
+|---|---|---|---|
+| `Emulation.setPageScaleFactor` 1,5 (echter Zoom, Ausschnitt bleibt links, Share 353–385 ausserhalb) | 0–262 | **offen**, 8–300, 292 | **zu** |
+| `visualViewport` gestellt: Zoom 1,5, rechts angelegt (Share sichtbar), `resize` | 131–393 | offen, 139–431, **292** — 38 über dem Rand | offen, **139–385, 246** |
+| danach nach links verschoben (Share ausserhalb), `scroll` | 0–262 | **offen**, 8–300, 292 | **zu** |
+
+Der echte Zoom verschiebt den Ausschnitt nicht (siehe oben), darum ist der Fall „Anker bleibt sichtbar" gestellt; ein Pinch per `Input.synthesizePinchGesture` zoomte im headless Chrome gar nicht. `test/ui-bubble.test.mjs` hält beide Hälften am Hörer fest, den `init()` registriert; mit `placeShare()` statt `keepShare()` werden beide Tests rot (Mutation geprüft).
+
 ## Sperre durch eine unbestätigte Zahl
 
 | Schritt | gemessen |

@@ -888,12 +888,15 @@ export function planApp(seam = SEAM) {
       window.addEventListener('resize', this._onResize);
       /* Zooming and panning move the visible frame and fire no `resize` on
          the window (#154): iOS reports them on `visualViewport` alone. Every
-         bubble is placed again there — the one frame, all four placings. */
+         bubble is placed again there — the one frame, all four placings.
+         Share's goes through `keepShare()`, not `placeShare()` alone: the
+         others close inside their placing, Share's closes — and is capped
+         to the visible width — only there (#66, #155 N3). */
       this._onView = () => {
         this.placeBubble();
         this.placeConfirm();
         this.placeInfo();
-        this.placeShare();
+        this.keepShare();
       };
       window.visualViewport?.addEventListener('resize', this._onView);
       window.visualViewport?.addEventListener('scroll', this._onView);
