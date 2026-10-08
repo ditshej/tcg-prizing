@@ -460,6 +460,55 @@ test('the question not shown yet is not placed on a width of nothing, but in the
   assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
 });
 
+test('an ⓘ not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167 B16)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const bubble = shownLate(160, 140);
+  const app = shell();
+  app.toggleInfo('game');
+  withFrames((frames) => inBrowser({ '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) }, () => {
+    app.placeInfo();
+    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
+    assert.equal(frames.length, 1, 'it asks for the next frame');
+    flush(frames);
+  }));
+  assert.equal(bubble.style.left, `${350 - 160 - MARGIN}px`);
+  assert.equal(bubble.style.top, `${342 + GAP}px`);
+});
+
+/*
+ * B17: the wait's count belongs to one opening, not to the bubble. WebKit
+ * makes every opening of the same element wait one frame; were the count kept
+ * across them, the opening after the allowance would be placed on width 0.
+ * Six openings: one more than the allowance of four frames plus the first try.
+ */
+test('the same bubble opened again and again waits each time, and is placed each time (#167 B17)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const width = 160;
+  const height = 140;
+  const bubble = element(box(0, 0, width, height));
+  let reads = 0;
+  Object.defineProperty(bubble, 'offsetWidth', { get: () => (reads++ === 0 ? 0 : width) });
+  Object.defineProperty(bubble, 'offsetHeight', { get: () => (reads > 1 ? height : 0) });
+  const app = shell();
+  const elements = { '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) };
+  for (let opening = 1; opening <= 6; opening++) {
+    reads = 0;
+    delete bubble.style.left;
+    delete bubble.style.top;
+    app.toggleInfo('game');
+    assert.equal(app.openInfo, 'game');
+    withFrames((frames) => inBrowser(elements, () => {
+      app.placeInfo();
+      assert.equal(bubble.style.left, undefined, `opening ${opening}: no left from a box of width 0`);
+      assert.equal(frames.length, 1, `opening ${opening}: it asks for the next frame`);
+      flush(frames);
+    }));
+    assert.equal(bubble.style.left, `${350 - width - MARGIN}px`, `opening ${opening}: placed by its width`);
+    assert.equal(bubble.style.top, `${342 + GAP}px`, `opening ${opening}`);
+    app.toggleInfo('game');
+  }
+});
+
 /*
  * The second half of #167: neither bubble has a set width, so a box standing
  * at `left` shrinks to the room right of it, down to its `min-width`. Placed
