@@ -660,6 +660,10 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
   673 ebenfalls 124. Die einspaltige Schwelle (351 + 56 + gemessene Schiene, K2) wandert mit:
   am Master **531** statt 494. 673 × 469 und 600 × 493 sind darum jetzt **flach** (vorher
   einspaltig). Nichts davon ist gesetzt, alles gemessen.
+  Unter 393 standen die Zähler einzeln (360/375: 195, 320: 229), iPhone SE in Safari (375 × 553)
+  und 360 × 580 scrollten. **Entschieden in Runde 142·145, K2** ([#142](https://github.com/ditshej/tcg-prizing/issues/142#issuecomment-6059121659)):
+  zwei Zähler nebeneinander bis 360 Breite, das Zahlenfeld 44 statt 54 — erwartet 124, ein Bild ab
+  531. Die Zahlen für 320–392 hier nach diesem Bau nachmessen.
 - **Die Verlosungsleiste ist höher**: offen **144** statt 119, nach dem Wurf **224** statt 190,5,
   nach sieben Würfen bei 674 × 399 **268** statt 216. Grund: 13 Stufen in zwei Reihen und der
   Auslöser darüber brauchen je 44 Abstand (Stufen 28 hoch + 16 Lücke, Auslöser 34 + 16).
@@ -679,17 +683,27 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
   Die zwei Entscheide stehen gegeneinander: 44 px „überall" (#142, 4) und eine freie Reihe über
   der Leiste nach dem Wurf (#129). Kleinere Zeichnung bei gleicher Trefferfläche bringt
   höchstens rund 14 px zurück (Stufen 24 statt 28, Auslöser 30); eine Reihe (54) wird bei
-  812 × 375 so nicht frei. **Offen, Entscheid beim Maintainer.**
+  812 × 375 so nicht frei. **Entschieden in Runde 142·145, K1: 44 px gehen vor**
+  ([#142](https://github.com/ditshej/tcg-prizing/issues/142#issuecomment-6059121384)). Flach gilt die
+  freie Reihe nur noch vor dem ersten Wurf; die 24 / 29 px bei 812 × 375 / 436 × 380 sind das
+  neue Soll, AC 1 von #129 ist gestempelt.
 - **Unter 352 Leistenbreite** (Bühnen unter rund 392 Breite) sind die sieben Stufen je Reihe
   schmaler als 44: bei 320 × 700 **40,4 × 44**. Sieben Stufen zu 44 brauchen 308 + Lücken; die
-  Reihen sind „ungekürzt und ungefaltet" entschieden (#61, #69). **Offen.**
+  Reihen sind „ungekürzt und ungefaltet" entschieden (#61, #69). **Entschieden in Runde 142·145, K3: Ausnahme unter 348**
+  ([#142](https://github.com/ditshej/tcg-prizing/issues/142#issuecomment-6059121918)). Nachgemessen
+  liegt die Grenze bei 348 Bühnenbreite, nicht bei rund 392 (340 → 43, 348 → 44); darunter bleiben
+  sieben je Reihe, die Stufen sind schmaler als 44 — die eine benannte Ausnahme vom 44-px-Kriterium
+  in #142.
 - **Flach mit Spalte der heissen Vier (812 × 375)** liegt die offene Leiste über dem unteren
   Regler der Spalte (`Min boosters per rank`, Fläche 39 statt 44 hoch). Die Lage ist alt (Lauf 15:
   Leiste 8–756 über der Spalte 478–764); neu ist nur, dass es jetzt gemessen ist.
+  Nachgeschlagen in Runde 142·145: bis dahin Sache des Scrollens (#129, Lauf 15, K4); #143
+  Entscheid 5 nimmt `RankFloor` aus der Leiste.
 - **`Details` bei 286**: Titelzeile und Zählwerk mit Rückweg passen nicht mehr nebeneinander;
   das Zählwerk geht samt Rückweg unter den Titel, `cap N` bleibt auf der Titelzeile. Die Spalte
   läuft nicht über (`scrollWidth` 286 = `clientWidth`). Die Kurve steht dort in zwei Reihen
-  (4 + 3), weil sieben Stufen zu 44 erst ab 332 nebeneinander passen.
+  (4 + 3), weil sieben Stufen zu 44 erst ab 332 nebeneinander passen. Gedeckt durch #71 K-B9:
+  286 ist die kleinste Breite **ohne Überlauf**, Überschriften dürfen umbrechen.
 
 ### Tests
 
