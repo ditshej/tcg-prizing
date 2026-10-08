@@ -389,7 +389,7 @@ test('each ⓘ is the anchor of its own bubble, placed by placeInfo()', () => {
 });
 
 test('the content of the ⓘ is unchanged, the Discord link included', () => {
-  assert.match(SHEET, /<a href="https:\/\/discord\.com\/users\/428891117220659241" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
+  assert.match(SHEET, /<a href="<\?= htmlspecialchars\(require __DIR__ \. '\/discord-profile\.php'\) \?>" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
   assert.match(SHEET, /built for One Piece, other games welcome/);
   assert.match(SHEET, /<strong>Tournament type<\/strong>/);
   assert.match(SHEET, /Values you set by\s+hand stay where you put them\./);

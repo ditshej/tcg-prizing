@@ -102,7 +102,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
         the robust form. The tag therefore stays visible beside it — where the
         link goes nowhere, it has to be typeable.
       -->
-      <a href="https://discord.com/users/428891117220659241" target="_blank"
+      <a href="<?= htmlspecialchars(require __DIR__ . '/discord-profile.php') ?>" target="_blank"
          rel="noreferrer"><strong>ditshej</strong></a></p>
   </div>
 

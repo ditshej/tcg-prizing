@@ -42,4 +42,5 @@
   </header>
 
   <?php require __DIR__ . '/controls-sheet.php'; ?>
+  <?php require __DIR__ . '/about.php'; ?>
 </div>

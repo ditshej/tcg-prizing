@@ -233,6 +233,7 @@ body {
   .share-copy,
   .link-field-close,
   .set-info a,
+  .about a,
   .legend-handle,
   .raffle-trigger,
   .raffle-close,
@@ -266,6 +267,7 @@ body {
   .share-copy,
   .link-field-close,
   .set-info a,
+  .about a,
   .legend-handle,
   .raffle-trigger,
   .raffle-close,
@@ -2688,4 +2690,40 @@ textarea {
    the counters the bar stood side by side. */
 .app .rail-probe .controls-hot {
   grid-template-columns: var(--rail-cells);
+}
+
+/*
+ * The about block (#159): the very bottom of `Details`, after the last group.
+ * Set quietly — muted, small, the size of a group's foot line — and without a
+ * line, since a line separates data and this is none (#15). The space above
+ * it is a group's (26), so it reads as the page's end, not as a group.
+ *
+ * Each of the two lines is 44 high and centres its text: the links take
+ * their 44 from the hit rule's `::after` (in the `:where` lists above), and
+ * with the lines 44 apart no link's area reaches over the other line's link.
+ * In the by-line the two links stand on either side of the bar with a gap
+ * that keeps them 44 apart from centre to centre, so neither area lies over
+ * the other's word (#142).
+ */
+.about {
+  margin-top: 26px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.about p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.3em;
+  min-height: var(--hit);
+  margin: 0;
+}
+
+.about a {
+  color: inherit;
+}
+
+.about-bar {
+  margin-inline: 4px;
 }
