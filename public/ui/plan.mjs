@@ -39,7 +39,7 @@ import { addressFor, encode } from '../link/encode.mjs';
 import { readLocation, writeLocation } from '../link/location.mjs';
 import { migrate } from '../link/migrate.mjs';
 import { GAME, GAME_TITLE, TOURNAMENT_TYPES } from '../sets/onepiece.mjs';
-import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, readRowEnds, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
+import { applyGeometry, applyRaffleLift, applyRafflePadding, attachFades, attachMeasuring, attachStage, hasBox, readRowEnds, showChipInRow, showRaffleHit, stepRow } from './measure.mjs';
 import { foldPage, foldProperties, fold as foldOf, pageShown } from './fold.mjs';
 import { DEFAULT_RANGE, RANGE_ROWS, drawFrom, raffleView } from './raffle.mjs';
 import { rankSegments } from './diagram.mjs';
@@ -778,7 +778,7 @@ export function planApp(seam = SEAM) {
          after Alpine has applied the `x-show`s, or the grid would keep the
          column count and diagram height of the layout it just left. */
       this.$watch('fullscreen', () => {
-        requestAnimationFrame(() => this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
+        requestAnimationFrame(() => hasBox(this.$refs.stage) && this.applyDiagramRoom(applyGeometry(this.$refs.stage, fixed, bar())));
       });
       /*
          The bubble is placed — and closed — after **every drawing**, not at
@@ -1091,7 +1091,7 @@ export function planApp(seam = SEAM) {
           const verdict = this.diagramFits;
           /* First the diagram yields to the bar (K1), or goes where it has no
              room (#129). */
-          if (this._fixed) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
+          if (this._fixed && hasBox(this.$refs?.stage)) this.applyDiagramRoom(applyGeometry(this.$refs?.stage, this._fixed, bar));
           const flipped = this.diagramFits !== verdict;
           frame(() => {
             if (round < 4 && (flipped || boxes() !== seen)) { pass(round + 1); return; }

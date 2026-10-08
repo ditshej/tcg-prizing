@@ -88,6 +88,57 @@ test('every resize reads the insets again — a turned phone moves them to the o
   assert.deepEqual(sizes.map(({ width, height }) => [width, height]), [[393, 793], [734, 393]]);
 });
 
+/* ── A hidden Plan is not measured (10a) ─────────────────────────────────── */
+
+/**
+ * While another page is in front, `Plan` is `display: none` and its stage
+ * reports 0 × 0. Measured, that box says the diagram has no room, the
+ * diagram goes, and on the way back one frame shows the plan without it and
+ * the next lets the tiles slide. The measurement is discarded instead: no
+ * verdict, no write — `diagramFits()` itself is not asked and not touched.
+ */
+function stageBox(width, height) {
+  const writes = [];
+  return {
+    writes,
+    clientWidth: width, clientHeight: height, children: [],
+    getClientRects: () => (width || height ? [{}] : []),
+    querySelector: () => null,
+    style: { setProperty: (name, value) => writes.push([name, value]) },
+  };
+}
+
+test('a stage of 0 × 0 is not measured: no verdict on the diagram, no size written', () => {
+  const fire = installObserver();
+  installStyle({});
+  const stage = stageBox(0, 0);
+  const verdicts = [];
+  attachMeasuring(stage, [], () => null, (fits) => verdicts.push(fits));
+  fire();
+  assert.deepEqual(verdicts, []);
+  assert.deepEqual(stage.writes, []);
+});
+
+test('back in front, the stage is measured again as before', () => {
+  const fire = installObserver();
+  installStyle({});
+  const stage = stageBox(0, 0);
+  const verdicts = [];
+  attachMeasuring(stage, [], () => null, (fits) => verdicts.push(fits));
+  Object.assign(stage, { clientWidth: 393, clientHeight: 600 });
+  stage.getClientRects = () => [{}];
+  fire();
+  assert.equal(verdicts.length, 1);
+  assert.deepEqual(stage.writes.map(([name]) => name), ['--plan-columns', '--diagram-height']);
+});
+
+test('the two direct measurings in plan.mjs ask the same question first', () => {
+  const plan = readFileSync(new URL('../public/ui/plan.mjs', import.meta.url), 'utf8');
+  const direct = [...plan.matchAll(/^.*applyDiagramRoom\(applyGeometry\(.*$/gm)].map(([line]) => line);
+  assert.equal(direct.length, 2, 'the fullscreen watch and the raffle pass');
+  for (const line of direct) assert.match(line, /hasBox\(this\.\$refs\??\.stage\)/, line.trim());
+});
+
 /* ── The stylesheet: where the insets are applied (9a, 9b, 12) ───────────── */
 
 const CSS = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');

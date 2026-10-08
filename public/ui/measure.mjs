@@ -77,13 +77,30 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
 }
 
 /**
+ * Whether `el` has a box to measure. A page that is not in front is
+ * `display: none`, and its stage reports 0 × 0 (#158, 10a).
+ */
+export function hasBox(el) {
+  return !!el && (el.clientWidth > 0 || el.clientHeight > 0);
+}
+
+/**
  * Wires `applyGeometry` to run once now and again on every resize of
  * `stageEl`, via `ResizeObserver` — the browser's own measuring loop, not a
  * poll this module would have to own.
+ *
+ * **A stage of 0 × 0 is not measured** (#158, 10a). While another page is in
+ * front the `Plan` is hidden, and its box says nothing about the room it will
+ * have: measured, it took the diagram away, and the way back showed one frame
+ * of the plan without it and a second in which the tiles slid. So that
+ * reading is discarded — no verdict, no size written, and `diagramFits()` is
+ * neither asked nor changed. The page comes back to what it left.
  */
 export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null, onRoom = () => {}) {
   if (!stageEl || typeof ResizeObserver === 'undefined') return () => {};
-  const run = () => onRoom(applyGeometry(stageEl, fixedEls, barOf()));
+  const run = () => {
+    if (hasBox(stageEl)) onRoom(applyGeometry(stageEl, fixedEls, barOf()));
+  };
   run();
   const observer = new ResizeObserver(run);
   observer.observe(stageEl);
