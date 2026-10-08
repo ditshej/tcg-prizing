@@ -10,10 +10,16 @@
  * address bar — and reads the link the app was opened at before its first
  * paint (#89). A `node --test` run calls the same factory with a seam of its
  * own; nothing about that reaches this file.
+ *
+ * `themeToggle` is the mode button in the head of `Details` (#144), a
+ * component of its own: the mode is device state, not plan state. Its first
+ * application happens earlier still, in `<head>` (`views/shell.php`).
  */
 
 import { planApp } from './plan.mjs';
+import { themeToggle } from './theme.mjs';
 
 document.addEventListener('alpine:init', () => {
   window.Alpine.data('planApp', planApp);
+  window.Alpine.data('themeToggle', themeToggle);
 });

@@ -22,6 +22,16 @@
  *
  * Every colour in this file is one of these tokens. Only colours and depth
  * turn with the mode.
+ *
+ * The mode is chosen (#144, ADR 0011): System, light or dark, by the button
+ * in the head of `Details` (`theme.mjs`). System is no attribute at all and
+ * follows the device exactly as before; a choice is `data-theme` on `<html>`,
+ * set in `<head>` before the first paint. So the dark set has two ways in —
+ * a dark device not told light, and dark chosen anywhere — and CSS cannot
+ * join a media query and an attribute in one rule: the set stands **twice**,
+ * below and after the media block, and `test/ui-look.test.mjs` holds the two
+ * copies equal. Change one, change both. `color-scheme` follows the choice
+ * too, so native controls and scrollbars turn with the tokens.
  */
 :root {
   color-scheme: light dark;
@@ -82,8 +92,14 @@
   --field-size: 16px;
 }
 
+/* Light chosen on a dark device: the tokens above stand, the media block
+   below does not apply, and native controls are drawn light. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --accent: #c9992e;
     --accent-soft: #2a2620;
     --on-accent: #14110c;
@@ -115,6 +131,43 @@
     --glow: 0 0 0 1px rgba(240, 205, 100, 0.75), 0 0 16px rgba(201, 153, 46, 0.55);
     --tile-fill: linear-gradient(#221e18, #1a1713);
   }
+}
+
+/* Dark chosen on any device: the same set as in the media block above, word
+   for word (held equal by `test/ui-look.test.mjs`), and native controls
+   drawn dark. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --accent: #c9992e;
+  --accent-soft: #2a2620;
+  --on-accent: #14110c;
+  --ink: #f2ece0;
+  --muted: #9a9384;
+  --line: #35312a;
+  --bg: #131210;
+  --paper: #1e1b16;
+  --warn: #ff9f90;
+  --warn-soft: #3d1b18;
+  --pin: #b48ee8;
+  --pin-soft: #2b2338;
+  --gold: #e8c352;
+  --pack: #7ea6d4;
+  --unserved: #3a362e;
+  --floorfill: #6b5f3c;
+  --reserve: #a888c8;
+  --reserve-soft: #2a2338;
+  --reserve-ink: #c8aee4;
+  --shape: #8a7a4a;
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  /* The glow: an inner rim of gold, far too faint to be called a line — it
+     is what makes the edge visible in the dark at all. */
+  --tile-shadow: inset 0 0 0 1px rgba(214, 168, 58, 0.3), 0 8px 20px rgba(0, 0, 0, 0.6);
+  --btn-shadow: inset 0 0 0 1px rgba(214, 168, 58, 0.34), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --panel-shadow: 0 10px 28px rgba(0, 0, 0, 0.62);
+  --chip-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --glow: 0 0 0 1px rgba(240, 205, 100, 0.75), 0 0 16px rgba(201, 153, 46, 0.55);
+  --tile-fill: linear-gradient(#221e18, #1a1713);
 }
 
 * {
@@ -166,6 +219,7 @@ body {
  * the field itself takes its 44 from a transparent border (`.counter-value`).
  */
 :where(
+  .theme-toggle,
   .grid-fullscreen-toggle,
   .bubble-close,
   .counter > button,
@@ -197,6 +251,7 @@ body {
 }
 
 :where(
+  .theme-toggle,
   .grid-fullscreen-toggle,
   .bubble-close,
   .counter > button,
@@ -430,6 +485,52 @@ textarea {
   margin: -8px -8px 0;
   padding: 8px 8px 6px;
   background: var(--paper);
+}
+
+/*
+ * The mode button (#144): top right in the head of `Details`, icon only. It is
+ * one of the three head buttons — Share, Reset, mode — and they are one family
+ * with one form (#144, K-B1): a raised card drawn 32 × 32 on paper with the
+ * button shadow, the icon in ink at 17 px, as `.plan-share` has it (#143). It
+ * lies over the head's right end rather than in the title line, which clips;
+ * the head is sticky and so already the box it is placed in. It is inset from
+ * the edge by the head's own padding and centred on the head's height, which
+ * it leaves as it was (38 / 36). The facts give way to it on the right: its 32
+ * plus the inset plus a gap of 8.
+ *
+ * Its hit area is the rule above's 44, centred across but not down: the page
+ * scrolls, and a scroller clips whatever reaches past it, so an area centred
+ * on the drawing would lose its top rows above the head's edge. The drawing
+ * sits 2–3 px below that edge, so the area starts 2 px above the drawing and
+ * takes the rest downward, over the head's lower edge.
+ */
+.page-details > .col-head {
+  padding-right: 48px;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 8px;
+  margin-block: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.theme-toggle::after {
+  top: -2px;
+  bottom: calc(100% + 2px - var(--hit));
 }
 
 .plan-stage {

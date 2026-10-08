@@ -2,6 +2,7 @@
 
 Teilweise überholt durch ADR-0006.
 Ergänzt durch ADR-0007.
+Teilweise überholt durch ADR-0011.
 
 Der eingestellte Zustand eines `Tournament` steht in der **URL** und schreibt sich
 beim Ziehen mit (`replaceState`, also ohne Browser-Historie). Sie trägt

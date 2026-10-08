@@ -33,6 +33,12 @@
       <h1 class="col-title" x-show="titled('details')">Details</h1>
       <span class="col-facts">everything you can turn</span>
     </div>
+    <button type="button" class="theme-toggle" x-data="themeToggle()"
+            @click="next()" :aria-label="label" :title="label">
+      <span class="icon-swap" x-show="theme === 'system'"><?= icon('sun-moon') ?></span>
+      <span class="icon-swap" x-show="theme === 'light'" x-cloak><?= icon('sun') ?></span>
+      <span class="icon-swap" x-show="theme === 'dark'" x-cloak><?= icon('moon') ?></span>
+    </button>
   </header>
 
   <?php require __DIR__ . '/controls-sheet.php'; ?>

@@ -1,5 +1,7 @@
 # Der SetupLink trägt eine Version, und die Migration erhält das Ergebnis
 
+Teilweise überholt durch ADR-0011.
+
 Der `SetupLink` ist ein **Lesezeichen**: er wird im Discord gepinnt, in einer Notiz
 abgelegt und Monate später wieder geöffnet. Zwischen Verschicken und Öffnen wandert
 der Code weiter, der Link nicht — damit ist seine Kodierung eine **Schnittstelle**.
