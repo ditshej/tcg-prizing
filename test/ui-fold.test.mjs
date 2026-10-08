@@ -20,7 +20,7 @@ import {
   foldProperties,
   pageShown,
 } from '../public/ui/fold.mjs';
-import { MIN_DIAGRAM_HEIGHT, TILE_GAP, TILE_SIZE, columnsFitting, diagramCap } from '../public/ui/geometry.mjs';
+import { MIN_DIAGRAM_HEIGHT, TILE_GAP, TILE_SIZE, columnsFitting, diagramCap, diagramFits } from '../public/ui/geometry.mjs';
 
 /* A stage tall enough that the height axis never folds — the width axis alone. */
 const TALL = 900;
@@ -212,8 +212,21 @@ test('under 436 and under the threshold the stage is cramped: the Plan keeps its
   assert.equal(fold({ width: 360, height: 300, fullscreen: true }).cramped, false, 'fullscreen has no rail and no foot');
   assert.equal(fold({ width: 393, height: 830 }).cramped, false);
   const props = foldProperties(f);
-  assert.equal(props['--diagram-floor'], `${DECIDED.diagramFloor}px`);
   assert.equal(props['--two-rows'], `${DECIDED.twoRows}px`);
+});
+
+/*
+ * The cramped stage draws the `Plan`'s floor, 173 shared — a third is 57.7,
+ * so no diagram (#157, F2 a: "auf der engen Bühne fehlt es ganz, die feste 60
+ * entfällt"). The stylesheet hides it there rather than drawing it at 60.
+ */
+test('the cramped stage draws no diagram, and no fixed 60 for it (#157)', () => {
+  const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
+  const rule = css.match(/\.app\[data-cramped\] \.plan-diagram\s*\{([^}]*)\}/);
+  assert.ok(rule, 'a cramped rule for the diagram');
+  assert.match(rule[1], /display:\s*none/);
+  assert.doesNotMatch(css, /--diagram-floor/);
+  assert.equal(foldProperties(fold({ width: 360, height: 300, railHeight: 124 }))['--diagram-floor'], undefined);
 });
 
 test('the stage folds flat from 436 wide: 435 keeps the master, 436 turns the strip (#71, K-B10b)', () => {
@@ -266,8 +279,9 @@ test('flat and too narrow for the hot column, the Plan page keeps the tiles and 
 
 test('in the flat mode two full tile rows are visible, not cut', () => {
   const f = fold({ width: 812, height: 375 });
-  const diagram = diagramCap(f.planHeight - DECIDED.fixed);
-  assert.ok(f.planHeight - DECIDED.fixed - diagram >= DECIDED.twoRows);
+  const leftover = f.planHeight - DECIDED.fixed;
+  const diagram = diagramFits(leftover) ? diagramCap(leftover, 0, f.diagramMax) : 0;
+  assert.ok(leftover - diagram >= DECIDED.twoRows);
 });
 
 /**
@@ -305,7 +319,8 @@ test('the master is the floor: never fewer than six tile columns and two tile ro
     for (let height = lowest; height <= 1400; height += 5) for (const railHeight of RAILS_MEASURED) {
       const f = fold({ width, height, railHeight });
       const columns = columnsFitting(f.planWidth - PLAN_PADDING);
-      const window = f.planHeight - DECIDED.fixed - diagramCap(f.planHeight - DECIDED.fixed);
+      const leftover = f.planHeight - DECIDED.fixed;
+      const window = leftover - (diagramFits(leftover) ? diagramCap(leftover, 0, f.diagramMax) : 0);
       const rows = Math.floor((window + TILE_GAP) / (TILE_SIZE + TILE_GAP));
       if (columns < 6 || rows < 2) failures.push(`${width}×${height} (rail ${railHeight}): ${columns} columns, ${rows} rows`);
     }
@@ -346,12 +361,71 @@ test('with the upper bound the master is still the floor: six columns, two rows 
     for (let height = lowest; height <= 1400; height += 7) for (const railHeight of RAILS_MEASURED) {
       const f = fold({ width, height, railHeight });
       const leftover = f.planHeight - DECIDED.fixed;
-      const window = leftover - diagramCap(leftover, undefined, 0, f.diagramMax);
+      const window = leftover - (diagramFits(leftover) ? diagramCap(leftover, 0, f.diagramMax) : 0);
       const rows = Math.floor((window + TILE_GAP) / (TILE_SIZE + TILE_GAP));
       if (rows < 2) failures.push(`${width}×${height} (rail ${railHeight}): ${rows} rows`);
     }
   }
   assert.deepEqual(failures.slice(0, 5), []);
+});
+
+/* ── The diagram's third (#157) ───────────────────────────────────────── */
+
+/*
+ * The diagram takes at most a third of the area it shares with the tiles, and
+ * the tiles always have more (#157, overall review 2026-10-08, point 4); where
+ * that third is under 60 it is gone (F2 a). Run as a sweep over the same
+ * stages as the master-floor sweeps, through the real `fold()`,
+ * `diagramFits()` and `diagramCap()` — the pattern of `test/onepiece.test.mjs`.
+ * The shared area is the fold's plan height less the **decided** fixed part
+ * (B16), with the raffle bar closed and covering 79 (674 × 760, protocol A3).
+ * "Stands from 180 shared" is the ticket's number, not the formula reworked.
+ */
+const COVERS = Object.freeze([0, 79]);
+
+test('on every stage the diagram is at most a third of the shared area and the tiles have more (#157)', () => {
+  const minWidth = 6 * TILE_SIZE + 5 * TILE_GAP + PLAN_PADDING;
+  const failures = [];
+  for (let width = minWidth; width <= 2000; width += 7) {
+    const lowest = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
+    for (let height = lowest; height <= 1400; height += 3) for (const railHeight of RAILS_MEASURED) for (const covered of COVERS) {
+      const f = fold({ width, height, railHeight });
+      const shared = f.planHeight - DECIDED.fixed - covered;
+      const stands = diagramFits(f.planHeight - DECIDED.fixed, covered);
+      const diagram = stands ? diagramCap(f.planHeight - DECIDED.fixed, covered, f.diagramMax) : 0;
+      const tiles = shared - diagram;
+      const at = `${width}×${height} (rail ${railHeight}, cover ${covered})`;
+      if (stands !== shared >= 180) failures.push(`${at}: stands ${stands} at ${shared} shared`);
+      if (stands && diagram > shared / 3) failures.push(`${at}: diagram ${diagram} over a third of ${shared}`);
+      if (stands && diagram < DECIDED.diagramFloor) failures.push(`${at}: diagram ${diagram} under its floor`);
+      if (stands && diagram > f.diagramMax) failures.push(`${at}: diagram ${diagram} over its bound ${f.diagramMax}`);
+      if (stands && !(tiles > diagram)) failures.push(`${at}: tiles ${tiles} not more than diagram ${diagram}`);
+      if (stands && tiles < DECIDED.twoRows) failures.push(`${at}: tiles ${tiles} under two rows`);
+    }
+  }
+  assert.deepEqual(failures.slice(0, 5), []);
+});
+
+test('at the first height and on the cramped stage there is no diagram; 399 and 351 stay (#157, F2 a)', () => {
+  assert.equal(FIRST_HEIGHT, 399);
+  assert.equal(PLAN_FLOOR, 351);
+  for (const width of [900, 1280]) {
+    const f = fold({ width, height: FIRST_HEIGHT });
+    assert.equal(f.flat, false);
+    assert.equal(f.planHeight - DECIDED.fixed, 173, `${width} × 399 shares 173`);
+    assert.equal(diagramFits(f.planHeight - DECIDED.fixed), false, `${width} × 399`);
+  }
+  const cramped = fold({ width: 420, height: 450 });
+  assert.equal(cramped.cramped, true);
+  assert.equal(cramped.planHeight, PLAN_FLOOR);
+  assert.equal(diagramFits(cramped.planHeight - DECIDED.fixed), false);
+});
+
+test('the upper bound stays the second cap: 190 at 1597 × 900 (#142, #157)', () => {
+  const f = fold({ width: 1597, height: 900 });
+  const leftover = f.planHeight - DECIDED.fixed;
+  assert.equal(diagramFits(leftover), true);
+  assert.equal(diagramCap(leftover, 0, f.diagramMax), 190);
 });
 
 /* ── The two insets ──────────────────────────────────────────────────────── */

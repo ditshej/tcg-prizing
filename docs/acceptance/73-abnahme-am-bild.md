@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"; Safe Areas, Überblendung der Seiten und die gleitende Fussmarkierung (#158) unter „#158 · Hülle"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"; Safe Areas, Überblendung der Seiten und die gleitende Fussmarkierung (#158) unter „#158 · Hülle"; das Diagramm auf höchstens einem Drittel der geteilten Fläche (#157) unter „#157 · Das Diagramm nimmt höchstens ein Drittel"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -595,6 +595,12 @@ mindestens 44 × 44 und Lucide statt Zeichen und Emoji.
 
 ### Obergrenze des Diagramms — Soll und Ist
 
+> ⚠︎ **Ergänzt durch #157** (Gesamt-Review 2026-10-08, Punkt 4 und F2 a): Der Deckel bleibt, dazu
+> kommt eine zweite Obergrenze, ein Drittel der geteilten Fläche; unter einem Drittel von 60 ist das
+> Diagramm weg. Die Spalte „Diagramm zu" unten ist damit überholt (am Master 158,3 statt 280, bei
+> 1280 × 760 179 statt 190 (mit dem Kopf von #156), bei 674 × 399 weg statt 61). Neu gemessen unter
+> „#157 · Das Diagramm nimmt höchstens ein Drittel".
+
 Soll (Prototyp, nachgeschlagen): flach 60–96, unter 460 Höhe 96, ab zwei Spalten 190, einspaltig
 280. Darunter unverändert: Boden 60, weg statt geklemmt (#129), zwei Reihen.
 
@@ -738,6 +744,106 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
 Boden gewinnt, `diagramFits` unberührt), `test/ui-look.test.mjs` (Tokens hell und dunkel,
 Farben nur über Tokens, Linien nur zwischen Daten, Ecken), `test/ui-icons.test.mjs` (Lucide
 vendort samt Lizenz, keine Glyphe und kein Emoji im Markup, Chip-Glyphe als Schlüssel).
+
+## #157 · Das Diagramm nimmt höchstens ein Drittel
+
+Entscheid: Gesamt-Review 2026-10-08, Punkt 4 und F2 a, an #157. Das Diagramm nimmt höchstens ein
+Drittel der Fläche, die es mit den Kacheln teilt; die Kacheln haben immer mehr Platz. Fällt das
+Drittel unter 60, ist es weg. `DIAGRAM_MAX` bleibt als zweite Obergrenze, Ersthöhe 399 und
+`PLAN_FLOOR` 351 bleiben.
+
+- **Stand:** Zweig `feat/157-diagramm-drittel` bei `cd09ffe`. Die Spalten-Zeilen (zwei und drei
+  Spalten) sind nachgemessen auf #157 (`525a58e`) + #160 (`feat/156-seitenkoepfe` bei `de76938`),
+  weil #161 nach #160 gemergt wird: #156 macht den Plan-Kopf überall 40 hoch statt 42, der feste
+  Teil in den Spalten misst damit 175 statt 177, der Rest ist 2 px grösser (Gegenprobe B3). Die
+  Telefon- und Flach-Zeilen haben sich dabei nicht bewegt (Master und flach hatten den Kopf schon
+  auf 40).
+- **Server:** `php -S localhost:8783 -t public` aus der Worktree-Wurzel.
+- **Browser:** Chrome headless über Playwright (aus dem npx-Cache, `channel: 'chrome'`), je
+  Leinwand ein eigener Kontext mit diesem Viewport, ohne Link (Weekly, 40 Spielende), hell. Der
+  geteilte MCP-Browser war von einem anderen Bau belegt.
+- **Messmittel:** `getBoundingClientRect`, berechnete Stile. *Rest* (`leftover`) gemessen wie der
+  Messrand in `applyGeometry()`: `clientHeight` der Plan-Bühne minus Polster, feste Teile und
+  Lücken, die Lücke des Diagramms mitgezählt, als stünde es. *Gedeckt* wie `raffleCover()`
+  (Unterkante Raster − (Oberkante Leiste − 10)). *Fenster* ist die Höhe des Kachelfensters, *frei*
+  das Fenster minus Gedecktes. *Verhältnis* = frei / Diagramm.
+- **Soll** je Leinwand: Diagramm = min(`--diagram-max`, (Rest − gedeckt) / 3), es steht genau dann,
+  wenn (Rest − gedeckt) / 3 ≥ 60; frei > Diagramm.
+
+### Leiste zu
+
+| Leinwand | Faltung | Rest | gedeckt | Soll Diagramm | Ist Diagramm | Fenster | Verhältnis |
+|---|---|---|---|---|---|---|---|
+| 393 × 830 | Master | 475 | 0 | min(280, 158,3) = 158,3 | **158,3** | 316,7 | 2,0 |
+| 393 × 844 | Master (iPhone Standalone) | 489 | 0 | min(280, 163) = 163 | **163** | 326 | 2,0 |
+| 393 × 664 | Master (Safari mit Leisten) | 309 | 0 | min(280, 103) = 103 | **103** | 206 | 2,0 |
+| 375 × 553 | Master (iPhone SE Safari) | 198 | 0 | min(280, 66) = 66 | **66** | 132 | 2,0 |
+| 812 × 375 | flach | 200 | 0 | min(96, 66,7) = 66,7 | **66,7** | 133,3 | 2,0 |
+| 673 × 760 | einspaltig | 405 | 0 | min(280, 135) = 135 | **135** | 270 | 2,0 |
+| 674 × 760 | zwei Spalten | 537 | 0 | min(190, 179) = 179 | **179** | 358 | 2,0 |
+| 900 × 700 | zwei Spalten | 477 | 0 | min(190, 159) = 159 | **159** | 318 | 2,0 |
+| 1280 × 760 | drei Spalten | 537 | 0 | min(190, 179) = 179 | **179** | 358 | 2,0 |
+| 1597 × 900 | drei Spalten | 677 | 0 | min(190, 225,7) = 190 | **190** | 487 | 2,6 |
+| 1280 × 450 | drei Spalten, unter 460 | 227 | 0 | min(96, 75,7) = 75,7 | **75,7** | 151,3 | 2,0 |
+| 600 × 493 | flach | 318 | 0 | min(96, 106) = 96 | **96** | 222 | 2,3 |
+| 673 × 469 | flach | 294 | 0 | min(96, 98) = 96 | **96** | 198 | 2,1 |
+| 900 × 399 | zwei Spalten, Ersthöhe | 176 | 0 | 58,7 < 60 → weg | **weg** | 184 | — |
+| 674 × 399 | zwei Spalten, Ersthöhe | 176 | 0 | 58,7 < 60 → weg | **weg** | 184 | — |
+| 420 × 450 | eng (`data-cramped`) | 105 | 0 | weg (Boden 351: 173 / 3 = 57,7) | **weg** | 113 | — |
+
+### Leiste offen (vor dem ersten Wurf)
+
+| Leinwand | Faltung | Rest | gedeckt | Soll Diagramm | Ist Diagramm | frei | Verhältnis |
+|---|---|---|---|---|---|---|---|
+| 393 × 830 | Master | 475 | 0 | 158,3 | **158,3** | 316,7 | 2,0 |
+| 812 × 375 | flach | 200 | 104 | 32 < 60 → weg | **weg** | 104 | — |
+| 600 × 493 | flach | 318 | 104 | min(96, 71,3) = 71,3 | **71,3** | 142,7 | 2,0 |
+| 674 × 760 | zwei Spalten | 537 | 104 | min(190, 144,3) = 144,3 | **144,3** | 288,7 | 2,0 |
+| 900 × 700 | zwei Spalten | 477 | 104 | min(190, 124,3) = 124,3 | **124,3** | 248,7 | 2,0 |
+| 1280 × 760 | drei Spalten | 537 | 104 | min(190, 144,3) = 144,3 | **144,3** | 288,7 | 2,0 |
+| 1280 × 450 | drei Spalten, unter 460 | 227 | 104 | 41 < 60 → weg | **weg** | 131 | — |
+| 1597 × 900 | drei Spalten | 677 | 104 | min(190, 191) = 190 | **190** | 383 | 2,0 |
+
+Am Master liegt die Leiste unter der Schiene, sie deckt kein Fenster (gedeckt 0, wie in Lauf 14).
+Wo das Diagramm weg ist, bekommt das Fenster seinen Platz samt Lücke (Rest + 8).
+
+### Gegen die Vorhersage im Ticket
+
+Das Ticket rechnete mit `PLAN_FIXED` 178. Gemessen ist der feste Teil am Master 175 (650 − 475),
+in den Spalten nach #156 ebenfalls 175 (712 − 537; vor #156 waren es 177); der Rest ist darum
+3 px grösser als vorhergesagt:
+
+| Vorhersage (#157) | gemessen |
+|---|---|
+| 844: Rest 486, 162 / 324 | Rest 489, **163 / 326** |
+| ~664: Rest 306, 102 / 204 | Rest 309 (bei 393 × 664), **103 / 206** |
+| 812 × 375: 87 → rund 66 | vorher 87 (Lauf 17), jetzt **66,7** |
+| 1597 × 900: 190 | **190** |
+
+Die Abweichung kommt aus der Annahme, nicht aus dem Bau: 178 ist die aufgerundete Messung von
+#71 mit stehender Rangmeldung und gilt in `fold()` als Schranke, nicht als Pixelwert jeder Bühne.
+
+### Was sich verschoben hat
+
+- **Ersthöhe und enge Bühne ohne Diagramm.** Bei 674 × 399 stand es in Lauf 17 auf 61, jetzt
+  ist es weg; die enge Bühne zeichnet es nicht mehr auf der festen 60 (`plan.css`, Regel
+  `.app[data-cramped] .plan-diagram` jetzt `display: none`, `--diagram-floor` entfällt). Auf der
+  engen Bühne bleibt das Raster bei seinen zwei Reihen (`--two-rows`); die Plan-Bühne misst bei
+  420 × 450 jetzt 280 (fester Teil + 113). Die frei gewordenen 68 px nimmt nicht das Raster, die
+  Schiene rückt hoch (offen, im Bericht an die Eltern-Session).
+- **iPhone SE in Safari (375 × 553) behält das Diagramm**, knapp: Rest 198, ein Drittel 66.
+- **Unter dem Deckel gemessen statt am Deckel**: 1280 × 450 hat 75,7 statt 96 (Lauf 17), 600 × 493 bei offener
+  Leiste 71,3; flach bei geschlossener Leiste (600 × 493, 673 × 469) bleibt es am Deckel 96.
+
+### Tests
+
+`node --test`: `test/ui-geometry.test.mjs` (`diagramCap` als Drittel mit den Zahlen der
+Ticket-Tabelle, Gedecktes nicht geteilt, `DIAGRAM_MAX` als zweite Grenze; `diagramFits` bei 179
+und 180, auch mit Gedecktem; über 180–2000 nie unter 60, Fenster > Diagramm, zwei Reihen),
+`test/ui-fold.test.mjs` (Durchlauf über die Bühnen 357–2000 × 351–1400 mit den gemessenen
+Schienen `RAILS_MEASURED` und gedeckt 0 / 79 durch `fold()`, `diagramFits()` und `diagramCap()`:
+höchstens ein Drittel, Fenster > Diagramm, steht genau ab 180; kein Diagramm bei 399 und auf der
+engen Bühne; 190 bei 1597 × 900; keine feste 60 auf der engen Bühne im Stylesheet).
 
 ## #145: Startwerte
 

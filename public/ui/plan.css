@@ -2809,9 +2809,9 @@ textarea {
 /*
  * The cramped stage (#73, run 14, K4 `seite-scrollt`): under 436 wide and under
  * the one-column threshold no fold holds two rows in view. Nothing lies on top
- * of anything there — the `Plan` keeps its floor (the diagram at its floor,
- * two tile rows), the rail stands under it, and the `Plan` page scrolls
- * between head and foot. The sizes come from `foldProperties()`.
+ * of anything there — the `Plan` keeps its floor (two tile rows), the rail
+ * stands under it, and the `Plan` page scrolls between head and foot. The
+ * sizes come from `foldProperties()`.
  */
 .app[data-cramped] .page-plan {
   overflow-y: auto;
@@ -2822,8 +2822,12 @@ textarea {
   flex: 0 0 auto;
 }
 
+/* No diagram here (#157, F2 a): the floor shares 173 px with the tiles, and a
+   third of that is under the diagram's 60. Hidden by the stylesheet, not left
+   to the rind, because the cramped stage is as tall as its content — a drawn
+   diagram would feed its own height back into the leftover it is cut from. */
 .app[data-cramped] .plan-diagram {
-  height: var(--diagram-floor);
+  display: none;
 }
 
 .app[data-cramped] .plan-grid-wrap {

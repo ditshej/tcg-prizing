@@ -344,10 +344,12 @@ Leiste über der Fussnavigation aufgehen lässt; die Leiste trägt Auslöser,
 `RaffleRange`, die Ansage des letzten Treffers und die nach `Rank` sortierte
 Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbild
 und deckt keine Kachel zu — gemeint sind Kacheln, nicht die Rangmeldung darunter,
-die bei offener Leiste verdeckt ist (#129, Lauf 15, K7): solange sie offen ist, gibt
-das Diagramm um ihre gemessene Überlappung mit dem Kachelfenster nach (#73, K1), und
-wo es dabei unter seinen Boden käme, ist es **weg** (#129, Lauf 15, K3/K4; die Regel
-steht bei `Fold`). Die Leiste wächst beim ersten Wurf einmal um Ansage und
+die bei offener Leiste verdeckt ist (#129, Lauf 15, K7): solange sie offen ist, zählt
+ihre gemessene Überlappung mit dem Kachelfenster nicht zur geteilten Fläche — das
+Diagramm nimmt ein Drittel dessen, was darüber bleibt, also
+min(`DIAGRAM_MAX`, (Rest − gedeckt) / 3) (#73, K1; #157), und wo dieses Drittel
+unter seinen Boden 60 fällt (Rest − gedeckt unter 180), ist es **weg** (#129, Lauf 15,
+K3/K4; #157; die Regel steht bei `Fold`). Die Leiste wächst beim ersten Wurf einmal um Ansage und
 Rücknahmezeile und danach mit der Rücknahmeliste (#69) — ausser auf der flachen Bühne
 und in der engen Ausnahme (`fold().flat`, `fold().cramped`, keine Breite): dort ist die
 Rücknahmeliste **eine Zeile, die seitlich scrollt** (am Handy gezogen; die Pfeile `‹ ›`
@@ -478,8 +480,10 @@ der Blöcke sich mit der Breite ändern darf, darf dieser Boden es nicht. #37 ha
 „Aufklappen nimmt nie etwas weg" beschlossen; im Querformat reicht das nicht, weil
 dort die Höhe fehlt und nicht die Breite — der Boden ist die Fassung dieses Satzes
 für die zweite Achse. Aus ihm sind sowohl die Höhenschwelle gerechnet, unterhalb
-derer der Schirm einspaltig bleibt, als auch die Grösse des Diagramms, das als
-einzige elastische Grösse für die zweite Kachelreihe zahlt. Wer die zwei Reihen
+derer der Schirm einspaltig bleibt, als auch die Grösse des Diagramms, der
+einzigen elastischen Grösse der Spalte. Es nimmt höchstens ein Drittel der Fläche,
+die es mit den Kacheln teilt, und ist unter 60 weg (#157; siehe `Fold`), so dass die
+Kacheln immer mehr Platz haben als das Diagramm und die zweite Reihe von selbst hält. Wer die zwei Reihen
 antastet, verschiebt keine Pixelzahl, sondern nimmt die Zusicherung zurück.
 _Avoid_: Payout
 
@@ -502,22 +506,33 @@ herzuleiten: die Erstbreiten sind `Plan` 388 · `Details` 286 · `Prepare` 356 �
 für `Details` die kleinste Breite ohne Überlauf, weil eine Spalte ohne Schieber
 keine eindeutige Breite hat. Daraus die Bruchstellen 674 und 1030 und der Deckel
 1597, alle drei als Summen. Die Ersthöhe ist 399 (178 fester Teil + 60 Boden des
-Diagramms + 113 für zwei Kachelreihen + 48 Streifen): das Diagramm geht mit
-seinem Boden ein und gibt auf niedrigen Schirmen nach, die zwei Reihen halten.
-**Das Diagramm ist Beigabe** (#129, Lauf 15, K3/K4, Definition an die Session
-delegiert): es steht nur, wo nach den zwei Kachelreihen und der gemessenen
-Überlappung einer offenen Verlosungsleiste noch sein Boden von 60 bleibt —
-`Rest − Überlappung − 113 ≥ 60`, der Rest gerechnet, als stünde es —, und ist sonst
-weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. Das **Rangtotal geht
+Diagramms + 113 für zwei Kachelreihen + 48 Streifen). Der Wert steht, seine
+Herleitung beschreibt aber nicht mehr, was an der Schwelle gezeichnet wird: Seit
+#157 bleiben dort 173 geteilt, ein Drittel davon ist unter 60, und das Diagramm
+fehlt — an der Faltschwelle, bis 179 geteilter Fläche und auf der engen Bühne
+(`PLAN_FLOOR` 351) ganz. Die zwei Reihen halten. Verworfen: die Ersthöhe auf 406
+heben, damit ein Drittel an der Schwelle genau 60 ist.
+**Das Diagramm ist Beigabe** (#129, Lauf 15, K3/K4; Regel seit #157, Gesamt-Review
+2026-10-08, Punkt 4 und F2 a): es nimmt **höchstens ein Drittel** der Fläche, die es
+mit den Kacheln teilt, und die Kacheln haben immer mehr Platz als es. Geteilt ist
+der Rest der Spalte, gerechnet, als stünde es, ohne die gemessene Überlappung einer
+offenen Verlosungsleiste: `(Rest − Überlappung) / 3`. Es steht nur, wo dieses
+Drittel mindestens seinen Boden von 60 erreicht, also ab 180 px geteilter Fläche,
+und ist sonst weg, statt auf 60 zu stehen und die Kacheln zahlen zu lassen. (Bis
+#157 hiess die Regel `Rest − Überlappung − 113 ≥ 60`, und das Diagramm bekam alles
+über den zwei Reihen.) Das **Rangtotal geht
 nicht mit ihm** (#132): Die Summenprobe hat auf jeder Bühne drei Stellen
 (Gesamtzahl `Booster` · `Participation` · Rangtotal), und ohne Diagramm bleibt das
 Rangtotal als eigene Zeile unter dem Raster stehen. Es steckt im festen Teil (178),
 kostet also keine Kachelreihe. Unter einer offenen Verlosungsleiste liegt es,
 wie die Rangmeldung, unter der Leiste: Die Summenprobe liest man bei
-geschlossener Leiste (Maintainer, 2026-10-05). **Nach oben ist es gedeckelt** (#142, Prototyp
-`stripMax`, nachgeschlagen): 96 auf der flachen Bühne und unter 460 Höhe, 190 ab zwei
-Spalten, 280 einspaltig (`fold().diagramMax`). Was es darüber nähme, bekommt das
-Kachelraster; der Boden 60, das Wegfallen und die zwei Reihen bleiben, wie sie sind. Unter `CombinedHandout` sind es zwei Stellen,
+geschlossener Leiste (Maintainer, 2026-10-05). **Nach oben ist es zweimal gedeckelt**:
+durch das Drittel und durch den Deckel des Prototyps (#142, `stripMax`,
+nachgeschlagen): 96 auf der flachen Bühne und unter 460 Höhe, 190 ab zwei Spalten,
+280 einspaltig (`fold().diagramMax`). Es gilt die kleinere der beiden Grenzen,
+`min(diagramMax, (Rest − Überlappung) / 3)`; was es darüber nähme, bekommt das
+Kachelraster. Am Master (393 × 830) setzt das Drittel die Grenze (158,3), bei
+1597 × 900 der Deckel (190). Unter `CombinedHandout` sind es zwei Stellen,
 weil die Zeile `Participation` ausgeblendet ist; „to the ranks" trägt dann den
 ganzen Anteil ohne den `JudgePool` (#103, Map-Closure Durchgang 2). Die Faltung selbst
 rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält

@@ -62,9 +62,10 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
      a box that holds six, and its first tile was cut at the left edge (#71). */
   const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
   stageEl.style.setProperty('--plan-columns', String(tileColumnsFor(width - sides)));
-  /* An open raffle bar over the tile window takes its overlap off the
-     diagram (#73, K1) — or the diagram goes, where that leaves it under its
-     floor (#129). A bar whose page is hidden has no box and covers nothing. */
+  /* An open raffle bar over the tile window is no shared area: the diagram's
+     third is taken of what is left above it (#73, K1; #157) — and the diagram
+     goes where that third is under its floor (#129, #157). A bar whose page is
+     hidden has no box and covers nothing. */
   const gridEl = stageEl.querySelector('.plan-grid');
   const bar = barEl && barEl.getClientRects().length > 0 ? barEl.getBoundingClientRect() : null;
   const covered = gridEl ? raffleCover(gridEl.getBoundingClientRect(), bar) : 0;
@@ -72,7 +73,7 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   /* The diagram's upper bound on this stage (#142), written by the fold onto
      the app root and inherited here; read, not reckoned. */
   const max = parseFloat(style.getPropertyValue('--diagram-max')) || Infinity;
-  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, undefined, covered, max)}px`);
+  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, covered, max)}px`);
   return diagramFits(leftover, covered);
 }
 
