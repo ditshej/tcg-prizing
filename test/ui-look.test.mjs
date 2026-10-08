@@ -74,7 +74,7 @@ test('the dark mode glows gold at the edge: an inner rim on tile and button', ()
   assert.match(declared(dark, '--btn-shadow'), /^inset 0 0 0 1px rgba\(214, 168, 58/);
 });
 
-test('outside the token blocks there is no colour but a token', () => {
+test('outside the token blocks no hex, rgb/hsl/light-dark or common colour name', () => {
   const rest = code
     .replace(`:root {${block(code, ':root')}}`, '')
     .replace(`@media (prefers-color-scheme: dark) {${block(code, '@media (prefers-color-scheme: dark)')}}`, '');
@@ -83,7 +83,7 @@ test('outside the token blocks there is no colour but a token', () => {
   assert.doesNotMatch(rest, /:\s*(?:white|black|red|green|blue|gray|grey)\b/, 'no named colour');
 });
 
-test('no drawn border but the data lines: the group title on Details and the derivation steps', () => {
+test('no solid px border but the data lines: the group title on Details and the derivation steps', () => {
   const lines = [...code.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .filter(([, , body]) => /border(?:-top|-bottom|-left|-right)?:\s*(?!none|0\b)[^;]*\d+px solid (?!transparent)/.test(body))
     .map(([, selector]) => selector.trim());
@@ -102,7 +102,7 @@ test('corners are the tokens, except what is round on purpose', () => {
   for (const value of radii) assert.match(value, allowed, `border-radius: ${value}`);
 });
 
-test('every pressable target the hit rule knows reaches 44 px', () => {
+test('the hit rule is 44 px, and its ::after grows from the centre', () => {
   assert.equal(declared(block(code, ':root'), '--hit'), '44px');
   assert.match(code, /::after \{\s*content: '';\s*position: absolute;\s*top: min\(0px, calc\(50% - var\(--hit\) \/ 2\)\)/);
 });

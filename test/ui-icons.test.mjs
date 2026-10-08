@@ -48,7 +48,7 @@ test('every icon a view asks for is one that is vendored', () => {
   }
 });
 
-test('no glyph or emoji serves as an icon in the markup any more', () => {
+test('no glyph or emoji serves as an icon in the views\' markup', () => {
   const glyphs = /🛒|⊞|☰|🎲|↺|✕|▾|⤢|⤡|‹|›|⚠|ⓘ|&#8634;|&#10005;|&#9662;/u;
   const emoji = /\p{Extended_Pictographic}/u;
   for (const name of views()) {
