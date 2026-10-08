@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -738,6 +738,47 @@ bzw. `#ff9f90` / `#a888c8` / `#c9992e` — berechnet am Bild bestätigt (`rgb(25
 Boden gewinnt, `diagramFits` unberührt), `test/ui-look.test.mjs` (Tokens hell und dunkel,
 Farben nur über Tokens, Linien nur zwischen Daten, Ecken), `test/ui-icons.test.mjs` (Lucide
 vendort samt Lizenz, keine Glyphe und kein Emoji im Markup, Chip-Glyphe als Schlüssel).
+
+## #145: Startwerte
+
+Korrektur N2 der Runde 142·145 ([#145](https://github.com/ditshej/tcg-prizing/issues/145#issuecomment-6059141963)).
+PR #147 (#145) landet vor PR #148; danach startet One Piece mit anderen Werten: `players` 40
+(Release 64), `depthStep` `topThird`, `curve` `moderate` (Weekend `firm`). Gemessen wurde dieses
+Protokoll mit 32, `top8`, `mild` (Weekend `steep`). Die Adressen oben tragen die alten
+Startwerte darum **selbst**, so wie die Tests auf PR #147 (`MEASURED_ON`) — `players=32` allein
+genügt nicht, Weekly und Weekend brauchen auch `depthStep` und `curve`:
+
+| Adresse oben | nach #145 | nach #145 ohne die Ergänzung |
+|---|---|---|
+| `type=weekly` (`plain`, Zustände darauf, Sets) | `…&players=32&depthStep=top8&curve=mild` | 14 Kacheln statt 8 |
+| `type=weekly&depth=32` (`conflictOpen`, Zustände darauf) | `…&players=32&depthStep=top8&curve=mild` | 20 Kacheln, Ränge 20–32 statt 16–32 |
+| `type=weekly&players=64&depth=32` | `…&depthStep=top8&curve=mild` | Kurve `moderate` statt `mild` |
+| `type=weekly&winnerPacks=16` | `…&players=32&depthStep=top8&curve=mild` | 14 Kacheln, keine ungedeckte |
+| K-B2 Weekly | `…&players=32&depthStep=top8&curve=mild` | Spielende 40, Tiefe 14 |
+| `type=weekend` (Sets) | `…&players=32&depthStep=top8&curve=steep` | 14 Kacheln, anderes `Offer` |
+| `type=weekend&players=27` | `…&depthStep=top8&curve=steep` | Tiefe 9 statt 8, kein Vielfaches mehr („5 off a full display") |
+| `type=release` (Sets) | `…&players=32` | 64 Kacheln statt 32 |
+| K-B2 Release | `type=release&players=32&manualWinner=20:1` | **kein Überhang** (64 Spielende, 4 `WinnerPack`s: 3 ranked + 1 von Hand) |
+
+Gemessen an einer Merge-Probe (`feat/142-bronze-foil-look` bei `3e339f8` + `origin/feat/145-onepiece-startwerte`
+bei `189874f`, losgelöst, danach entfernt; `node --test` dort 623/623), 393 × 830, Chrome
+headless: je Zeile ist die ergänzte Adresse nach #145 **gleich** der alten Adresse vor #145 —
+Kachelinhalte (Prüfsumme über alle Kacheltexte), Kachelzahl, rote Kacheln, Meldungstexte,
+Zählerwerte und Schienenhöhe. Einziger Unterschied: die Zustandswörter der Schiene stehen auf
+`pinned` statt `auto`, weil die Werte jetzt von Hand gesetzt sind. Das wirkt auf das Bild nur bei
+360–361 und 540–542 Breite, wo ein gepinntes `Served ranks` die Schiene auf 139 hebt (Lauf 17);
+keine der Leinwände oben liegt dort. Unverändert gleich bleiben ohne Ergänzung
+`type=release&players=64` (Blase) und K2 bei `plain` (Schiene 124 ab 360, 375 × 553 und
+360 × 580 in einem Bild, Trefferflächen 0 unter 44 — mit 14 Kacheln statt 8).
+
+**`CarryOverNotice`** (`type=weekly&players=40&rankFloor=3`, dann Weekend) bleibt, wie sie ist:
+dieselbe Meldung „2 pinned values stayed behind …", die Blase bei 393 × 830, 812 × 375 und
+900 × 700 an derselben Stelle (5,6 über dem Knopf, ganz im Bild). Neu steht darüber ein `Offer`
+(„Rank 1 is 3 off a full display"), weil Weekend jetzt mit `topThird` und `firm` rechnet. Mit
+`depthStep` und `curve` in der Adresse würden aus 2 gepinnten Werten 4 — die Ergänzung passt
+hier nicht.
+
+Die Zahlen dieses Protokolls gelten damit, sobald #147 auf `main` steht.
 
 ## Abnahmekriterien von #73
 
