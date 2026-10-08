@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 /**
- * The about block at the very bottom of `Details` (#159): a by-line
- * `by ditshej | GitHub` and, once more, the contact channel the `Game` ⓘ
- * carries (#64, "Lauf 8 · Angabe"). Held as markup, the way
+ * The about block at the very bottom of `Details` (#159), in the form of a
+ * page footer (#169): on top, once more, the contact channel the `Game` ⓘ
+ * carries (#64, "Lauf 8 · Angabe"), under it the by-line
+ * `created by ditshej with AI | GitHub`. Held as markup, the way
  * `views-controls-hot.test.mjs` holds its partial — PHP composes it once
  * (ADR 0004), so what `node --test` can check is the text it composes from.
  *
@@ -57,19 +58,20 @@ test('the ⓘ of Game and the about block both read that one value, and show the
   }
 });
 
-test('the by-line is `by ditshej | GitHub`, the two links carry exactly the two URLs', () => {
+test('the by-line is `created by ditshej with AI | GitHub`, the two links carry exactly the two URLs', () => {
   const byline = code(ABOUT).match(/<p class="about-by">([^]*?)<\/p>/)?.[1];
   assert.ok(byline, 'about.php has a by-line');
-  assert.equal(byline.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(), 'by ditshej | GitHub');
+  assert.equal(byline.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(), 'created by ditshej with AI | GitHub');
   assert.deepEqual(
     links(byline).map(({ href, text, attributes }) => [href, text, /target="_blank" rel="noreferrer"/.test(attributes)]),
     [['https://ditshej.ch', 'ditshej', true], ['https://github.com/ditshej/tcg-prizing', 'GitHub', true]],
   );
 });
 
-test('the Discord line says where its link goes, under the by-line', () => {
+test('the Discord line says where its link goes, above the by-line', () => {
   const source = code(ABOUT);
-  assert.ok(source.indexOf('class="about-by"') < source.indexOf('class="about-contact"'));
+  assert.ok(source.indexOf('class="about-contact"') < source.indexOf('class="about-by"'),
+    'the Discord line comes first, the by-line under it (review 2, point 3c)');
   const contact = source.match(/<p class="about-contact">([^]*?)<\/p>/)?.[1];
   assert.equal(contact.replace(/<\?=[^]*?\?>/g, '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(),
     'Questions or ideas? Say so on Discord — ditshej');
@@ -90,18 +92,39 @@ test('its links take a 44 px hit area, beside the ⓘ link in both :where lists'
   for (const [, list] of lists) assert.match(list, /\.about a,/);
 });
 
-test('it is set quietly: muted, small, no line', () => {
-  const rules = [...CSS.replace(/\/\*[^]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter(([, selector]) => /^\s*\.about\b/.test(selector));
-  assert.ok(rules.length > 0, 'the about block has its own rules');
-  const body = rules.map(([, , declarations]) => declarations).join('');
-  assert.match(body, /color:\s*var\(--muted\)/);
-  assert.match(body, /font-size:\s*0\.7rem/);
-  assert.doesNotMatch(body, /border|outline/);
+/** The declarations of every rule whose selector list is exactly `selector`. */
+function declarations(selector) {
+  return [...CSS.replace(/\/\*[^]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, list]) => list.trim() === selector)
+    .map(([, , body]) => body)
+    .join('');
+}
+
+test('it is the page footer: a line above, no head, both lines centred, muted, small', () => {
+  assert.doesNotMatch(code(ABOUT), /<h\d|class="[^"]*head/, 'no head under the line (F1 = b)');
+  const about = declarations('.about');
+  assert.match(about, /border-top:\s*1px solid var\(--line\)/);
+  assert.match(about, /color:\s*var\(--muted\)/);
+  assert.match(about, /font-size:\s*0\.7rem/);
+  assert.match(about, /text-align:\s*center/);
+  const lines = declarations('.about p');
+  assert.match(lines, /justify-content:\s*center/);
+  assert.doesNotMatch(lines, /font-size|color/, 'both lines take one size and one colour from the block');
   assert.ok(CSS.lastIndexOf('.about') > CSS.lastIndexOf('.rail-probe'), 'the block stands at the end of the file');
 });
 
-test('CONTEXT.md › Game names the second place of the contact channel', () => {
+test('its links stand out by weight alone: the line\'s colour, no underline at rest', () => {
+  const link = declarations('.about a');
+  assert.match(link, /color:\s*inherit/);
+  assert.match(link, /text-decoration:\s*none/);
+  assert.match(link, /font-weight:\s*700/);
+  assert.doesNotMatch(link, /var\(--accent|font-size|outline/, 'no accent, no size of its own, the focus ring stays');
+  assert.doesNotMatch(code(ABOUT), /<strong|<b>/, 'the weight is the rule\'s, not a nested tag\'s on top of it');
+});
+
+test('CONTEXT.md › Game names the second place of the contact channel, above the by-line', () => {
   const game = CONTEXT.slice(CONTEXT.indexOf('**Game**:'), CONTEXT.indexOf('**TournamentType**:'));
   assert.match(game, /ganz unten auf\s+`Details`/);
+  assert.match(game, /über\s+der\s+Zeile\s+`created by ditshej with AI \| GitHub`/, 'Discord on top, the new wording under it');
+  assert.doesNotMatch(game, /`by ditshej \| GitHub`/, 'the old wording is gone');
 });

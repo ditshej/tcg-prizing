@@ -2859,27 +2859,37 @@ textarea {
 }
 
 /*
- * The about block (#159): the very bottom of `Details`, after the last group.
- * Set quietly — muted, small, the size of a group's foot line — and without a
- * line, since a line separates data and this is none (#15). The space above
- * it is a group's (26), so it reads as the page's end, not as a group.
+ * The about block (#159, form from review 2, point 3, F1 = b): the page's
+ * footer, at the very bottom of `Details` after the last group. A line
+ * `1px var(--line)` stands before it and no head under that line — the block
+ * is the end of the page, not one more group. The line is allowed here
+ * because it separates data, the controls, from the colophon (#15 allows a
+ * line only where it separates data; review 2, point 3a). The space above it
+ * is a group's (26).
+ *
+ * Both lines centred, small, `--muted`: the Discord line has no precedence in
+ * colour or size, only its place on top puts it first. The links wear the
+ * line's colour, no underline at rest, and stand out by weight alone; the
+ * browser's `:focus-visible` ring stays.
  *
  * Each of the two lines is 44 high and centres its text: the links take
  * their 44 from the hit rule's `::after` (in the `:where` lists above), and
  * with the lines 44 apart no link's area reaches over the other line's link.
- * In the by-line the two links stand on either side of the bar with a gap
- * that keeps them 44 apart from centre to centre, so neither area lies over
- * the other's word (#142).
+ * In the by-line the two links stand three words apart, so neither area
+ * lies over the other's word (#142).
  */
 .about {
   margin-top: 26px;
+  border-top: 1px solid var(--line);
   font-size: 0.7rem;
   color: var(--muted);
+  text-align: center;
 }
 
 .about p {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   column-gap: 0.3em;
   min-height: var(--hit);
@@ -2888,6 +2898,8 @@ textarea {
 
 .about a {
   color: inherit;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .about-bar {
