@@ -131,6 +131,19 @@ export function firstHeightOneColumn(railHeight) {
 }
 
 /**
+ * The diagram's upper bound (#142), the prototype's `stripMax`
+ * (proto:3217–3253, "Das Diagramm darf nicht die halbe Fläche nehmen"),
+ * looked up and not re-derived: 96 on the flat stage, 96 under 460 height,
+ * 190 with two columns or more, 280 with one. Its floor (60) and whether it
+ * stands at all are `diagramCap()`/`diagramFits()`'s, unchanged; the bound
+ * only takes height from the diagram and gives it to the tile grid.
+ */
+export const DIAGRAM_MAX = Object.freeze({ flat: 96, low: 96, columns: 190, oneColumn: 280 });
+
+/** Under this stage height the diagram keeps its flat bound (prototype, `h < 460`). */
+export const DIAGRAM_LOW_HEIGHT = 460;
+
+/**
  * The fold of a stage `{ width, height, fullscreen }`. Everything between the
  * breakpoints goes to the `Plan` — the one column that profits from width.
  *
@@ -177,9 +190,14 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
   const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
   const planHeight = cramped ? PLAN_FLOOR : height - stripBottom - (rail === 'bar' ? railHeight : 0);
 
+  const diagramMax = flat || height < DIAGRAM_LOW_HEIGHT
+    ? (flat ? DIAGRAM_MAX.flat : DIAGRAM_MAX.low)
+    : columns >= 2 ? DIAGRAM_MAX.columns : DIAGRAM_MAX.oneColumn;
+
   return {
     columns,
     flat,
+    diagramMax,
     cramped,
     fullscreen,
     rail,
@@ -245,6 +263,9 @@ export function foldProperties(f) {
     // at its floor and two tile rows, the page scrolling under them.
     '--diagram-floor': px(MIN_DIAGRAM_HEIGHT),
     '--two-rows': px(rowsHeight(MIN_ROWS)),
+    // The diagram's upper bound on this stage (#142); the rind hands it to
+    // `diagramCap()`.
+    '--diagram-max': px(f.diagramMax),
     '--plan-left': px(f.planLeft),
     '--plan-right': px(f.planRight),
     '--strip-bottom': px(f.stripBottom),

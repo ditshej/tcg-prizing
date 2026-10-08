@@ -92,9 +92,14 @@ export function tileColumnsFor(width) {
  * floor any more: it is gone (`diagramFits()` below, #129, run 15). So the
  * floor in this cap only keeps a diagram that fits from being drawn shorter
  * than the one it was decided to be.
+ *
+ * `max` is the diagram's upper bound on this stage (`diagramMax` out of
+ * `fold()`, #142): above it the diagram stops growing and the tile grid gets
+ * the rest. It only ever takes height from the diagram, so the two rows hold
+ * as before, and the floor still wins over it.
  */
-export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0) {
-  return Math.max(floor, leftoverHeight - rowsHeight(MIN_ROWS) - covered);
+export function diagramCap(leftoverHeight, floor = MIN_DIAGRAM_HEIGHT, covered = 0, max = Infinity) {
+  return Math.max(floor, Math.min(max, leftoverHeight - rowsHeight(MIN_ROWS) - covered));
 }
 
 /**

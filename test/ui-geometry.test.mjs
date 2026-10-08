@@ -72,6 +72,28 @@ test('diagramCap accepts a custom floor for a differently-tuned stage', () => {
   assert.equal(diagramCap(200, 40), 87);
 });
 
+/*
+ * The diagram's upper bound (#142): the prototype caps it per stage —
+ * `stripMax` at proto:3217–3253, "Das Diagramm darf nicht die halbe Fläche
+ * nehmen". The bound only ever takes height from the diagram, never from the
+ * two rows, and the floor still stands above it.
+ */
+test('diagramCap stops at an upper bound, and what is left over goes to the tiles', () => {
+  assert.equal(diagramCap(600, undefined, 0, 280), 280); // 487 would be left for it
+  assert.equal(diagramCap(313, undefined, 0, 280), 200); // under the bound, unchanged
+  assert.equal(diagramCap(313, undefined, 0, 96), 96);
+});
+
+test('the upper bound never takes the diagram under its floor', () => {
+  assert.equal(diagramCap(150, undefined, 0, 96), 60);
+});
+
+test('the upper bound does not decide whether the diagram stands', () => {
+  // `diagramFits` reads the leftover, not the bounded height.
+  assert.equal(diagramFits(600), true);
+  assert.equal(diagramFits(172), false);
+});
+
 test('MIN_ROWS is the master floor used by rowsHeight when called without an argument', () => {
   assert.equal(rowsHeight(), rowsHeight(MIN_ROWS));
 });

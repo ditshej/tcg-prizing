@@ -299,6 +299,47 @@ test('the master is the floor: never fewer than six tile columns and two tile ro
   assert.deepEqual(failures.slice(0, 5), []);
 });
 
+/*
+ * The diagram's upper bound per stage (#142), the prototype's numbers looked
+ * up and not re-derived: `stripMax` at proto:3217–3253 —
+ * flat 60–96, 96 under 460 height, 190 with two columns or more, 280 with
+ * one. The floor (60) is the fold's business and stays where it is.
+ */
+const PROTO_STRIP_MAX = Object.freeze({ flat: 96, low: 96, columns: 190, oneColumn: 280 });
+
+test('the diagram has the prototype\'s upper bound on each stage (#142)', () => {
+  assert.equal(fold({ width: 812, height: 375 }).diagramMax, PROTO_STRIP_MAX.flat);
+  assert.equal(fold({ width: 600, height: 380 }).diagramMax, PROTO_STRIP_MAX.flat);
+  assert.equal(fold({ width: 900, height: 450 }).diagramMax, PROTO_STRIP_MAX.low);
+  assert.equal(fold({ width: 900, height: 459 }).diagramMax, PROTO_STRIP_MAX.low);
+  assert.equal(fold({ width: 900, height: 460 }).diagramMax, PROTO_STRIP_MAX.columns);
+  assert.equal(fold({ width: 900, height: 700 }).diagramMax, PROTO_STRIP_MAX.columns);
+  assert.equal(fold({ width: 1280, height: 760 }).diagramMax, PROTO_STRIP_MAX.columns);
+  assert.equal(fold({ width: 393, height: 830 }).diagramMax, PROTO_STRIP_MAX.oneColumn);
+  assert.equal(fold({ width: TWO_COLUMNS - 1, height: 830 }).diagramMax, PROTO_STRIP_MAX.oneColumn);
+});
+
+test('the upper bound reaches the CSS as --diagram-max', () => {
+  assert.equal(foldProperties(fold({ width: 393, height: 830 }))['--diagram-max'], '280px');
+  assert.equal(foldProperties(fold({ width: 812, height: 375 }))['--diagram-max'], '96px');
+});
+
+test('with the upper bound the master is still the floor: six columns, two rows (#61)', () => {
+  const minWidth = 6 * TILE_SIZE + 5 * TILE_GAP + PLAN_PADDING;
+  const failures = [];
+  for (let width = minWidth; width <= 2000; width += 7) {
+    const lowest = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows;
+    for (let height = lowest; height <= 1400; height += 7) for (const railHeight of [62, 87, 117]) {
+      const f = fold({ width, height, railHeight });
+      const leftover = f.planHeight - DECIDED.fixed;
+      const window = leftover - diagramCap(leftover, undefined, 0, f.diagramMax);
+      const rows = Math.floor((window + TILE_GAP) / (TILE_SIZE + TILE_GAP));
+      if (rows < 2) failures.push(`${width}×${height} (rail ${railHeight}): ${rows} rows`);
+    }
+  }
+  assert.deepEqual(failures.slice(0, 5), []);
+});
+
 /* ── The two insets ──────────────────────────────────────────────────────── */
 
 test('where the Plan stops on either side: phone, two columns, three columns, flat, fullscreen', () => {
