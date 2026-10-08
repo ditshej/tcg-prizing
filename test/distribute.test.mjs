@@ -9,15 +9,25 @@ import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
  * The Weekend sheet (#21/#25's resolution comments, transcribed into
  * `public/sets/onepiece.mjs` by #54), with the four trailing sliders left at
  * `null` so the core computes them, and `overrides` for what a ticket's
- * scenario pins by hand (`players`, `displays`, …). #55's acceptance criteria
- * are measured against this sheet, not a hand-assembled Settings object
- * (AGENTS.md, "a decided number is looked up, never back-computed").
+ * scenario pins by hand (`players`, `displays`, …).
+ *
+ * #55's acceptance criteria were measured on that sheet as #21 decided it —
+ * `depthStep` `top8` and `curve` `steep`. #145 moved both (the Game sheet's
+ * `topThird`, weekend's `firm`), so the helper sets them itself: the subject
+ * of the tests below is the settlement and the overtake on that stand, not
+ * today's start values. Their measured rows are #55's, and they stay
+ * comparable only on the stand they were measured on (AGENTS.md, "a decided
+ * number is looked up, never back-computed"). `players` comes from each
+ * scenario, which names it in its title.
  */
+const MEASURED_ON = { depthStep: 'top8', curve: 'steep' };
+
 function weekendSettings(overrides = {}) {
   const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
   return {
     ...GAME,
     ...weekend,
+    ...MEASURED_ON,
     tournamentPacks: null,
     depth: null,
     ranked: null,

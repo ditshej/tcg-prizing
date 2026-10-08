@@ -10,12 +10,28 @@ import { combinedWayOut, curveStepDistance, suggestions, offerFor, waysOut as wa
  * A DefaultSet sheet read as Settings, the same way `test/onepiece.test.mjs`
  * reads it: the Game's values, the TournamentType's deviations on top, the
  * four trailing sliders left at `null` so the core computes them.
+ *
+ * Every scenario in this file was measured on the sheets as #21 and #25
+ * decided them — 32 Players, the top 8 served, Weekend `steep`. #145 moved
+ * those start values (40 / `topThird` / `moderate`, Weekend `firm`, Release
+ * 64), and its own words for a test like these are that it "sets its values
+ * itself": the subject here is the search for ways out and the Offer window,
+ * not today's sheet. So the measured stand is laid over the sheet before a
+ * scenario's overrides, and a title that says "Weekend 32" or "Curve to
+ * moderate" still means the stand it was written against.
  */
+const MEASURED_ON = {
+  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
+  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  release: { players: 32 },
+};
+
 function settingsFor(id, overrides = {}) {
   const type = TOURNAMENT_TYPES.find((t) => t.id === id);
   return {
     ...GAME,
     ...type,
+    ...MEASURED_ON[id],
     tournamentPacks: null,
     depth: null,
     ranked: null,
