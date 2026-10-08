@@ -74,6 +74,12 @@
   /* The smallest hit area of anything that can be pressed (#142): 44 × 44,
      the area and not necessarily the drawing (`.hit` below). */
   --hit: 44px;
+
+  /* The type of every field one types or picks in (#146): iOS zooms into a
+     focused field under 16 px and does not zoom back out. The cure is the
+     type, not the viewport — `maximum-scale` would take pinch zoom from
+     everyone. */
+  --field-size: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -119,6 +125,11 @@ html,
 body {
   height: 100%;
   margin: 0;
+  /* The document holds still (#146): it neither scrolls nor rubber-bands —
+     `.app` is the screen at 100dvh, and only the pages scroll, each
+     containing its own overscroll (`.page-*` below). */
+  overflow: hidden;
+  overscroll-behavior: none;
   /* The prototype's family; size and line height stay the browser's, since
      the fold's measured sums (`PLAN_FIXED` 178, the foot's 56) stand on them. */
   font-family: var(--font);
@@ -255,6 +266,14 @@ select {
   font-family: inherit;
 }
 
+/* Every field at the field type (#146); a rule that styles a field further
+   down keeps it, or iOS zooms on focus again. */
+input,
+select,
+textarea {
+  font-size: var(--field-size);
+}
+
 /*
  * The fold (#71). The app is the stage: a column of the folded pages over the
  * foot, or — on the flat stage — a row of them beside a foot turned to the
@@ -333,6 +352,15 @@ select {
  */
 [x-cloak] {
   display: none !important;
+}
+
+/* What scrolls is a page, and its overscroll stays in it (#146): at its end
+   nothing passes on to the document. `.page-plan` scrolls on the cramped
+   stage only (`.app[data-cramped]` below). */
+.page-plan,
+.page-prepare,
+.page-details {
+  overscroll-behavior: contain;
 }
 
 .page-plan {
@@ -847,7 +875,7 @@ select {
   background: var(--accent-soft);
   background-clip: padding-box;
   color: var(--ink);
-  font-size: 0.85rem;
+  font-size: var(--field-size);
   font-weight: 600;
   cursor: pointer;
 }
@@ -887,7 +915,7 @@ select {
 .controls-hot .counter-value {
   width: 44px;
   padding: 1px 2px;
-  font-size: 0.8rem;
+  font-size: var(--field-size);
 }
 
 /*
@@ -1137,9 +1165,12 @@ select {
 
 /* The number is a field one types into (#113). Wide enough for four digits —
    1152 boosters is a real pool — and framed by the ± on either side, so it
-   reads as the counter's middle and not as a form field beside it. */
+   reads as the counter's middle and not as a form field beside it. The width
+   is the 4.2em it had at its old 0.85rem type, held in rem: the field type
+   (#146) makes the digits larger, not the field, so no row of the sheet
+   wraps differently. */
 .counter-value {
-  width: 4.2em;
+  width: 3.57rem;
   min-width: 0;
   /* Drawn 34 high, hit 44: the transparent border is part of the field, the
      background is not, and the negative margin gives the layout its 34 back
@@ -1157,7 +1188,7 @@ select {
   font: inherit;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--field-size);
 }
 
 .counter-value:focus {
@@ -2056,7 +2087,7 @@ select {
   background: var(--bg);
   box-shadow: var(--btn-shadow);
   color: var(--ink);
-  font: 0.75rem var(--font-mono);
+  font: var(--field-size) var(--font-mono);
 }
 
 .link-field-close {
