@@ -738,13 +738,6 @@
      Gold sieht niemand. Jetzt hebt die Kachel sich kurz heraus: ein Sprung in
      der Groesse liest sich auch dort, wo die Farbe schon besetzt ist, und der
      Ring liegt aussen statt innen. */
-  /* ÜBERHOLT durch #168 (Entscheid K1, /round 2026-10-08), nur Werte und Ort
-     des Pulses: Die App pulst mit `scale(1.14)` bei 35 %, 900 ms, einmal —
-     bewusst nicht 1.11 / .85s / dreimal wie hier —, und sie zeichnet den Puls
-     ausserhalb des Scrollers auf einer Kopie der Kachel, damit ihn kein Rand
-     schneidet. Das Polster an `.gridwin` unten trägt in der App nur noch den
-     Ring der offenen Kachel; Ring aussen und das Herausheben gelten weiter.
-     Verbindlich ist #168 (Kommentar K1). Nicht umgebaut. */
   @keyframes hitpulse {
     0%   { transform: scale(1);    box-shadow: var(--tile-shadow), 0 0 0 0 var(--accent); }
     28%  { transform: scale(1.11); box-shadow: var(--tile-shadow), 0 0 0 5px var(--accent); }
@@ -760,6 +753,14 @@
      liegt 12px weiter aussen. Im Vollbild traegt `.body` sein Polster schon
      selbst und ist zugleich der Scroller, dort war nie etwas abgeschnitten. */
   .gridwin { margin: -5px -12px 0; padding: 5px 12px 0; }
+  /* ÜBERHOLT durch #168 (Entscheid K1, /round 2026-10-08), nur Werte und Ort
+     des Pulses (`hitpulse` und `.gridwin` oben): Die App pulst mit
+     `scale(1.14)` bei 35 %, 900 ms, einmal — bewusst nicht 1.11 / .85s /
+     dreimal wie hier —, und sie zeichnet den Puls ausserhalb des Scrollers auf
+     einer Kopie der Kachel, damit ihn kein Rand schneidet. Das Polster an
+     `.gridwin` trägt in der App nur noch den Ring der offenen Kachel; Ring
+     aussen und das Herausheben gelten weiter. Verbindlich ist #168
+     (Kommentar K1). Nicht umgebaut. */
 
   /* Die Blase an der Kachel: eine Aufgabe, ± für die WinnerPacks. */
   /* z 38, nicht mehr 30: seit Runde 23 hängt die Blase auch an einem Knopf
