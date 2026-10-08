@@ -22,7 +22,7 @@
  * The `RaffleRange` is **no `Regler`**: no pin, no reset at the element,
  * untouched by a Set switch. It travels in the `SetupLink` nonetheless (run
  * 12, K1b on #72), as a key beside the sliders that is written only when it
- * differs from `all`, and the pin chip counts it and its drop puts it back to
+ * differs from `all`, and the reset in the plan head counts it and its drop puts it back to
  * `all` (run 12, Phase G on #72; `handSetKeys()` in `controls.mjs`). Its default `all` is a constant of
  * the term and not a sheet entry, so it stands here as `DEFAULT_RANGE` and
  * not in `core/defaults.mjs` — and once more, as `term`, in `link/keys.mjs`,

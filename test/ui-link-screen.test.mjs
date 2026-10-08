@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { planApp } from '../public/ui/plan.mjs';
-import { copyText, linkAddress, reportView } from '../public/ui/link-screen.mjs';
+import { COPIED_MS, copyText, linkAddress, reportView } from '../public/ui/link-screen.mjs';
 
 /**
  * The SetupLink on screen (#72): the `Copy link` button and the
@@ -132,10 +132,12 @@ function fakeButton() {
 /** A timer that fires only when told to, so the fall-back can be watched. */
 function fakeTimer() {
   const pending = [];
+  const delays = [];
   return {
-    later: (fn) => pending.push(fn),
+    later: (fn, ms) => { pending.push(fn); delays.push(ms); },
     cancel: () => {},
     fire: () => pending.splice(0).forEach((fn) => fn()),
+    delays,
   };
 }
 
@@ -161,25 +163,39 @@ test('Copy link puts the whole address on the clipboard', async () => {
   assert.deepEqual(taken, ['https://prizing.optcg.ch/?v=1&game=onepiece&type=weekly&rankFloor=5']);
 });
 
-test('the confirmation is fleeting: the button flips and falls back, and the component keeps nothing (#72 AC 3)', async () => {
+/**
+ * #143, decision 4: after copying, a small bubble at the Share button says
+ * `Link copied` and runs out by itself after about 2 s — on the bubble layer,
+ * not in the NoticeStack, which carries statements about the plan. Fleeting
+ * as #72 AC 3 had it: the bubble element carries it for the moment, and no
+ * member of the component remembers that a copy happened.
+ */
+test('the confirmation is a bubble at Share that runs out after about 2 s, and the component keeps nothing (#143)', async () => {
   const { app } = opened();
   const button = fakeButton();
+  const note = fakeButton();
   const timer = fakeTimer();
+  let placed = 0;
   const before = dataOf(app);
-  await app.copyLink(button, { clipboard: { writeText: async () => {} }, page: 'https://a/', ...timer });
-  assert.ok('linkCopied' in button.dataset, 'the button says it, for a moment');
+  await app.copyLink(button, { clipboard: { writeText: async () => {} }, page: 'https://a/', note, place: () => { placed += 1; }, ...timer });
+  assert.ok('linkCopied' in note.dataset, 'the bubble says it, for a moment');
+  assert.ok(!('linkCopied' in button.dataset), 'the icon itself does not change');
+  assert.equal(placed, 1, 'the bubble is placed at its anchor');
   assert.equal(dataOf(app), before, 'no member of the component changed');
+  assert.equal(COPIED_MS, 2000);
+  assert.deepEqual(timer.delays, [COPIED_MS]);
   timer.fire();
-  assert.ok(!('linkCopied' in button.dataset), 'and falls back');
+  assert.ok(!('linkCopied' in note.dataset), 'and runs out');
 });
 
 test('without a clipboard the address opens in a field instead (#72 AC 4)', async () => {
   const { app } = opened();
   const button = fakeButton();
-  const outcome = await app.copyLink(button, { clipboard: undefined, page: 'https://a/', ...fakeTimer() });
+  const note = fakeButton();
+  const outcome = await app.copyLink(button, { clipboard: undefined, page: 'https://a/', note, place: () => {}, ...fakeTimer() });
   assert.equal(outcome, 'manual');
   assert.equal(app.linkField, 'https://a/?v=1&game=onepiece&type=weekly');
-  assert.ok(!('linkCopied' in button.dataset), 'no success is claimed');
+  assert.ok(!('linkCopied' in note.dataset), 'no success is claimed');
   app.closeLinkField();
   assert.equal(app.linkField, null);
 });
@@ -332,24 +348,30 @@ test('with no report, showing does nothing', () => {
 
 const view = (name) => readFileSync(new URL(`../views/${name}`, import.meta.url), 'utf8');
 
-/** The `Type` row of the Set block, from its label to the row's end. */
-function typeRow() {
-  const sheet = view('controls-sheet.php');
-  const start = sheet.indexOf('<span class="set-label">Type</span>');
-  assert.ok(start > 0, 'the Type row exists');
-  const rowStart = sheet.lastIndexOf('<div class="set-row">', start);
-  const end = sheet.indexOf('\n    </div>', start);
-  return sheet.slice(rowStart, end);
+/** The plan head: from its opening tag to its close. */
+function planHead() {
+  const plan = view('plan.php');
+  const start = plan.indexOf('<header class="col-head plan-head"');
+  assert.ok(start > 0, 'the plan head exists');
+  return plan.slice(start, plan.indexOf('</header>', start));
 }
 
-test('Copy link sits in the Set block on Details, in the Type row, behind the reset chip (#72 AC 1)', () => {
-  const row = typeRow();
-  const chip = row.indexOf('class="pin-chip"');
-  const copy = row.indexOf('class="link-copy"');
-  assert.ok(chip > 0 && copy > chip, 'behind the pin chip');
-  assert.match(row, /@click="copyLink\(\$el\)"/);
-  assert.match(row, />Copy link</);
-  assert.ok(view('details.php').includes("controls-sheet.php"), 'the sheet is the Details page');
+/**
+ * #143, decisions 1 and 2 (overruling #72 AC 1 and the place from #67): Share
+ * and Reset-all stand in the plan head, top right, in every fold, as icons
+ * alone — the word is the `aria-label` and the tooltip. `Details` carries
+ * neither any more.
+ */
+test('Share sits in the plan head as an icon, its word the label and tooltip; Details has no Copy link (#143)', () => {
+  const head = planHead();
+  const share = head.slice(head.indexOf('class="plan-share"'));
+  assert.match(share, /^class="plan-share"[^>]*aria-label="Copy link"[^>]*title="Copy link"/);
+  assert.match(share, /@click="copyLink\(\$el\)"/);
+  assert.match(share.slice(0, share.indexOf('</button>')), /icon\('share'\)/);
+  assert.doesNotMatch(share.slice(0, share.indexOf('</button>')), />\s*Copy link\s*</, 'no word on screen');
+  const sheet = view('controls-sheet.php');
+  assert.doesNotMatch(sheet, /link-copy|copyLink|link-field/);
+  assert.ok(view('plan.php').includes('Link copied'), 'the bubble says it in words');
 });
 
 test('the report is a dialog with exactly one exit, required after the foot (#72 AC 6)', () => {

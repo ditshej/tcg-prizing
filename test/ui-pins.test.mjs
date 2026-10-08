@@ -636,6 +636,7 @@ test('a pinned value a wall sank under stands, and its minus still leaves it (AD
 const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
 const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
 const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url), 'utf8');
+const PLAN = readFileSync(new URL('../views/plan.php', import.meta.url), 'utf8');
 const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
 
 /**
@@ -687,10 +688,24 @@ test('the rail under the plan marks its three the same way', () => {
   assert.ok(RAIL.includes(`sheet_pin_head('curve')`), 'curve is marked on the rail too');
 });
 
-test('the full reach hangs off the type row and asks before it acts', () => {
-  assert.match(SHEET, /data-drop-all/);
-  assert.match(SHEET, /askDrop\(/);
-  assert.ok(!/@click="applyDrop\(\)"[^]*data-drop-all/.test(SHEET), 'the chip never drops outright');
+/**
+ * #143, decisions 1–3: the full reach left the type row on `Details` for the
+ * plan head, top right, as the `rotate-ccw` icon. It still asks first, over
+ * the same list (`handSetKeys`), and still carries the count of that list —
+ * the pin counter #67 AC 6 holds against the question.
+ */
+test('the full reach hangs off the plan head, carries the count and asks before it acts (#143)', () => {
+  const head = PLAN.slice(PLAN.indexOf('<header class="col-head plan-head"'), PLAN.indexOf('</header>'));
+  const reset = head.slice(head.indexOf('class="plan-reset"'));
+  const button = reset.slice(0, reset.indexOf('</button>'));
+  assert.match(button, /data-drop-all/);
+  assert.match(button, /@click="askDrop\(\{ keys: handSetKeys, anchor: '\[data-drop-all\]' \}\)"/);
+  assert.match(button, /:aria-label="dropAllLabel"/);
+  assert.match(button, /:title="dropAllLabel"/);
+  assert.match(button, /icon\('rotate-ccw'\)/);
+  assert.match(button, /x-text="pinCount"/);
+  assert.ok(!/@click="applyDrop\(\)"/.test(button), 'the button never drops outright');
+  assert.doesNotMatch(SHEET, /data-drop-all|pin-chip/, 'Details carries it no more');
 });
 
 test('the question is a bubble anchored at the button, and not the app one overlay', () => {

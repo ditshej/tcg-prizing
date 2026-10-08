@@ -174,8 +174,8 @@ body {
   .set-chip,
   .info,
   .pin-reset,
-  .pin-chip,
-  .link-copy,
+  .plan-reset,
+  .plan-share,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -205,8 +205,8 @@ body {
   .set-chip,
   .info,
   .pin-reset,
-  .pin-chip,
-  .link-copy,
+  .plan-reset,
+  .plan-share,
   .link-field-close,
   .set-info a,
   .legend-handle,
@@ -451,6 +451,105 @@ textarea {
 .plan-rest,
 .plan-ranktotal {
   flex: 0 0 auto; /* the fixed parts never shrink; only .plan-grid may */
+}
+
+/*
+ * The plan head carries Share and Reset-all top right (#143), beside its two
+ * lines and not in the title line: `.col-titleline` clips, and is 22 high. The
+ * buttons are drawn 32 × 32 — inside the head's 40, so the head and with it
+ * `PLAN_FIXED` keep their height — and take 44 × 44 through the hit rule,
+ * reaching 6 past the head into the stage's padding above and the gap below.
+ * Side by side at a pitch of 44 (32 + 12), so no area lies over the other
+ * button's drawing.
+ */
+.plan-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.plan-head > .col-titleline,
+.plan-head > .col-sub {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.plan-head-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  gap: 12px;
+}
+
+.plan-reset,
+.plan-share {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-ctl);
+  background: var(--paper);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* The full reach is a pin matter, so it wears the pin's colours, as the chip
+   it replaces did; the count rides on its corner (#67 AC 6). */
+.plan-reset {
+  background: var(--pin-soft);
+  box-shadow: var(--glow);
+  color: var(--pin);
+}
+
+.plan-reset-count {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: var(--r-pill);
+  background: var(--pin);
+  color: var(--paper);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bubble at Share (#143): `Link copied` while the element carries
+   `data-link-copied`, the link field while there is no clipboard. Hidden
+   otherwise; placed by `placeShare()` in the viewport, like the drop
+   question. */
+.share-bubble {
+  position: fixed;
+  z-index: 40;
+  display: none;
+  padding: 7px 10px;
+  border-radius: var(--r-tile);
+  background: var(--paper);
+  box-shadow: var(--tile-shadow), var(--panel-shadow);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.share-bubble[data-link-copied],
+.share-bubble.has-field {
+  display: block;
+}
+
+.share-bubble-done {
+  display: none;
+}
+
+.share-bubble[data-link-copied] .share-bubble-done {
+  display: inline;
 }
 
 .plan-output {
@@ -1714,34 +1813,6 @@ textarea {
   opacity: 0.28;
 }
 
-/* The second reach, beside the `TournamentType` title: the count of what is
-   pinned, and it is the length of the list the question reads out. A word or
-   a number, never a bare symbol on its own. */
-.pin-chip {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 30px;
-  padding: 2px 9px;
-  border: none;
-  border-radius: var(--r-pill);
-  background: var(--pin-soft);
-  box-shadow: var(--glow);
-  color: var(--pin);
-  font: inherit;
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.pin-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentcolor;
-}
-
 /*
  * The question. Same form as the tile's bubble and a higher layer than the
  * messages: since the third reach sits in a button *inside* the NoticeStack,
@@ -1986,56 +2057,10 @@ textarea {
    The SetupLink on screen (#72)
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* `Copy link`, behind the reset chip. It takes the row's free space itself
-   only while the chip is gone — two `auto` margins would split it. */
-.link-copy {
-  display: inline-grid;
-  align-items: center;
-  min-height: 30px;
-  padding: 2px 9px;
-  border: none;
-  border-radius: var(--r-pill);
-  background: var(--paper);
-  box-shadow: var(--btn-shadow);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.72rem;
-  cursor: pointer;
-}
-
-.link-copy-alone {
-  margin-left: auto;
-}
-
-/* Both words share one cell, so the button keeps its width while it says
-   `Copied` for a moment (`flashCopied()`). Fleeting: the attribute lives on
-   the element and nowhere in the component. */
-.link-copy-word,
-.link-copy-done {
-  grid-area: 1 / 1;
-}
-
-.link-copy-done {
-  visibility: hidden;
-}
-
-.link-copy[data-link-copied] {
-  color: var(--accent);
-  box-shadow: var(--glow);
-}
-
-.link-copy[data-link-copied] .link-copy-word {
-  visibility: hidden;
-}
-
-.link-copy[data-link-copied] .link-copy-done {
-  visibility: visible;
-}
-
-/* No clipboard: the address in a preselected field, on its own line. */
+/* No clipboard: the address in a preselected field, in the Share bubble. */
 .link-field {
-  flex: 1 0 100%;
   display: flex;
+  width: min(292px, calc(100vw - 32px));
   gap: 6px;
   align-items: center;
 }

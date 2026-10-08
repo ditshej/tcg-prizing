@@ -41,7 +41,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
 ?>
 
 <!--
-  The Set block stands in the body, above the hot four, and scrolls with them:
+  The Set block stands in the body, above the hot ones, and scrolls with them:
   fixed in the column head it would cost a measured 101px permanently, a
   quarter of the height in phone landscape, for a row touched once an evening
   (#41, CONTEXT.md `TournamentType`). Two levels, and the indent is the whole
@@ -103,57 +103,6 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
       </span>
       <button type="button" class="info" @click="toggleInfo('type')"
               :aria-expanded="openInfo === 'type'" aria-label="About the tournament type level"><?= icon('info') ?></button>
-
-      <!--
-        The second reach: **all** pins at once, and it stands beside the
-        `TournamentType` title because that is where CONTEXT.md has always put
-        it (`Pinned`) — the prototype had it in the Plan head only because
-        there was no type title on screen yet (prototype, Runde 23, Frage 2).
-        The price is named and taken: `Details` scrolls, so the way back
-        scrolls with it — the same price the four hot ones already pay.
-
-        It carries the count and never a bare symbol, and the count is the
-        list the question reads out, so the two cannot disagree (#67 AC 6).
-        It is gone while nothing is pinned: a reach over nothing is not an
-        offer.
-
-        It **asks** rather than acting. The set of pins is handed in, not
-        looked up inside — `handSetKeys` is everything stored, which is
-        everything but `Game` and `TournamentType` by construction, plus the
-        RaffleRange where it is off `all`: no pin, but counted here and put
-        back to `all` by this drop (run 12, Phase G on #72). The second caller
-        #103 brings hands in two pins instead.
-      -->
-      <button type="button" class="pin-chip" data-drop-all x-cloak x-show="pinCount > 0"
-              :aria-expanded="!!dropQuestion"
-              :aria-label="dropAllLabel"
-              @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })">
-        <span class="pin-dot" aria-hidden="true"></span><span x-text="pinCount"></span>
-        <?= icon('rotate-ccw') ?>
-      </button>
-
-      <!--
-        `Copy link` (#72), behind the reset chip: the Set block already shows
-        the base and the pin count, which is exactly what the link carries.
-        Not in the foot — that carries only what lies across the pages, and an
-        address is no destination. `link` shortens `SetupLink`, so no
-        `_Label_` line. It copies the copy form, base plus pins, never the
-        resolved stand (K5 on #72). The confirmation is fleeting and lives on
-        the button element alone (`flashCopied()`); without a clipboard the
-        address opens in a preselected field instead of claiming a success.
-      -->
-      <button type="button" class="link-copy" :class="{ 'link-copy-alone': pinCount === 0 }"
-              @click="copyLink($el)">
-        <span class="link-copy-word">Copy link</span>
-        <span class="link-copy-done" aria-hidden="true">Copied</span>
-      </button>
-      <div class="link-field" x-cloak x-show="linkField !== null">
-        <input class="link-field-input" type="text" readonly aria-label="Link to copy"
-               :value="linkField ?? ''"
-               x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
-        <button type="button" class="link-field-close" aria-label="Close the link field"
-                @click="closeLinkField()"><?= icon('x') ?></button>
-      </div>
     </div>
 
     <!--
@@ -335,7 +284,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
     The RaffleRange is **no control** but session state of the WinnerRaffle's
     operating step (#69, #61): no pin mark, no reset button, and a Set switch
     leaves it standing. It travels in the SetupLink (run 12, K1b on #72), and
-    the pin chip above counts it and its drop puts it back to `all` (run 12,
+    the full reach in the plan head counts it and its drop puts it back to `all` (run 12,
     Phase G on #72).
     So what stands here is a **pointer** — and above all the explanation text:
     the bar has no room for one, and without this line the RaffleRange would

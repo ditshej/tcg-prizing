@@ -316,15 +316,32 @@ test('init() attaches its listeners once, however often Alpine calls it', () => 
  * active page is `Plan` — `activePage` alone would send the question away
  * from the sheet that is right there.
  */
-test('the carry-over question goes to the sheet bubble wherever Details is shown', () => {
+test('the drop question goes to the sheet bubble wherever Details is shown', () => {
   const { app } = opened('');
-  assert.equal(app.carryBubble, '[data-notice-drop]');
+  assert.equal(app.dropBubble, '[data-notice-drop]');
   app.setPage('details');
-  assert.equal(app.carryBubble, '[data-drop-bubble]');
+  assert.equal(app.dropBubble, '[data-drop-bubble]');
   app.setPage('plan');
   app.setStage({ width: 900, height: 700 });
   assert.equal(app.activePage, 'plan');
-  assert.equal(app.carryBubble, '[data-drop-bubble]');
+  assert.equal(app.dropBubble, '[data-drop-bubble]');
   app.setStage({ width: 900, height: 375 });
-  assert.equal(app.carryBubble, '[data-notice-drop]', 'flat: one page, and it is the Plan');
+  assert.equal(app.dropBubble, '[data-notice-drop]', 'flat: one page, and it is the Plan');
+});
+
+/**
+ * #143: the full reach is pressed in the plan head now, and on the phone the
+ * `Plan` page is what is shown — the sheet's bubble sits under a hidden page
+ * there. So a question asked without naming its bubble takes the one that is
+ * on screen, by the same rule as the CarryOverNotice's.
+ */
+test('the plan head\'s reset asks in a bubble that is on screen, on the phone and beside Details', () => {
+  const { app } = opened('');
+  app.setSlider('rankFloor', 3);
+  app.askDrop({ keys: app.handSetKeys, anchor: '[data-drop-all]' });
+  assert.equal(app.confirmDrop.bubble, '[data-notice-drop]', 'phone, Plan page: the layer bubble');
+  app.cancelDrop();
+  app.setStage({ width: 900, height: 700 });
+  app.askDrop({ keys: app.handSetKeys, anchor: '[data-drop-all]' });
+  assert.equal(app.confirmDrop.bubble, '[data-drop-bubble]', 'Details stands as a column: the sheet bubble');
 });

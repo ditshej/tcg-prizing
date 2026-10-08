@@ -36,6 +36,24 @@
       The title line keeps its height either way, so the head is the same
       shape whether the word is there or in the foot.
     -->
+    <!--
+      Share and Reset-all, top right (#143, decisions 1–3, overruling #72 AC 1
+      and the type title of #67): icons alone, the word as `aria-label` and
+      tooltip. They stand beside the two lines rather than in the title line:
+      `.col-titleline` clips (`overflow: hidden`) and is 22 high, so a 44 px
+      hit area there would be cut, and a 32 px drawing would grow the head
+      and with it `PLAN_FIXED`. Here, beside both lines, the 32 px drawing
+      stays inside the head's height and the hit area reaches 6 past it into
+      the stage's padding and the gap below — over no other target.
+
+      Reset-all is the full reach of the way back and asks first (stories 17,
+      18; `askDrop()`); it carries the count of what it would drop — the pin
+      counter, the length of the list the question reads out (#67 AC 6) — and
+      is gone while nothing is set by hand, as the chip it replaces was: a
+      reach over nothing is not an offer. Share copies the complete
+      `SetupLink` (story 48). Neither stands in fullscreen, whose head is
+      only "where you are, and how to get out".
+    -->
     <header class="col-head plan-head" x-ref="head">
       <div class="col-titleline">
         <h1 class="col-title" x-show="titled('plan')">Plan</h1>
@@ -43,7 +61,39 @@
       </div>
       <p class="col-sub plan-output" x-show="!fullscreen"
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} tournament packs · ${plan.pool.winners} winner packs`"></p>
+      <div class="plan-head-actions" x-show="!fullscreen">
+        <button type="button" class="plan-reset" data-drop-all x-cloak x-show="pinCount > 0"
+                :aria-expanded="!!dropQuestion" :aria-label="dropAllLabel" :title="dropAllLabel"
+                @click="askDrop({ keys: handSetKeys, anchor: '[data-drop-all]' })"><?= icon('rotate-ccw') ?><span
+                class="plan-reset-count" aria-hidden="true" x-text="pinCount"></span></button>
+        <button type="button" class="plan-share" data-share aria-label="Copy link" title="Copy link"
+                @click="copyLink($el)"><?= icon('share') ?></button>
+      </div>
     </header>
+
+    <!--
+      The bubble at Share (#143, decision 4): `Link copied` for about 2 s after
+      a copy, on the bubble layer and not in the NoticeStack — that one carries
+      statements about the plan and covers tiles (story 23). Fleeting: the
+      element carries it as `data-link-copied` for the moment
+      (`flashCopied()`), the component keeps nothing. Without a clipboard the
+      same bubble opens with the address in a preselected field instead of
+      claiming a success (#72 AC 4). Placed by `placeShare()`, fixed in the
+      viewport like the drop question.
+    -->
+    <div class="share-bubble" data-share-bubble role="status"
+         :class="{ 'has-field': linkField !== null }"
+         x-effect="if (linkField !== null) $nextTick(() => placeShare())"
+         @resize.window="placeShare()" @keydown.escape.window="closeLinkField()">
+      <span class="share-bubble-done">Link copied</span>
+      <div class="link-field" x-show="linkField !== null">
+        <input class="link-field-input" type="text" readonly aria-label="Link to copy"
+               :value="linkField ?? ''"
+               x-effect="if (linkField !== null) $nextTick(() => { $el.focus(); $el.select(); })">
+        <button type="button" class="link-field-close" aria-label="Close the link field"
+                @click="closeLinkField()"><?= icon('x') ?></button>
+      </div>
+    </div>
 
     <div class="plan-participation" x-ref="participation" x-show="!fullscreen && !plan.combinedHandout">
       <span>Participation</span>

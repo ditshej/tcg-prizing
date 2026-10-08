@@ -36,7 +36,7 @@
  * the `SetupLink` all the same — as a key beside the sliders, not as one
  * (run 12, K1b on #72; `CHOICE_KEYS` in `link/keys.mjs`). Its pointer on the
  * sheet belongs to #69. The one place it joins the pins is the full reach at
- * the pin chip — counted there and put back to `all` by its drop
+ * the reset in the plan head (#143) — counted there and put back to `all` by its drop
  * (`handSetKeys()` below; run 12, Phase G on #72) — still without being one.
  */
 
@@ -622,7 +622,7 @@ export function pinnedKeys(pins) {
 }
 
 /**
- * What the pin chip counts and its question lists: the pinned items, and
+ * What the reset in the plan head counts and its question lists: the pinned items, and
  * after them the `RaffleRange` where it is off `all` (maintainer, run 12,
  * Phase G on #72, `zaehlt-mit`: "Eine gewählte RaffleRange (≠ all) zählt im
  * Pin-Knopf neben Copy link mit, und „alle zurücksetzen“ stellt sie wieder auf
