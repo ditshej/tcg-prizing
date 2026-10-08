@@ -465,6 +465,26 @@ textarea {
   border-style: solid;
   border-color: transparent;
   border-width: var(--inset-top) var(--inset-right) 0 var(--inset-left);
+  /* A page that comes to the front fades in (#158, 10a; proto:831-837): 150 ms
+     of opacity and no movement, since a switch has no direction (#63). An
+     animation and not a transition, because `x-show` brings the page back from
+     `display: none`, which starts animations and no transitions. The page
+     leaving goes at once; under it is the ground the arriving one fades over. */
+  animation: page-fade 150ms linear;
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-plan,
+  .page-prepare,
+  .page-details {
+    animation: none;
+  }
 }
 
 /* Only the outermost column keeps a side inset; the edges between columns,
@@ -1579,6 +1599,7 @@ textarea {
 }
 
 .foot-item {
+  position: relative; /* paints over the marking laid under it (#158) */
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
@@ -1612,17 +1633,42 @@ textarea {
 }
 
 /*
- * The active entry reads by colour **and** a soft field under the icon, never
- * by a stroke (#63 AC 3, #15; prototype `.navbtn[aria-current]`): colour alone
- * was too quiet on 56 px, and a line under it would be a line that separates
- * no data. A field is depth, not a stroke.
+ * The active entry reads by colour **and** a soft field, never by a stroke
+ * (#63 AC 3, #15; prototype `.navbtn[aria-current]`): colour alone was too
+ * quiet on 56 px, and a line under it would be a line that separates no data.
+ * A field is depth, not a stroke.
+ *
+ * Since #158 (F4 a) the field is the **whole entry**, not the icon's: one
+ * element under the entries (`.foot-mark`), placed and sized by
+ * `placeMark()` in `foot.mjs` from the active entry's measured box. On a page
+ * switch it slides there — sideways upright, up or down at the turned strip —
+ * in the time a page takes to fade. Nothing else moves it with a transition.
  */
 .foot-active {
   color: var(--accent);
 }
 
-.foot-active .foot-icon {
+.foot-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--mark-width, 0px);
+  height: var(--mark-height, 0px);
+  transform: translate(var(--mark-x, 0px), var(--mark-y, 0px));
+  opacity: var(--mark-shown, 0);
+  border-radius: var(--r-ctl);
   background: var(--accent-soft);
+  pointer-events: none;
+}
+
+.foot[data-mark-slide] .foot-mark {
+  transition: transform 150ms ease, width 150ms ease, height 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foot[data-mark-slide] .foot-mark {
+    transition: none;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
