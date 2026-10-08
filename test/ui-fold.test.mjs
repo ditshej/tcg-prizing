@@ -167,14 +167,17 @@ test('398 is flat, 399 is not — at two and three columns (#71, K-B8)', () => {
 /**
  * K2 of run 14 at #73 (`schiene-gemessen`): the one-column threshold is the
  * floor, the foot and the rail **as measured** — no fixed 494. The rail
- * heights below are the ones measured at the acceptance by image (2026-10-02,
- * Chromium): 87 at the master and at 600, 101 at 360/540, 115 at 500, 117 at
- * 320. Each must move the threshold by itself.
+ * heights below are the ones measured after #143 (2026-10-08, headless Chrome,
+ * `.plan-controls`, height 900, no link): three controls, the curve as chips —
+ * 212 at 320, 124 from 360 up; 139 at 540 where a pinned `Served ranks` wraps
+ * its title line (`depth=32`). Each must move the threshold by itself.
+ * (Before #142 these were 117 / 101 / 87 / 115 / 101 / 87, measured
+ * 2026-10-02.)
  */
-const MEASURED_RAIL = Object.freeze({ 320: 117, 360: 101, 393: 87, 500: 115, 540: 101, 600: 87 });
+const MEASURED_RAIL = Object.freeze({ 320: 212, 360: 124, 393: 124, 500: 124, 540: 139, 600: 124 });
 
 test('the one-column threshold is the floor, the foot and the measured rail — no fixed number (#73, K2)', () => {
-  assert.equal(firstHeightOneColumn(87), PLAN_FLOOR + FOOT_HEIGHT + 87);
+  assert.equal(firstHeightOneColumn(124), PLAN_FLOOR + FOOT_HEIGHT + 124);
   for (const [w, rail] of Object.entries(MEASURED_RAIL)) {
     const width = Number(w);
     const threshold = DECIDED.fixed + DECIDED.diagramFloor + DECIDED.twoRows + FOOT_HEIGHT + rail;
@@ -185,8 +188,8 @@ test('the one-column threshold is the floor, the foot and the measured rail — 
     assert.equal(at.planHeight, PLAN_FLOOR, `${width} × ${threshold}: exactly the floor above foot and rail`);
     assert.equal(under.flat || under.cramped, true, `${width} × ${threshold - 1} is flat or cramped`);
   }
-  // 500 wide and 500 high: under the old 494 the master, with its measured rail of 115 flat.
-  assert.equal(fold({ width: 500, height: 500, railHeight: 115 }).flat, true);
+  // 500 wide and 500 high: under the old 494 the master, with its measured rail of 124 flat.
+  assert.equal(fold({ width: 500, height: 500, railHeight: 124 }).flat, true);
 });
 
 test('until the first reading the fold reckons with the rail measured at the master', () => {
@@ -200,7 +203,7 @@ test('until the first reading the fold reckons with the rail measured at the mas
  * its foot, and the `Plan` keeps its floor while the page scrolls.
  */
 test('under 436 and under the threshold the stage is cramped: the Plan keeps its floor and the page scrolls (#73, K4)', () => {
-  const f = fold({ width: 360, height: 300, railHeight: 101 });
+  const f = fold({ width: 360, height: 300, railHeight: 124 });
   assert.equal(f.flat, false);
   assert.equal(f.cramped, true);
   assert.equal(f.rail, 'bar');
@@ -284,13 +287,15 @@ test('in the flat mode two full tile rows are visible, not cut', () => {
  * because the threshold moves with it: `RAILS_MEASURED` below.
  */
 /*
- * The rail heights the acceptance by image measured after round 142·145, K2
- * (2026-10-08, headless Chrome, `.plan-controls`, every width 320–673 in
- * `plain`, Weekend, Release and Weekly at `depth=32`): 124 from 360 up, 139
- * at 360–361 and 540–542 where a pinned `Served ranks` wraps its title line,
- * 195 / 212 / 229 below 360. `docs/acceptance/73-abnahme-am-bild.md` › run 17.
+ * The rail heights the acceptance by image measured after #143 (2026-10-08,
+ * headless Chrome, `.plan-controls`, every width 320–673 at height 900, with
+ * no link, Weekly with its old start values pinned, `depth=32`, Release and
+ * Weekend): 124 from 360 up, 139 at 360–362 and 540–543 where a pinned
+ * `Served ranks` wraps its title line, and below 360 151 / 168 / 195 / 212
+ * (counters single, curve chips 7 or 4 + 3). `docs/acceptance/73-abnahme-am-bild.md`
+ * › „#143". Before #143: 124, 139, 195, 212, 229.
  */
-const RAILS_MEASURED = Object.freeze([124, 139, 195, 212, 229]);
+const RAILS_MEASURED = Object.freeze([124, 139, 151, 168, 195, 212]);
 
 test('the master is the floor: never fewer than six tile columns and two tile rows', () => {
   const minWidth = 6 * TILE_SIZE + 5 * TILE_GAP + PLAN_PADDING;
