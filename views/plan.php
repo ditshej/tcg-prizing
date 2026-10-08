@@ -109,10 +109,13 @@
       *fewer* ranks than the page it opened from, because the diagram takes
       every pixel the controls rail and the foot give up.
 
-      And it stands only where it has room (#129, run 15, K3/K4): after the two
-      tile rows and an open raffle bar's cover, its 60 px floor must be left,
-      or it is gone and the tiles get its place. It is an extra, not the work.
-      The rind decides (`diagramFits()`), the component holds the verdict.
+      And it takes at most a third of the area it shares with the tiles (#157):
+      its height is min(DIAGRAM_MAX, (leftover − covered) / 3), where covered is
+      an open raffle bar's overlap with the tile window. It stands only where
+      that third reaches its 60 px floor — from 180 px of leftover − covered
+      on — or it is gone and the tiles get its place (#129, run 15, K3/K4). It
+      is an extra, not the work. The rind decides (`diagramFits()`), the
+      component holds the verdict.
     -->
     <div class="plan-diagram" aria-hidden="true" x-show="diagramShown">
       <template x-for="row in plan.rows" :key="row.rank">

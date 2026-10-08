@@ -65,7 +65,10 @@ export const DECK = columnsWidth(MAX_COLUMNS) + PLAN_PADDING + FIRST_WIDTH.detai
  * on the built app (#71, 2026-10-02, Chromium) at the `Plan`'s first width
  * of 388 px with a rank message standing: 8 padding + 41.5 head + 16
  * participation + 21.9 legend + 15 rank total + 27 rank message + 6 gaps × 8
- * = 177.4, rounded up.
+ * = 177.4, rounded up. Since #156 the head is 40 on every stage, and the fixed
+ * part measures 175 in the columns as on the Master (2026-10-08, Chrome, #157
+ * on #156). 178 stays: in `fold()` it is an upper bound, not the pixel value
+ * of every stage, and a bound 3 px high costs nothing.
  *
  * **Not 158 and not 245.** #40 derives the first height with `158`, the fixed
  * part *without* the bar, and #71's body with `245`, the fixed part *with* a

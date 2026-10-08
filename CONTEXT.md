@@ -344,10 +344,12 @@ Leiste über der Fussnavigation aufgehen lässt; die Leiste trägt Auslöser,
 `RaffleRange`, die Ansage des letzten Treffers und die nach `Rank` sortierte
 Rücknahmeliste. Sie schliesst nie von selbst, überlebt den Wechsel ins Vollbild
 und deckt keine Kachel zu — gemeint sind Kacheln, nicht die Rangmeldung darunter,
-die bei offener Leiste verdeckt ist (#129, Lauf 15, K7): solange sie offen ist, gibt
-das Diagramm um ihre gemessene Überlappung mit dem Kachelfenster nach (#73, K1), und
-wo es dabei unter seinen Boden käme, ist es **weg** (#129, Lauf 15, K3/K4; die Regel
-steht bei `Fold`). Die Leiste wächst beim ersten Wurf einmal um Ansage und
+die bei offener Leiste verdeckt ist (#129, Lauf 15, K7): solange sie offen ist, zählt
+ihre gemessene Überlappung mit dem Kachelfenster nicht zur geteilten Fläche — das
+Diagramm nimmt ein Drittel dessen, was darüber bleibt, also
+min(`DIAGRAM_MAX`, (Rest − gedeckt) / 3) (#73, K1; #157), und wo dieses Drittel
+unter seinen Boden 60 fällt (Rest − gedeckt unter 180), ist es **weg** (#129, Lauf 15,
+K3/K4; #157; die Regel steht bei `Fold`). Die Leiste wächst beim ersten Wurf einmal um Ansage und
 Rücknahmezeile und danach mit der Rücknahmeliste (#69) — ausser auf der flachen Bühne
 und in der engen Ausnahme (`fold().flat`, `fold().cramped`, keine Breite): dort ist die
 Rücknahmeliste **eine Zeile, die seitlich scrollt** (am Handy gezogen; die Pfeile `‹ ›`
