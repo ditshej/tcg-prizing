@@ -514,7 +514,10 @@ nicht mit ihm** (#132): Die Summenprobe hat auf jeder Bühne drei Stellen
 Rangtotal als eigene Zeile unter dem Raster stehen. Es steckt im festen Teil (178),
 kostet also keine Kachelreihe. Unter einer offenen Verlosungsleiste liegt es,
 wie die Rangmeldung, unter der Leiste: Die Summenprobe liest man bei
-geschlossener Leiste (Maintainer, 2026-10-05). Unter `CombinedHandout` sind es zwei Stellen,
+geschlossener Leiste (Maintainer, 2026-10-05). **Nach oben ist es gedeckelt** (#142, Prototyp
+`stripMax`, nachgeschlagen): 96 auf der flachen Bühne und unter 460 Höhe, 190 ab zwei
+Spalten, 280 einspaltig (`fold().diagramMax`). Was es darüber nähme, bekommt das
+Kachelraster; der Boden 60, das Wegfallen und die zwei Reihen bleiben, wie sie sind. Unter `CombinedHandout` sind es zwei Stellen,
 weil die Zeile `Participation` ausgeblendet ist; „to the ranks" trägt dann den
 ganzen Anteil ohne den `JudgePool` (#103, Map-Closure Durchgang 2). Die Faltung selbst
 rechnet weiter mit dem Boden; sie wird davon nicht neu gezogen. Der feste Teil hält
@@ -523,7 +526,8 @@ sondern seitlich scrollt (K6, schliesst A10).
 Die einspaltige Form hat eine eigene Schwelle: 351 + 56 Fuss + die **gemessene**
 Höhe der Schiene bei der Breite der Bühne — keine feste Zahl, die Faltung kippt je
 nach Breite bei einer anderen Höhe (#73, Lauf 14, K2; ersetzt die 494 = 351 + 56 + 87
-aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117).
+aus K-B10a, deren 87 nur am Master stimmte: gemessen 62 bis 117, seit #142 mit
+den 44-px-Zählern 124 bis 229 — #73, Lauf 17).
 Flach wird eine Bühne schon ab 436 Breite (388 + 48 gedrehter Streifen), auch
 unter der Zwei-Spalten-Bruchstelle; die vier heissen Regler stehen dort erst ab 722
 (388 + 286 + 48) als Spalte neben dem `Plan`, darunter nur auf `Details`.

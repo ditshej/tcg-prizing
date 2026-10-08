@@ -50,6 +50,7 @@ require_once __DIR__ . '/control-row.php';
       made to it in script. The $watch below, registered once the options
       exist, is what keeps $el.value on settings.curve after that.
     -->
+    <span class="plan-control-select">
     <select x-init="$nextTick(() => {
               $el.value = settings.curve
               $watch('settings.curve', (value) => { $el.value = value })
@@ -59,6 +60,8 @@ require_once __DIR__ . '/control-row.php';
         <option :value="step.id" x-text="step.id"></option>
       </template>
     </select>
+    <?= icon('chevron-down') ?>
+    </span>
   </label>
 
   <?php control_row('rankFloor', 'Min boosters per rank'); ?>

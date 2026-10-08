@@ -54,7 +54,7 @@ function sheet_pin_reset(string $key, string $label): void
     ?>
       <button type="button" class="pin-reset" :class="{ 'is-idle': !isPinned('<?= $k ?>') }"
               @click="resetSlider('<?= $k ?>')"
-              aria-label="<?= $l ?>, back to the chosen type">&#8634;</button>
+              aria-label="<?= $l ?>, back to the chosen type"><?= icon('rotate-ccw') ?></button>
     <?php
 }
 
@@ -105,6 +105,7 @@ function control_row(string $key, string $label, string $unit = '', string $note
         <span class="sheet-control-note" x-text="<?= $n ?>"></span>
         <?php endif; ?>
       </span>
+      <span class="sheet-control-act">
       <span class="counter" :class="{ 'is-draft': isDraft('<?= $k ?>') }">
         <button type="button" @click="step('<?= $k ?>', -1)" :disabled="!canStep('<?= $k ?>', -1)"
                 aria-label="<?= $l ?>, one less">&minus;</button>
@@ -121,6 +122,7 @@ function control_row(string $key, string $label, string $unit = '', string $note
                 aria-label="<?= $l ?>, one more">+</button>
       </span>
       <?php sheet_pin_reset($key, $label); ?>
+      </span>
     </div>
     <?php
 }

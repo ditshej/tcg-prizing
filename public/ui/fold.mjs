@@ -88,18 +88,20 @@ export const STRIP_WIDTH = 48;
 /**
  * The rail of the four hot controls under the `Plan`, while there is one
  * column: its height is **measured**, not assumed (#73, run 14, K2
- * `schiene-gemessen`). The rail wraps with the width — two rows of two, three
- * cells over two rows, one row from 664 — and its height went 62 to 117 px at
- * the acceptance by image; the 87 that #71's K-B10a reckoned with held at the
+ * `schiene-gemessen`). The rail wraps with the width — one cell per row under
+ * 360, two rows from 360 (round 142·145, K2) — and since #142's 44 px
+ * counters its height goes 124 to 229 px (run 17 of the acceptance by image;
+ * 62 to 117 before); the 87 that #71's K-B10a reckoned with held at the
  * master only. The measuring rind (`measureRail()` in `measure.mjs`) reads the
  * rail in its bar form at the stage's width and hands it in as `railHeight`.
  *
  * This value is no rule — it is what `fold()` uses **until the first
  * reading** and under `node --test`, where nothing is measured: the rail at
- * the boot stage, the 393 × 830 master, measured 87 on 2026-10-02 (Chromium,
- * `.plan-controls` with its border and padding).
+ * the boot stage, the 393 × 830 master, measured 124 on 2026-10-08 (headless
+ * Chrome, `.plan-controls` with its border and padding; 87 on 2026-10-02,
+ * before #142).
  */
-export const RAIL_AT_MASTER = 87;
+export const RAIL_AT_MASTER = 124;
 
 /**
  * What the `Plan` column needs to show its fixed part, the diagram at its
@@ -129,6 +131,19 @@ export const FIRST_HEIGHT = PLAN_FLOOR + STRIP_HEIGHT;
 export function firstHeightOneColumn(railHeight) {
   return PLAN_FLOOR + FOOT_HEIGHT + railHeight;
 }
+
+/**
+ * The diagram's upper bound (#142), the prototype's `stripMax`
+ * (proto:3217–3253, "Das Diagramm darf nicht die halbe Fläche nehmen"),
+ * looked up and not re-derived: 96 on the flat stage, 96 under 460 height,
+ * 190 with two columns or more, 280 with one. Its floor (60) and whether it
+ * stands at all are `diagramCap()`/`diagramFits()`'s, unchanged; the bound
+ * only takes height from the diagram and gives it to the tile grid.
+ */
+export const DIAGRAM_MAX = Object.freeze({ flat: 96, low: 96, columns: 190, oneColumn: 280 });
+
+/** Under this stage height the diagram keeps its flat bound (prototype, `h < 460`). */
+export const DIAGRAM_LOW_HEIGHT = 460;
 
 /**
  * The fold of a stage `{ width, height, fullscreen }`. Everything between the
@@ -177,9 +192,14 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
   const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
   const planHeight = cramped ? PLAN_FLOOR : height - stripBottom - (rail === 'bar' ? railHeight : 0);
 
+  const diagramMax = flat || height < DIAGRAM_LOW_HEIGHT
+    ? (flat ? DIAGRAM_MAX.flat : DIAGRAM_MAX.low)
+    : columns >= 2 ? DIAGRAM_MAX.columns : DIAGRAM_MAX.oneColumn;
+
   return {
     columns,
     flat,
+    diagramMax,
     cramped,
     fullscreen,
     rail,
@@ -245,6 +265,9 @@ export function foldProperties(f) {
     // at its floor and two tile rows, the page scrolling under them.
     '--diagram-floor': px(MIN_DIAGRAM_HEIGHT),
     '--two-rows': px(rowsHeight(MIN_ROWS)),
+    // The diagram's upper bound on this stage (#142); the rind hands it to
+    // `diagramCap()`.
+    '--diagram-max': px(f.diagramMax),
     '--plan-left': px(f.planLeft),
     '--plan-right': px(f.planRight),
     '--strip-bottom': px(f.stripBottom),

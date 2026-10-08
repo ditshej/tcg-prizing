@@ -69,7 +69,10 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   const bar = barEl && barEl.getClientRects().length > 0 ? barEl.getBoundingClientRect() : null;
   const covered = gridEl ? raffleCover(gridEl.getBoundingClientRect(), bar) : 0;
   const leftover = Math.max(0, height - overhead);
-  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, undefined, covered)}px`);
+  /* The diagram's upper bound on this stage (#142), written by the fold onto
+     the app root and inherited here; read, not reckoned. */
+  const max = parseFloat(style.getPropertyValue('--diagram-max')) || Infinity;
+  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, undefined, covered, max)}px`);
   return diagramFits(leftover, covered);
 }
 
