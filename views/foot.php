@@ -19,6 +19,10 @@
  * while the `Plan` stands, `Plan` while `Prepare` has taken its place. At
  * three columns none is left. On the flat stage the strip turns to the right
  * edge and carries all three again, because only one page is in front.
+ *
+ * The entry is not the page's only label: every column head carries its title
+ * on every fold (#156, F1 a), so on the phone the word stands in foot and head
+ * at once — `Plan` here, the `TournamentType`'s title in the Plan head.
  */
 ?>
 <footer class="foot" x-show="!fullscreen">

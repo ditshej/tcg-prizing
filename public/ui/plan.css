@@ -516,8 +516,8 @@ textarea {
  * lies over the head's right end rather than in the title line, which clips;
  * the head is sticky and so already the box it is placed in. It is inset from
  * the edge by the head's own padding and centred on the head's height, which
- * it leaves as it was (38 / 36). The facts give way to it on the right: its 32
- * plus the inset plus a gap of 8.
+ * it leaves as it was (36 on every fold since #156; 38 / 36 before). The
+ * facts give way to it on the right: its 32 plus the inset plus a gap of 8.
  *
  * Its hit area is the rule above's 44, centred across but not down: the page
  * scrolls, and a scroller clips whatever reaches past it, so an area centred
