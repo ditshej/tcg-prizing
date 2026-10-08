@@ -3,7 +3,7 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"; Safe Areas, Überblendung der Seiten und die gleitende Fussmarkierung (#158) unter „#158 · Hülle"
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
 - **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
@@ -983,6 +983,108 @@ gegen `planApp()` ausgewertet — am Telefon (393 × 830) und bei drei Spalten (
 Typ des Katalogs, im Vollbild; `.col-titleline` mit `height: 22px`, Titel und Fakten mit Ellipse;
 kein Kommentar sagt mehr „genau eine davon".
 
+## #158 · Hülle: Safe Areas, Seitenwechsel, Fussmarkierung
+
+Entscheide: Body von #158 (Gesamt-Review 2026-10-08, Punkte 9a, 12, 10; F5 a und F4 a).
+`viewport-fit=cover`; die Insets sitzen als transparenter Rand an den Seiten (der Streifen ist
+die Fläche der Seite) und als Polster am Fuss (sein Papier); `attachStage()` zieht sie ab, bevor
+`fold()` die Bühne sieht. Seiten blenden 150 ms ein, die Markierung füllt den aktiven Eintrag und
+gleitet.
+
+- **Stand:** Zweig `feat/158-huelle-safe-areas`, geschnitten vom Kopf von `feat/156-seitenkoepfe`
+  (`1ec18a0`, PR #160).
+- **PHP:** Server `php -S localhost:8784 -t public` aus der Worktree-Wurzel `tcg-prizing-158`.
+  Der Vergleich „vorher" lief gegen `git archive 1ec18a0` unter `/tmp/m158/base`.
+- **Browser:** Google Chrome (headless) über Playwright, eigener Kontext je Leinwand.
+- **Insets:** Chromium meldet alle `env(safe-area-inset-*)` als 0. Gesetzt wurden darum die
+  Eigenschaften `--inset-left/-right/-top` an `<html>` (47 und 59 wie iPhone quer, 59 oben wie
+  iPhone hochkant), danach die Leinwand um 1 px gezogen und zurück, damit der `ResizeObserver`
+  neu misst.
+- **Messmittel:** `Alpine.$data(.app).stage` gegen die Inhaltsbreite (Rahmenbreite der sichtbaren
+  Seiten ohne ihre Ränder, flach plus der Streifen ohne sein Polster); `elementFromPoint` 5 px vom
+  Rand mit der ersten deckenden Hintergrundfarbe; `getBoundingClientRect` von `.foot-mark` und
+  dem aktiven `.foot-item`; Zeitstempel je `requestAnimationFrame` nach dem Klick.
+
+### Bühne gegen Inhalt — Soll: gleich
+
+| Leinwand | Insets | Faltung | Bühne `fold()` | sichtbarer Inhalt |
+|---|---|---|---|---|
+| 812 × 375 | 47 / 47 | flach | 718 × 375 | 718 |
+| 932 × 430 | 59 / 59 | zwei Spalten | 814 × 430 | 814 |
+| 1180 × 820 | 47 / 47 | drei Spalten | 1086 × 820 | 1086 |
+| 393 × 852 | oben 59 | eine Seite | 393 × 793 | 393 |
+| 812 × 375 | 0 | flach | 812 × 375 | 812 |
+
+Ohne Abzug hätte `fold()` bei 812 × 375 mit 812 statt 718 gerechnet (94 px), bei 932 × 430 mit
+932 statt 814 (118 px = 2 × 59).
+
+### Streifenfarben — Soll: die angrenzende Fläche, aus Tokens
+
+| Leinwand, Seite | links | rechts | oben |
+|---|---|---|---|
+| 812 × 375 flach, Plan | `--bg` (236, 225, 203) | Fuss `--paper` (255, 253, 248) | `--bg` |
+| 812 × 375 flach, Details / Prepare | `--paper` der Seite | Fuss `--paper` | Kopf `--paper` |
+| 932 × 430, Plan \| Details, hell | `--bg` | Details `--paper` | `--bg` |
+| 932 × 430, Plan \| Details, dunkel | `--bg` (19, 18, 16) | Details `--paper` (30, 27, 22) | `--bg` |
+| 1180 × 820, drei Spalten | Prepare `--paper` | Details `--paper` | Plan `--bg` |
+| 393 × 852 oben 59, Plan / Details / Prepare | — | — | `--bg` / `--paper` / `--paper` |
+
+### Unter der Statusleiste — Soll: Kopf, Share, Reset unter dem Inset (59)
+
+393 × 852, `--inset-top` 59: Titelzeile auf allen drei Seiten bei **67**, auch nach 400 px
+Scrollen von `Details` (der Kopf klebt unter dem Rand, nicht darunter durch). Share **71**,
+Reset-all **71** (nach einem Pin), Mode-Knopf auf `Details` **61**.
+
+Feste Schichten zählen ab Bildschirmrand und legen die Insets dazu: die offene Verlosungsleiste
+bei 812 × 375 mit 47 / 47 steht bei 55–709 in der Bühne 47–717 (je 8 innen).
+
+### Seitenwechsel — Soll: kein Frame ohne Diagramm, 150 ms Opazität
+
+Zurück von `Details` auf `Plan`, 393 × 830, je Frame (`raf0` ist der erste nach dem Klick):
+
+| | `raf0` | `raf1` | `raf2` |
+|---|---|---|---|
+| vorher (`1ec18a0`) | Seite aus, `diagramFits` **false** | Seite da, **Diagramm aus** | Diagramm da |
+| nachher | Seite aus, `diagramFits` true | Seite da, Diagramm da | Diagramm da |
+
+`--plan-columns` blieb in beiden Läufen 6. Mit offener Verlosungsleiste derselbe Befund
+(nachher `D6` ab dem ersten sichtbaren Frame).
+
+Überblendung: Opazität von `Details` 0,22 · 0,44 · 0,66 · 0,88 · 1 bei 32 · 65 · 99 · 131 · 165 ms
+nach dem Klick, linear, ohne Bewegung (die Animation hat nur `opacity`).
+
+### Fussmarkierung — Soll: `.foot-item` ±1 px, gleitet 150 ms
+
+| Leinwand | Seite | `.foot-item` (x, y, b, h) | `.foot-mark` |
+|---|---|---|---|
+| 393 × 830 | Plan | 131, 774, 131, 56 | 131, 774, 131, 56 |
+| 393 × 830 | Details | 262, 774, 131, 56 | 262, 774, 131, 56 |
+| 393 × 830 | Prepare | 0, 774, 131, 56 | 0, 774, 131, 56 |
+| 812 × 375 flach | Plan | 764, 161,5, 48, 52 | 764, 161,5, 48, 52 |
+| 812 × 375 flach | Details | 764, 268,3, 48, 52 | 764, 268,3, 48, 52 |
+| 812 × 375 flach | Prepare | 764, 54,8, 48, 52 | 764, 54,8, 48, 52 |
+| 900 × 700 | zwei Spalten | kein aktiver Eintrag sichtbar | Opazität 0, gleitet nicht (auch nach dem Griff) |
+
+Abweichung überall **0 px**. Gleiten Plan → Details: hochkant waagrecht x 131 → 146 → 207 → 243
+→ 258 → 262 bei 1 · 32 · 65 · 99 · 131 · 165 ms, `transitionrun` bei 32, `transitionend` bei 165
+(Dauer 150 ms ab dem ersten Frame, `transition-duration` 0,15 s); flach senkrecht y 162 → 174 →
+223 → 252 → 265 → 268, Ende bei 179.
+
+`prefers-reduced-motion: reduce`: zwei Frames nach dem Klick steht die Markierung schon bei 262,
+`transition-duration` 0 s; `Details` hat `animation-name: none`, Opazität 1.
+
+Tippen: `-webkit-tap-highlight-color` an Knöpfen `rgba(0, 0, 0, 0)`; der Tastaturfokus (Tab)
+trägt den Ring des Browsers (`:focus-visible`, `outline: auto`).
+
+### Tests
+
+`test/ui-ios.test.mjs`: Viewport `width=device-width, initial-scale=1, viewport-fit=cover`.
+`test/ui-shell-insets.test.mjs`: `attachStage()` mit 47 / 59 gesetzten Insets (812 → 718,
+932 → 814, 852 hoch → 793, gedreht), `.app` ohne Polster, Ränder und Polster der Randkinder,
+feste Schichten; `attachMeasuring()` verwirft 0 × 0 ohne Urteil und ohne Schreiben.
+`test/ui-page-switch.test.mjs`: Überblendung 150 ms nur Opazität, Markierung als Feld ohne Strich,
+Gleiten nur beim Seitenwechsel und nie ab zwei Spalten, Reduced Motion.
+
 ## Abnahmekriterien von #73
 
 | Kriterium | Urteil | gemessen |
@@ -1004,7 +1106,7 @@ kein Kommentar sagt mehr „genau eine davon".
 - ~~`<select>` der Kurve in der Schiene auf iOS~~ — gegenstandslos seit #143: die Leiste trägt Chips, die App hat kein `<select>` mehr.
 - Echte Schriften auf iOS/Android: ob die Schiene bei 320–360 Breite umbricht (A5 hängt an der Schriftbreite), ob der Kopf bei 320–340 zweizeilig wird (gemessen 58 statt 40).
 - Querformat mit Browserleisten: ob die Bühne unter 349 hoch fällt (A6) und was `100dvh` beim Ein- und Ausblenden der Leisten tut.
-- Sichere Bereiche (Notch) am gedrehten Streifen rechts im Querformat.
+- Sichere Bereiche (Notch) am gedrehten Streifen rechts im Querformat — gebaut in #158 (`viewport-fit=cover`, Insets an Seiten und Fuss, s. „#158 · Hülle"); am Gerät zu prüfen: beide Drehrichtungen auf allen drei Seiten, Streifen in der Farbe der Nachbarfläche, nichts unter Notch oder Ecken; hochkant Standalone Kopf, Share und Reset unter der Statusleiste; der Home-Indikator unten ist bewusst nicht eingerückt.
 - Freies Ziehen eines echten Fensters (hier nur Treppen über `setViewportSize`).
 - Farben auf einem echten OLED-Schirm im dunklen Modus, besonders das knappe Flächenpaar `ConflictNotice` / `CarryOverNotice` im hellen.
 - Gerätepixel-Rundung an der zweiten Kachelreihe (die `112.999…`-Falle, auf dem Gerät mit DPR 3).
