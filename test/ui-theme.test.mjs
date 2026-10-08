@@ -156,3 +156,39 @@ test('the SetupLink knows no mode: no key under public/link/ names it', async ()
     assert.doesNotMatch(readFileSync(new URL(name, dir), 'utf8'), /\btheme\b|color-?scheme|data-theme/i, name);
   }
 });
+
+/*
+ * The button (#144, decisions 1 and 2): one, in the head of `Details`, top
+ * right, icon only — Lucide `sun-moon` / `sun` / `moon` — with the word as its
+ * `aria-label` and tooltip. Its own small component, not part of `planApp()`.
+ */
+const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
+const APP = readFileSync(new URL('../public/ui/app.mjs', import.meta.url), 'utf8');
+const CSS = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8').replace(/\/\*[^]*?\*\//g, '');
+
+test('the head of Details carries the one mode button, after its title line', () => {
+  const headAt = DETAILS.indexOf('<header class="col-head">');
+  const head = DETAILS.slice(headAt, DETAILS.indexOf('</header>', headAt));
+  const titleEnd = head.lastIndexOf('</div>');
+  const button = head.slice(head.indexOf('<button'));
+  assert.ok(head.indexOf('<button') > titleEnd, 'outside the title line, which clips');
+  assert.match(button, /class="theme-toggle"/);
+  assert.match(button, /x-data="themeToggle\(\)"/);
+  assert.match(button, /@click="next\(\)"/);
+  assert.match(button, /:aria-label="label"/);
+  assert.match(button, /:title="label"/);
+  for (const [theme, icon] of [['system', 'sun-moon'], ['light', 'sun'], ['dark', 'moon']]) {
+    assert.match(button, new RegExp(`x-show="theme === '${theme}'"[^>]*>\\s*<\\?= icon\\('${icon}'\\) \\?>`), `${theme} shows ${icon}`);
+  }
+  assert.equal((DETAILS.match(/themeToggle/g) ?? []).length, 1, 'one button');
+});
+
+test('app.mjs registers the toggle as its own Alpine component', () => {
+  assert.match(APP, /import \{ themeToggle \} from '\.\/theme\.mjs';/);
+  assert.match(APP, /Alpine\.data\('themeToggle', themeToggle\)/);
+});
+
+test('the button is in both hit-area lists, first', () => {
+  const lists = [...CSS.matchAll(/:where\(\s*([^)]*)\)/g)].map(([, list]) => list.split(',')[0].trim());
+  assert.deepEqual(lists.slice(0, 2), ['.theme-toggle', '.theme-toggle']);
+});

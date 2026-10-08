@@ -219,6 +219,7 @@ body {
  * the field itself takes its 44 from a transparent border (`.counter-value`).
  */
 :where(
+  .theme-toggle,
   .grid-fullscreen-toggle,
   .bubble-close,
   .counter > button,
@@ -251,6 +252,7 @@ body {
 }
 
 :where(
+  .theme-toggle,
   .grid-fullscreen-toggle,
   .bubble-close,
   .counter > button,
@@ -485,6 +487,44 @@ textarea {
   margin: -8px -8px 0;
   padding: 8px 8px 6px;
   background: var(--paper);
+}
+
+/*
+ * The mode button (#144): top right in the head of `Details`, icon only, drawn
+ * as quietly as the ⓘ beside a control. It lies over the head's right end
+ * rather than in the title line, which clips; the head is sticky and so
+ * already the box it is placed in. The facts give way to it on the right.
+ *
+ * Its drawing is the head's full height (36) and 44 wide, flush with the
+ * page's top and right edge — the page scrolls, and a scroller clips
+ * whatever reaches past it, so a hit area centred on a smaller drawing would
+ * lose its outer rim there. What the rule above adds is only the missing
+ * 8 px downward, over the head's lower edge.
+ */
+.page-details > .col-head {
+  padding-right: 44px;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--hit);
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle::after {
+  top: 0;
+  bottom: min(0px, calc(100% - var(--hit)));
 }
 
 .plan-stage {
