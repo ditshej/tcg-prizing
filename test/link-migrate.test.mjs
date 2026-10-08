@@ -424,9 +424,12 @@ test('migrate() cannot write the address bar — it does not even name it', asyn
  * own body, not derived. At v1 with an empty production chain, `migrate()`
  * is a pure pass-through, and this proves that pass-through composes with
  * the rest of the pipeline rather than only with itself.
+ *
+ * The row was measured on Weekend as #21 decided it (top 8 served, `steep`);
+ * since #145 moved those start values, the link carries them itself.
  */
 test('a real link runs through decode, migrate and resolveSettings to the measured plan', () => {
-  const read = decode('?v=1&game=onepiece&type=weekend&players=32&displays=1');
+  const read = decode('?v=1&game=onepiece&type=weekend&players=32&depthStep=top8&curve=steep&displays=1');
   const migrated = migrate(read);
   const type = TOURNAMENT_TYPES.find((entry) => entry.id === migrated.type);
   const settings = resolveSettings({ game: GAME, type, pins: migrated.pins });
