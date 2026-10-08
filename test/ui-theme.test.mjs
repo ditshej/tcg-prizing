@@ -192,3 +192,21 @@ test('the button is in both hit-area lists, first', () => {
   const lists = [...CSS.matchAll(/:where\(\s*([^)]*)\)/g)].map(([, list]) => list.split(',')[0].trim());
   assert.deepEqual(lists.slice(0, 2), ['.theme-toggle', '.theme-toggle']);
 });
+
+/*
+ * The form (#144, K-B1): the three head buttons are one family, and the mode
+ * button wears the raised card of Share/Reset (#143). #143 holds the same
+ * values at `.plan-share`; one test over all three waits for both merges.
+ */
+test('the button is a raised card, drawn 32 × 32, like Share and Reset', () => {
+  const rule = CSS.match(/(?:^|\})\s*\.theme-toggle\s*\{([^}]*)\}/)?.[1];
+  assert.ok(rule, 'a rule of its own');
+  const decl = Object.fromEntries(
+    rule.split(';').map((d) => d.split(':').map((part) => part.trim())).filter(([key]) => key),
+  );
+  assert.equal(decl.width, '32px');
+  assert.equal(decl.height, '32px');
+  assert.equal(decl.background, 'var(--paper)');
+  assert.equal(decl['box-shadow'], 'var(--btn-shadow)');
+  assert.equal(decl['border-radius'], 'var(--r-ctl)');
+});
