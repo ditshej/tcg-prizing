@@ -170,8 +170,52 @@
   --tile-fill: linear-gradient(#221e18, #1a1713);
 }
 
+/*
+ * The safe areas (#158, F5 a): `viewport-fit=cover` lets every background
+ * run to the screen's edge, and the content is inset by what iOS reports —
+ * left and right alike, top for the status bar of the standalone app. No
+ * value by hand and no script reading which way the phone is turned.
+ *
+ * The insets go on the **edge children**, never as padding on `.app`: each
+ * page carries them as a transparent border, so the strip is the page's own
+ * surface (Prepare and Details paper, Plan the ground), and the foot as
+ * padding in its own paper. `attachStage()` (`measure.mjs`) reads the same
+ * three properties and takes them off the app's box before the fold sees it.
+ * They are registered as lengths so that read gives pixels, and they live on
+ * `:root`, where a test can set them — Chromium reports every inset as 0.
+ *
+ * The bottom inset is not applied (open at #158): the home indicator stays
+ * over the foot and the lowest tile row, as before `cover`.
+ */
+@property --inset-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --inset-right {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --inset-left {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+:root {
+  --inset-top: env(safe-area-inset-top, 0px);
+  --inset-right: env(safe-area-inset-right, 0px);
+  --inset-left: env(safe-area-inset-left, 0px);
+}
+
 * {
   box-sizing: border-box;
+  /* No flash and no blue under a tapped control (#158, 10b; proto:105). The
+     keyboard's focus ring is the browser's `:focus-visible` and stays. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -372,14 +416,15 @@ textarea {
 
 .app[data-columns='2'] .page-details,
 .app[data-columns='3'] .page-details {
-  flex: 0 0 var(--col-details);
+  /* Its first width plus the right inset it carries at the screen edge (#158). */
+  flex: 0 0 calc(var(--col-details) + var(--inset-right));
   box-shadow: var(--panel-shadow);
   /* The curve's seven steps measure their width against this column (#142). */
   container-type: inline-size;
 }
 
 .app[data-columns='3'] .page-prepare {
-  flex: 0 0 var(--col-prepare);
+  flex: 0 0 calc(var(--col-prepare) + var(--inset-left));
   box-shadow: var(--panel-shadow);
 }
 
@@ -414,6 +459,29 @@ textarea {
 .page-prepare,
 .page-details {
   overscroll-behavior: contain;
+  /* The safe areas (#158): a transparent border, so the page's own surface
+     runs into the strip, and outside the scrollport, so nothing scrolls
+     under the status bar and the sticky heads stick below it. */
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--inset-top) var(--inset-right) 0 var(--inset-left);
+}
+
+/* Only the outermost column keeps a side inset; the edges between columns,
+   and the one beside the turned foot, have none. Fullscreen is the `Plan`
+   alone, edge to edge, at every column count. */
+.app[data-columns='2']:not([data-fullscreen]) .page-plan,
+.app[data-columns='2']:not([data-fullscreen]) .page-prepare,
+.app[data-columns='3']:not([data-fullscreen]) .page-plan,
+.app[data-columns='3']:not([data-fullscreen]) .page-prepare,
+.app[data-flat]:not([data-fullscreen]) .fold > * {
+  border-right-width: 0;
+}
+
+.app[data-columns='2']:not([data-fullscreen]) .page-details,
+.app[data-columns='3']:not([data-fullscreen]) .page-details,
+.app[data-columns='3']:not([data-fullscreen]) .page-plan {
+  border-left-width: 0;
 }
 
 .page-plan {
@@ -1503,6 +1571,9 @@ textarea {
   position: relative;
   z-index: 2;
   display: flex;
+  /* Its paper runs to the screen's edge; the entries keep off it (#158). */
+  padding-left: var(--inset-left);
+  padding-right: var(--inset-right);
   background: var(--paper);
   box-shadow: var(--panel-shadow);
 }
@@ -1617,8 +1688,8 @@ textarea {
  */
 .raffle-bar {
   position: absolute;
-  left: calc(var(--plan-left, 0px) + 8px);
-  right: calc(var(--plan-right, 0px) + 8px);
+  left: calc(var(--plan-left, 0px) + var(--inset-left) + 8px);
+  right: calc(var(--plan-right, 0px) + var(--inset-right) + 8px);
   bottom: calc(var(--strip-bottom, 56px) + 8px);
   z-index: 40;
   padding: 10px 12px 12px;
@@ -2295,15 +2366,15 @@ textarea {
 
 .notice-stack {
   position: fixed;
-  left: calc(var(--deck-margin, 0px) + var(--plan-left, 0px));
-  right: calc(var(--deck-margin, 0px) + var(--plan-right, 0px));
+  left: calc(var(--deck-margin, 0px) + var(--plan-left, 0px) + var(--inset-left));
+  right: calc(var(--deck-margin, 0px) + var(--plan-right, 0px) + var(--inset-right));
   bottom: calc(var(--strip-bottom, 56px) + var(--notice-chiprow, 0px) + var(--raffle-lift, 0px));
   z-index: 36;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 8px;
-  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px) - var(--raffle-lift, 0px));
+  max-height: calc(100dvh - var(--strip-bottom, 56px) - var(--notice-chiprow, 0px) - var(--raffle-lift, 0px) - var(--inset-top));
   overflow-y: auto;
   pointer-events: none;
 }
@@ -2401,7 +2472,7 @@ textarea {
 
 .notice-chips {
   position: fixed;
-  right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px));
+  right: calc(var(--deck-margin, 0px) + var(--chip-right, 0px) + var(--inset-right));
   /* Above an open raffle bar wherever the chips share its corner (#73). The
      5 px padding above and below takes in the chips' hit areas, which the
      row's own scroller would clip (#142); the bottom gives them back. */
@@ -2485,7 +2556,7 @@ textarea {
 .app[data-columns='3'] .foot {
   height: 48px;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 calc(8px + var(--inset-right)) 0 calc(8px + var(--inset-left));
 }
 
 .app[data-columns='2'] .foot-item,
@@ -2509,7 +2580,9 @@ textarea {
  * behind the navigation. Its three entries spread over the whole height.
  */
 .app[data-flat] .foot {
-  flex: 0 0 var(--strip-width);
+  /* The strip's 48 plus the right inset it continues into (#158). */
+  flex: 0 0 calc(var(--strip-width) + var(--inset-right));
+  padding: var(--inset-top) var(--inset-right) 0 0;
   flex-direction: column;
   justify-content: space-evenly;
 }

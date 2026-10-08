@@ -197,12 +197,23 @@ export function showRaffleHit(gridEl, barEl, rank) {
  * every resize. The stage is the app, not the window: above the deck the app
  * stops growing (`max-width`), and the fold has to see what the app is, not
  * what the window is. The arithmetic is `fold()` in `fold.mjs`.
+ *
+ * **Less the safe areas** (#158). With `viewport-fit=cover` the app's box
+ * runs under the notch and the rounded corners, and its edge children — the
+ * outermost page, the foot — inset their content by the safe areas
+ * (`plan.css`, `--inset-*`). `clientWidth` counts that inset in; handed on as
+ * it is, the fold would reckon with a stage up to 2 × 59 px wider than the
+ * pages get. So the insets come off here, read from the same custom
+ * properties the stylesheet insets with — one source, and one a test can set
+ * where the browser reports 0 (`test/ui-shell-insets.test.mjs`). The bottom
+ * inset is not applied anywhere and so comes off nothing.
  */
 export function attachStage(appEl, onSize, railEl = null) {
   if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
   const run = () => {
-    const width = appEl.clientWidth;
-    onSize({ width, height: appEl.clientHeight, railHeight: measureRail(appEl, railEl, width) });
+    const inset = safeInsets(appEl);
+    const width = appEl.clientWidth - inset.left - inset.right;
+    onSize({ width, height: appEl.clientHeight - inset.top, railHeight: measureRail(appEl, railEl, width) });
   };
   run();
   const observer = new ResizeObserver(run);
@@ -212,6 +223,18 @@ export function attachStage(appEl, onSize, railEl = null) {
      right: the probe below measures it then. */
   if (railEl) observer.observe(railEl);
   return () => observer.disconnect();
+}
+
+/**
+ * The safe-area insets as the stylesheet applies them: `--inset-top`,
+ * `--inset-right`, `--inset-left` on `:root`, registered as lengths so the
+ * computed value is pixels and not the `env()` it was written with. A browser
+ * without them reads 0, and the box is the stage as it was before #158.
+ */
+function safeInsets(el) {
+  const style = getComputedStyle(el);
+  const read = (name) => parseFloat(style.getPropertyValue(name)) || 0;
+  return { top: read('--inset-top'), right: read('--inset-right'), left: read('--inset-left') };
 }
 
 /**
