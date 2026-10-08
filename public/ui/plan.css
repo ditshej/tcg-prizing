@@ -1635,11 +1635,14 @@ textarea {
  * The foot (#63): three page entries, icon over word, never icon alone.
  * Height is content-driven, not set — `.foot-icon`/`.foot-label` fix their
  * own line-height so the rendered height (56px, the spec's Master figure) is
- * a property of the content, not a number pasted onto the container:
- * `.foot`'s own 1px top border + 10px padding + 20px icon line + 3px gap +
- * 12px label line + 10px padding = 56, measured with a real browser at
- * 393×830 (`node --test` cannot see this — #61's Testing Decisions name
- * rendered pixel measures as the shell's explicitly unproven half).
+ * a property of the content, not a number pasted onto the container: an
+ * entry's 7px padding + 26px icon field (20 + 2 × 3) + 4px gap + 12px label
+ * line + 7px padding = 56; `.foot` itself has no border and no vertical
+ * padding of its own but the bottom inset. Measured in headless Chrome at
+ * 393×852 on 2026-10-08: 56 without an inset, 56 + 34 = 90 with a bottom
+ * inset of 34 (#158, K4) (`node --test` cannot see this — #61's Testing
+ * Decisions name rendered pixel measures as the shell's explicitly unproven
+ * half).
  * Hidden outright in fullscreen (`x-show="!fullscreen"` in foot.php), at
  * every width — #63 AC 5.
  */

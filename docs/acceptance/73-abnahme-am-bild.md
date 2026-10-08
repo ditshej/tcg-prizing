@@ -1002,7 +1002,9 @@ die Fläche der Seite) und als Polster am Fuss (sein Papier); `attachStage()` zi
 gleitet.
 
 - **Stand:** Zweig `feat/158-huelle-safe-areas`, geschnitten vom Kopf von `feat/156-seitenkoepfe`
-  (`1ec18a0`, PR #160).
+  (`1ec18a0`, PR #160). Nachmessung zu K4 und B1 nach dem Einmergen von #160 (`de76938`) und
+  #162 (`03819d3`, der Blasenrahmen) bei `e991c3b`, Server `php -S localhost:8853 -t public`,
+  2026-10-08; unten unter „Unterer Inset hochkant (K4)" und „Blasen im sicheren Bereich (B1)".
 - **PHP:** Server `php -S localhost:8784 -t public` aus der Worktree-Wurzel `tcg-prizing-158`.
   Der Vergleich „vorher" lief gegen `git archive 1ec18a0` unter `/tmp/m158/base`.
 - **Browser:** Google Chrome (headless) über Playwright, eigener Kontext je Leinwand.
@@ -1086,12 +1088,62 @@ Abweichung überall **0 px**. Gleiten Plan → Details: hochkant waagrecht x 131
 Tippen: `-webkit-tap-highlight-color` an Knöpfen `rgba(0, 0, 0, 0)`; der Tastaturfokus (Tab)
 trägt den Ring des Browsers (`:focus-visible`, `outline: auto`).
 
+### Unterer Inset hochkant (K4) — Soll: Streifen im Papier des Fusses, quer unverändert
+
+Entscheid K4 (#158, Weg c): `env(safe-area-inset-bottom)` nur hochkant, als Streifen in der Farbe
+des Fusses unter dem Fuss; quer (flache Bühne) bleibt die Bühne bis an die Unterkante. Gebaut als
+`padding-bottom: var(--inset-bottom)` am `.foot`, das der gedrehte Fuss (`.app[data-flat] .foot`)
+auf 0 zurücksetzt; ab zwei Spalten wächst der 48er-Streifen um den Inset. `attachStage()` reicht
+den Inset als `insetBottom` weiter, und `fold()` rechnet ihn genau dort in `stripBottom`, wo der
+Fuss unten steht. Gesetzt: `--inset-bottom` (34 hochkant, 21 quer) zusätzlich zu den Insets oben.
+
+| Leinwand | Insets | Fuss (oben–unten, Höhe) | Einträge unten | Streifen | Bühne `fold()` | `planHeight` | Diagramm | Raster |
+|---|---|---|---|---|---|---|---|---|
+| 393 × 852 | oben 59 | 796–852, **56** | 852 | — | 393 × 793 | 613 | 139–419 (280) | 456–614 (158) |
+| 393 × 852 | oben 59, unten 34 | 762–852, **90** | **818** (34 über dem Rand) | 818–852, 34 | 393 × 793, `stripBottom` 90 | **579** | 139–419 (280) | 456–580 (124) |
+| 812 × 375 flach | 47 / 47 / 20 | 0–375, Polster unten 0 | — | — | 718 × 355 | 355 | 100–167 (67) | 204–317 (113) |
+| 812 × 375 flach | 47 / 47 / 20, unten 21 | 0–375, Polster unten **0** | — | — | 718 × 355 | **355** | 100–167 (67) | 204–317 (113) |
+
+Hochkant gibt die Bühne 34 px an den Streifen; sie gehen ganz vom Raster (158 → 124, die zwei
+Reihen des Bodens bleiben), das Diagramm hält seine 280. `planHeight` 579 ist genau die Höhe der
+Plan-Seite im Bild (59 bis zur Leiste bei 638); ohne `insetBottom` hätte `fold()` mit 613
+gerechnet. Quer ist jede Zahl gleich, mit und ohne unteren Inset.
+
+Farbe des Streifens (Pixel 3 px über dem Rand, im Bildschirmfoto): hell **255, 253, 248**, dunkel
+**30, 27, 22** — jeweils gleich der Hintergrundfarbe von `.foot` (`--paper`). Die Markierung des
+aktiven Eintrags bleibt der Eintrag (762–818, 56 hoch) und reicht nicht in den Streifen.
+`--strip-bottom` ist hochkant 90, die festen Schichten (Verlosungsleiste, Meldungen, Chips) stehen
+damit über dem Streifen. Drei Spalten bei 1180 × 820 mit unten 20: Streifen 772–820 (48) →
+752–820 (68), `--chip-bottom` 7 → 27 (in den 48 zentriert).
+
+Die Fusshöhe von 56 steht im Kommentar über `.foot` jetzt mit der gemessenen Summe (7 + 26 + 4 +
+12 + 7); die alte Rechnung mit „1px top border + 10px padding" war falsch (B10).
+
+### Blasen im sicheren Bereich (B1) — Soll: innerhalb 47…765 bei 812 × 375
+
+`seenFrame()` (`plan.mjs`) schneidet den sichtbaren Rahmen um dieselben vier `--inset-*`, die das
+Stylesheet nutzt (`safeInsets()` aus `measure.mjs`, eine Quelle). 812 × 375, Insets 47 / 47 / 20,
+unten 21, `navigator.share` gelöscht:
+
+| Blase | vorher (`e991c3b`) | nachher | sicher |
+|---|---|---|---|
+| Reset-Rückfrage (`?…&players=40&boosterRate=4`, Knopf 633–665) | 503–795 | **465–757** | 47–765 |
+| Share-Blase (ohne Zwischenablage, mit Linkfeld) | 492–804 | **445–757** | 47–765 |
+
+757 ist 765 minus der 8 px Rand der Blase. Der untere Inset zählt für die Blasen in beiden
+Richtungen: ein Knopf in einer Blase gehört über den Home-Indikator, was immer der Fuss dort tut.
+
 ### Tests
 
 `test/ui-ios.test.mjs`: Viewport `width=device-width, initial-scale=1, viewport-fit=cover`.
 `test/ui-shell-insets.test.mjs`: `attachStage()` mit 47 / 59 gesetzten Insets (812 → 718,
 932 → 814, 852 hoch → 793, gedreht), `.app` ohne Polster, Ränder und Polster der Randkinder,
-feste Schichten; `attachMeasuring()` verwirft 0 × 0 ohne Urteil und ohne Schreiben.
+feste Schichten; `attachMeasuring()` verwirft 0 × 0 ohne Urteil und ohne Schreiben. K4: vier
+registrierte Insets, `insetBottom` wird weitergereicht und nicht abgezogen, hochkant `stripBottom`
+56 + 34 und `planHeight` 34 kleiner, drei Spalten 48 + 20 mit zentrierten Chips, flach und im
+Vollbild unverändert; der Streifen nur am `.foot` und am 48er-Streifen, der gedrehte Fuss setzt
+ihn auf 0. `test/ui-bubble.test.mjs`: Reset-Rückfrage und Share-Blase quer bei 757 statt 804,
+links 55 statt 8, und eine Blase klappt nach oben, statt in den Home-Indikator zu reichen (B1).
 `test/ui-page-switch.test.mjs`: Überblendung 150 ms nur Opazität, Markierung als Feld ohne Strich,
 Gleiten nur beim Seitenwechsel und nie ab zwei Spalten, Reduced Motion.
 
@@ -1116,7 +1168,7 @@ Gleiten nur beim Seitenwechsel und nie ab zwei Spalten, Reduced Motion.
 - ~~`<select>` der Kurve in der Schiene auf iOS~~ — gegenstandslos seit #143: die Leiste trägt Chips, die App hat kein `<select>` mehr.
 - Echte Schriften auf iOS/Android: ob die Schiene bei 320–360 Breite umbricht (A5 hängt an der Schriftbreite), ob der Kopf bei 320–340 zweizeilig wird (gemessen 58 statt 40).
 - Querformat mit Browserleisten: ob die Bühne unter 349 hoch fällt (A6) und was `100dvh` beim Ein- und Ausblenden der Leisten tut.
-- Sichere Bereiche (Notch) am gedrehten Streifen rechts im Querformat — gebaut in #158 (`viewport-fit=cover`, Insets an Seiten und Fuss, s. „#158 · Hülle"); am Gerät zu prüfen: beide Drehrichtungen auf allen drei Seiten, Streifen in der Farbe der Nachbarfläche, nichts unter Notch oder Ecken; hochkant Standalone Kopf, Share und Reset unter der Statusleiste; der Home-Indikator unten ist bewusst nicht eingerückt.
+- Sichere Bereiche (Notch) am gedrehten Streifen rechts im Querformat — gebaut in #158 (`viewport-fit=cover`, Insets an Seiten und Fuss, s. „#158 · Hülle"); am Gerät zu prüfen: beide Drehrichtungen auf allen drei Seiten, Streifen in der Farbe der Nachbarfläche, nichts unter Notch oder Ecken; hochkant Standalone Kopf, Share und Reset unter der Statusleiste; hochkant liegt der Home-Indikator auf dem Streifen unter den Fusseinträgen (K4), quer bewusst über der Bühne — ob er dort stört, bleibt hier zu prüfen; Rückfrage und Share-Blase quer nicht im Inset (B1).
 - Freies Ziehen eines echten Fensters (hier nur Treppen über `setViewportSize`).
 - Farben auf einem echten OLED-Schirm im dunklen Modus, besonders das knappe Flächenpaar `ConflictNotice` / `CarryOverNotice` im hellen.
 - Gerätepixel-Rundung an der zweiten Kachelreihe (die `112.999…`-Falle, auf dem Gerät mit DPR 3).
