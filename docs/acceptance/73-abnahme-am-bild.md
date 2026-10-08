@@ -870,9 +870,21 @@ Trefferflächen aller Ziele im Bild auf `Plan` (30 bei 320 × 900, 360 × 580, 3
 `Min boosters per rank`, das in der `Details`-Spalte halb unter dem Streifen liegt (Sache des
 Scrollens, wie Lauf 17).
 
-**Folge, gemessen:** die Ausgabezeile verliert die 84 px der zwei Knöpfe. Am Master steht sie
-nicht mehr ganz da („96 boosters · 32 tournament packs · 3 winner p…") und scrollt seitlich, wie
-#129 K6 es für 320–340 entschieden hat — jetzt auch bei 393. Die Höhe bleibt.
+**Folge, gemessen:** die Ausgabezeile verliert die 84 px der zwei Knöpfe (bei 393: 377 → 293). Mit
+„tournament packs" stand sie bei 393 nicht mehr ganz da; seit K-B3 heisst sie
+`120 boosters · 40 packs · 4 winner packs` und steht neben beiden Knöpfen ganz (1 Pin, Reset
+sichtbar). Gemessen am App-Stand dieses PRs (Chrome headless, `.plan-output`, Textbreite über
+`Range`):
+
+| Leinwand | Platz (`clientWidth`) | Weekly `rankFloor=3` (Text 254.6) | Release `players=128&rankFloor=3` (Text 266.5) | Kopf | Leiste |
+|---|---|---|---|---|---|
+| 393 × 830 | 293 | `scrollWidth` 293 ✓ | 293 ✓ | **40** | **124** |
+| 375 × 553 | 275 | 275 ✓ | 275 ✓ | **40** | **124** |
+| 360 × 580 | 260 | 260 ✓ | 266 ✗ → scrollt seitlich (#129 K6) | **40** | **124** |
+
+Bei 320 × 900 (`players=64&depth=32`, Text 253.6, Platz 220) scrollt sie wie bisher; bei
+674 × 760 und 1280 × 760 steht sie ganz, Kopf **42**. Kopf und Leiste sind gleich hoch wie
+vorher, also bleiben `PLAN_FIXED` 178 und `RAIL_AT_MASTER` 124 unberührt.
 
 ### Die Abläufe
 
