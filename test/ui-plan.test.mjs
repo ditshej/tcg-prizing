@@ -276,15 +276,17 @@ test('the component has no takeOffer() any more (#143)', () => {
  * listener single (#71, B17). Driven here with the browser stubbed down to
  * counters: `ResizeObserver` is absent, so the rind's two observers return at
  * their first line, and what is left to count is the resize listener, the
- * four "erst bestätigen" listeners on the document, the fade bands' scroll
+ * visual viewport's resize and scroll (#154), the four "erst bestätigen"
+ * listeners and the ⓘ bubble's captured scroll on the document, the fade bands' scroll
  * listener on the root, the two effects and the one fullscreen watch.
  */
 test('init() attaches its listeners once, however often Alpine calls it', () => {
-  const counts = { window: 0, document: 0, root: 0, effects: 0, watches: 0 };
+  const counts = { window: 0, viewport: 0, document: 0, root: 0, effects: 0, watches: 0 };
   const saved = { window: globalThis.window, document: globalThis.document };
   globalThis.window = {
     addEventListener: () => { counts.window += 1; },
     removeEventListener: () => {},
+    visualViewport: { addEventListener: () => { counts.viewport += 1; }, removeEventListener: () => {} },
     Alpine: { effect: () => { counts.effects += 1; return {}; }, release: () => {} },
   };
   globalThis.document = { addEventListener: () => { counts.document += 1; }, removeEventListener: () => {} };
@@ -300,7 +302,7 @@ test('init() attaches its listeners once, however often Alpine calls it', () => 
     const once = { ...counts };
     app.init();
     assert.deepEqual(counts, once);
-    assert.deepEqual(once, { window: 1, document: 4, root: 1, effects: 2, watches: 1 });
+    assert.deepEqual(once, { window: 1, viewport: 2, document: 5, root: 1, effects: 2, watches: 1 });
   } finally {
     for (const key of ['window', 'document']) {
       if (saved[key] === undefined) delete globalThis[key];
