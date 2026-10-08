@@ -212,8 +212,21 @@ test('under 436 and under the threshold the stage is cramped: the Plan keeps its
   assert.equal(fold({ width: 360, height: 300, fullscreen: true }).cramped, false, 'fullscreen has no rail and no foot');
   assert.equal(fold({ width: 393, height: 830 }).cramped, false);
   const props = foldProperties(f);
-  assert.equal(props['--diagram-floor'], `${DECIDED.diagramFloor}px`);
   assert.equal(props['--two-rows'], `${DECIDED.twoRows}px`);
+});
+
+/*
+ * The cramped stage draws the `Plan`'s floor, 173 shared — a third is 57.7,
+ * so no diagram (#157, F2 a: "auf der engen Bühne fehlt es ganz, die feste 60
+ * entfällt"). The stylesheet hides it there rather than drawing it at 60.
+ */
+test('the cramped stage draws no diagram, and no fixed 60 for it (#157)', () => {
+  const css = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8');
+  const rule = css.match(/\.app\[data-cramped\] \.plan-diagram\s*\{([^}]*)\}/);
+  assert.ok(rule, 'a cramped rule for the diagram');
+  assert.match(rule[1], /display:\s*none/);
+  assert.doesNotMatch(css, /--diagram-floor/);
+  assert.equal(foldProperties(fold({ width: 360, height: 300, railHeight: 124 }))['--diagram-floor'], undefined);
 });
 
 test('the stage folds flat from 436 wide: 435 keeps the master, 436 turns the strip (#71, K-B10b)', () => {

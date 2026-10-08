@@ -71,8 +71,9 @@ export const DECK = columnsWidth(MAX_COLUMNS) + PLAN_PADDING + FIRST_WIDTH.detai
  * part *without* the bar, and #71's body with `245`, the fixed part *with* a
  * bar of 87 px. Both were measured on the prototype with sliders (#113 took
  * them away). Here the diagram has no fixed height at all — it is the one
- * elastic size of the column (`diagramCap()`), never under its 60 px floor —
- * so the bar enters the sum below as that floor, not as a measured height.
+ * elastic size of the column (`diagramCap()`: a third of what it shares with
+ * the tiles, gone under 60, #157) — so the bar enters the sum below as that
+ * floor, not as a measured height.
  */
 export const PLAN_FIXED = 178;
 
@@ -110,6 +111,8 @@ export const RAIL_AT_MASTER = 124;
 /**
  * What the `Plan` column needs to show its fixed part, the diagram at its
  * floor and the master's two tile rows: 178 + 60 + 113 = 351 (#71, K-B10).
+ * Kept as decided; since #157 the 173 left of it hold no diagram (a third is
+ * 57.7), so the cramped stage, which draws exactly this floor, has none.
  */
 export const PLAN_FLOOR = PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS);
 
@@ -117,9 +120,15 @@ export const PLAN_FLOOR = PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS)
  * The **first height of the `Plan`** (#71, #40): its floor plus the strip it
  * stands on once the pages are columns — 178 + 60 + 113 + 48 = **399**,
  * decided at #71 (run 13, K-B8). Below it nothing opens side by side — the
- * stage is flat. The diagram enters at its floor, not at its height on the
- * portrait master: on a low screen the diagram gives way and the two tile
- * rows hold. The body's `245 + 2 tile rows + 48 = 406` is overruled.
+ * stage is flat. The body's `245 + 2 tile rows + 48 = 406` is overruled.
+ *
+ * The value stands; its derivation no longer describes what is drawn at it.
+ * K-B8 let the diagram enter at its floor of 60, but since #157 (F2 a) the
+ * diagram takes at most a third of the area it shares with the tiles and is
+ * gone under 60 — the 173 px shared at this height hold no diagram. So at the
+ * fold edge, and up to 179 px shared, the `Plan` shows its fixed part and the
+ * tiles alone. The sum is kept as the number the fold was decided with
+ * (rejected in #157: raising it to 406 so a third would be exactly 60).
  */
 export const FIRST_HEIGHT = PLAN_FLOOR + STRIP_HEIGHT;
 
@@ -140,9 +149,15 @@ export function firstHeightOneColumn(railHeight) {
  * The diagram's upper bound (#142), the prototype's `stripMax`
  * (proto:3217–3253, "Das Diagramm darf nicht die halbe Fläche nehmen"),
  * looked up and not re-derived: 96 on the flat stage, 96 under 460 height,
- * 190 with two columns or more, 280 with one. Its floor (60) and whether it
- * stands at all are `diagramCap()`/`diagramFits()`'s, unchanged; the bound
- * only takes height from the diagram and gives it to the tile grid.
+ * 190 with two columns or more, 280 with one. The bound only takes height
+ * from the diagram and gives it to the tile grid.
+ *
+ * It is one of **two** upper bounds since #157: the diagram also takes at
+ * most a third of the area it shares with the tiles, and the smaller one wins
+ * (`diagramCap()`). The prototype's split — `stripMax` *and* its `flex:3 1
+ * 122px` share with the tiles — is overruled by that third; only these four
+ * values are kept. Whether the diagram stands at all (a third of at least 60)
+ * is `diagramFits()`'s.
  */
 export const DIAGRAM_MAX = Object.freeze({ flat: 96, low: 96, columns: 190, oneColumn: 280 });
 
@@ -265,9 +280,8 @@ export function foldProperties(f) {
     '--col-details': px(FIRST_WIDTH.details),
     '--col-prepare': px(FIRST_WIDTH.prepare),
     '--strip-width': px(STRIP_WIDTH),
-    // The `Plan`'s floor as the cramped stage draws it (#73, K4): the diagram
-    // at its floor and two tile rows, the page scrolling under them.
-    '--diagram-floor': px(MIN_DIAGRAM_HEIGHT),
+    // The `Plan`'s floor as the cramped stage draws it (#73, K4): two tile
+    // rows, the page scrolling under them — and no diagram (#157).
     '--two-rows': px(rowsHeight(MIN_ROWS)),
     // The diagram's upper bound on this stage (#142); the rind hands it to
     // `diagramCap()`.
