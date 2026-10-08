@@ -12,7 +12,7 @@ import { planApp } from '../public/ui/plan.mjs';
  *
  * | page    | title                                   | facts                                      |
  * |---------|-----------------------------------------|--------------------------------------------|
- * | Plan    | the active `TournamentType`'s catalog title | `40 players · 120 boosters`            |
+ * | Plan    | the active `TournamentType`'s catalog title | `40 players` (K2: no booster total)    |
  * | Prepare | `Prepare`                               | `Weekly · 40` before *everything the pool holds* |
  * | Details | `Details`                               | `everything you can turn`                  |
  *
@@ -98,7 +98,7 @@ test('on the phone every page head carries its title and facts (#156 AC 1)', () 
     app.setPage(page);
     assert.equal(app.titled(page), true, `titled('${page}') on the phone`);
   }
-  assert.deepEqual(shown('plan.php', app), { title: 'Weekly', facts: '40 players · 120 boosters' });
+  assert.deepEqual(shown('plan.php', app), { title: 'Weekly', facts: '40 players' });
   assert.deepEqual(shown('prepare.php', app), { title: 'Prepare', facts: 'Weekly · 40 everything the pool holds' });
   assert.deepEqual(shown('details.php', app), { title: 'Details', facts: 'everything you can turn' });
 });
@@ -106,7 +106,7 @@ test('on the phone every page head carries its title and facts (#156 AC 1)', () 
 test('as columns every head carries the same title and facts (#156 AC 1)', () => {
   const app = appAt(...COLUMNS);
   for (const page of ['plan', 'prepare', 'details']) assert.equal(app.titled(page), true);
-  assert.deepEqual(shown('plan.php', app), { title: 'Weekly', facts: '40 players · 120 boosters' });
+  assert.deepEqual(shown('plan.php', app), { title: 'Weekly', facts: '40 players' });
   assert.deepEqual(shown('prepare.php', app), { title: 'Prepare', facts: 'Weekly · 40 everything the pool holds' });
   assert.deepEqual(shown('details.php', app), { title: 'Details', facts: 'everything you can turn' });
 });
@@ -118,15 +118,30 @@ test('the Plan head is titled by the active TournamentType out of the catalog an
       app.setType(type.id);
       const head = shown('plan.php', app);
       assert.equal(head.title, type.title, `${type.id} at ${width}`);
-      assert.equal(head.facts, `${app.plan.players} players · ${app.plan.pool.booster} boosters`);
+      assert.equal(head.facts, `${app.plan.players} players`);
     }
   }
 });
 
-test('the Plan facts follow the player count and the booster total', () => {
+test('the Plan facts follow the player count and name it alone (#156, K2)', () => {
   const app = appAt(...PHONE, '?v=1&game=onepiece&type=weekly&players=32');
   assert.equal(app.plan.players, 32);
-  assert.equal(shown('plan.php', app).facts, `32 players · ${app.plan.pool.booster} boosters`);
+  assert.equal(shown('plan.php', app).facts, '32 players');
+});
+
+test('the booster total stands once in the Plan head, in the output line and not beside the title (#156, K2)', () => {
+  for (const [width, height] of [PHONE, COLUMNS]) {
+    const app = appAt(width, height);
+    for (const type of TOURNAMENT_TYPES) {
+      app.setType(type.id);
+      assert.doesNotMatch(shown('plan.php', app).facts, /booster/, `${type.id} at ${width}`);
+    }
+  }
+  const head = headOf('plan.php');
+  const titleline = head.slice(head.indexOf('class="col-titleline"'), head.indexOf('class="col-sub plan-output"'));
+  assert.doesNotMatch(titleline, /booster/, 'nothing in the title line names the boosters');
+  assert.match(head, /class="col-sub plan-output"[^>]*x-text="`\$\{plan\.pool\.booster\} boosters · \$\{plan\.pool\.packs\} packs · \$\{plan\.pool\.winners\} winner packs`"/,
+    'the output line below keeps the booster total, whole (#143 K-B3)');
 });
 
 test('the Prepare head names the type and the player count before its caption, as proto:2257 (#156 AC 3)', () => {

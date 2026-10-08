@@ -35,8 +35,9 @@
       every fold and on the phone too (#156, F1 a): the title stands here
       whether or not the foot carries the page's word as well. The `Plan` is
       titled by its `TournamentType` — the catalog title, `Weekly` — not by the
-      word `Plan`, which stays the foot's; its facts are the player count and
-      the booster total. The title line is 22 high with the title in it or not
+      word `Plan`, which stays the foot's; its facts are the player count alone
+      (#156, K2): the booster total stands once, at the head of the output line
+      below, and not a second time beside the title. The title line is 22 high with the title in it or not
       (`.col-titleline`), so the head keeps its 40 and `PLAN_FIXED` its 178.
     -->
     <!--
@@ -61,7 +62,7 @@
       <div class="col-titleline">
         <h1 class="col-title" x-show="titled('plan')" x-text="typeTitle"></h1>
         <span class="col-facts plan-type"
-              x-text="fullscreen ? `${typeTitle} · ${plan.players} players` : `${plan.players} players · ${plan.pool.booster} boosters`"></span>
+              x-text="fullscreen ? `${typeTitle} · ${plan.players} players` : `${plan.players} players`"></span>
       </div>
       <p class="col-sub plan-output" x-show="!fullscreen"
          x-text="`${plan.pool.booster} boosters · ${plan.pool.packs} packs · ${plan.pool.winners} winner packs`"></p>
