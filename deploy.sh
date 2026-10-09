@@ -4,8 +4,10 @@ set -eu
 # There is no build step (ADR 0004) and nothing to upload: the server pulls
 # the repository itself. This script only triggers _deploy.sh over SSH.
 
+cd "$(dirname "$0")"
+
 if [ ! -f .env.deploy ]; then
-    echo "Error: .env.deploy not found. Copy .env.deploy.example and fill in your credentials." >&2
+    echo "Error: .env.deploy not found. Copy .env.deploy.example and fill in the server values." >&2
     exit 1
 fi
 

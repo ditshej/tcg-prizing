@@ -15,6 +15,9 @@ if [ "$current_branch" != "$BRANCH" ]; then
     exit 1
 fi
 
+# diff-index compares stat data; refresh first so a touched but unchanged
+# file (Plesk fixing permissions) does not count as a change.
+git update-index -q --refresh || true
 if ! git -c core.fileMode=false diff-index --quiet HEAD --; then
     echo "Deploy aborted: uncommitted changes in the server working tree." >&2
     echo "Inspect on the server with: git status" >&2
