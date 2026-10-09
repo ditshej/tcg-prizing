@@ -288,6 +288,7 @@ function sheet_control(string $key, string $label, string $desc, string $unit = 
     <label class="sheet-check">
       <input type="checkbox" :checked="settings.combinedHandout"
              @change="setSlider('combinedHandout', $event.target.checked)">
+      <span class="sheet-box"><?= icon('check') ?></span>
       <span>Hand participation prizes out together with rank prizes</span>
     </label>
   </div>
