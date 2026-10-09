@@ -23,7 +23,8 @@ installed.
 
 ## Deploy
 
-Copy `.env.deploy.example` to `.env.deploy` (untracked), then run `./deploy.sh`.
+Copy `.env.deploy.example` to `.env.deploy` (untracked), fill in the real
+values — they are in #30, step 10 — then run `./deploy.sh`.
 It connects over SSH and runs `_deploy.sh` in the server's checkout, which
 checks the branch and a clean worktree and does `git pull --ff-only` — nothing
 else, since there is nothing to build. A rollback is a `git revert` on `main`
