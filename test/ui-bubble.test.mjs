@@ -391,6 +391,172 @@ test('one bubble at a time: the ⓘ, the tile and the question put each other ou
 });
 
 /*
+ * #167: the tile bubble and the question measured in WebKit before they were
+ * shown. Alpine reveals an `x-show` in the next animation frame, `$nextTick`
+ * runs on a timer, and WebKit runs the timer first — so `offsetWidth` read 0,
+ * and the bubble stood with its left edge on the anchor's centre: tile 6 at
+ * 344 → 554 on a 393 screen, the Reset question at 325 → 535. Chromium runs the
+ * frame first, which is why every check there passed.
+ */
+
+/** A bubble that has no box at its first reading and its real one after. */
+function shownLate(width, height) {
+  const el = element(box(0, 0, width, height));
+  let reads = 0;
+  Object.defineProperty(el, 'offsetWidth', { get: () => (reads++ === 0 ? 0 : width) });
+  Object.defineProperty(el, 'offsetHeight', { get: () => (reads > 1 ? height : 0) });
+  return el;
+}
+
+/** Runs `fn` with `requestAnimationFrame` collected rather than run; returns the queue. */
+function withFrames(fn) {
+  const saved = globalThis.requestAnimationFrame;
+  const frames = [];
+  globalThis.requestAnimationFrame = (cb) => frames.push(cb);
+  try {
+    fn(frames);
+  } finally {
+    if (saved === undefined) delete globalThis.requestAnimationFrame;
+    else globalThis.requestAnimationFrame = saved;
+  }
+  return frames;
+}
+
+const flush = (frames) => {
+  while (frames.length) frames.shift()();
+};
+
+test('a tile bubble not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)', () => {
+  const tile = element(box(330, 320, 20, 20));
+  const bubble = shownLate(180, 120);
+  const app = shell();
+  app.$refs = {
+    stage: element(STAGE),
+    bubble,
+    grid: element(box(0, 150, 400, 500), { children: { '.tile[data-rank="3"]': tile } }),
+  };
+  app.openTile = 3;
+  withFrames((frames) => inBrowser({}, () => {
+    app.placeBubble();
+    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
+    assert.equal(frames.length, 1, 'it asks for the next frame');
+    flush(frames);
+  }));
+  assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
+  assert.equal(bubble.style.top, `${340 + GAP - STAGE.top}px`);
+});
+
+test('the question not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const bubble = shownLate(180, 120);
+  const app = shell();
+  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
+  withFrames((frames) => inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(330, 320, 20, 20), { frame: details }) }, () => {
+    app.placeConfirm();
+    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
+    assert.equal(frames.length, 1, 'it asks for the next frame');
+    flush(frames);
+  }));
+  assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
+});
+
+test('an ⓘ not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167 B16)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const bubble = shownLate(160, 140);
+  const app = shell();
+  app.toggleInfo('game');
+  withFrames((frames) => inBrowser({ '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) }, () => {
+    app.placeInfo();
+    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
+    assert.equal(frames.length, 1, 'it asks for the next frame');
+    flush(frames);
+  }));
+  assert.equal(bubble.style.left, `${350 - 160 - MARGIN}px`);
+  assert.equal(bubble.style.top, `${342 + GAP}px`);
+});
+
+/*
+ * B17: the wait's count belongs to one opening, not to the bubble. WebKit
+ * makes every opening of the same element wait one frame; were the count kept
+ * across them, the opening after the allowance would be placed on width 0.
+ * Six openings: one more than the allowance of four frames plus the first try.
+ */
+test('the same bubble opened again and again waits each time, and is placed each time (#167 B17)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const width = 160;
+  const height = 140;
+  const bubble = element(box(0, 0, width, height));
+  let reads = 0;
+  Object.defineProperty(bubble, 'offsetWidth', { get: () => (reads++ === 0 ? 0 : width) });
+  Object.defineProperty(bubble, 'offsetHeight', { get: () => (reads > 1 ? height : 0) });
+  const app = shell();
+  const elements = { '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) };
+  for (let opening = 1; opening <= 6; opening++) {
+    reads = 0;
+    delete bubble.style.left;
+    delete bubble.style.top;
+    app.toggleInfo('game');
+    assert.equal(app.openInfo, 'game');
+    withFrames((frames) => inBrowser(elements, () => {
+      app.placeInfo();
+      assert.equal(bubble.style.left, undefined, `opening ${opening}: no left from a box of width 0`);
+      assert.equal(frames.length, 1, `opening ${opening}: it asks for the next frame`);
+      flush(frames);
+    }));
+    assert.equal(bubble.style.left, `${350 - width - MARGIN}px`, `opening ${opening}: placed by its width`);
+    assert.equal(bubble.style.top, `${342 + GAP}px`, `opening ${opening}`);
+    app.toggleInfo('game');
+  }
+});
+
+/*
+ * The second half of #167: neither bubble has a set width, so a box standing
+ * at `left` shrinks to the room right of it, down to its `min-width`. Placed
+ * from where it stood last, it measured the shrunk width — 210 instead of 292
+ * — and was then placed by a width it does not have once it stands elsewhere.
+ * The mock lays itself out as the browser does: its content wants 292, it is
+ * never less than `min`, and never more than the room right of `left`.
+ */
+const UNZOOMED = { offsetLeft: 0, offsetTop: 0, width: 400, height: 800, scale: 1 };
+
+function shrinkToFit({ content, min, room, height, left }) {
+  const el = element(box(0, 0, content, height));
+  el.style.left = `${left}px`;
+  const width = () => Math.max(min, Math.min(content, room - parseFloat(el.style.left || '0')));
+  Object.defineProperty(el, 'offsetWidth', { get: width });
+  Object.defineProperty(el, 'offsetHeight', { get: () => height });
+  el.right = () => parseFloat(el.style.left) + width();
+  return el;
+}
+
+test('a tile bubble last placed at the right edge is measured at its own width, not the shrunk one (#167)', () => {
+  // The stage is 0…400; the bubble stood at 344, where 56 are left and it shrinks to its 190.
+  const bubble = shrinkToFit({ content: 292, min: 190, room: STAGE.width, height: 160, left: 344 });
+  const app = shell();
+  app.$refs = {
+    stage: element(STAGE),
+    bubble,
+    grid: element(box(0, 150, 400, 500), { children: { '.tile[data-rank="6"]': element(box(346, 250, 54, 54)) } }),
+  };
+  app.openTile = 6;
+  inBrowser({}, () => app.placeBubble(), { viewport: UNZOOMED });
+  assert.equal(bubble.style.left, `${400 - 292 - MARGIN}px`);
+  assert.equal(bubble.right(), 400 - MARGIN, 'it ends 8 inside the frame');
+});
+
+test('the question last placed at the right edge is measured at its own width, not the shrunk one (#167)', () => {
+  const details = element(box(0, 0, 400, 800));
+  const bubble = shrinkToFit({ content: 292, min: 210, room: 400, height: 140, left: 325 });
+  const app = shell();
+  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
+  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(309, 20, 32, 32), { frame: details }) }, () => {
+    app.placeConfirm();
+  }, { viewport: UNZOOMED });
+  assert.equal(bubble.style.left, `${400 - 292 - MARGIN}px`);
+  assert.equal(bubble.right(), 400 - MARGIN, 'it ends 8 inside the frame');
+});
+
+/*
  * The form, held on the stylesheet and the markup as text (#154). Where it
  * lands on a screen is the acceptance by image's; what it is made of is
  * checkable here.

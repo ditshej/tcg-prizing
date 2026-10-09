@@ -3,10 +3,10 @@
 Protokoll der Abnahme am Bild für Spec 2 (#61): je Leinwand die gemessenen Zahlen
 neben den Sollwerten, nie „sieht gut aus".
 
-- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"; Safe Areas, Überblendung der Seiten und die gleitende Fussmarkierung (#158) unter „#158 · Hülle"; das Diagramm auf höchstens einem Drittel der geteilten Fläche (#157) unter „#157 · Das Diagramm nimmt höchstens ein Drittel"
+- **Stand:** `main` bei `cd539a9` (nach Lauf 13), Zweig `feat/73-abnahme-am-bild`; Nachbau Lauf 14 (K1–K5) unter „Lauf 14"; flache Bühne mit offener Leiste (#129) unter „Lauf 15 · #129"; Bronze/Foil, Diagramm-Obergrenze, 44-px-Ziele und Lucide (#142) unter „Lauf 17 · #142"; die Adressen nach den Startwerten von #145 unter „#145: Startwerte"; Plan-Kopf mit Share und Reset-all, Leiste mit drei Reglern (#143) unter „#143 · Plan-Kopf und Leiste"; die Seitenköpfe mit Titel und Fakten in jeder Faltung (#156) unter „#156 · Seitenköpfe"; Safe Areas, Überblendung der Seiten und die gleitende Fussmarkierung (#158) unter „#158 · Hülle"; das Diagramm auf höchstens einem Drittel der geteilten Fläche (#157) unter „#157 · Das Diagramm nimmt höchstens ein Drittel"; Kachelblase und Rückfrage in WebKit (#167) als Nachtrag unter „Die Blase" und in `167-blasen-messen.md`
 - **PHP:** 8.3.33 (`php -v`), Entscheid K4 an #73
 - **Server:** `php -S localhost:8773 -t public` aus der Worktree-Wurzel
-- **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark
+- **Browser:** Chromium über Playwright MCP, Viewport per `setViewportSize`, Emulation `colorScheme` light / dark. **Für Blasen und Popover ist seit #167 WebKit der Messbrowser**, mit Chromium als Gegenprobe. Chromium zeigt ein `x-show` vor dem `$nextTick`-Timer, WebKit danach. Ein Messfehler vor dem Zeigen ist darum nur in WebKit zu sehen (Nachtrag unter „Die Blase", Protokoll `167-blasen-messen.md`)
 - **Messmittel:** `getBoundingClientRect`, berechnete Stile, `elementFromPoint` für Verdeckung (Mitte und zwei Ecken jeder Kachel im Fenster)
 - **Bilder:** `review/73-bilder/` (gitignoriert, nicht eingecheckt); jede Zeile nennt ihre Datei
 
@@ -194,6 +194,23 @@ letzten der ersten Reihe und der letzten sichtbaren (`bubble-<w>x<h>-rank<n>.png
 | 812 × 375 | dito | ja | ja |
 | 900 × 700 | dito | ja | ja |
 | 1597 × 900 | dito | ja | ja — aber der Anker Kachel 16 ist in der Mitte **vom Vollbild-Griff verdeckt** (A4) |
+
+**Nachtrag #154 / #167 — in Chromium gemessen, in WebKit falsch.** Die Tabelle oben und die
+Abnahme von #154 wurden in Chromium gemessen. Dort stimmen sie. In WebKit standen die Kachelblase
+und die Rückfrage aus dem Bild. Die Ursache war nicht ein Zoom, wie #154 vermutete. Die Blasen
+wurden gemessen, solange sie noch `display: none` waren, also mit Breite 0. Und ihre Breite hing
+am alten `left`, weil eine Box ohne feste Breite auf den Platz rechts davon schrumpft. Zahlen
+aus #167, WebKit, 393 × 852:
+
+| Fall | WebKit vor #167 | WebKit nach #167 | Chromium vor und nach |
+|---|---|---|---|
+| Kachel 6 | 344 → 554,5 (210,5), `+` nicht antippbar | 93 → 385 (292) | 93 → 385 (292) |
+| Kachel 6 nach `+` | 175 → 393 (218), ohne Rand | 93 → 385 (292) | 93 → 385 (292) |
+| Reset-all → „1 value back to Weekly?“ | 325 → 535 (210) | 93 → 385 (292) | 93 → 385 (292) |
+| Details-Rückfrage | 108,5 → 393, unten 935,8 > 852 | 8 → 300 (292), 590…739,8 | 8 → 300 (292) |
+
+Die ganze Folge mit 360 × 780, hell und dunkel, steht in `docs/acceptance/167-blasen-messen.md`.
+Stempel an #154: https://github.com/ditshej/tcg-prizing/issues/154#issuecomment-6067405988.
 
 ## Farbe
 
