@@ -1,0 +1,8 @@
+# Plesk denies this account the vhost's own HTTP -> HTTPS switch
+# ("Permission denied" on 'ssl-redirect'), so Apache does it here. Apache
+# sees every request: nginx hands static files on too, since .mjs needs
+# Apache's MIME type (#30, step 9b). The query string travels with the
+# redirect, so a SetupLink opened over http keeps its state.
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
