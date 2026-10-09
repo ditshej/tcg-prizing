@@ -1,5 +1,7 @@
 # Kein Build-Schritt: Alpine über reinen ES-Modulen
 
+Teilweise überholt durch ADR-0012.
+
 Der Rechenkern läuft **im Browser** als reine ES-Module, die das DOM nie
 anfassen: `distribute(prizePool, settings)` macht aus den Reglerstellungen den
 `DistributionPlan` und sonst nichts. Die Oberfläche darüber ist **Alpine 3**,
