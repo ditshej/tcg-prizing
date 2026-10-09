@@ -902,8 +902,10 @@ textarea {
   gap: 4px;
 }
 
+/* Not positioned (#168): the grid reaches 8 px up into the stage gap with its
+   top padding, and a positioned wrap would paint it over the legend's hit
+   areas, which reach down into that same gap (#142). */
 .plan-grid-wrap {
-  position: relative;
   flex: 1 1 auto;
   min-height: 113px; /* the two-row master floor, MIN_ROWS in geometry.mjs */
   display: flex;
@@ -924,7 +926,24 @@ textarea {
   gap: 5px;
   justify-content: center;
   align-content: start;
+  /* The scroller clips at its padding box, and the open tile's ring (3 px)
+     lies outside the tile: with no padding it was cut at the top row and the
+     outer columns (#168). (The hit's pulse reaches further than any padding
+     here could, and is drawn outside the scroller instead: `.tile-pulse`.) So the padding sits on the scroller
+     with a negative margin against it, the prototype's `.gridwin`
+     (proto:748-755) — the tiles stand where they stood, only the clip edge
+     lies further out. As far as the stage gives: 8 up into the stage gap, 8
+     into the stage's side padding, which lies inside the safe-area border
+     (#158) — the prototype's 12 would reach past the stage. The bottom keeps
+     its own 4 and no margin: its edge is what the raffle bar's sums read.
+     Longhands, because `applyRafflePadding()` writes `padding-bottom` inline. */
+  margin-top: -8px;
+  margin-right: -8px;
+  margin-left: -8px;
+  padding-top: 8px;
+  padding-right: 8px;
   padding-bottom: 4px;
+  padding-left: 8px;
 }
 
 /* At the end of the legend row (prototype `slotBlock()`, #73 B5), and no
@@ -2055,11 +2074,21 @@ textarea {
 }
 
 /*
- * The hit, and it is **fleeting**. The class is put on for one animation and
- * taken off again at `animationend` (`measure.mjs`), so nothing on the screen
+ * The hit, and it is **fleeting**. The pulse runs for one animation and is
+ * taken away again at `animationend` (`measure.mjs`), so nothing on the screen
  * and nothing in the component remembers afterwards which rank was drawn and
  * which was set by hand — that provenance is what the model deliberately does
  * not keep (CONTEXT.md, `WinnerRaffle`).
+ *
+ * The values are the app's: `scale(1.14)` at 35 %, a 5 px ring, 900 ms, once.
+ * A **deliberate departure from the prototype**'s hitpulse (proto:741-747:
+ * `scale(1.11)` at 28 %, `.85s`, three times), decided as K1 —
+ * https://github.com/ditshej/tcg-prizing/issues/168#issuecomment-6068726592 —
+ * with the one condition that the pulse is never cut. It reaches 9.48 px past
+ * the tile, more than the grid's padding can hold (≤ 8), so it does not run on
+ * the tile in the scroller but on a copy of it in `.tile-pulse`, outside the
+ * scroller's clip (`measure.mjs`, `startPulse()`; #168). `PULSE_SCALE`,
+ * `PULSE_RING_MAX` and `PULSE_MS` in `geometry.mjs` repeat these numbers.
  */
 @keyframes tile-hit {
   0% {
@@ -2079,6 +2108,33 @@ textarea {
 .tile-hit {
   animation: tile-hit 900ms ease-out;
   z-index: 5;
+}
+
+/* The layer the pulse runs in (#168, K1): on the tile's box, moved there every
+   frame by `measure.mjs`, in the top layer as a manual popover — so the UA's
+   popover box (centred, bordered, padded, painted) is undone here — or
+   `position: fixed` where there is no popover. Never a target: taps go
+   through to the tile beneath, which is only transparent meanwhile. */
+.tile-pulse {
+  position: fixed;
+  inset: auto;
+  z-index: 1000;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tile-pulse > .tile {
+  width: 100%;
+  height: 100%;
+}
+
+.tile.tile-pulsing {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
