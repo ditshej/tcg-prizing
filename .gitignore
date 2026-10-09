@@ -30,3 +30,8 @@ node_modules/
 # not into .playwright-mcp/. One slipped into #96 that way.
 *.png
 !docs/**/*.png
+
+# Deploy connection data for `./deploy.sh`: host, port, path. No secrets —
+# authentication is by SSH key — but it is machine-local, like
+# `.claude/settings.local.json`. The tracked template is `.env.deploy.example`.
+.env.deploy

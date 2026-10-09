@@ -21,6 +21,16 @@ the browser imports the core straight from the docroot, and the same files run
 under `node --test` — run them from the repository root, with no packages
 installed.
 
+## Deploy
+
+Copy `.env.deploy.example` to `.env.deploy` (untracked), then run `./deploy.sh`.
+It connects over SSH and runs `_deploy.sh` in the server's checkout, which
+checks the branch and a clean worktree and does `git pull --ff-only` — nothing
+else, since there is nothing to build. A rollback is a `git revert` on `main`
+and another deploy. The first setup of the server is a manual checklist,
+[#30](https://github.com/ditshej/tcg-prizing/issues/30); the decision is
+[#22](https://github.com/ditshej/tcg-prizing/issues/22).
+
 ## Predecessor
 
 This repository replaces the archived

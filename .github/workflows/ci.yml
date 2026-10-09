@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# `_deploy.sh` pulls `main` onto the server unchecked and there is no build
+# artifact where a mistake could surface first: this check is the only net
+# before going live (#22). No install step — the core runs without packages.
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Run tests
+        run: node --test
+
+      - name: Lint PHP templates
+        run: |
+          find views -name '*.php' -print0 | xargs -0 -n1 php -l
+          php -l public/index.php
