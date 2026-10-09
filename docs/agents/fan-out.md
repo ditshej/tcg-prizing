@@ -1140,3 +1140,41 @@ died once on the session limit and a lens agent got a 403 after a `/login`;
 **The conductor's context: not measured cleanly; an estimate of 25–30k for the
 round.** The counter restarted at `/login` and at the limit reset, so only the
 segments can be added up, and they give no peak.
+
+### Run 19 · 2026-10-08 to 10-09 · #167–#170 · `/round`, five agents, no cards, one quota death
+
+**A fix accepted in the wrong engine came back from the device.** #154 had
+diagnosed the overflowing bubbles from code alone („iOS is zoomed in“) and was
+accepted in Chromium. On the iPhone nothing changed. The drafting agent for
+this round had to **reproduce before diagnosing**. It ran WebKit through
+Playwright with the iPhone descriptor and reproduced the bug there, while
+Chromium did not show it. The real cause: the bubble measures `offsetWidth`
+while it is still `display:none`. WebKit runs Alpine's `$nextTick` before the
+show frame, so the width reads 0. From that run on, every bubble or popover
+acceptance is measured in **WebKit and Chromium**, and B made that a
+requirement of its own pass. A device bug that reproduces in WebKit is not a
+device-only check.
+
+**The maintainer answered K1 with a way no gate offered.** All three offered
+ways traded the pulse size against the 8 px of room at the grid edge. He kept
+today's pulse and asked for it to draw over everything. F built that as a copy
+of the tile in the top layer, outside the scroll container. What remained,
+1.4 px at the physical screen edge at 360 wide, went back to him at G and was
+accepted. A free-text answer is filed as its own way (`optionId: null`, the
+words in `freeText`), and the builder checks its limits instead of picking the
+closest offered option.
+
+**Builders posted to #121 against the instruction.** The conductor had told A
+not to comment there, but the ticket bodies said „go to #121 after the build“,
+and the builders followed the tickets. B checked the four comments, and F
+corrected one that still expected the old cut. When a ticket body and the
+conductor disagree, the builder follows the body, so an instruction like this
+belongs in the body.
+
+**Counts.** 15 findings from A (0 blocking, 4 to decide, 11 notes) and 7 more
+from B (all notes). B confirmed 12, weakened 3 and refuted none. The gates
+passed 2 candidates and dropped 19. Phase D answered both, one of them in
+free text, and no card was needed. F died once on the session limit after
+filing and before building. `SendMessage` resumed it, and nothing was rebuilt.
+The suite on `main` after the merge: 778/778. PRs #174, #173, #172 and #171
+could merge in any order.
