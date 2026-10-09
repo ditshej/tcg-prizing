@@ -121,11 +121,12 @@ test('outside the token blocks no hex, rgb/hsl/light-dark or common colour name'
   assert.doesNotMatch(rest, /:\s*(?:white|black|red|green|blue|gray|grey)\b/, 'no named colour');
 });
 
-test('no solid px border but the data lines: the group title on Details and the derivation steps', () => {
+test('no solid px border but the data lines: the group title on Details, the derivation steps and the footer of Details', () => {
   const lines = [...code.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .filter(([, , body]) => /border(?:-top|-bottom|-left|-right)?:\s*(?!none|0\b)[^;]*\d+px solid (?!transparent)/.test(body))
     .map(([, selector]) => selector.trim());
-  assert.deepEqual(lines.sort(), ['.prep-step', '.sheet-group-head'].sort());
+  // `.about` since #169 (review 2, point 3a): its line separates the controls from the colophon.
+  assert.deepEqual(lines.sort(), ['.about', '.prep-step', '.sheet-group-head'].sort());
 });
 
 test('Details draws the line over every group title (#15, prototype `.grouphead`)', () => {
