@@ -20,6 +20,11 @@
  * `public/ui/theme.mjs` — key `theme`, values `light`/`dark`, anything else
  * System — and a storage that throws leaves it at System.
  * `test/ui-theme.test.mjs` runs it as written.
+ *
+ * The icon: `favicon.svg` is the source and carries both modes itself
+ * (`prefers-color-scheme`, tokens `--accent`/`--on-accent`). `favicon.ico`
+ * (16 + 32 px) and `apple-touch-icon.png` (180 px, square, Bronze) are
+ * renders of it, committed as files — there is no build step to make them.
  */
 ?><!doctype html>
 <html lang="en">
@@ -27,6 +32,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Prizing — Plan</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/ui/plan.css">
   <script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>

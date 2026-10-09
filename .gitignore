@@ -30,6 +30,7 @@ node_modules/
 # not into .playwright-mcp/. One slipped into #96 that way.
 *.png
 !docs/**/*.png
+!public/apple-touch-icon.png
 
 # Deploy connection data for `./deploy.sh`: host, port, path. No secrets —
 # authentication is by SSH key — but it is machine-local, like

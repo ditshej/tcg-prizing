@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- A podium: the pool split across ranks, first in the middle. Colours
+       are the tokens of public/ui/plan.css — Bronze --accent/--on-accent,
+       Foil the same pair in dark. -->
+  <style>
+    .tile { fill: #8c5a2b; }
+    .rank { fill: #fff8ee; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #c9992e; }
+      .rank { fill: #14110c; }
+    }
+  </style>
+  <rect class="tile" width="32" height="32" rx="7"/>
+  <rect class="rank" x="5" y="14" width="6" height="12" rx="1"/>
+  <rect class="rank" x="13" y="7" width="6" height="19" rx="1"/>
+  <rect class="rank" x="21" y="18" width="6" height="8" rx="1"/>
+</svg>
