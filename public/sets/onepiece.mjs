@@ -49,7 +49,7 @@
  * That the two are split is not an oversight: only one of them has a reader
  * that needs it off the sheet itself.
  */
-export const GAME_TITLE = 'One Piece';
+export const GAME_TITLE = "One Piece";
 
 /**
  * The sheet leads with its own `id`, and that is the decision of #64
@@ -70,7 +70,7 @@ export const GAME_TITLE = 'One Piece';
  * `gameReplaced` without a `now`.
  */
 export const GAME = {
-  id: 'onepiece',
+  id: "onepiece",
   players: 40,
   boosterRate: 3,
   envelopeSize: 9,
@@ -81,23 +81,23 @@ export const GAME = {
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
-  depthStep: 'topThird',
-  curve: 'moderate',
+  depthStep: "topThird",
+  curve: "moderate",
   combinedHandout: false,
 };
 
 export const TOURNAMENT_TYPES = [
-  { id: 'weekly', title: 'Weekly' },
-  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'firm' },
+  { id: "weekly", title: "Weekly" },
+  { id: "weekend", title: "Weekend", participationBooster: 1, curve: "firm" },
   {
-    id: 'release',
-    title: 'Release',
+    id: "release",
+    title: "Release",
     players: 64,
     boosterRate: 9,
     participationBooster: 6,
     envelopeSize: 32,
     envelopeYield: 2,
-    depthStep: 'all',
-    curve: 'gentle',
+    depthStep: "all",
+    curve: "gentle",
   },
 ];

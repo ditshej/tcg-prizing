@@ -76,7 +76,7 @@ drawn — they only get marked (see the next section) — and rebasing a branch 
 SHAs that closed-ticket comments may point at.
 
 **So: remove the worktree, keep the branch.** The branch is the primary source
-and keeps its history, gaining only marking commits; what goes away is the checked-out copy of the *rest*
+and keeps its history, gaining only marking commits; what goes away is the checked-out copy of the _rest_
 of the tree — `public/`, `CONTEXT.md`, `docs/` — which is what actually goes
 stale and what a `grep` wanders into. Fetch the prototype when you need to look
 at it:
@@ -102,7 +102,7 @@ the file — otherwise the next lookup reads the old form as decided.
   lives, and „Nicht umgebaut.“ Inside HTML markup the comment is `<!-- … -->`.
 - **The word follows the stamp rule in `docs/agents/domain.md`.** `ERGÄNZT`
   where the old form still holds and has only become incomplete; `ÜBERHOLT …
-  nur …` where part of it no longer holds — and a form that stops holding in one
+nur …` where part of it no longer holds — and a form that stops holding in one
   branch (say, under `CombinedHandout`) has stopped holding, as ADR 0002's
   restamp to „Teilweise überholt“ in map-closure pass 2 decided. The ticket
   stamp and the prototype mark for the same claim use the same word.

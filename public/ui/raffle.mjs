@@ -29,10 +29,10 @@
  * which may not import from the screen.
  */
 
-import { RANGES, rafflePot } from '../core/rules.mjs';
+import { RANGES, rafflePot } from "../core/rules.mjs";
 
 /** The default is a constant of the term, not a DefaultSet entry (#61). */
-export const DEFAULT_RANGE = 'all';
+export const DEFAULT_RANGE = "all";
 
 /**
  * One icon language for the range grid: ↑ for a prefix from `Rank` 1, ↓ for a
@@ -41,35 +41,35 @@ export const DEFAULT_RANGE = 'all';
  * rides along as the chip's title, so no step is ever only a symbol.
  */
 const RANGE_ICON = {
-  top8: '8',
-  top16: '16',
-  topQuarter: '¼',
-  topThird: '⅓',
-  topHalf: '½',
-  topTwoThirds: '⅔',
-  topThreeQuarters: '¾',
-  all: 'all',
-  bottomThreeQuarters: '¾',
-  bottomTwoThirds: '⅔',
-  bottomHalf: '½',
-  bottomThird: '⅓',
-  bottomQuarter: '¼',
+  top8: "8",
+  top16: "16",
+  topQuarter: "¼",
+  topThird: "⅓",
+  topHalf: "½",
+  topTwoThirds: "⅔",
+  topThreeQuarters: "¾",
+  all: "all",
+  bottomThreeQuarters: "¾",
+  bottomTwoThirds: "⅔",
+  bottomHalf: "½",
+  bottomThird: "⅓",
+  bottomQuarter: "¼",
 };
 
 const RANGE_NAME = {
-  top8: 'top 8',
-  top16: 'top 16',
-  topQuarter: 'top quarter',
-  topThird: 'top third',
-  topHalf: 'top half',
-  topTwoThirds: 'top two thirds',
-  topThreeQuarters: 'top three quarters',
-  all: 'all ranks',
-  bottomThreeQuarters: 'bottom three quarters',
-  bottomTwoThirds: 'bottom two thirds',
-  bottomHalf: 'bottom half',
-  bottomThird: 'bottom third',
-  bottomQuarter: 'bottom quarter',
+  top8: "top 8",
+  top16: "top 16",
+  topQuarter: "top quarter",
+  topThird: "top third",
+  topHalf: "top half",
+  topTwoThirds: "top two thirds",
+  topThreeQuarters: "top three quarters",
+  all: "all ranks",
+  bottomThreeQuarters: "bottom three quarters",
+  bottomTwoThirds: "bottom two thirds",
+  bottomHalf: "bottom half",
+  bottomThird: "bottom third",
+  bottomQuarter: "bottom quarter",
 };
 
 /** The screen name of a step, for the bar's chips and the sheet's pointer. */
@@ -89,13 +89,15 @@ export function rangeName(id) {
  * stands under the upper one it is the complement of.
  */
 export const RANGE_ROWS = (() => {
-  const upper = RANGES.filter((step) => step.comp === undefined && step.id !== DEFAULT_RANGE);
+  const upper = RANGES.filter(
+    (step) => step.comp === undefined && step.id !== DEFAULT_RANGE,
+  );
   const lower = RANGES.filter((step) => step.comp !== undefined);
   const chip = (step, wide = false) => ({
     id: step.id,
     icon: RANGE_ICON[step.id] ?? step.id,
     name: rangeName(step.id),
-    arrow: step.id === DEFAULT_RANGE ? '' : step.comp === undefined ? '↑' : '↓',
+    arrow: step.id === DEFAULT_RANGE ? "" : step.comp === undefined ? "↑" : "↓",
     wide,
   });
   const all = RANGES.find((step) => step.id === DEFAULT_RANGE);
@@ -109,7 +111,7 @@ export const RANGE_ROWS = (() => {
 
 /** `1 winner pack` · `2 winner packs`. */
 function packs(n) {
-  return `${n} winner ${n === 1 ? 'pack' : 'packs'}`;
+  return `${n} winner ${n === 1 ? "pack" : "packs"}`;
 }
 
 /**
@@ -151,11 +153,14 @@ export function raffleView(plan, raffleRange, lastDraw = null) {
        sentence saying the same thing is the noise ADR 0002 is not asking for.
        It names the state and asks for nothing: "— widen the range" was taken
        out everywhere (#129, run 15, K2 — "an diesem Ort falsch"). */
-    potEmptyNote: potEmpty ? 'every rank in range already has one' : null,
+    potEmptyNote: potEmpty ? "every rank in range already has one" : null,
     /* The announcement does not survive the retraction: whoever takes the rank
        out of the list has undone the throw, and a sentence about it would be a
        claim about a state that no longer exists. */
-    hit: lastDraw != null && (allocation.manual[lastDraw] ?? 0) > 0 ? lastDraw : null,
+    hit:
+      lastDraw != null && (allocation.manual[lastDraw] ?? 0) > 0
+        ? lastDraw
+        : null,
     takeBack: takeBackList(allocation.manual),
   };
 }
@@ -193,4 +198,3 @@ export function drawFrom(pot, roll = Math.random) {
   const at = Math.floor(roll() * pot.length);
   return pot[Math.min(pot.length - 1, Math.max(0, at))];
 }
-

@@ -36,15 +36,15 @@ than believed.
 
 ## The phases
 
-| | Who | Produces |
-|---|---|---|
-| **A** | agent · `/fan-out` entire, Phases 0–6 | `review/<batch>-befunde.md` |
-| **B** | agent · `/counter-check` | `review/<batch>-gegenprobe.md` |
-| **C** | agent · Gate 1 and Gate 2 only | `review/<batch>-kandidaten.md` |
-| **D** | **conductor + maintainer** | `review/<batch>-sofort.json` — answers given in the terminal |
-| **E** | maintainer · `/ask-hard-questions` | `…-fragen.json`, `…-antworten.json` |
-| **F** | agent · file the answers, build the corrections | ticket comments, commits |
-| **G** | maintainer | review, merge |
+|       | Who                                             | Produces                                                     |
+| ----- | ----------------------------------------------- | ------------------------------------------------------------ |
+| **A** | agent · `/fan-out` entire, Phases 0–6           | `review/<batch>-befunde.md`                                  |
+| **B** | agent · `/counter-check`                        | `review/<batch>-gegenprobe.md`                               |
+| **C** | agent · Gate 1 and Gate 2 only                  | `review/<batch>-kandidaten.md`                               |
+| **D** | **conductor + maintainer**                      | `review/<batch>-sofort.json` — answers given in the terminal |
+| **E** | maintainer · `/ask-hard-questions`              | `…-fragen.json`, `…-antworten.json`                          |
+| **F** | agent · file the answers, build the corrections | ticket comments, commits                                     |
+| **G** | maintainer                                      | review, merge                                                |
 
 Phase 4's judging half stays intact because it lives **inside** agent A — the
 same head that read the source in Phase 3. That is not delegated; it is
@@ -226,7 +226,7 @@ up** — the ticket comment, an ADR, `CONTEXT.md` (`AGENTS.md`, "Building severa
 tickets at once").
 
 Filing comes **before** building, in that order, and the filing goes to the
-ticket that will *do* the work, not the ticket where the finding appeared. Run
+ticket that will _do_ the work, not the ticket where the finding appeared. Run
 5 first filed a glossary follow-up against the spec issue, where nobody
 building it would read it; it belonged on the ticket whose builder would open
 it with `gh issue view <n> --comments`.

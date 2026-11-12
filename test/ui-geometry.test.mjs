@@ -1,5 +1,5 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
 import {
   TILE_SIZE,
@@ -21,17 +21,17 @@ import {
   RAFFLE_AIR,
   fadeShown,
   fadeHeight,
-} from '../public/ui/geometry.mjs';
+} from "../public/ui/geometry.mjs";
 
-test('rowsHeight(2) is the master floor: two 54px tiles plus one 5px gap', () => {
+test("rowsHeight(2) is the master floor: two 54px tiles plus one 5px gap", () => {
   assert.equal(rowsHeight(2), 113);
 });
 
-test('rowsHeight of a single row has no gap to add', () => {
+test("rowsHeight of a single row has no gap to add", () => {
   assert.equal(rowsHeight(1), TILE_SIZE);
 });
 
-test('columnsFor fits exactly as many 54px/5px columns as the width holds', () => {
+test("columnsFor fits exactly as many 54px/5px columns as the width holds", () => {
   // 6 columns need 6*54 + 5*5 = 349px; one pixel short must still floor to 5,
   // but the master assurance (CONTEXT.md, DistributionPlan) raises it to 6.
   assert.equal(columnsFor(349), 6);
@@ -41,12 +41,12 @@ test('columnsFor fits exactly as many 54px/5px columns as the width holds', () =
   assert.equal(columnsFor(408), 7);
 });
 
-test('columnsFor never drops below the six-column master floor, even on a tiny stage', () => {
+test("columnsFor never drops below the six-column master floor, even on a tiny stage", () => {
   assert.equal(columnsFor(0), MIN_COLUMNS);
   assert.equal(columnsFor(100), MIN_COLUMNS);
 });
 
-test('columnsFor grows past the floor once the stage is wide enough for a 16-column deck (the deck at 1597, #71 K-B9)', () => {
+test("columnsFor grows past the floor once the stage is wide enough for a 16-column deck (the deck at 1597, #71 K-B9)", () => {
   // 16 columns need 16*54 + 15*5 = 939px, the tile part of the 1597 deck.
   assert.equal(columnsFor(939), 16);
 });
@@ -58,18 +58,18 @@ test('columnsFor grows past the floor once the stage is wide enough for a 16-col
  * covers. The worked numbers are the ticket's own table, iPhone portrait at
  * 844 and ~664 — leftover 486 and 306.
  */
-test('diagramCap gives the diagram a third of the shared area (#157)', () => {
+test("diagramCap gives the diagram a third of the shared area (#157)", () => {
   assert.equal(diagramCap(486), 162); // 844 standalone: 162 diagram, 324 tiles
   assert.equal(diagramCap(306), 102); // ~664 Safari with bars: 102 / 204
 });
 
-test('diagramCap stops at the upper bound too, the smaller of the two wins (#142, #157)', () => {
+test("diagramCap stops at the upper bound too, the smaller of the two wins (#142, #157)", () => {
   assert.equal(diagramCap(486, 0, 280), 162); // the third is the tighter bound
   assert.equal(diagramCap(674, 0, 190), 190); // 1597 × 900: a third would be 224.7
   assert.equal(diagramCap(600, 0, 96), 96);
 });
 
-test('an open bar\'s cover is not shared area: the third is taken of what is left above it', () => {
+test("an open bar's cover is not shared area: the third is taken of what is left above it", () => {
   assert.equal(diagramCap(486, 66), 140); // (486 − 66) / 3
   assert.equal(diagramCap(486, 66, 96), 96);
 });
@@ -79,7 +79,7 @@ test('an open bar\'s cover is not shared area: the third is taken of what is lef
  * 180 px of shared area on (F2 a: "Fällt ein Drittel unter den Boden 60, fällt
  * das Diagramm weg"). The ticket's edge cases, 179 and 180.
  */
-test('the diagram stands from 180 px of shared area on, and is gone at 179 (#157, F2 a)', () => {
+test("the diagram stands from 180 px of shared area on, and is gone at 179 (#157, F2 a)", () => {
   assert.equal(diagramFits(180), true);
   assert.equal(diagramFits(179), false);
   assert.equal(diagramFits(179.9), false);
@@ -87,26 +87,32 @@ test('the diagram stands from 180 px of shared area on, and is gone at 179 (#157
   assert.equal(diagramFits(179 + 79, 79), false);
 });
 
-test('where it stands, it is never drawn under its floor and never as tall as the tiles', () => {
+test("where it stands, it is never drawn under its floor and never as tall as the tiles", () => {
   for (let shared = 180; shared <= 2000; shared += 0.5) {
     const diagram = diagramCap(shared);
     assert.ok(diagram >= MIN_DIAGRAM_HEIGHT, `${shared}: ${diagram}`);
-    assert.ok(shared - diagram > diagram, `${shared}: tiles ${shared - diagram}, diagram ${diagram}`);
-    assert.ok(shared - diagram >= rowsHeight(MIN_ROWS), `${shared}: two rows hold`);
+    assert.ok(
+      shared - diagram > diagram,
+      `${shared}: tiles ${shared - diagram}, diagram ${diagram}`,
+    );
+    assert.ok(
+      shared - diagram >= rowsHeight(MIN_ROWS),
+      `${shared}: two rows hold`,
+    );
   }
 });
 
-test('the upper bound does not decide whether the diagram stands', () => {
+test("the upper bound does not decide whether the diagram stands", () => {
   // `diagramFits` reads the shared area, not the bounded height.
   assert.equal(diagramFits(600), true);
   assert.equal(diagramFits(172), false);
 });
 
-test('MIN_ROWS is the master floor used by rowsHeight when called without an argument', () => {
+test("MIN_ROWS is the master floor used by rowsHeight when called without an argument", () => {
   assert.equal(rowsHeight(), rowsHeight(MIN_ROWS));
 });
 
-test('TILE_SIZE and TILE_GAP are the tile constants the spec measures against', () => {
+test("TILE_SIZE and TILE_GAP are the tile constants the spec measures against", () => {
   assert.equal(TILE_SIZE, 54);
   assert.equal(TILE_GAP, 5);
 });
@@ -119,12 +125,15 @@ test('TILE_SIZE and TILE_GAP are the tile constants the spec measures against', 
  * results, no `if` on the surface: in the Plan view the grid window ends well
  * above the bar, the overlap is zero, and nothing happens by itself.
  */
-test('the scroll padding is exactly the overlap, plus the clearance that makes the last row readable', () => {
+test("the scroll padding is exactly the overlap, plus the clearance that makes the last row readable", () => {
   // The grid ends at 700, the bar's top edge is at 640 → 60px are covered.
-  assert.equal(raffleScrollPadding({ bottom: 700 }, { top: 640 }), 60 + RAFFLE_CLEARANCE);
+  assert.equal(
+    raffleScrollPadding({ bottom: 700 }, { top: 640 }),
+    60 + RAFFLE_CLEARANCE,
+  );
 });
 
-test('a bar that does not reach the grid window costs no padding at all', () => {
+test("a bar that does not reach the grid window costs no padding at all", () => {
   assert.equal(raffleScrollPadding({ bottom: 400 }, { top: 640 }), 0);
   assert.equal(raffleScrollPadding({ bottom: 640 }, { top: 640 }), 0); // edge to edge
   assert.equal(raffleScrollPadding({ bottom: 700 }, null), 0); // bar closed
@@ -137,7 +146,7 @@ test('a bar that does not reach the grid window costs no padding at all', () => 
  * measured height and the air it keeps to the strip (the prototype's
  * `--raffleh`, Runde 16; found at the acceptance by image, #73).
  */
-test('the raffle lift is the bar\'s height plus its air, and nothing while the bar is closed', () => {
+test("the raffle lift is the bar's height plus its air, and nothing while the bar is closed", () => {
   assert.equal(raffleLift(119), 119 + RAFFLE_AIR);
   assert.equal(raffleLift(0), 0);
   assert.equal(raffleLift(null), 0);
@@ -151,71 +160,126 @@ test('the raffle lift is the bar\'s height plus its air, and nothing while the b
  * grid itself took `columnsFor()` uncapped and showed 21 columns in
  * fullscreen at 1280 and 26 at 1597 (#73).
  */
-test('tileColumnsFor keeps the master floor and the sixteen-column deck', () => {
+test("tileColumnsFor keeps the master floor and the sixteen-column deck", () => {
   assert.equal(tileColumnsFor(200), 6);
   assert.equal(tileColumnsFor(10 * 59 - 5), 10);
   assert.equal(tileColumnsFor(1597 - 16), MAX_COLUMNS);
   assert.equal(tileColumnsFor(1264), MAX_COLUMNS);
 });
 
-
 /**
  * "Sichtbar" measures against the **top edge of the bar**, not the bottom of
  * the scroll window (#69, #61): the bar stands still while the retraction list
  * under it grows, so the boundary stands still too.
  */
-test('a tile already inside the free strip is not scrolled to at all', () => {
+test("a tile already inside the free strip is not scrolled to at all", () => {
   const window = { top: 100, bottom: 500 };
   // The bar's top edge at 410 leaves the free strip 100…400 once the same
   // clearance the padding uses is taken off it.
-  assert.equal(hitScrollDelta(window, { top: 200, bottom: 254, height: 54 }, 410), 0);
-  assert.equal(hitScrollDelta(window, { top: 346, bottom: 400, height: 54 }, 410), 0); // edge to edge
+  assert.equal(
+    hitScrollDelta(window, { top: 200, bottom: 254, height: 54 }, 410),
+    0,
+  );
+  assert.equal(
+    hitScrollDelta(window, { top: 346, bottom: 400, height: 54 }, 410),
+    0,
+  ); // edge to edge
 });
 
-test('a tile hidden behind the bar is scrolled to, even though it is inside the scroll window', () => {
+test("a tile hidden behind the bar is scrolled to, even though it is inside the scroll window", () => {
   const window = { top: 100, bottom: 500 };
   // Free strip 100…400, its middle 250. The tile sits at 420…474 — inside the
   // window, behind the bar — so its centre 447 has to travel up by 197.
-  assert.equal(hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }, 410), 197);
+  assert.equal(
+    hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }, 410),
+    197,
+  );
 });
 
-test('with the bar closed the free strip is the whole scroll window', () => {
+test("with the bar closed the free strip is the whole scroll window", () => {
   const window = { top: 100, bottom: 500 };
-  assert.equal(hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }), 0);
+  assert.equal(
+    hitScrollDelta(window, { top: 420, bottom: 474, height: 54 }),
+    0,
+  );
   // Below the window: centre 747 against the middle 300 → 447 down.
-  assert.equal(hitScrollDelta(window, { top: 720, bottom: 774, height: 54 }), 447);
+  assert.equal(
+    hitScrollDelta(window, { top: 720, bottom: 774, height: 54 }),
+    447,
+  );
 });
 
 test('the target is the middle of the free strip, not "just barely in"', () => {
   // A tile far above: free strip 100…400 (middle 250), tile centre 27 → −223.
-  assert.equal(hitScrollDelta({ top: 100, bottom: 500 }, { top: 0, bottom: 54, height: 54 }, 410), -223);
+  assert.equal(
+    hitScrollDelta(
+      { top: 100, bottom: 500 },
+      { top: 0, bottom: 54, height: 54 },
+      410,
+    ),
+    -223,
+  );
 });
 
 /* ── The scroll fade band (#71) ──────────────────────────────────────────── */
 
-test('a surface that does not overflow gets no fade band', () => {
-  assert.equal(fadeShown({ scrollHeight: 542, clientHeight: 566, scrollTop: 0 }), false);
-  assert.equal(fadeShown({ scrollHeight: 566, clientHeight: 566, scrollTop: 0 }), false);
+test("a surface that does not overflow gets no fade band", () => {
+  assert.equal(
+    fadeShown({ scrollHeight: 542, clientHeight: 566, scrollTop: 0 }),
+    false,
+  );
+  assert.equal(
+    fadeShown({ scrollHeight: 566, clientHeight: 566, scrollTop: 0 }),
+    false,
+  );
 });
 
-test('a surface with something below its edge gets the band', () => {
-  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 0 }), true);
+test("a surface with something below its edge gets the band", () => {
+  assert.equal(
+    fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 0 }),
+    true,
+  );
 });
 
-test('the band goes out at the bottom stop', () => {
-  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2066 }), false);
+test("the band goes out at the bottom stop", () => {
+  assert.equal(
+    fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2066 }),
+    false,
+  );
   // Sub-pixel scroll positions leave a pixel or two short of the stop.
-  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2064.5 }), false);
-  assert.equal(fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2000 }), true);
+  assert.equal(
+    fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2064.5 }),
+    false,
+  );
+  assert.equal(
+    fadeShown({ scrollHeight: 2748, clientHeight: 682, scrollTop: 2000 }),
+    true,
+  );
 });
 
 test('the scroller\'s own bottom padding is not "something below"', () => {
   // The tile grid keeps 4px of padding under its last row; that is no content.
-  assert.equal(fadeShown({ scrollHeight: 117, clientHeight: 113, scrollTop: 0, paddingBottom: 4 }), false);
-  assert.equal(fadeShown({ scrollHeight: 176, clientHeight: 113, scrollTop: 0, paddingBottom: 4 }), true);
+  assert.equal(
+    fadeShown({
+      scrollHeight: 117,
+      clientHeight: 113,
+      scrollTop: 0,
+      paddingBottom: 4,
+    }),
+    false,
+  );
+  assert.equal(
+    fadeShown({
+      scrollHeight: 176,
+      clientHeight: 113,
+      scrollTop: 0,
+      paddingBottom: 4,
+    }),
+    true,
+  );
 });
 
-test('the band never takes more than a quarter of a short window', () => {
+test("the band never takes more than a quarter of a short window", () => {
   assert.equal(fadeHeight(682), 60);
   assert.equal(fadeHeight(113), 28); // the two-row tile window keeps its second row readable
 });
@@ -228,16 +292,22 @@ test('the band never takes more than a quarter of a short window', () => {
  * 514 after the first throw. Measured, not derived — the test only states that
  * the cover is what the bar takes off the window down to its top edge.
  */
-test('the bar covers the window from its top edge less the clearance down, and nothing above it', () => {
+test("the bar covers the window from its top edge less the clearance down, and nothing above it", () => {
   const window = { top: 541, bottom: 654 };
-  assert.equal(raffleCover(window, { top: 585 }), 654 - (585 - RAFFLE_CLEARANCE));
-  assert.equal(raffleCover(window, { top: 514 }), 654 - (514 - RAFFLE_CLEARANCE));
+  assert.equal(
+    raffleCover(window, { top: 585 }),
+    654 - (585 - RAFFLE_CLEARANCE),
+  );
+  assert.equal(
+    raffleCover(window, { top: 514 }),
+    654 - (514 - RAFFLE_CLEARANCE),
+  );
   // The master: the rail lies under the bar, the window ends at 629, the bar starts at 647.
   assert.equal(raffleCover({ top: 516, bottom: 629 }, { top: 647 }), 0);
   assert.equal(raffleCover(window, null), 0);
 });
 
-test('the open bar\'s cover comes off the shared area, so the tiles keep twice the diagram above the bar', () => {
+test("the open bar's cover comes off the shared area, so the tiles keep twice the diagram above the bar", () => {
   // 674 × 760 at the acceptance (protocol A3): a cover of 79.
   const leftover = 600;
   const covered = 79;
@@ -247,7 +317,7 @@ test('the open bar\'s cover comes off the shared area, so the tiles keep twice t
   assert.equal(diagramCap(leftover, 0), diagramCap(leftover));
 });
 
-test('the diagram never yields under its floor — where a third is less, it goes away instead (#129, #157)', () => {
+test("the diagram never yields under its floor — where a third is less, it goes away instead (#129, #157)", () => {
   // 812 × 375 at the acceptance: 199 shared, the bar covering 79 of it.
   assert.equal(diagramFits(199, 79), false);
   // Closed, the same stage keeps it: 199 / 3 = 66.3.
@@ -259,7 +329,6 @@ test('the diagram never yields under its floor — where a third is less, it goe
  * for a diagram: 173 shared at the fold edge and on the cramped stage is a
  * third of 57.7 (#157, F2 a — kept 399 and 351, the diagram goes there).
  */
-test('at the Plan\'s floor — 60 + two rows — the diagram no longer stands (#157)', () => {
+test("at the Plan's floor — 60 + two rows — the diagram no longer stands (#157)", () => {
   assert.equal(diagramFits(rowsHeight(MIN_ROWS) + MIN_DIAGRAM_HEIGHT), false);
 });
-

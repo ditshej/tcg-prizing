@@ -19,12 +19,12 @@ Entschieden an #103 (Entscheide 1, 2, 3 und 5 vom 2026-09-30, Punkt C vom
 
 ## Was gilt
 
-| bei `combinedHandout` an | Booster | TournamentPacks |
-|---|---|---|
-| `ParticipationPool` | 0 | 0 |
-| der `RankPool` trägt | alles nach dem `JudgePool` | den ganzen Bestand, die Teilnahmerate eingeschlossen |
-| Formgebung | Tiefendeckel, `ShapedRemainder`, `DistributionCurve`, `RankFloor` | keine, der `RankCycle` wie bisher |
-| Zeile | geformt, ohne flache Rate | `packsCycle[i] + Rate` |
+| bei `combinedHandout` an | Booster                                                           | TournamentPacks                                      |
+| ------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------- |
+| `ParticipationPool`      | 0                                                                 | 0                                                    |
+| der `RankPool` trägt     | alles nach dem `JudgePool`                                        | den ganzen Bestand, die Teilnahmerate eingeschlossen |
+| Formgebung               | Tiefendeckel, `ShapedRemainder`, `DistributionCurve`, `RankFloor` | keine, der `RankCycle` wie bisher                    |
+| Zeile                    | geformt, ohne flache Rate                                         | `packsCycle[i] + Rate`                               |
 
 Die Tabelle in Entscheid 5 an #103 schrieb unter Packs „`ParticipationPool`
 bleibt `rate × players`". Wörtlich genommen zählte das zusammen mit der flachen

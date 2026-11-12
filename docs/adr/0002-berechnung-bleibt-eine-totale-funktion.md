@@ -37,7 +37,7 @@ zeigt. Ein Plan ohne Meldung ist gültig, ein Plan mit Meldung ist es nicht — 
 beide sind sichtbar.
 
 Die Reglergrenzen bleiben davon unberührt: Sie verhindern weiterhin, dass solche
-Zustände durch die Eingabe *entstehen*. Erreichbar sind sie nur noch dadurch,
+Zustände durch die Eingabe _entstehen_. Erreichbar sind sie nur noch dadurch,
 dass ein zweiter Regler einen bereits gesetzten Wert nachträglich ungültig macht.
 
 Nachtrag: Die Totalität ist nicht nur eine Anzeigefrage — sie ist die Bedingung
@@ -72,9 +72,9 @@ oben — „ein Plan ohne Meldung ist gültig, ein Plan mit Meldung ist es nicht
 bleibt wörtlich gültig, weil nur die eine Sorte eine Meldung ist.
 
 Eine **Konfliktmeldung** benennt einen unpassenden Plan und die Wege heraus; der
-Lead *muss* etwas tun, und sie ist nicht wegklickbar. Ein **Angebot** steht auf
+Lead _muss_ etwas tun, und sie ist nicht wegklickbar. Ein **Angebot** steht auf
 einem vollständig gültigen Plan und schlägt bloss eine runde Sache vor; der Lead
-*darf*, und es ist wegklickbar. Der erste Vertreter der zweiten Sorte ist der
+_darf_, und es ist wegklickbar. Der erste Vertreter der zweiten Sorte ist der
 `DisplayReservation`-Vorschlag: liegt ein `Rank` höchstens eine Viertel-`Display`
 -Grösse von einem Vielfachen davon entfernt, wird dieses Vielfache angeboten —
 in beide Richtungen, sodass die Fläche stumm bleibt, wenn eine Zuteilung mitten
@@ -92,11 +92,11 @@ zurück, sobald sich sein Inhalt ändert — aus „1 `Display`" ein „2" wird,
 ein anderes Angebot.
 
 Variiert wird dabei **immer nur ein Regler**. Zwei gleichzeitig wären ein Produkt
-statt einer Summe, vor allem aber unlesbar: „Kurve auf `moderate` *und* Tiefe auf
+statt einer Summe, vor allem aber unlesbar: „Kurve auf `moderate` _und_ Tiefe auf
 11" ist kein Vorschlag, den jemand abwägt. Die Meldung zeigt alle einzeln
 gangbaren Wege, geordnet nach der Vorrangkette aus ADR 0001, und jeder ist mit
 einem Klick übernehmbar — was den betroffenen Regler `pinned` setzt (ADR 0006).
-Der Sonderfall ist der Vorschlag „Regler X zurück auf automatisch": er *ist* der
+Der Sonderfall ist der Vorschlag „Regler X zurück auf automatisch": er _ist_ der
 Reset-Knopf und entfernt den Pin, statt einen zu setzen.
 
 Nachtrag (#56): Ein vierter Fall reiht sich ohne neue Mechanik ein — eine

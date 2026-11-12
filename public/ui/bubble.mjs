@@ -43,12 +43,19 @@ function inside(value, low, high) {
  * the numbers do not carry: the little arrow, if one is ever drawn, points the
  * other way.
  */
-export function bubblePosition({ anchor, bubble, stage, gap = GAP, margin = MARGIN }) {
+export function bubblePosition({
+  anchor,
+  bubble,
+  stage,
+  gap = GAP,
+  margin = MARGIN,
+}) {
   const bottom = anchor.top + anchor.height - stage.top;
   const wanted = bottom + gap;
   const flipped = wanted + bubble.height > stage.height - margin;
   const top = flipped ? anchor.top - stage.top - bubble.height - gap : wanted;
-  const centred = anchor.left - stage.left + anchor.width / 2 - bubble.width / 2;
+  const centred =
+    anchor.left - stage.left + anchor.width / 2 - bubble.width / 2;
   return {
     left: inside(centred, margin, stage.width - bubble.width - margin),
     top: inside(top, margin, stage.height - bubble.height - margin),
@@ -86,7 +93,12 @@ export function anchorVisible(anchor, stage) {
  */
 export function visibleBox(viewport, layout) {
   if (!viewport) return layout;
-  return { left: viewport.offsetLeft, top: viewport.offsetTop, width: viewport.width, height: viewport.height };
+  return {
+    left: viewport.offsetLeft,
+    top: viewport.offsetTop,
+    width: viewport.width,
+    height: viewport.height,
+  };
 }
 
 /**
@@ -98,7 +110,12 @@ export function visibleFrame(box, visible) {
   const top = Math.max(box.top, visible.top);
   const right = Math.min(box.left + box.width, visible.left + visible.width);
   const bottom = Math.min(box.top + box.height, visible.top + visible.height);
-  return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  return {
+    left,
+    top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+  };
 }
 
 /**
@@ -111,8 +128,19 @@ export function visibleFrame(box, visible) {
  * `scale > 1` it stands wholly in the visible window and not merely in the
  * laid-out one.
  */
-export function placeInFrame({ anchor, bubble, box, visible, gap = GAP, margin = MARGIN }) {
+export function placeInFrame({
+  anchor,
+  bubble,
+  box,
+  visible,
+  gap = GAP,
+  margin = MARGIN,
+}) {
   const frame = visibleFrame(box, visible);
   const at = bubblePosition({ anchor, bubble, stage: frame, gap, margin });
-  return { left: at.left + frame.left - box.left, top: at.top + frame.top - box.top, flipped: at.flipped };
+  return {
+    left: at.left + frame.left - box.left,
+    top: at.top + frame.top - box.top,
+    flipped: at.flipped,
+  };
 }

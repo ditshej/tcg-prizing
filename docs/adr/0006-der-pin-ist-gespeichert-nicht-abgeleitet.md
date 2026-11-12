@@ -24,7 +24,7 @@ eine **Obermenge** der abweichenden.
 ## Considered Options
 
 **Abgeleitet: `pinned` heisst „Wert ≠ heutiger Default-Wert".** Der Reiz ist
-Zustandsfreiheit — nichts zu speichern, der `SetupLink` *ist* der Zustand, und der
+Zustandsfreiheit — nichts zu speichern, der `SetupLink` _ist_ der Zustand, und der
 Rückweg wäre gratis, weil ein Regler auf dem Default-Wert von selbst wieder
 nachzöge. Zwei Dinge sprechen dagegen.
 
@@ -74,7 +74,7 @@ Knopf gäbe es keinen Rückweg ausser dem Wechsel von `Game` oder
 wenn der Wert mit dem Default übereinstimmt.
 
 > ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#26): der Rückweg hat zwei
-> Reichweiten, der Wechsel ist keine`.** Der Wechsel von `Game` oder
+Reichweiten, der Wechsel ist keine`.** Der Wechsel von `Game` oder
 > `TournamentType` setzt nichts mehr zurück; den Rückweg für alle Pins trägt ein
 > zweiter Knopf neben dem `TournamentType`-Titel. Weiterlesen dort, bevor du dich
 > auf diesen Absatz stützt.
@@ -124,7 +124,7 @@ ist **hinfällig, sobald es ein sitzungsweites Undo gibt**: eine Rückfrage vor
 einer rücknehmbaren Handlung ist Reibung ohne Gegenwert.
 
 > ⚠︎ **Zurückgezogen durch `## Nachtrag (#33): die Verfallsklausel verfällt, die
-> Sicherung bleibt — an der Handlung, nicht am Ort`.** Ein Undo kommt nicht, die
+Sicherung bleibt — an der Handlung, nicht am Ort`.** Ein Undo kommt nicht, die
 > Sicherung bleibt dauerhaft, und zwar als verankerte Blase statt eines
 > zweistufigen Knopfs; „einzige verbliebene Stelle" gilt nicht mehr, denn
 > dieselbe Handlung steht in der dritten Reichweite auch an der

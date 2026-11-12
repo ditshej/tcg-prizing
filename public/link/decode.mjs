@@ -5,8 +5,8 @@
  * list (docs/agents/setup-link.md).
  */
 
-import { CURVES, DEPTH_STEPS, RANGES } from '../core/rules.mjs';
-import { BASE_KEYS, CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
+import { CURVES, DEPTH_STEPS, RANGES } from "../core/rules.mjs";
+import { BASE_KEYS, CHOICE_KEYS, CURRENT_VERSION, KEYS } from "./keys.mjs";
 
 /**
  * Reads a SetupLink to
@@ -107,16 +107,18 @@ import { BASE_KEYS, CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * `unknown`, with its raw value and no judgement.
  */
 export function decode(query, games = null) {
-  const params = new URLSearchParams(String(query ?? '').replace(/^[?#]/, ''));
-  const read = Object.fromEntries(BASE_KEYS.map(({ key }) => [key, params.get(key)]));
+  const params = new URLSearchParams(String(query ?? "").replace(/^[?#]/, ""));
+  const read = Object.fromEntries(
+    BASE_KEYS.map(({ key }) => [key, params.get(key)]),
+  );
   const base = catchBase({ game: read.game, type: read.type }, games);
 
   const version = readVersion(read.v);
   if (version === null || version > CURRENT_VERSION) {
     const entry =
       version === null
-        ? { kind: 'unreadableVersion', was: read.v }
-        : { kind: 'futureVersion', from: version };
+        ? { kind: "unreadableVersion", was: read.v }
+        : { kind: "futureVersion", from: version };
     return {
       version,
       game: base.game,
@@ -151,7 +153,7 @@ export function decode(query, games = null) {
 
   const entries = [
     ...base.entries,
-    ...unreadableValues.map((key) => ({ kind: 'unreadableValue', key })),
+    ...unreadableValues.map((key) => ({ kind: "unreadableValue", key })),
   ];
 
   return {
@@ -205,20 +207,31 @@ export function decode(query, games = null) {
  * says "do not judge the base" — but naming a half one does not.
  */
 function catchBase({ game, type }, games) {
-  if (!Array.isArray(games) || games.length === 0) return { game, type, entries: [] };
+  if (!Array.isArray(games) || games.length === 0)
+    return { game, type, entries: [] };
   for (const entry of games) assertCatalogueEntry(entry);
 
   const entries = [];
   let sheet = games.find((entry) => entry.id === game);
   if (sheet === undefined) {
     sheet = games[0];
-    entries.push({ kind: 'gameReplaced', was: game, now: sheet.id, by: 'fallback' });
+    entries.push({
+      kind: "gameReplaced",
+      was: game,
+      now: sheet.id,
+      by: "fallback",
+    });
   }
 
   let chosen = sheet.types.find((entry) => entry.id === type);
   if (chosen === undefined) {
     chosen = sheet.types[0];
-    entries.push({ kind: 'typeReplaced', was: type, now: chosen.id, by: 'fallback' });
+    entries.push({
+      kind: "typeReplaced",
+      was: type,
+      now: chosen.id,
+      by: "fallback",
+    });
   }
 
   return { game: sheet.id, type: chosen.id, entries };
@@ -231,14 +244,20 @@ function catchBase({ game, type }, games) {
  * such thing to be lenient about.
  */
 function assertCatalogueEntry(entry) {
-  const named = (value) => typeof value === 'string' && value.length > 0;
-  if (entry === null || typeof entry !== 'object' || !named(entry.id)) {
-    throw new TypeError('decode: every catalogue entry names its Game with a string `id`');
+  const named = (value) => typeof value === "string" && value.length > 0;
+  if (entry === null || typeof entry !== "object" || !named(entry.id)) {
+    throw new TypeError(
+      "decode: every catalogue entry names its Game with a string `id`",
+    );
   }
-  if (!Array.isArray(entry.types) || entry.types.length === 0 || !entry.types.every((t) => named(t?.id))) {
+  if (
+    !Array.isArray(entry.types) ||
+    entry.types.length === 0 ||
+    !entry.types.every((t) => named(t?.id))
+  ) {
     throw new TypeError(
       `decode: the catalogue entry "${entry.id}" carries no TournamentType list — pass ` +
-        '`{ ...sheet, types }`, not the bare sheet',
+        "`{ ...sheet, types }`, not the bare sheet",
     );
   }
 }
@@ -283,7 +302,7 @@ function readVersion(raw) {
  */
 function reportOf({ from, entries }) {
   if (entries.length === 0) return null;
-  const fromTheFuture = entries.some((entry) => entry.kind === 'futureVersion');
+  const fromTheFuture = entries.some((entry) => entry.kind === "futureVersion");
   return {
     from,
     to: CURRENT_VERSION,
@@ -294,10 +313,12 @@ function reportOf({ from, entries }) {
 }
 
 /** Every key the v1 register names, base, sliders and choices — anything else is loss. */
-const KNOWN_KEYS = new Set([...BASE_KEYS, ...KEYS, ...CHOICE_KEYS].map(({ key }) => key));
+const KNOWN_KEYS = new Set(
+  [...BASE_KEYS, ...KEYS, ...CHOICE_KEYS].map(({ key }) => key),
+);
 
 /** What a value that does not fit its key's type reads as — never a default. */
-export const UNREADABLE = Symbol('unreadable');
+export const UNREADABLE = Symbol("unreadable");
 
 /**
  * Exported for `migrate.mjs` (#52): a name a step renames still has to become
@@ -309,19 +330,19 @@ export const UNREADABLE = Symbol('unreadable');
  */
 export function readValue(type, raw) {
   switch (type) {
-    case 'int':
+    case "int":
       return readInt(raw);
-    case 'curveId':
+    case "curveId":
       return CURVES.some((step) => step.id === raw) ? raw : UNREADABLE;
-    case 'stepId':
+    case "stepId":
       return DEPTH_STEPS.includes(raw) ? raw : UNREADABLE;
-    case 'rangeId':
+    case "rangeId":
       return RANGES.some((step) => step.id === raw) ? raw : UNREADABLE;
-    case 'bit':
-      return raw === '0' ? false : raw === '1' ? true : UNREADABLE;
-    case 'vector':
+    case "bit":
+      return raw === "0" ? false : raw === "1" ? true : UNREADABLE;
+    case "vector":
       return readVector(raw);
-    case 'rankCountMap':
+    case "rankCountMap":
       return readRankCountMap(raw);
     default:
       return UNREADABLE;
@@ -368,7 +389,7 @@ function readInt(raw) {
  * it with every other numeric key.
  */
 function readVector(raw) {
-  const parts = raw.split('.').map(readInt);
+  const parts = raw.split(".").map(readInt);
   if (parts.some((part) => part === UNREADABLE)) return UNREADABLE;
   return parts;
 }
@@ -382,8 +403,8 @@ function readVector(raw) {
  */
 function readRankCountMap(raw) {
   const map = {};
-  for (const pair of raw.split(',')) {
-    const [rankRaw, countRaw, ...rest] = pair.split(':');
+  for (const pair of raw.split(",")) {
+    const [rankRaw, countRaw, ...rest] = pair.split(":");
     if (rest.length > 0) return UNREADABLE;
     const rank = readInt(rankRaw);
     const count = readInt(countRaw);

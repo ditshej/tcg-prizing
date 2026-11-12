@@ -21,7 +21,7 @@ Muster, mit dem die Regler-Obergrenzen aus der Summenregel eine Eigenschaft der
 Eingabe statt einer Prüfung gemacht haben.
 
 Das scheitert an einem Fakt, der schon festgehalten war: Die
-`PromoEnvelope`-Grösse wechselt ausdrücklich *innerhalb* desselben `Game` von
+`PromoEnvelope`-Grösse wechselt ausdrücklich _innerhalb_ desselben `Game` von
 Event zu Event. Sie ist nach jeder vernünftigen Lesart eine physische Tatsache
 und müsste also am `Game` hängen — genau dort, wo sie nicht bleiben kann. Ein
 Modell, das schon beim ersten bekannten Beispiel eine Ausnahme braucht, ist

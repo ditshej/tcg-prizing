@@ -1,19 +1,31 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { readFileSync } from 'node:fs';
+import { readFileSync } from "node:fs";
 
-import { planApp } from '../public/ui/plan.mjs';
-import { GAP, MARGIN, anchorVisible, bubblePosition, placeInFrame, visibleBox, visibleFrame } from '../public/ui/bubble.mjs';
+import { planApp } from "../public/ui/plan.mjs";
+import {
+  GAP,
+  MARGIN,
+  anchorVisible,
+  bubblePosition,
+  placeInFrame,
+  visibleBox,
+  visibleFrame,
+} from "../public/ui/bubble.mjs";
 
 /** A box as the measuring rind hands it over: the four numbers of a DOMRect. */
 const box = (left, top, width, height) => ({ left, top, width, height });
 
 const STAGE = box(0, 100, 400, 600);
 
-test('the bubble hangs under its anchor and is centred on it', () => {
+test("the bubble hangs under its anchor and is centred on it", () => {
   const anchor = box(100, 200, 54, 54);
-  const at = bubblePosition({ anchor, bubble: { width: 180, height: 120 }, stage: STAGE });
+  const at = bubblePosition({
+    anchor,
+    bubble: { width: 180, height: 120 },
+    stage: STAGE,
+  });
   assert.equal(at.flipped, false);
   // Anchor bottom is 254 in the page, 154 in the stage, plus the gap.
   assert.equal(at.top, 154 + GAP);
@@ -21,17 +33,21 @@ test('the bubble hangs under its anchor and is centred on it', () => {
   assert.equal(at.left, 37);
 });
 
-test('it flips upward where there is no room below, rather than leaving the frame', () => {
+test("it flips upward where there is no room below, rather than leaving the frame", () => {
   // The anchor sits near the stage's bottom edge: 600 tall, the anchor ends at
   // 540 inside it, and a 120 bubble under it would end at 666.
   const anchor = box(100, 586, 54, 54);
-  const at = bubblePosition({ anchor, bubble: { width: 180, height: 120 }, stage: STAGE });
+  const at = bubblePosition({
+    anchor,
+    bubble: { width: 180, height: 120 },
+    stage: STAGE,
+  });
   assert.equal(at.flipped, true);
   // Anchor top is 486 in the stage, the bubble sits above it with the gap.
   assert.equal(at.top, 486 - 120 - GAP);
 });
 
-test('it stays inside the frame at either edge — it is no overlay and never hangs over one', () => {
+test("it stays inside the frame at either edge — it is no overlay and never hangs over one", () => {
   const left = bubblePosition({
     anchor: box(0, 200, 54, 54),
     bubble: { width: 180, height: 120 },
@@ -46,7 +62,7 @@ test('it stays inside the frame at either edge — it is no overlay and never ha
   assert.equal(right.left, 400 - 180 - MARGIN);
 });
 
-test('a bubble too tall for the frame is pinned to it rather than flipped out of it', () => {
+test("a bubble too tall for the frame is pinned to it rather than flipped out of it", () => {
   const at = bubblePosition({
     anchor: box(100, 660, 54, 54),
     bubble: { width: 180, height: 590 },
@@ -55,7 +71,7 @@ test('a bubble too tall for the frame is pinned to it rather than flipped out of
   assert.equal(at.top, MARGIN);
 });
 
-test('an anchor scrolled out of the frame closes the bubble — one rule for all its inhabitants', () => {
+test("an anchor scrolled out of the frame closes the bubble — one rule for all its inhabitants", () => {
   // Inside, whole.
   assert.equal(anchorVisible(box(100, 200, 54, 54), STAGE), true);
   // Half over the upper edge is still an anchor one can see.
@@ -80,15 +96,21 @@ test('an anchor scrolled out of the frame closes the bubble — one rule for all
  * hands back coordinates in its own positioning box.
  */
 
-test('the visible box is the visual viewport, in the layout viewport\'s coordinates', () => {
+test("the visible box is the visual viewport, in the layout viewport's coordinates", () => {
   // Zoomed ×2 into a 400 × 800 page and panned 150 right, 300 down.
-  const visible = visibleBox({ offsetLeft: 150, offsetTop: 300, width: 200, height: 400 }, box(0, 0, 400, 800));
+  const visible = visibleBox(
+    { offsetLeft: 150, offsetTop: 300, width: 200, height: 400 },
+    box(0, 0, 400, 800),
+  );
   assert.deepEqual(visible, box(150, 300, 200, 400));
   // Without a visual viewport at all, what is laid out is what is seen.
-  assert.deepEqual(visibleBox(undefined, box(0, 0, 400, 800)), box(0, 0, 400, 800));
+  assert.deepEqual(
+    visibleBox(undefined, box(0, 0, 400, 800)),
+    box(0, 0, 400, 800),
+  );
 });
 
-test('a fixed bubble stays inside a shifted and shrunk visible frame', () => {
+test("a fixed bubble stays inside a shifted and shrunk visible frame", () => {
   // The positioning box of `position: fixed` is the layout viewport.
   const layout = box(0, 0, 400, 800);
   const visible = box(150, 300, 200, 400);
@@ -104,11 +126,16 @@ test('a fixed bubble stays inside a shifted and shrunk visible frame', () => {
   assert.equal(at.left, 350 - 180 - MARGIN);
   assert.equal(at.top, 340 + GAP);
   // And at its left edge, the near margin is the visible one, not 8.
-  const left = placeInFrame({ anchor: box(150, 320, 20, 20), bubble: { width: 180, height: 120 }, box: layout, visible });
+  const left = placeInFrame({
+    anchor: box(150, 320, 20, 20),
+    bubble: { width: 180, height: 120 },
+    box: layout,
+    visible,
+  });
   assert.equal(left.left, 150 + MARGIN);
 });
 
-test('it flips against the visible bottom, not against the layout one', () => {
+test("it flips against the visible bottom, not against the layout one", () => {
   // 120 under an anchor ending at 640 would end at 766 — inside the layout
   // viewport's 800, below the visible 700.
   const at = placeInFrame({
@@ -121,7 +148,7 @@ test('it flips against the visible bottom, not against the layout one', () => {
   assert.equal(at.top, 620 - 120 - GAP);
 });
 
-test('an absolute bubble gets the stage cut down to the visible part, in stage coordinates', () => {
+test("an absolute bubble gets the stage cut down to the visible part, in stage coordinates", () => {
   // The stage runs 0…400 × 100…700; the visible window 150…350 × 300…700.
   // The frame is their overlap, 150…350 × 300…700, and the answer is measured
   // from the stage's own corner, because that is what `left`/`top` mean
@@ -136,19 +163,30 @@ test('an absolute bubble gets the stage cut down to the visible part, in stage c
   assert.equal(at.top, 340 + GAP - 100);
 });
 
-test('unzoomed, the frame is the box and the answer is bubblePosition()\'s', () => {
-  const args = { anchor: box(346, 200, 54, 54), bubble: { width: 180, height: 120 } };
+test("unzoomed, the frame is the box and the answer is bubblePosition()'s", () => {
+  const args = {
+    anchor: box(346, 200, 54, 54),
+    bubble: { width: 180, height: 120 },
+  };
   assert.deepEqual(
     placeInFrame({ ...args, box: STAGE, visible: box(0, 0, 1000, 1000) }),
     bubblePosition({ ...args, stage: STAGE }),
   );
 });
 
-test('the visible frame is what an anchor has to be inside to count as visible', () => {
+test("the visible frame is what an anchor has to be inside to count as visible", () => {
   const frame = visibleFrame(box(0, 100, 400, 600), box(150, 300, 200, 400));
   assert.deepEqual(frame, box(150, 300, 200, 400));
-  assert.equal(anchorVisible(box(100, 320, 40, 40), frame), false, 'panned out to the left');
-  assert.equal(anchorVisible(box(140, 320, 40, 40), frame), true, 'half in sight');
+  assert.equal(
+    anchorVisible(box(100, 320, 40, 40), frame),
+    false,
+    "panned out to the left",
+  );
+  assert.equal(
+    anchorVisible(box(140, 320, 40, 40), frame),
+    true,
+    "half in sight",
+  );
   // Frames that do not meet leave nothing, and nothing in nothing is visible.
   const none = visibleFrame(box(0, 0, 100, 100), box(200, 200, 50, 50));
   assert.equal(none.width, 0);
@@ -165,16 +203,25 @@ test('the visible frame is what an anchor has to be inside to count as visible',
  */
 
 const LAYOUT = { innerWidth: 400, innerHeight: 800 };
-const ZOOMED = { offsetLeft: 150, offsetTop: 300, width: 200, height: 400, scale: 2 };
+const ZOOMED = {
+  offsetLeft: 150,
+  offsetTop: 300,
+  width: 200,
+  height: 400,
+  scale: 2,
+};
 
 /** An element as the placings use it: a box, two sizes, a style to write. */
-function element(rect, { width = 0, height = 0, frame = null, children = {} } = {}) {
+function element(
+  rect,
+  { width = 0, height = 0, frame = null, children = {} } = {},
+) {
   return {
     getBoundingClientRect: () => rect,
     offsetWidth: width,
     offsetHeight: height,
     style: {},
-    closest: (selector) => (selector === '[data-bubble-frame]' ? frame : null),
+    closest: (selector) => (selector === "[data-bubble-frame]" ? frame : null),
     querySelector: (selector) => children[selector] ?? null,
   };
 }
@@ -184,33 +231,51 @@ function element(rect, { width = 0, height = 0, frame = null, children = {} } = 
  * puts them back. `insets` are the `--inset-*` custom properties as `:root`
  * would compute them (#158); Chromium reports 0, so they are set by hand.
  */
-function inBrowser(elements, fn, { layout = LAYOUT, viewport = ZOOMED, insets = {} } = {}) {
-  const saved = { window: globalThis.window, document: globalThis.document, getComputedStyle: globalThis.getComputedStyle };
+function inBrowser(
+  elements,
+  fn,
+  { layout = LAYOUT, viewport = ZOOMED, insets = {} } = {},
+) {
+  const saved = {
+    window: globalThis.window,
+    document: globalThis.document,
+    getComputedStyle: globalThis.getComputedStyle,
+  };
   globalThis.window = { ...layout, visualViewport: viewport };
   globalThis.document = {
-    documentElement: { clientWidth: layout.innerWidth, clientHeight: layout.innerHeight },
+    documentElement: {
+      clientWidth: layout.innerWidth,
+      clientHeight: layout.innerHeight,
+    },
     querySelector: (selector) => elements[selector] ?? null,
   };
   globalThis.getComputedStyle = () => ({
-    getPropertyValue: (name) => (name.startsWith('--inset-') ? `${insets[name.slice(8)] ?? 0}px` : ''),
+    getPropertyValue: (name) =>
+      name.startsWith("--inset-") ? `${insets[name.slice(8)] ?? 0}px` : "",
   });
   try {
     return fn();
   } finally {
-    for (const key of ['window', 'document', 'getComputedStyle']) {
+    for (const key of ["window", "document", "getComputedStyle"]) {
       if (saved[key] === undefined) delete globalThis[key];
       else globalThis[key] = saved[key];
     }
   }
 }
 
-const shell = () => planApp({ read: () => '', write: () => {} });
+const shell = () => planApp({ read: () => "", write: () => {} });
 
-test('Share\'s bubble is placed inside the visible window, not the layout one', () => {
+test("Share's bubble is placed inside the visible window, not the layout one", () => {
   const bubble = element(box(0, 0, 180, 40), { width: 180, height: 40 });
-  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(330, 320, 20, 20)) }, () => {
-    shell().placeShare();
-  });
+  inBrowser(
+    {
+      "[data-share-bubble]": bubble,
+      "[data-share]": element(box(330, 320, 20, 20)),
+    },
+    () => {
+      shell().placeShare();
+    },
+  );
   assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
   assert.equal(bubble.style.top, `${340 + GAP}px`);
 });
@@ -228,10 +293,18 @@ function viewListener(app) {
   globalThis.window = {
     addEventListener: () => {},
     removeEventListener: () => {},
-    visualViewport: { addEventListener: (type, fn) => { listeners[type] = fn; }, removeEventListener: () => {} },
+    visualViewport: {
+      addEventListener: (type, fn) => {
+        listeners[type] = fn;
+      },
+      removeEventListener: () => {},
+    },
     Alpine: { effect: () => ({}), release: () => {} },
   };
-  globalThis.document = { addEventListener: () => {}, removeEventListener: () => {} };
+  globalThis.document = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
   try {
     Object.assign(app, {
       $refs: {},
@@ -241,59 +314,105 @@ function viewListener(app) {
     });
     app.init();
   } finally {
-    for (const key of ['window', 'document']) {
+    for (const key of ["window", "document"]) {
       if (saved[key] === undefined) delete globalThis[key];
       else globalThis[key] = saved[key];
     }
   }
-  assert.equal(listeners.resize, listeners.scroll, 'one listener for zoom and pan');
+  assert.equal(
+    listeners.resize,
+    listeners.scroll,
+    "one listener for zoom and pan",
+  );
   return listeners.scroll;
 }
 
-test('a zoom or pan closes Share\'s bubble once its button is out of the visible frame (#155 N3)', () => {
+test("a zoom or pan closes Share's bubble once its button is out of the visible frame (#155 N3)", () => {
   const app = shell();
   const onView = viewListener(app);
   app.shareOpen = true;
   const bubble = element(box(0, 0, 292, 90), { width: 292, height: 90 });
-  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(360, 20, 24, 24)) }, onView);
-  assert.equal(app.shareOpen, false, 'its anchor lies right of 150…350 and above 300…700');
+  inBrowser(
+    {
+      "[data-share-bubble]": bubble,
+      "[data-share]": element(box(360, 20, 24, 24)),
+    },
+    onView,
+  );
+  assert.equal(
+    app.shareOpen,
+    false,
+    "its anchor lies right of 150…350 and above 300…700",
+  );
 });
 
-test('a zoom caps Share\'s open bubble to the visible width and places it inside (#155 N3)', () => {
+test("a zoom caps Share's open bubble to the visible width and places it inside (#155 N3)", () => {
   const app = shell();
   const onView = viewListener(app);
   app.shareOpen = true;
   const bubble = element(box(0, 0, 292, 90), { width: 184, height: 90 });
-  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(330, 320, 20, 20)) }, onView);
+  inBrowser(
+    {
+      "[data-share-bubble]": bubble,
+      "[data-share]": element(box(330, 320, 20, 20)),
+    },
+    onView,
+  );
   assert.equal(app.shareOpen, true);
-  assert.equal(bubble.style.maxWidth, `${ZOOMED.width - 16}px`, 'the visible frame is 200 wide');
+  assert.equal(
+    bubble.style.maxWidth,
+    `${ZOOMED.width - 16}px`,
+    "the visible frame is 200 wide",
+  );
   assert.equal(bubble.style.left, `${350 - 184 - MARGIN}px`);
 });
 
-test('the reset question is placed inside the visible window, and closes when its button is panned out of it', () => {
+test("the reset question is placed inside the visible window, and closes when its button is panned out of it", () => {
   const details = element(box(0, 0, 400, 800));
   const bubble = element(box(0, 0, 180, 120), { width: 180, height: 120 });
   const app = shell();
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
-  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(330, 320, 20, 20), { frame: details }) }, () => {
-    app.placeConfirm();
-  });
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
+  inBrowser(
+    {
+      "[data-drop-bubble]": bubble,
+      "[data-drop-all]": element(box(330, 320, 20, 20), { frame: details }),
+    },
+    () => {
+      app.placeConfirm();
+    },
+  );
   assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
   assert.notEqual(app.confirmDrop, null);
-  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(100, 320, 20, 20), { frame: details }) }, () => {
-    app.placeConfirm();
-  });
-  assert.equal(app.confirmDrop, null, 'its anchor lies left of the visible window');
+  inBrowser(
+    {
+      "[data-drop-bubble]": bubble,
+      "[data-drop-all]": element(box(100, 320, 20, 20), { frame: details }),
+    },
+    () => {
+      app.placeConfirm();
+    },
+  );
+  assert.equal(
+    app.confirmDrop,
+    null,
+    "its anchor lies left of the visible window",
+  );
 });
 
-test('the tile bubble is placed inside the visible part of the stage, in stage coordinates', () => {
+test("the tile bubble is placed inside the visible part of the stage, in stage coordinates", () => {
   const tile = element(box(330, 320, 20, 20));
   const app = shell();
   const bubble = element(box(0, 0, 180, 120), { width: 180, height: 120 });
   app.$refs = {
     stage: element(STAGE),
     bubble,
-    grid: element(box(0, 150, 400, 500), { children: { '.tile[data-rank="3"]': tile } }),
+    grid: element(box(0, 150, 400, 500), {
+      children: { '.tile[data-rank="3"]': tile },
+    }),
   };
   app.openTile = 3;
   inBrowser({}, () => app.placeBubble());
@@ -302,29 +421,41 @@ test('the tile bubble is placed inside the visible part of the stage, in stage c
   assert.equal(bubble.style.top, `${340 + GAP - STAGE.top}px`);
 });
 
-test('an ⓘ opens as a bubble at its own button, inside the visible window', () => {
+test("an ⓘ opens as a bubble at its own button, inside the visible window", () => {
   const details = element(box(0, 0, 400, 800));
   // 160 wide: at ×2, the visible window is 200, and a bubble wider than it
   // has no place that keeps both margins (see `inside()` — the left one wins).
   const bubble = element(box(0, 0, 160, 140), { width: 160, height: 140 });
   const app = shell();
-  app.toggleInfo('game');
-  inBrowser({ '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) }, () => {
-    app.placeInfo();
-  });
-  assert.equal(app.openInfo, 'game');
+  app.toggleInfo("game");
+  inBrowser(
+    {
+      '[data-info-bubble="game"]': bubble,
+      '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }),
+    },
+    () => {
+      app.placeInfo();
+    },
+  );
+  assert.equal(app.openInfo, "game");
   assert.equal(bubble.style.left, `${350 - 160 - MARGIN}px`);
   assert.equal(bubble.style.top, `${342 + GAP}px`);
 });
 
-test('the ⓘ bubble closes when its button scrolls out of Details', () => {
+test("the ⓘ bubble closes when its button scrolls out of Details", () => {
   const details = element(box(0, 300, 400, 400));
   const app = shell();
-  app.toggleInfo('type');
-  inBrowser({
-    '[data-info-bubble="type"]': element(box(0, 0, 260, 140), { width: 260, height: 140 }),
-    '[data-info="type"]': element(box(200, 260, 22, 22), { frame: details }),
-  }, () => app.placeInfo());
+  app.toggleInfo("type");
+  inBrowser(
+    {
+      '[data-info-bubble="type"]': element(box(0, 0, 260, 140), {
+        width: 260,
+        height: 140,
+      }),
+      '[data-info="type"]': element(box(200, 260, 22, 22), { frame: details }),
+    },
+    () => app.placeInfo(),
+  );
   assert.equal(app.openInfo, null);
 });
 
@@ -337,55 +468,98 @@ test('the ⓘ bubble closes when its button scrolls out of Details', () => {
  */
 
 const TURNED = { innerWidth: 812, innerHeight: 375 };
-const TURNED_VIEW = { offsetLeft: 0, offsetTop: 0, width: 812, height: 375, scale: 1 };
+const TURNED_VIEW = {
+  offsetLeft: 0,
+  offsetTop: 0,
+  width: 812,
+  height: 375,
+  scale: 1,
+};
 const TURNED_INSETS = { top: 20, right: 47, bottom: 21, left: 47 };
 
-test('turned, the Reset question stays inside the safe area, not in the right inset (B1)', () => {
+test("turned, the Reset question stays inside the safe area, not in the right inset (B1)", () => {
   const bubble = element(box(0, 0, 292, 152), { width: 292, height: 152 });
   const app = shell();
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
-  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(633, 30, 32, 32)) }, () => {
-    app.placeConfirm();
-  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
+  inBrowser(
+    {
+      "[data-drop-bubble]": bubble,
+      "[data-drop-all]": element(box(633, 30, 32, 32)),
+    },
+    () => {
+      app.placeConfirm();
+    },
+    { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS },
+  );
   // Right edge at 812 − 47 − 8 = 757, not at 812 − 8 = 804.
   assert.equal(bubble.style.left, `${812 - 47 - MARGIN - 292}px`);
   assert.notEqual(app.confirmDrop, null);
 });
 
-test('turned, the Share bubble stays inside the safe area too (B1)', () => {
+test("turned, the Share bubble stays inside the safe area too (B1)", () => {
   const bubble = element(box(0, 0, 312, 58), { width: 312, height: 58 });
-  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(740, 30, 32, 32)) }, () => {
-    shell().placeShare();
-  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
+  inBrowser(
+    {
+      "[data-share-bubble]": bubble,
+      "[data-share]": element(box(740, 30, 32, 32)),
+    },
+    () => {
+      shell().placeShare();
+    },
+    { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS },
+  );
   assert.equal(bubble.style.left, `${812 - 47 - MARGIN - 312}px`);
 });
 
-test('a bubble keeps off the notch at the left and off the home indicator below (B1)', () => {
+test("a bubble keeps off the notch at the left and off the home indicator below (B1)", () => {
   const bubble = element(box(0, 0, 200, 120), { width: 200, height: 120 });
-  inBrowser({ '[data-share-bubble]': bubble, '[data-share]': element(box(20, 200, 32, 32)) }, () => {
-    shell().placeShare();
-  }, { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS });
-  assert.equal(bubble.style.left, `${47 + MARGIN}px`, 'not 8 px from the screen edge');
+  inBrowser(
+    {
+      "[data-share-bubble]": bubble,
+      "[data-share]": element(box(20, 200, 32, 32)),
+    },
+    () => {
+      shell().placeShare();
+    },
+    { layout: TURNED, viewport: TURNED_VIEW, insets: TURNED_INSETS },
+  );
+  assert.equal(
+    bubble.style.left,
+    `${47 + MARGIN}px`,
+    "not 8 px from the screen edge",
+  );
   // Below the button it would reach 238 + 120 = 358: inside the screen's
   // 375 − 8, but past the home indicator's 375 − 21 − 8. So it flips above.
   assert.equal(bubble.style.top, `${200 - GAP - 120}px`);
 });
 
-test('one bubble at a time: the ⓘ, the tile and the question put each other out', () => {
+test("one bubble at a time: the ⓘ, the tile and the question put each other out", () => {
   const app = shell();
   app.toggleTile(3);
-  app.toggleInfo('game');
-  assert.equal(app.openTile, null, 'the ⓘ closes the tile bubble');
+  app.toggleInfo("game");
+  assert.equal(app.openTile, null, "the ⓘ closes the tile bubble");
   app.toggleTile(3);
-  assert.equal(app.openInfo, null, 'the tile closes the ⓘ');
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
-  app.toggleInfo('type');
-  assert.equal(app.confirmDrop, null, 'the ⓘ answers the question with no');
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
+  assert.equal(app.openInfo, null, "the tile closes the ⓘ");
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
+  app.toggleInfo("type");
+  assert.equal(app.confirmDrop, null, "the ⓘ answers the question with no");
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
   app.toggleTile(4);
-  assert.equal(app.confirmDrop, null, 'so does the tile');
+  assert.equal(app.confirmDrop, null, "so does the tile");
   assert.equal(app.openInfo, null);
-  app.toggleInfo('type');
+  app.toggleInfo("type");
   app.closeInfo();
   assert.equal(app.openInfo, null);
 });
@@ -403,8 +577,12 @@ test('one bubble at a time: the ⓘ, the tile and the question put each other ou
 function shownLate(width, height) {
   const el = element(box(0, 0, width, height));
   let reads = 0;
-  Object.defineProperty(el, 'offsetWidth', { get: () => (reads++ === 0 ? 0 : width) });
-  Object.defineProperty(el, 'offsetHeight', { get: () => (reads > 1 ? height : 0) });
+  Object.defineProperty(el, "offsetWidth", {
+    get: () => (reads++ === 0 ? 0 : width),
+  });
+  Object.defineProperty(el, "offsetHeight", {
+    get: () => (reads > 1 ? height : 0),
+  });
   return el;
 }
 
@@ -426,51 +604,89 @@ const flush = (frames) => {
   while (frames.length) frames.shift()();
 };
 
-test('a tile bubble not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)', () => {
+test("a tile bubble not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)", () => {
   const tile = element(box(330, 320, 20, 20));
   const bubble = shownLate(180, 120);
   const app = shell();
   app.$refs = {
     stage: element(STAGE),
     bubble,
-    grid: element(box(0, 150, 400, 500), { children: { '.tile[data-rank="3"]': tile } }),
+    grid: element(box(0, 150, 400, 500), {
+      children: { '.tile[data-rank="3"]': tile },
+    }),
   };
   app.openTile = 3;
-  withFrames((frames) => inBrowser({}, () => {
-    app.placeBubble();
-    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
-    assert.equal(frames.length, 1, 'it asks for the next frame');
-    flush(frames);
-  }));
+  withFrames((frames) =>
+    inBrowser({}, () => {
+      app.placeBubble();
+      assert.equal(
+        bubble.style.left,
+        undefined,
+        "no left from a box of width 0",
+      );
+      assert.equal(frames.length, 1, "it asks for the next frame");
+      flush(frames);
+    }),
+  );
   assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
   assert.equal(bubble.style.top, `${340 + GAP - STAGE.top}px`);
 });
 
-test('the question not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)', () => {
+test("the question not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167)", () => {
   const details = element(box(0, 0, 400, 800));
   const bubble = shownLate(180, 120);
   const app = shell();
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
-  withFrames((frames) => inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(330, 320, 20, 20), { frame: details }) }, () => {
-    app.placeConfirm();
-    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
-    assert.equal(frames.length, 1, 'it asks for the next frame');
-    flush(frames);
-  }));
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
+  withFrames((frames) =>
+    inBrowser(
+      {
+        "[data-drop-bubble]": bubble,
+        "[data-drop-all]": element(box(330, 320, 20, 20), { frame: details }),
+      },
+      () => {
+        app.placeConfirm();
+        assert.equal(
+          bubble.style.left,
+          undefined,
+          "no left from a box of width 0",
+        );
+        assert.equal(frames.length, 1, "it asks for the next frame");
+        flush(frames);
+      },
+    ),
+  );
   assert.equal(bubble.style.left, `${350 - 180 - MARGIN}px`);
 });
 
-test('an ⓘ not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167 B16)', () => {
+test("an ⓘ not shown yet is not placed on a width of nothing, but in the frame it is drawn (#167 B16)", () => {
   const details = element(box(0, 0, 400, 800));
   const bubble = shownLate(160, 140);
   const app = shell();
-  app.toggleInfo('game');
-  withFrames((frames) => inBrowser({ '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) }, () => {
-    app.placeInfo();
-    assert.equal(bubble.style.left, undefined, 'no left from a box of width 0');
-    assert.equal(frames.length, 1, 'it asks for the next frame');
-    flush(frames);
-  }));
+  app.toggleInfo("game");
+  withFrames((frames) =>
+    inBrowser(
+      {
+        '[data-info-bubble="game"]': bubble,
+        '[data-info="game"]': element(box(320, 320, 22, 22), {
+          frame: details,
+        }),
+      },
+      () => {
+        app.placeInfo();
+        assert.equal(
+          bubble.style.left,
+          undefined,
+          "no left from a box of width 0",
+        );
+        assert.equal(frames.length, 1, "it asks for the next frame");
+        flush(frames);
+      },
+    ),
+  );
   assert.equal(bubble.style.left, `${350 - 160 - MARGIN}px`);
   assert.equal(bubble.style.top, `${342 + GAP}px`);
 });
@@ -481,31 +697,52 @@ test('an ⓘ not shown yet is not placed on a width of nothing, but in the frame
  * across them, the opening after the allowance would be placed on width 0.
  * Six openings: one more than the allowance of four frames plus the first try.
  */
-test('the same bubble opened again and again waits each time, and is placed each time (#167 B17)', () => {
+test("the same bubble opened again and again waits each time, and is placed each time (#167 B17)", () => {
   const details = element(box(0, 0, 400, 800));
   const width = 160;
   const height = 140;
   const bubble = element(box(0, 0, width, height));
   let reads = 0;
-  Object.defineProperty(bubble, 'offsetWidth', { get: () => (reads++ === 0 ? 0 : width) });
-  Object.defineProperty(bubble, 'offsetHeight', { get: () => (reads > 1 ? height : 0) });
+  Object.defineProperty(bubble, "offsetWidth", {
+    get: () => (reads++ === 0 ? 0 : width),
+  });
+  Object.defineProperty(bubble, "offsetHeight", {
+    get: () => (reads > 1 ? height : 0),
+  });
   const app = shell();
-  const elements = { '[data-info-bubble="game"]': bubble, '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }) };
+  const elements = {
+    '[data-info-bubble="game"]': bubble,
+    '[data-info="game"]': element(box(320, 320, 22, 22), { frame: details }),
+  };
   for (let opening = 1; opening <= 6; opening++) {
     reads = 0;
     delete bubble.style.left;
     delete bubble.style.top;
-    app.toggleInfo('game');
-    assert.equal(app.openInfo, 'game');
-    withFrames((frames) => inBrowser(elements, () => {
-      app.placeInfo();
-      assert.equal(bubble.style.left, undefined, `opening ${opening}: no left from a box of width 0`);
-      assert.equal(frames.length, 1, `opening ${opening}: it asks for the next frame`);
-      flush(frames);
-    }));
-    assert.equal(bubble.style.left, `${350 - width - MARGIN}px`, `opening ${opening}: placed by its width`);
+    app.toggleInfo("game");
+    assert.equal(app.openInfo, "game");
+    withFrames((frames) =>
+      inBrowser(elements, () => {
+        app.placeInfo();
+        assert.equal(
+          bubble.style.left,
+          undefined,
+          `opening ${opening}: no left from a box of width 0`,
+        );
+        assert.equal(
+          frames.length,
+          1,
+          `opening ${opening}: it asks for the next frame`,
+        );
+        flush(frames);
+      }),
+    );
+    assert.equal(
+      bubble.style.left,
+      `${350 - width - MARGIN}px`,
+      `opening ${opening}: placed by its width`,
+    );
     assert.equal(bubble.style.top, `${342 + GAP}px`, `opening ${opening}`);
-    app.toggleInfo('game');
+    app.toggleInfo("game");
   }
 });
 
@@ -517,43 +754,75 @@ test('the same bubble opened again and again waits each time, and is placed each
  * The mock lays itself out as the browser does: its content wants 292, it is
  * never less than `min`, and never more than the room right of `left`.
  */
-const UNZOOMED = { offsetLeft: 0, offsetTop: 0, width: 400, height: 800, scale: 1 };
+const UNZOOMED = {
+  offsetLeft: 0,
+  offsetTop: 0,
+  width: 400,
+  height: 800,
+  scale: 1,
+};
 
 function shrinkToFit({ content, min, room, height, left }) {
   const el = element(box(0, 0, content, height));
   el.style.left = `${left}px`;
-  const width = () => Math.max(min, Math.min(content, room - parseFloat(el.style.left || '0')));
-  Object.defineProperty(el, 'offsetWidth', { get: width });
-  Object.defineProperty(el, 'offsetHeight', { get: () => height });
+  const width = () =>
+    Math.max(min, Math.min(content, room - parseFloat(el.style.left || "0")));
+  Object.defineProperty(el, "offsetWidth", { get: width });
+  Object.defineProperty(el, "offsetHeight", { get: () => height });
   el.right = () => parseFloat(el.style.left) + width();
   return el;
 }
 
-test('a tile bubble last placed at the right edge is measured at its own width, not the shrunk one (#167)', () => {
+test("a tile bubble last placed at the right edge is measured at its own width, not the shrunk one (#167)", () => {
   // The stage is 0…400; the bubble stood at 344, where 56 are left and it shrinks to its 190.
-  const bubble = shrinkToFit({ content: 292, min: 190, room: STAGE.width, height: 160, left: 344 });
+  const bubble = shrinkToFit({
+    content: 292,
+    min: 190,
+    room: STAGE.width,
+    height: 160,
+    left: 344,
+  });
   const app = shell();
   app.$refs = {
     stage: element(STAGE),
     bubble,
-    grid: element(box(0, 150, 400, 500), { children: { '.tile[data-rank="6"]': element(box(346, 250, 54, 54)) } }),
+    grid: element(box(0, 150, 400, 500), {
+      children: { '.tile[data-rank="6"]': element(box(346, 250, 54, 54)) },
+    }),
   };
   app.openTile = 6;
   inBrowser({}, () => app.placeBubble(), { viewport: UNZOOMED });
   assert.equal(bubble.style.left, `${400 - 292 - MARGIN}px`);
-  assert.equal(bubble.right(), 400 - MARGIN, 'it ends 8 inside the frame');
+  assert.equal(bubble.right(), 400 - MARGIN, "it ends 8 inside the frame");
 });
 
-test('the question last placed at the right edge is measured at its own width, not the shrunk one (#167)', () => {
+test("the question last placed at the right edge is measured at its own width, not the shrunk one (#167)", () => {
   const details = element(box(0, 0, 400, 800));
-  const bubble = shrinkToFit({ content: 292, min: 210, room: 400, height: 140, left: 325 });
+  const bubble = shrinkToFit({
+    content: 292,
+    min: 210,
+    room: 400,
+    height: 140,
+    left: 325,
+  });
   const app = shell();
-  app.confirmDrop = { keys: ['players'], anchor: '[data-drop-all]', bubble: '[data-drop-bubble]' };
-  inBrowser({ '[data-drop-bubble]': bubble, '[data-drop-all]': element(box(309, 20, 32, 32), { frame: details }) }, () => {
-    app.placeConfirm();
-  }, { viewport: UNZOOMED });
+  app.confirmDrop = {
+    keys: ["players"],
+    anchor: "[data-drop-all]",
+    bubble: "[data-drop-bubble]",
+  };
+  inBrowser(
+    {
+      "[data-drop-bubble]": bubble,
+      "[data-drop-all]": element(box(309, 20, 32, 32), { frame: details }),
+    },
+    () => {
+      app.placeConfirm();
+    },
+    { viewport: UNZOOMED },
+  );
   assert.equal(bubble.style.left, `${400 - 292 - MARGIN}px`);
-  assert.equal(bubble.right(), 400 - MARGIN, 'it ends 8 inside the frame');
+  assert.equal(bubble.right(), 400 - MARGIN, "it ends 8 inside the frame");
 });
 
 /*
@@ -562,57 +831,90 @@ test('the question last placed at the right edge is measured at its own width, n
  * checkable here.
  */
 
-const CSS = readFileSync(new URL('../public/ui/plan.css', import.meta.url), 'utf8').replace(/\/\*[^]*?\*\//g, '');
-const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
+const CSS = readFileSync(
+  new URL("../public/ui/plan.css", import.meta.url),
+  "utf8",
+).replace(/\/\*[^]*?\*\//g, "");
+const SHEET = readFileSync(
+  new URL("../views/controls-sheet.php", import.meta.url),
+  "utf8",
+);
 
 /** The declarations of every rule whose selector list is exactly `head`. */
 function declarations(head) {
   const found = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter(([, h]) => h.split(',').map((x) => x.trim()).join(',') === head)
+    .filter(
+      ([, h]) =>
+        h
+          .split(",")
+          .map((x) => x.trim())
+          .join(",") === head,
+    )
     .map(([, , body]) => body);
   assert.ok(found.length > 0, `${head} is in the stylesheet`);
-  return found.join(';');
+  return found.join(";");
 }
 
-test('a double tap zooms no control, and pinch zoom stays', () => {
+test("a double tap zooms no control, and pinch zoom stays", () => {
   const rule = [...CSS.matchAll(/([^{}]+)\{([^{}]*touch-action[^{}]*)\}/g)];
-  assert.equal(rule.length, 1, 'one rule says it');
+  assert.equal(rule.length, 1, "one rule says it");
   const [, head, body] = rule[0];
   assert.match(body, /touch-action:\s*manipulation;/);
   // Every pressable thing is real markup — the tiles, the ±, the chips and
   // the head buttons are all <button>s — so the elements are the list.
-  for (const selector of ['button', 'a', 'input', 'select', 'label', '.counter']) {
+  for (const selector of [
+    "button",
+    "a",
+    "input",
+    "select",
+    "label",
+    ".counter",
+  ]) {
     assert.ok(head.includes(selector), selector);
   }
   assert.doesNotMatch(CSS, /maximum-scale|user-scalable/);
 });
 
-test('the ⓘ\'s sentence floats as the bubble, at most 292 wide, and pushes nothing', () => {
-  const body = declarations('.set-info');
+test("the ⓘ's sentence floats as the bubble, at most 292 wide, and pushes nothing", () => {
+  const body = declarations(".set-info");
   assert.match(body, /position:\s*fixed;/);
   assert.match(body, /z-index:\s*38;/);
   assert.match(body, /max-width:\s*292px;/);
   assert.doesNotMatch(body, /margin/);
 });
 
-test('each ⓘ is the anchor of its own bubble, placed by placeInfo()', () => {
-  for (const id of ['game', 'type']) {
-    assert.match(SHEET, new RegExp(`class="info" data-info="${id}" @click="toggleInfo\\('${id}'\\)"`));
-    assert.match(SHEET, new RegExp(`class="set-info" data-info-bubble="${id}"`));
+test("each ⓘ is the anchor of its own bubble, placed by placeInfo()", () => {
+  for (const id of ["game", "type"]) {
+    assert.match(
+      SHEET,
+      new RegExp(
+        `class="info" data-info="${id}" @click="toggleInfo\\('${id}'\\)"`,
+      ),
+    );
+    assert.match(
+      SHEET,
+      new RegExp(`class="set-info" data-info-bubble="${id}"`),
+    );
   }
   assert.equal(SHEET.match(/\$nextTick\(\(\) => placeInfo\(\)\)/g).length, 2);
-  assert.equal(SHEET.match(/@keydown\.escape\.window="closeInfo\(\)"/g).length, 2);
+  assert.equal(
+    SHEET.match(/@keydown\.escape\.window="closeInfo\(\)"/g).length,
+    2,
+  );
 });
 
-test('the content of the ⓘ is unchanged, the Discord link included', () => {
-  assert.match(SHEET, /<a href="<\?= htmlspecialchars\(require __DIR__ \. '\/discord-profile\.php'\) \?>" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/);
+test("the content of the ⓘ is unchanged, the Discord link included", () => {
+  assert.match(
+    SHEET,
+    /<a href="<\?= htmlspecialchars\(require __DIR__ \. '\/discord-profile\.php'\) \?>" target="_blank"\s+rel="noreferrer"><strong>ditshej<\/strong><\/a>/,
+  );
   assert.match(SHEET, /built for One Piece, other games welcome/);
   assert.match(SHEET, /<strong>Tournament type<\/strong>/);
   assert.match(SHEET, /Values you set by\s+hand stay where you put them\./);
 });
 
-test('in the tile\'s bubble the number stands in the middle of its counter', () => {
-  const body = declarations('.bubble .counter-value');
+test("in the tile's bubble the number stands in the middle of its counter", () => {
+  const body = declarations(".bubble .counter-value");
   assert.match(body, /display:\s*grid;/);
   assert.match(body, /place-items:\s*center;/);
 });

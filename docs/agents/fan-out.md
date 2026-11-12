@@ -11,11 +11,11 @@ hand each other, and the facts of the one run the skills were written from.
 The procedure was driven once, by hand, end to end. Every number either skill
 quotes comes from it.
 
-| Ticket | What it built            | Worktree                 | Branch                      | Files it owned                                                                     | PR  |
-| ------ | ------------------------ | ------------------------ | --------------------------- | ---------------------------------------------------------------------------------- | --- |
-| #54    | the `DefaultSet` sheets  | `../tcg-prizing-54`      | `feat/54-defaultset-blaetter` | `public/sets/onepiece.mjs`, `test/onepiece.test.mjs`                               | #75 |
-| #57    | the indivisible axes     | `../tcg-prizing-57`      | `feat/57-unteilbare-achsen`   | `public/core/*`, of which it changed `distribute.mjs` and `test/distribute.test.mjs` | #77 |
-| #48    | the v1 key register      | `../tcg-prizing-48`      | `feat/48-schluesselregister`  | `public/link/encode.mjs`, `test/link-keys.test.mjs`, `docs/agents/setup-link.md`, `docs/adr/0007-*` | #76 |
+| Ticket | What it built           | Worktree            | Branch                        | Files it owned                                                                                      | PR  |
+| ------ | ----------------------- | ------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------- | --- |
+| #54    | the `DefaultSet` sheets | `../tcg-prizing-54` | `feat/54-defaultset-blaetter` | `public/sets/onepiece.mjs`, `test/onepiece.test.mjs`                                                | #75 |
+| #57    | the indivisible axes    | `../tcg-prizing-57` | `feat/57-unteilbare-achsen`   | `public/core/*`, of which it changed `distribute.mjs` and `test/distribute.test.mjs`                | #77 |
+| #48    | the v1 key register     | `../tcg-prizing-48` | `feat/48-schluesselregister`  | `public/link/encode.mjs`, `test/link-keys.test.mjs`, `docs/agents/setup-link.md`, `docs/adr/0007-*` | #76 |
 
 Three Sonnet agents, one message, three PRs. What it produced, and what each
 skill draws from it:
@@ -168,7 +168,7 @@ findings are a session artifact, not source.
 Path: `review/<batch>-befunde.md`. German — the maintainer reads it. IDs are
 stable (`B1`, `B2`, …) so the counter-check can cite them.
 
-````markdown
+```markdown
 # Befunde: <Stapelname> · <ISO-Datum>
 
 ## Stand
@@ -201,7 +201,7 @@ Welche gefahren wurden, mit Kommando und Ergebnis.
 
 Die ehrlichen Lücken. Dieser Abschnitt lenkt die Gegenprobe und darf nicht leer bleiben,
 um aufgeräumt zu wirken.
-````
+```
 
 Two sections carry more than they look like:
 
@@ -231,6 +231,7 @@ Two sections carry more than they look like:
     `SetupLink`, a smaller `PromoEnvelope` — is reachable, and that path is the
     answer. It is also the one worth writing, because it is the one the guard at
     the control does not catch.
+
 - **Nicht geprüft** is the map of the gaps, and `/counter-check` reads it
   first. Left empty to look tidy, it hides precisely the region nobody has
   looked at.
@@ -251,7 +252,7 @@ session back-computes.
 **Append three lines per run, and read this before starting one.** A skill that
 only accumulates advice drifts into opinion; what keeps these two honest is
 that every claim in them is traceable to a run that went wrong in a particular
-way. The log is also how a *recurring* failure becomes visible — one green test
+way. The log is also how a _recurring_ failure becomes visible — one green test
 that proves nothing is an accident, three across two runs is a class.
 
 **Write down what the driving session's context cost**, as a number, next to
@@ -397,20 +398,20 @@ took every candidate to a card.
 
 **Three things went wrong, and none of them was the pipeline.**
 
-*`/fan-out` could not be invoked by an agent.* `disable-model-invocation: true`
+_`/fan-out` could not be invoked by an agent._ `disable-model-invocation: true`
 predated `/round`, so Phase A aborted before building anything. The flag came
 off `/fan-out` and `/counter-check` (commit 7afba63) and stays on
 `/ask-hard-questions`, where the skill text names it as deliberate. A session
 limit then killed A and its child mid-Phase-4; both resumed from their own
 transcripts with the worktrees and PRs already on disk, and nothing was rebuilt.
 
-*The cards were prose about surfaces.* Five went out, one came back answered.
+_The cards were prose about surfaces._ Five went out, one came back answered.
 Two came back with „ich bin mir nicht ganz sicher, was du für ein Bild vor dir
 hast" — every number on them correct. `fragebogen.mjs` gained an `image`
 evidence type, one or two pictures per entry (commit d0bb66d), and the second
 round with pictures was answered in full.
 
-*The prototype was never opened.* #63 built a fullscreen mode that keeps the
+_The prototype was never opened._ #63 built a fullscreen mode that keeps the
 diagram and grows it; `fsContent()` in the prototype is four lines and contains
 no diagram. The review then put three layouts on a card and asked the maintainer
 to choose — and he answered by quoting his own prototype. Gate 1 now names
@@ -513,13 +514,13 @@ tickets, but exactly one of {#86, #60} (both write `suggest.mjs`), exactly one o
 exists, so no analysis can produce a fifth agent.
 
 **The batch choice turned on one collision a file matrix cannot see.** #50's
-acceptance criterion describes the *caller's* behaviour, and the caller is
+acceptance criterion describes the _caller's_ behaviour, and the caller is
 `plan.mjs:40` — the same `pins` field #64 rebuilds. Not the same file by accident:
 the same field. Splitting the wiring out as #89 is what made four agents possible,
 and it cost one small ticket.
 
 **The blocking finding was invisible to the file matrix too.** #50 and #51 share
-no file and still broke each other in *both* merge orders: #51 appends `report`
+no file and still broke each other in _both_ merge orders: #51 appends `report`
 to `decode`'s return, #50's round-trip test compares the whole returned object.
 Phase A called it 21 red assertions; the counter-check ran it on two built merge
 probes and found **one** — the corpus loops inside a single test. It then refused
@@ -551,7 +552,7 @@ exactly — the `Type` label, already settled at `CONTEXT.md:722–726`.
 **A pre-build collision analysis has an expiry date, and it is the build.** Both
 review phases checked whether #64 calls the core. It did not, and they were right.
 Then finding G2 required #64's cap test to measure against the source instead of
-transcribing its own numbers — and *that* made it call `suggestions()`, whose
+transcribing its own numbers — and _that_ made it call `suggestions()`, whose
 signature #86 had just turned to `suggestions(plan)`. Every branch green alone,
 one red together. It surfaced only because the conductor built a fresh four-way
 merge probe instead of adding up four green reports. **The corrections need their
@@ -579,7 +580,7 @@ phase between them.
 **Counts.** 15 findings from A, 7 more from B, 0 of 15 refuted. 188/188 on the
 four-way merge probe. Two new tickets: #89 (the wiring #50 was forbidden to do)
 and #95 (post-merge catch-up). PR #94 carries two ADR addenda — and the filing
-agent corrected the conductor on the stamp rule: a stamp line is for a *later*
+agent corrected the conductor on the stamp rule: a stamp line is for a _later_
 ADR touching an earlier one, not for an ADR extending its own body.
 
 ### Run 9 · 2026-09-28 · #60, #52, #66 · `/round`, four agents, three deaths
@@ -596,7 +597,7 @@ keep meeting in one session, the conductor rule needs an answer for Phase E, and
 alone.
 
 **Settled on 2026-09-30, and the last sentence above was wrong.** Stage 3 is a
-test on the card's *text* — "read it out loud with the repo closed" — and costs
+test on the card's _text_ — "read it out loud with the repo closed" — and costs
 almost nothing; it can stay where the maintainer types. The 77k sat in Stage 2,
 which already said to file a screenshot beside the question file and point an
 evidence entry at it, and never said not to open it afterwards. So the conductor
@@ -604,7 +605,7 @@ rule needed no exception, only applying: Stage 2 now ends on "no artefact bigger
 than its own path has been read into this context", with the one seam where
 looking is still required — evidence you did not produce yourself, or cannot say
 which state it shows. Phase E keeps its session. The lesson generalises past this
-skill: a rule that says where an artefact *goes* is not yet a rule about whether
+skill: a rule that says where an artefact _goes_ is not yet a rule about whether
 you may read it, and the second half is the one that costs.
 
 **The conductor cut the batch wrong, and Phase 0 caught it.** The frontier was
@@ -646,14 +647,14 @@ numbers the offer sentence should name. The maintainer picked none of the four
 ways and wrote instead that with a combined handout there is no separately
 issued participation booster at all — the pool becomes freely distributable, and
 a rank that gets a display gets the display. That is not a wording; it is what
-`CombinedHandout` *means*, and #46, #60 and #61 all treat that as settled in the
+`CombinedHandout` _means_, and #46, #60 and #61 all treat that as settled in the
 other direction. It became **#103**, deliberately not `ready-for-agent`, and
 nothing in the batch was patched to chase it. A card that comes back with the
 question rewritten is the most expensive kind to build and the cheapest kind to
 be wrong about.
 
 **Two more suites that were green because they were empty** — run 8 found the
-first, and this is now three rounds in a row. #60's criterion 1 *had* a test,
+first, and this is now three rounds in a row. #60's criterion 1 _had_ a test,
 over six hand-picked states, and each of the six fell through for a different
 reason: removing the guard left **196 of 196 green**. The raster that replaced it
 bites on 70 of 3108 states. #52's v2 test asserted `report === null`, which holds
@@ -713,7 +714,7 @@ instead of two.
 said both PRs carried a closing line GitHub had not accepted — checked twice,
 still empty after 24 minutes. The maintainer decided accordingly: merge as-is,
 close by hand. At 15:44 UTC the links appeared, in both directions, with nothing
-edited. So B3 was a *delay* twenty times longer than the docs knew of, not a
+edited. So B3 was a _delay_ twenty times longer than the docs knew of, not a
 failure, and the decision it produced is still valid but moot. Phase F filed both
 states in order — the finding, then the measurement that overturns it. Worth
 keeping as a shape: **a finding about an external system's timing has a shelf
@@ -781,7 +782,7 @@ were the right form at all. The conductor filed it as a grilling ticket (#113),
 the maintainer grilled it in a parallel session, and its decisions landed in
 the round's tickets while Phase F was building. One of them reached a builder
 mid-run through a message, and it reshaped that branch (`DROP_NOUN`, the one
-place #113 will swap *slider* for *value*). K4 hung itself on the same ticket
+place #113 will swap _slider_ for _value_). K4 hung itself on the same ticket
 and was settled there. The round absorbed this without restarting anything.
 Worth keeping: **a parallel session can feed a running round, as long as it
 files to the tickets the builders read.**
@@ -869,7 +870,7 @@ alone. **Merge probe, every intermediate state measured:** 362 → +#119 398 →
 #71, #72, #113, #61, #69, ADR 0002 and `docs/agents/setup-link.md`. PRs: #119
 (#113), #118 (#68), #117 (#72). Merge order: **#119, then #118, then #117.**
 #117 last resolves one real comment conflict over `syncAddress`: keep #72's text,
-with *control* for *slider*. Run 13 starts with #114 on top of #113.
+with _control_ for _slider_. Run 13 starts with #114 on top of #113.
 
 ### Run 13 · 2026-10-02 · #114, #70, #71 · `/round`, four agents, no cards, no deaths
 

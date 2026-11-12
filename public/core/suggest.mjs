@@ -26,8 +26,8 @@
  * the wrong construction.
  */
 
-import { distribute, unfit } from './distribute.mjs';
-import { CURVES } from './rules.mjs';
+import { distribute, unfit } from "./distribute.mjs";
+import { CURVES } from "./rules.mjs";
 
 /** Reads a settings field as a whole number, the same way `distribute()` does. */
 function int(value, fallback = 0) {
@@ -50,7 +50,7 @@ export function curveStepDistance(from, to) {
 
 function curveIndex(id) {
   const i = CURVES.findIndex((c) => c.id === id);
-  return i >= 0 ? i : CURVES.findIndex((c) => c.id === 'steep');
+  return i >= 0 ? i : CURVES.findIndex((c) => c.id === "steep");
 }
 
 /**
@@ -81,15 +81,29 @@ export function suggestions(plan) {
   // 1 · what takes back no promise.
   out.push(...curveWaysOut(settings, plan));
   // 2–4 · the promises, in the precedence chain of ADR 0001.
-  out.push(...numericWaysOut(settings, plan, 'rankFloor', plan.rankFloor, 0, 8, floorLabel));
-  out.push(...(plan.combinedHandout ? handoutWayOut(settings, plan) : depthWaysOut(settings, plan)));
+  out.push(
+    ...numericWaysOut(
+      settings,
+      plan,
+      "rankFloor",
+      plan.rankFloor,
+      0,
+      8,
+      floorLabel,
+    ),
+  );
+  out.push(
+    ...(plan.combinedHandout
+      ? handoutWayOut(settings, plan)
+      : depthWaysOut(settings, plan)),
+  );
   out.push(...displayWaysOut(settings, plan));
   // 5 · the participation rate, which sits in no chain and applies to everyone.
   out.push(
     ...numericWaysOut(
       settings,
       plan,
-      'participationBooster',
+      "participationBooster",
       plan.participation.rate.booster,
       0,
       Math.max(0, int(settings.boosterRate)),
@@ -99,20 +113,29 @@ export function suggestions(plan) {
   return out;
 }
 
-const direction = (value, current) => (value > current ? 'up' : 'down');
-const plural = (n, word) => `${word}${n === 1 ? '' : 's'}`;
+const direction = (value, current) => (value > current ? "up" : "down");
+const plural = (n, word) => `${word}${n === 1 ? "" : "s"}`;
 
 /**
  * The direction belongs in the text, not in the entry: the floor clears an
  * overtake by **rising**, while at a floor conflict it falls (#46).
  */
 const floorLabel = (v, cur) => `Floor ${direction(v, cur)} to ${v}`;
-const depthLabel = (v) => `Serve ${v} ${plural(v, 'rank')}`;
-const participationLabel = (v, cur) => `Participation boosters ${direction(v, cur)} to ${v}`;
+const depthLabel = (v) => `Serve ${v} ${plural(v, "rank")}`;
+const participationLabel = (v, cur) =>
+  `Participation boosters ${direction(v, cur)} to ${v}`;
 
 /** The RankPoolDepth, searched like any other whole-numbered slider. */
 function depthWaysOut(settings, plan) {
-  return numericWaysOut(settings, plan, 'depth', plan.depth, 1, plan.players, depthLabel);
+  return numericWaysOut(
+    settings,
+    plan,
+    "depth",
+    plan.depth,
+    1,
+    plan.players,
+    depthLabel,
+  );
 }
 
 /**
@@ -141,15 +164,20 @@ function depthWaysOut(settings, plan) {
  * exactly these where switching the handout back off leaves them pinned (E4)
  * without restating them.
  */
-export const HANDOUT_PINS = ['rankFloor', 'depth'];
+export const HANDOUT_PINS = ["rankFloor", "depth"];
 
 function handoutWayOut(settings, plan) {
   if (!plan.combinedHandoutDepth) return [];
   const floor = Math.max(plan.rankFloor, plan.participation.rate.booster);
-  if (!clears(plan, { ...settings, rankFloor: floor, depth: plan.players })) return [];
+  if (!clears(plan, { ...settings, rankFloor: floor, depth: plan.players }))
+    return [];
   const changes = [];
   if (floor !== plan.rankFloor) {
-    changes.push({ key: 'rankFloor', value: floor, label: floorLabel(floor, plan.rankFloor) });
+    changes.push({
+      key: "rankFloor",
+      value: floor,
+      label: floorLabel(floor, plan.rankFloor),
+    });
   }
   changes.push(everyRank(plan));
   return [changes.length === 1 ? changes[0] : combinedWay(changes)];
@@ -157,15 +185,19 @@ function handoutWayOut(settings, plan) {
 
 /** The depth that serves every Player, as a change of a way out. */
 function everyRank(plan) {
-  return { key: 'depth', value: plan.players, label: depthLabel(plan.players) };
+  return { key: "depth", value: plan.players, label: depthLabel(plan.players) };
 }
 
 /** Several changes as one way out: their labels joined into the one the button carries. */
 function combinedWay(changes) {
   const label = changes
-    .map((change, i) => (i === 0 ? change.label : change.label[0].toLowerCase() + change.label.slice(1)))
-    .join(' and ');
-  return { key: 'combined', changes, label };
+    .map((change, i) =>
+      i === 0
+        ? change.label
+        : change.label[0].toLowerCase() + change.label.slice(1),
+    )
+    .join(" and ");
+  return { key: "combined", changes, label };
 }
 
 /** One slider over a whole-numbered range, its nearest clearing values. */
@@ -204,7 +236,8 @@ function displayWaysOut(settings, plan) {
     touched.add(plan.overtake.under - 1);
     touched.add(plan.overtake.over - 1);
   }
-  for (const rank of plan.orphanedReservation?.ranks ?? []) touched.add(rank - 1);
+  for (const rank of plan.orphanedReservation?.ranks ?? [])
+    touched.add(rank - 1);
 
   const out = [];
   for (const i of [...touched].sort((a, b) => a - b)) {
@@ -219,13 +252,13 @@ function displayWaysOut(settings, plan) {
         at: v,
         distance: Math.abs(v - now),
         entry: {
-          key: 'displays',
+          key: "displays",
           rank: i + 1,
           value: v,
           label:
             v === 0
-              ? `Drop rank ${i + 1}'s ${plural(now, 'display')}`
-              : `Rank ${i + 1} ${direction(v, now)} to ${v} ${plural(v, 'display')}`,
+              ? `Drop rank ${i + 1}'s ${plural(now, "display")}`
+              : `Rank ${i + 1} ${direction(v, now)} to ${v} ${plural(v, "display")}`,
         },
       });
     }
@@ -267,7 +300,7 @@ function curveWaysOut(settings, plan) {
     .map((c) => ({
       at: curveIndex(c.id),
       distance: curveStepDistance(current, c.id),
-      entry: { key: 'curve', value: c.id, label: `Curve to ${c.id}` },
+      entry: { key: "curve", value: c.id, label: `Curve to ${c.id}` },
     }));
   return nearest(candidates);
 }
@@ -368,7 +401,14 @@ export function offerFor(plan) {
       if (before !== after) also.push({ rank: j + 1, before, after });
     }
 
-    return { rank: i + 1, value: k, from: share, to: k * displaySize, also, key: `${i + 1}:${k}:${share}` };
+    return {
+      rank: i + 1,
+      value: k,
+      from: share,
+      to: k * displaySize,
+      also,
+      key: `${i + 1}:${k}:${share}`,
+    };
   }
   return null;
 }
@@ -444,42 +484,61 @@ export function combinedWayOut(plan) {
   // (`combinedHandoutDepth`), so there the edge serves every Player as well,
   // exactly as `handoutWayOut()` does — the one case in which the depth moves.
   const depth = plan.combinedHandoutDepth ? plan.players : settings.depth;
-  const edge = { ...settings, displays: [], rankFloor: 0, participationBooster: 0, depth };
+  const edge = {
+    ...settings,
+    displays: [],
+    rankFloor: 0,
+    participationBooster: 0,
+    depth,
+  };
   if (!clears(plan, edge)) return null;
 
   const stand = { ...edge };
-  stand.participationBooster = backToward(plan, stand, 'participationBooster', rate, 0);
+  stand.participationBooster = backToward(
+    plan,
+    stand,
+    "participationBooster",
+    rate,
+    0,
+  );
 
   const kept = current.slice();
-  while (kept.some((v) => v > 0) && !clears(plan, { ...stand, displays: kept })) {
+  while (
+    kept.some((v) => v > 0) &&
+    !clears(plan, { ...stand, displays: kept })
+  ) {
     let last = kept.length - 1;
     while (kept[last] === 0) last--;
     kept[last] -= 1;
   }
   stand.displays = kept;
-  stand.rankFloor = backToward(plan, stand, 'rankFloor', plan.rankFloor, 0);
+  stand.rankFloor = backToward(plan, stand, "rankFloor", plan.rankFloor, 0);
 
   const changes = [];
   if (stand.rankFloor !== plan.rankFloor) {
-    changes.push({ key: 'rankFloor', value: stand.rankFloor, label: floorLabel(stand.rankFloor, plan.rankFloor) });
+    changes.push({
+      key: "rankFloor",
+      value: stand.rankFloor,
+      label: floorLabel(stand.rankFloor, plan.rankFloor),
+    });
   }
   if (plan.combinedHandoutDepth) changes.push(everyRank(plan));
   current.forEach((now, i) => {
     const v = kept[i];
     if (v === now) return;
     changes.push({
-      key: 'displays',
+      key: "displays",
       rank: i + 1,
       value: v,
       label:
         v === 0
-          ? `Drop rank ${i + 1}'s ${plural(now, 'display')}`
-          : `Rank ${i + 1} ${direction(v, now)} to ${v} ${plural(v, 'display')}`,
+          ? `Drop rank ${i + 1}'s ${plural(now, "display")}`
+          : `Rank ${i + 1} ${direction(v, now)} to ${v} ${plural(v, "display")}`,
     });
   });
   if (stand.participationBooster !== rate) {
     changes.push({
-      key: 'participationBooster',
+      key: "participationBooster",
       value: stand.participationBooster,
       label: participationLabel(stand.participationBooster, rate),
     });

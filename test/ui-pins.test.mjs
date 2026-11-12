@@ -1,9 +1,9 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
 
-import { planApp } from '../public/ui/plan.mjs';
-import { confirmFirst } from '../public/ui/confirm-first.mjs';
+import { planApp } from "../public/ui/plan.mjs";
+import { confirmFirst } from "../public/ui/confirm-first.mjs";
 import {
   DEPTH_STEP_LABELS,
   DROP_BUBBLE,
@@ -16,7 +16,7 @@ import {
   pinTarget,
   pinnedKeys,
   pinsWithout,
-} from '../public/ui/controls.mjs';
+} from "../public/ui/controls.mjs";
 
 /**
  * `pinned` against `auto`, and the three reaches of the way back (#67).
@@ -33,7 +33,7 @@ import {
  * a handler on `planApp()`.
  */
 
-function opened(query = '') {
+function opened(query = "") {
   const written = [];
   const app = planApp({ read: () => query, write: (url) => written.push(url) });
   return { app, written };
@@ -41,68 +41,87 @@ function opened(query = '') {
 
 /* ── The marking (#67 AC 1, AC 2, AC 8) ─────────────────────────────────── */
 
-test('a slider dragged and dragged back is still pinned', () => {
+test("a slider dragged and dragged back is still pinned", () => {
   const { app } = opened();
-  const before = app.value('rankFloor');
-  app.setSlider('rankFloor', before + 1);
-  app.setSlider('rankFloor', before);
-  assert.equal(app.value('rankFloor'), before, 'the value is back where it started');
-  assert.equal(app.stateWord('rankFloor'), 'pinned', 'the handling set the pin, not the value');
+  const before = app.value("rankFloor");
+  app.setSlider("rankFloor", before + 1);
+  app.setSlider("rankFloor", before);
+  assert.equal(
+    app.value("rankFloor"),
+    before,
+    "the value is back where it started",
+  );
+  assert.equal(
+    app.stateWord("rankFloor"),
+    "pinned",
+    "the handling set the pin, not the value",
+  );
 });
 
-test('an untouched slider says auto, and every control says one of the two words', () => {
+test("an untouched slider says auto, and every control says one of the two words", () => {
   const { app } = opened();
-  assert.equal(app.stateWord('rankFloor'), 'auto');
+  assert.equal(app.stateWord("rankFloor"), "auto");
   for (const key of SHEET_KEYS) {
-    assert.ok(['pinned', 'auto'].includes(app.stateWord(key)), `${key} says a state word`);
+    assert.ok(
+      ["pinned", "auto"].includes(app.stateWord(key)),
+      `${key} says a state word`,
+    );
   }
 });
 
-test('a pin on the default value is marked all the same (ADR 0006)', () => {
+test("a pin on the default value is marked all the same (ADR 0006)", () => {
   const { app } = opened();
-  const standing = app.value('boosterRate');
-  app.setSlider('boosterRate', standing);
-  assert.equal(app.stateWord('boosterRate'), 'pinned');
+  const standing = app.value("boosterRate");
+  app.setSlider("boosterRate", standing);
+  assert.equal(app.stateWord("boosterRate"), "pinned");
 });
 
-test('a Game or TournamentType switch lifts no pin', () => {
+test("a Game or TournamentType switch lifts no pin", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 5);
+  app.setSlider("rankFloor", 5);
   app.setDisplays(1, 1);
   const before = app.pinCount;
   app.setType(app.types[app.types.length - 1].id);
-  assert.equal(app.pinCount, before, 'the switch replaces the sheet, not the pins');
-  assert.equal(app.stateWord('rankFloor'), 'pinned');
+  assert.equal(
+    app.pinCount,
+    before,
+    "the switch replaces the sheet, not the pins",
+  );
+  assert.equal(app.stateWord("rankFloor"), "pinned");
 });
 
 /* ── The counter, and what it counts (#67 AC 6) ─────────────────────────── */
 
-test('displays and manualWinner count as one item each, however many ranks carry one', () => {
+test("displays and manualWinner count as one item each, however many ranks carry one", () => {
   const { app } = opened();
   app.setDisplays(1, 1);
   app.setDisplays(2, 1);
   app.setManualWinner(3, 1);
-  assert.deepEqual(app.settings.displays, [1, 1], 'two ranks carry a reservation');
-  assert.deepEqual(app.pinnedKeys, ['displays', 'manualWinner']);
+  assert.deepEqual(
+    app.settings.displays,
+    [1, 1],
+    "two ranks carry a reservation",
+  );
+  assert.deepEqual(app.pinnedKeys, ["displays", "manualWinner"]);
   assert.equal(app.pinCount, 2);
 });
 
-test('the counter and the question count the same number', () => {
+test("the counter and the question count the same number", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
-  app.setSlider('players', 24);
+  app.setSlider("rankFloor", 4);
+  app.setSlider("players", 24);
   app.setDisplays(1, 1);
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   assert.equal(app.dropQuestion.count, app.pinCount);
   assert.equal(app.dropQuestion.count, 3);
 });
 
-test('a reservation taken back off the last rank is no pin any more', () => {
+test("a reservation taken back off the last rank is no pin any more", () => {
   const { app } = opened();
   app.setDisplays(1, 1);
   assert.equal(app.pinCount, 1);
   app.setDisplays(1, 0);
-  assert.equal(app.pinCount, 0, 'an empty vector is not a pinned reservation');
+  assert.equal(app.pinCount, 0, "an empty vector is not a pinned reservation");
 });
 
 /* ── The reads the screen draws from (#67, run 11, K5) ─────────────────── */
@@ -141,7 +160,7 @@ test('a reservation taken back off the last rank is no pin any more', () => {
  * record first. This row is what turns red if the core ever hands the record
  * through as it is.
  */
-const ITERATE = Symbol('ownKeys');
+const ITERATE = Symbol("ownKeys");
 
 function counted(record) {
   const reads = { tracked: new Set(), blind: 0 };
@@ -178,31 +197,35 @@ function counted(record) {
 }
 
 const READ_SITES = {
-  'isPinned(key) — the is-pinned frame and the idle reset': (app, key) => app.isPinned(pinItem(key)),
-  'stateWord(key) — the word at the control and on the rail': (app, key) => app.stateWord(pinItem(key)),
-  'pinCount — the counter on the type row': (app) => app.pinCount,
-  'pinnedKeys — what a Set switch carries over': (app) => app.pinnedKeys,
-  'handSetKeys — what the counter hands the question (run 12)': (app) => app.handSetKeys,
-  'pinnedItems — the list with its words': (app) => app.pinnedItems,
-  'preparation — the WinnerPack item of Prepare (#65)': {
+  "isPinned(key) — the is-pinned frame and the idle reset": (app, key) =>
+    app.isPinned(pinItem(key)),
+  "stateWord(key) — the word at the control and on the rail": (app, key) =>
+    app.stateWord(pinItem(key)),
+  "pinCount — the counter on the type row": (app) => app.pinCount,
+  "pinnedKeys — what a Set switch carries over": (app) => app.pinnedKeys,
+  "handSetKeys — what the counter hands the question (run 12)": (app) =>
+    app.handSetKeys,
+  "pinnedItems — the list with its words": (app) => app.pinnedItems,
+  "preparation — the WinnerPack item of Prepare (#65)": {
     read: (app) => app.preparation.winners,
-    keys: ['winnerPacks'],
+    keys: ["winnerPacks"],
   },
 };
 
 /** A row as `{ read, keys }`; a bare read is a site that every pin reaches. */
 function siteOf(row) {
-  return typeof row === 'function' ? { read: row, keys: PINNABLE } : row;
+  return typeof row === "function" ? { read: row, keys: PINNABLE } : row;
 }
 
-const PINNABLE = [...SHEET_KEYS, 'displays', 'manualWinner'];
+const PINNABLE = [...SHEET_KEYS, "displays", "manualWinner"];
 
 /** Each stored key pinned the way the screen pins it, on the value it has —
  *  a pin on the default value is a pin all the same (ADR 0006). */
 function pinIt(app, key) {
-  if (key === 'displays') return app.setDisplays(1, 1);
-  if (key === 'manualWinner') return app.setManualWinner(1, 1);
-  if (key === 'curve' || key === 'depthStep' || key === 'combinedHandout') return app.setSlider(key, app.settings[key]);
+  if (key === "displays") return app.setDisplays(1, 1);
+  if (key === "manualWinner") return app.setManualWinner(1, 1);
+  if (key === "curve" || key === "depthStep" || key === "combinedHandout")
+    return app.setSlider(key, app.settings[key]);
   return app.setSlider(key, app.value(key));
 }
 
@@ -223,50 +246,84 @@ for (const [site, row] of Object.entries(READ_SITES)) {
   test(`a pin set by a handling reaches the screen through ${site}`, () => {
     for (const key of keys) {
       const { app } = opened();
-      const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => pinIt(app, key));
-      assert.notDeepEqual(truth, before, `${key}: the handling changed what the site reads (the probe looks)`);
-      assert.deepEqual(shown, truth, `${key}: the site is redrawn, not left on what it said before`);
+      const { before, truth, shown } = drawnAfter(
+        app,
+        (a) => read(a, key),
+        () => pinIt(app, key),
+      );
+      assert.notDeepEqual(
+        truth,
+        before,
+        `${key}: the handling changed what the site reads (the probe looks)`,
+      );
+      assert.deepEqual(
+        shown,
+        truth,
+        `${key}: the site is redrawn, not left on what it said before`,
+      );
     }
   });
 }
 
-test('a reservation taken back to nothing reaches the screen the same way', () => {
+test("a reservation taken back to nothing reaches the screen the same way", () => {
   for (const [site, row] of Object.entries(READ_SITES)) {
     const { read, keys } = siteOf(row);
-    for (const [key, set] of [['displays', (a, n) => a.setDisplays(1, n)], ['manualWinner', (a, n) => a.setManualWinner(1, n)]]) {
+    for (const [key, set] of [
+      ["displays", (a, n) => a.setDisplays(1, n)],
+      ["manualWinner", (a, n) => a.setManualWinner(1, n)],
+    ]) {
       if (!keys.includes(key)) continue;
       const { app } = opened();
       set(app, 1);
-      const { before, truth, shown } = drawnAfter(app, (a) => read(a, key), () => set(app, 0));
+      const { before, truth, shown } = drawnAfter(
+        app,
+        (a) => read(a, key),
+        () => set(app, 0),
+      );
       assert.notDeepEqual(truth, before, `${site}, ${key}: the probe looks`);
-      assert.deepEqual(shown, truth, `${site}, ${key}: taken back, and the screen says so`);
+      assert.deepEqual(
+        shown,
+        truth,
+        `${site}, ${key}: taken back, and the screen says so`,
+      );
     }
   }
 });
 
 /** The proxy itself has to tell the two reads apart, or the probe above
  *  passes because it cannot see the difference it is about. */
-test('the counting proxy keeps a blind read apart from a tracked one', () => {
+test("the counting proxy keeps a blind read apart from a tracked one", () => {
   const watch = counted({ rankFloor: 3 });
-  Object.prototype.hasOwnProperty.call(watch.proxy, 'rankFloor');
+  Object.prototype.hasOwnProperty.call(watch.proxy, "rankFloor");
   assert.equal(watch.reads.blind, 1);
-  assert.equal(watch.reads.tracked.size, 0, 'hasOwnProperty is tracked by nothing');
+  assert.equal(
+    watch.reads.tracked.size,
+    0,
+    "hasOwnProperty is tracked by nothing",
+  );
   void watch.proxy.rankFloor;
-  assert.ok(watch.reads.tracked.has('rankFloor'));
+  assert.ok(watch.reads.tracked.has("rankFloor"));
 });
 
 /* ── The question (#67 AC 4) ────────────────────────────────────────────── */
 
-test('the question names the sliders that fall and says there is no undo', () => {
+test("the question names the sliders that fall and says there is no undo", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
+  app.setSlider("rankFloor", 4);
   app.setDisplays(1, 1);
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   const ask = app.dropQuestion;
-  assert.deepEqual(ask.items.map((item) => item.label), ['Min boosters per rank', 'Reserved displays']);
+  assert.deepEqual(
+    ask.items.map((item) => item.label),
+    ["Min boosters per rank", "Reserved displays"],
+  );
   assert.match(ask.note, /no undo/i);
-  assert.match(ask.headline, /Weekly/, 'the question names the type it goes back to');
-  assert.equal(ask.confirm, 'Drop 2');
+  assert.match(
+    ask.headline,
+    /Weekly/,
+    "the question names the type it goes back to",
+  );
+  assert.equal(ask.confirm, "Drop 2");
 });
 
 /**
@@ -275,40 +332,52 @@ test('the question names the sliders that fall and says there is no undo', () =>
  * what is announced has to be what the handling then sets, so the probe asks
  * for it after the drop, at the stand the drop really installed.
  */
-test('the question says per item where the reset puts it — and the drop puts it there', () => {
+test("the question says per item where the reset puts it — and the drop puts it there", () => {
   const { app } = opened();
-  app.setType('weekend');
-  app.setSlider('players', 40);
-  app.setSlider('rankFloor', 3);
-  app.setSlider('displaySize', 25);
-  app.setSlider('depthStep', 'topQuarter');
-  app.setSlider('curve', 'gentle');
-  app.setSlider('combinedHandout', !app.settings.combinedHandout);
+  app.setType("weekend");
+  app.setSlider("players", 40);
+  app.setSlider("rankFloor", 3);
+  app.setSlider("displaySize", 25);
+  app.setSlider("depthStep", "topQuarter");
+  app.setSlider("curve", "gentle");
+  app.setSlider("combinedHandout", !app.settings.combinedHandout);
   app.setDisplays(1, 1);
   app.setManualWinner(2, 1);
 
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   const announced = app.dropQuestion.items;
-  assert.ok(announced.every((item) => typeof item.to === 'string' && item.to !== ''), 'every item has a target');
+  assert.ok(
+    announced.every((item) => typeof item.to === "string" && item.to !== ""),
+    "every item has a target",
+  );
   app.applyDrop();
 
   for (const item of announced) {
-    assert.equal(pinTarget(item.key, app.stand), item.to, `${item.label} lands where the question said`);
+    assert.equal(
+      pinTarget(item.key, app.stand),
+      item.to,
+      `${item.label} lands where the question said`,
+    );
   }
 });
 
-test('the target is the chosen type\'s own value, not the pinned one', () => {
+test("the target is the chosen type's own value, not the pinned one", () => {
   const cold = opened().app;
-  cold.setType('weekend');
+  cold.setType("weekend");
   const { app } = opened();
-  app.setType('weekend');
-  app.setSlider('players', cold.value('players') + 9);
-  app.setSlider('depthStep', 'topQuarter');
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
-  const to = Object.fromEntries(app.dropQuestion.items.map((item) => [item.key, item.to]));
-  assert.equal(to.players, String(cold.value('players')));
-  assert.equal(to.depth, pinTarget('depth', cold.stand));
-  assert.ok(to.depth.startsWith(DEPTH_STEP_LABELS[cold.settings.depthStep]), 'a step is named by its chip word');
+  app.setType("weekend");
+  app.setSlider("players", cold.value("players") + 9);
+  app.setSlider("depthStep", "topQuarter");
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
+  const to = Object.fromEntries(
+    app.dropQuestion.items.map((item) => [item.key, item.to]),
+  );
+  assert.equal(to.players, String(cold.value("players")));
+  assert.equal(to.depth, pinTarget("depth", cold.stand));
+  assert.ok(
+    to.depth.startsWith(DEPTH_STEP_LABELS[cold.settings.depthStep]),
+    "a step is named by its chip word",
+  );
 });
 
 /* ── The number beside a step only where its name lacks it (run 11, G) ──── */
@@ -318,69 +387,90 @@ test('the target is the chosen type\'s own value, not the pinned one', () => {
  *  screen sets them. The number is read off the plan, not computed here. */
 function servedRanksTo(step, players) {
   const { app } = opened();
-  app.setSlider('players', players);
-  app.setSlider('depthStep', step);
-  return { to: pinTarget('depth', app.stand), ranks: app.value('depth') };
+  app.setSlider("players", players);
+  app.setSlider("depthStep", step);
+  return { to: pinTarget("depth", app.stand), ranks: app.value("depth") };
 }
 
-test('an absolute step names its number itself and gets no brackets', () => {
-  for (const [step, word, ranks] of [['top8', 'top 8', 8], ['top16', 'top 16', 16]]) {
+test("an absolute step names its number itself and gets no brackets", () => {
+  for (const [step, word, ranks] of [
+    ["top8", "top 8", 8],
+    ["top16", "top 16", 16],
+  ]) {
     const served = servedRanksTo(step, 64);
-    assert.equal(served.ranks, ranks, `${word} serves what it says at 64 players`);
+    assert.equal(
+      served.ranks,
+      ranks,
+      `${word} serves what it says at 64 players`,
+    );
     assert.equal(served.to, word);
   }
 });
 
-test('a share and all ranks carry the number in brackets', () => {
-  for (const step of ['topQuarter', 'topThird', 'topHalf', 'topTwoThirds', 'topThreeQuarters', 'all']) {
+test("a share and all ranks carry the number in brackets", () => {
+  for (const step of [
+    "topQuarter",
+    "topThird",
+    "topHalf",
+    "topTwoThirds",
+    "topThreeQuarters",
+    "all",
+  ]) {
     const served = servedRanksTo(step, 40);
     assert.equal(served.to, `${DEPTH_STEP_LABELS[step]} (${served.ranks})`);
   }
 });
 
-test('an absolute step that serves fewer than its own number shows the number it serves', () => {
-  const served = servedRanksTo('top16', 10);
-  assert.ok(served.ranks < 16, 'the plan serves fewer than sixteen here');
+test("an absolute step that serves fewer than its own number shows the number it serves", () => {
+  const served = servedRanksTo("top16", 10);
+  assert.ok(served.ranks < 16, "the plan serves fewer than sixteen here");
   assert.equal(served.to, `top 16 (${served.ranks})`);
 });
 
 /* ── Served ranks is one item (#67, run 11, K3) ─────────────────────────── */
 
-test('slider and step of Served ranks are one item, in the counter as in the question', () => {
+test("slider and step of Served ranks are one item, in the counter as in the question", () => {
   const { app } = opened();
-  app.setSlider('depthStep', 'topQuarter');
-  assert.deepEqual(app.pinnedKeys, ['depth'], 'the step alone is the item');
-  assert.equal(app.stateWord('depth'), 'pinned', 'and the control says so');
-  app.setSlider('depth', 6);
-  app.setSlider('players', 24);
-  assert.deepEqual(app.pinnedKeys, ['players', 'depth']);
-  assert.equal(app.pinCount, 2, 'two pins, one control, one count');
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.setSlider("depthStep", "topQuarter");
+  assert.deepEqual(app.pinnedKeys, ["depth"], "the step alone is the item");
+  assert.equal(app.stateWord("depth"), "pinned", "and the control says so");
+  app.setSlider("depth", 6);
+  app.setSlider("players", 24);
+  assert.deepEqual(app.pinnedKeys, ["players", "depth"]);
+  assert.equal(app.pinCount, 2, "two pins, one control, one count");
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   assert.equal(app.dropQuestion.count, app.pinCount);
-  assert.deepEqual(app.dropQuestion.items.map((item) => item.label), ['Players', 'Served ranks']);
-});
-
-test('the reset at Served ranks takes its step with it', () => {
-  const { app } = opened();
-  app.setSlider('depthStep', 'topQuarter');
-  app.setSlider('depth', 6);
-  app.resetSlider('depth');
-  assert.equal(app.pinCount, 0);
-  assert.equal(app.stateWord('depth'), 'auto');
-  assert.equal(app.pins.depthStep, undefined);
-});
-
-test('the question enumerates in sheet order, not in the order the pins were set', () => {
-  const items = pinnedItems({ ranked: 3, players: 12, displays: [1] });
   assert.deepEqual(
-    items.map((item) => item.key),
-    ['players', 'ranked', 'displays'],
+    app.dropQuestion.items.map((item) => item.label),
+    ["Players", "Served ranks"],
   );
 });
 
-test('the carry reach asks the same question in other words', () => {
-  const all = dropConfirmation({ keys: ['rankFloor'], typeTitle: 'Weekly' });
-  const carry = dropConfirmation({ keys: ['rankFloor'], typeTitle: 'Weekly', reach: 'carry' });
+test("the reset at Served ranks takes its step with it", () => {
+  const { app } = opened();
+  app.setSlider("depthStep", "topQuarter");
+  app.setSlider("depth", 6);
+  app.resetSlider("depth");
+  assert.equal(app.pinCount, 0);
+  assert.equal(app.stateWord("depth"), "auto");
+  assert.equal(app.pins.depthStep, undefined);
+});
+
+test("the question enumerates in sheet order, not in the order the pins were set", () => {
+  const items = pinnedItems({ ranked: 3, players: 12, displays: [1] });
+  assert.deepEqual(
+    items.map((item) => item.key),
+    ["players", "ranked", "displays"],
+  );
+});
+
+test("the carry reach asks the same question in other words", () => {
+  const all = dropConfirmation({ keys: ["rankFloor"], typeTitle: "Weekly" });
+  const carry = dropConfirmation({
+    keys: ["rankFloor"],
+    typeTitle: "Weekly",
+    reach: "carry",
+  });
   assert.equal(all.headline, carry.headline);
   assert.equal(all.confirm, carry.confirm);
   assert.notEqual(all.note, carry.note);
@@ -388,44 +478,47 @@ test('the carry reach asks the same question in other words', () => {
   assert.match(carry.note, /no undo/i);
 });
 
-test('one value is one value, and the plural follows the count', () => {
-  const one = dropConfirmation({ keys: ['players'], typeTitle: 'Weekly' });
-  const two = dropConfirmation({ keys: ['players', 'ranked'], typeTitle: 'Weekly' });
+test("one value is one value, and the plural follows the count", () => {
+  const one = dropConfirmation({ keys: ["players"], typeTitle: "Weekly" });
+  const two = dropConfirmation({
+    keys: ["players", "ranked"],
+    typeTitle: "Weekly",
+  });
   assert.match(one.headline, /^1 value back to Weekly\?$/);
   assert.match(two.headline, /^2 values back to Weekly\?$/);
 });
 
 /* ── The reaches (#67 AC 3, AC 5) ───────────────────────────────────────── */
 
-test('the reset at the slider drops that one pin and asks nothing', () => {
+test("the reset at the slider drops that one pin and asks nothing", () => {
   const { app } = opened();
-  const standing = app.value('rankFloor');
-  app.setSlider('rankFloor', standing + 2);
-  app.setSlider('players', 24);
-  app.resetSlider('rankFloor');
-  assert.equal(app.dropQuestion, null, 'the single reach never asks');
-  assert.equal(app.stateWord('rankFloor'), 'auto');
-  assert.equal(app.value('rankFloor'), standing, 'back on the chosen type');
-  assert.equal(app.stateWord('players'), 'pinned', 'and it reaches no further');
+  const standing = app.value("rankFloor");
+  app.setSlider("rankFloor", standing + 2);
+  app.setSlider("players", 24);
+  app.resetSlider("rankFloor");
+  assert.equal(app.dropQuestion, null, "the single reach never asks");
+  assert.equal(app.stateWord("rankFloor"), "auto");
+  assert.equal(app.value("rankFloor"), standing, "back on the chosen type");
+  assert.equal(app.stateWord("players"), "pinned", "and it reaches no further");
 });
 
-test('the full reach takes the tile allocations with it and stops at Game and TournamentType', () => {
+test("the full reach takes the tile allocations with it and stops at Game and TournamentType", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
+  app.setSlider("rankFloor", 4);
   app.setDisplays(1, 1);
   app.setManualWinner(2, 1);
   const game = app.gameId;
   const type = app.typeId;
 
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   app.applyDrop();
 
   assert.equal(app.pinCount, 0);
   assert.deepEqual(app.settings.displays, []);
   assert.deepEqual(app.settings.manualWinner, {});
-  assert.equal(app.gameId, game, 'it resets the screen to the chosen type');
-  assert.equal(app.typeId, type, 'it does not choose a new one');
-  assert.equal(app.dropQuestion, null, 'answering closes the question');
+  assert.equal(app.gameId, game, "it resets the screen to the chosen type");
+  assert.equal(app.typeId, type, "it does not choose a new one");
+  assert.equal(app.dropQuestion, null, "answering closes the question");
 });
 
 /**
@@ -435,70 +528,86 @@ test('the full reach takes the tile allocations with it and stops at Game and To
  * Mechanik". So the action is parameterised over the set of pins and the
  * anchor, and nothing here names "everything but Game and TournamentType".
  */
-test('a reach may be given any set of pins — the seam #103 calls with two', () => {
+test("a reach may be given any set of pins — the seam #103 calls with two", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
-  app.setSlider('depth', 6);
-  app.setSlider('players', 24);
+  app.setSlider("rankFloor", 4);
+  app.setSlider("depth", 6);
+  app.setSlider("players", 24);
 
-  app.askDrop({ keys: ['rankFloor', 'depth'], anchor: '[data-drop-handout]', reach: 'carry' });
+  app.askDrop({
+    keys: ["rankFloor", "depth"],
+    anchor: "[data-drop-handout]",
+    reach: "carry",
+  });
   assert.equal(app.dropQuestion.count, 2);
   app.applyDrop();
 
-  assert.deepEqual(app.pinnedKeys, ['players'], 'only the two named pins fell');
+  assert.deepEqual(app.pinnedKeys, ["players"], "only the two named pins fell");
 });
 
-test('a reach runs its caller\'s own errand after the drop', () => {
+test("a reach runs its caller's own errand after the drop", () => {
   const { app } = opened();
   let done = 0;
-  app.setSlider('rankFloor', 4);
-  app.askDrop({ keys: ['rankFloor'], anchor: '[data-drop-handout]', done: () => (done += 1) });
+  app.setSlider("rankFloor", 4);
+  app.askDrop({
+    keys: ["rankFloor"],
+    anchor: "[data-drop-handout]",
+    done: () => (done += 1),
+  });
   app.applyDrop();
-  assert.equal(done, 1, 'the notice that asked can close itself with the answer');
+  assert.equal(
+    done,
+    1,
+    "the notice that asked can close itself with the answer",
+  );
 });
 
-test('declining changes nothing', () => {
+test("declining changes nothing", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.setSlider("rankFloor", 4);
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   app.cancelDrop();
   assert.equal(app.dropQuestion, null);
   assert.equal(app.pinCount, 1);
 });
 
-test('a type switch withdraws an open question — it was asked of the old sheet', () => {
+test("a type switch withdraws an open question — it was asked of the old sheet", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 4);
-  app.askDrop({ keys: app.pinnedKeys, anchor: '[data-drop-all]' });
+  app.setSlider("rankFloor", 4);
+  app.askDrop({ keys: app.pinnedKeys, anchor: "[data-drop-all]" });
   app.setType(app.types[app.types.length - 1].id);
   assert.equal(app.dropQuestion, null);
-  assert.equal(app.pinCount, 1, 'and the pins it was about are still standing');
+  assert.equal(app.pinCount, 1, "and the pins it was about are still standing");
 });
 
 /* ── The address bar follows a drop (#89's rule, not a new one) ─────────── */
 
-test('dropping a pin writes the address bar like setting one does', () => {
+test("dropping a pin writes the address bar like setting one does", () => {
   const { app, written } = opened();
-  app.setSlider('rankFloor', 4);
-  app.resetSlider('rankFloor');
+  app.setSlider("rankFloor", 4);
+  app.resetSlider("rankFloor");
   assert.equal(written.length, 2);
-  assert.equal(written[1], '?v=1&game=onepiece&type=weekly');
+  assert.equal(written[1], "?v=1&game=onepiece&type=weekly");
 });
 
 /* ── The pure helpers ───────────────────────────────────────────────────── */
 
-test('an empty vector, an empty map and an absent key are all auto', () => {
-  assert.equal(isPinned('displays', { displays: [] }), false);
-  assert.equal(isPinned('displays', { displays: [0, 0] }), false);
-  assert.equal(isPinned('manualWinner', { manualWinner: {} }), false);
-  assert.equal(isPinned('rankFloor', {}), false);
-  assert.equal(isPinned('rankFloor', { rankFloor: 0 }), true, 'zero is a decision');
-  assert.equal(isPinned('combinedHandout', { combinedHandout: false }), true);
+test("an empty vector, an empty map and an absent key are all auto", () => {
+  assert.equal(isPinned("displays", { displays: [] }), false);
+  assert.equal(isPinned("displays", { displays: [0, 0] }), false);
+  assert.equal(isPinned("manualWinner", { manualWinner: {} }), false);
+  assert.equal(isPinned("rankFloor", {}), false);
+  assert.equal(
+    isPinned("rankFloor", { rankFloor: 0 }),
+    true,
+    "zero is a decision",
+  );
+  assert.equal(isPinned("combinedHandout", { combinedHandout: false }), true);
 });
 
-test('dropping keys leaves the record it was given alone', () => {
+test("dropping keys leaves the record it was given alone", () => {
   const pins = { rankFloor: 2, players: 12 };
-  const next = pinsWithout(pins, ['rankFloor']);
+  const next = pinsWithout(pins, ["rankFloor"]);
   assert.deepEqual(next, { players: 12 });
   assert.deepEqual(pins, { rankFloor: 2, players: 12 });
 });
@@ -507,8 +616,8 @@ test('dropping keys leaves the record it was given alone', () => {
  * The enumeration may not go looking for a name it does not have: a question
  * that lists `manualWinner` in code type has stopped naming what falls.
  */
-test('every pinnable key has a screen word — its own, or its control\'s', () => {
-  for (const key of [...SHEET_KEYS, 'displays', 'manualWinner']) {
+test("every pinnable key has a screen word — its own, or its control's", () => {
+  for (const key of [...SHEET_KEYS, "displays", "manualWinner"]) {
     assert.ok(PIN_LABELS[pinItem(key)], `${key} has a screen word`);
   }
 });
@@ -518,10 +627,13 @@ test('every pinnable key has a screen word — its own, or its control\'s', () =
  * `depthStep` is the step grid inside `Served ranks`, and a title of its own
  * would be one.
  */
-test('the step grid has no title of its own — it is a member of Served ranks', () => {
+test("the step grid has no title of its own — it is a member of Served ranks", () => {
   assert.equal(PIN_LABELS.depthStep, undefined);
-  assert.equal(pinItem('depthStep'), 'depth');
-  assert.ok(!Object.values(PIN_LABELS).some((label) => /step/i.test(label)), 'no invented step word');
+  assert.equal(pinItem("depthStep"), "depth");
+  assert.ok(
+    !Object.values(PIN_LABELS).some((label) => /step/i.test(label)),
+    "no invented step word",
+  );
 });
 
 /* ── The typed field and its commit (#113) ──────────────────────────────── */
@@ -535,122 +647,169 @@ test('the step grid has no title of its own — it is a member of Served ranks',
  * pin nobody set, which the question of the full reach would then read out by
  * name (comment on #67, "Aus #113 nachgetragen").
  */
-test('typing marks the field and moves nothing until the commit', () => {
+test("typing marks the field and moves nothing until the commit", () => {
   const { app, written } = opened();
   // The count the cold start shows — the sheet's, which #145 moved from 32 to
   // 40. A cold start is the subject, and setting the count would pin it, so
   // the test reads it off the field instead of naming the sheet's number.
-  const shown = app.value('players');
-  assert.notEqual(shown, 128, 'the typed number has to be a change');
-  app.draft('players', '128');
-  assert.equal(app.isDraft('players'), true, 'the field says it is not yet valid');
-  assert.equal(app.plan.players, shown, 'the plan stands still');
+  const shown = app.value("players");
+  assert.notEqual(shown, 128, "the typed number has to be a change");
+  app.draft("players", "128");
+  assert.equal(
+    app.isDraft("players"),
+    true,
+    "the field says it is not yet valid",
+  );
+  assert.equal(app.plan.players, shown, "the plan stands still");
   assert.deepEqual(app.pins, {});
   assert.deepEqual(written, []);
 
-  app.commitTyped('players', '128');
-  assert.equal(app.isDraft('players'), false);
+  app.commitTyped("players", "128");
+  assert.equal(app.isDraft("players"), false);
   assert.equal(app.plan.players, 128);
-  assert.equal(app.pins.players, 128, 'a changed commit pins');
+  assert.equal(app.pins.players, 128, "a changed commit pins");
   assert.equal(written.length, 1);
 });
 
-test('a field typed back to its own value is not marked, and committing it writes and pins nothing', () => {
+test("a field typed back to its own value is not marked, and committing it writes and pins nothing", () => {
   const { app, written } = opened();
   // The values the cold start shows, read off the fields: "its own value" is
   // the subject, not the sheet's number (#145 moved it from 32 to 40).
-  const packs = String(app.value('tournamentPacks'));
-  const players = String(app.value('players'));
-  app.draft('tournamentPacks', packs);
-  assert.equal(app.isDraft('tournamentPacks'), false, 'the auto value, typed again, is no draft');
-  app.commitTyped('tournamentPacks', packs);
-  app.commitTyped('players', ` ${players}`);
+  const packs = String(app.value("tournamentPacks"));
+  const players = String(app.value("players"));
+  app.draft("tournamentPacks", packs);
+  assert.equal(
+    app.isDraft("tournamentPacks"),
+    false,
+    "the auto value, typed again, is no draft",
+  );
+  app.commitTyped("tournamentPacks", packs);
+  app.commitTyped("players", ` ${players}`);
   assert.deepEqual(app.pins, {});
-  assert.equal(app.isPinned('tournamentPacks'), false);
+  assert.equal(app.isPinned("tournamentPacks"), false);
   assert.deepEqual(written, []);
 });
 
-test('Escape discards, and the leaving that follows it commits nothing', () => {
+test("Escape discards, and the leaving that follows it commits nothing", () => {
   const { app, written } = opened();
-  app.draft('rankFloor', '7');
-  assert.equal(app.isDraft('rankFloor'), true);
-  app.discardDraft('rankFloor');
-  assert.equal(app.isDraft('rankFloor'), false);
+  app.draft("rankFloor", "7");
+  assert.equal(app.isDraft("rankFloor"), true);
+  app.discardDraft("rankFloor");
+  assert.equal(app.isDraft("rankFloor"), false);
   // The field shows the standing value again, so the blur commits that.
-  app.commitTyped('rankFloor', String(app.value('rankFloor')));
+  app.commitTyped("rankFloor", String(app.value("rankFloor")));
   assert.deepEqual(app.pins, {});
   assert.deepEqual(written, []);
 });
 
-test('an entry that is not a number writes nothing and drops the draft', () => {
+test("an entry that is not a number writes nothing and drops the draft", () => {
   const { app, written } = opened();
-  for (const text of ['', 'abc', '3.5']) {
-    app.draft('players', text);
-    app.commitTyped('players', text);
-    assert.equal(app.isDraft('players'), false, JSON.stringify(text));
+  for (const text of ["", "abc", "3.5"]) {
+    app.draft("players", text);
+    app.commitTyped("players", text);
+    assert.equal(app.isDraft("players"), false, JSON.stringify(text));
   }
   assert.deepEqual(app.pins, {});
   assert.deepEqual(written, []);
 });
 
-test('minus and plus write and pin at once, on an auto value too', () => {
+test("minus and plus write and pin at once, on an auto value too", () => {
   const { app } = opened();
   // One above the auto value the cold start shows (the sheet's player count,
   // 40 since #145), read off the field rather than named.
-  const packs = app.value('tournamentPacks');
-  app.step('tournamentPacks', 1);
+  const packs = app.value("tournamentPacks");
+  app.step("tournamentPacks", 1);
   assert.equal(app.pins.tournamentPacks, packs + 1);
-  app.step('rankFloor', -1);
+  app.step("rankFloor", -1);
   assert.equal(app.pins.rankFloor, 1);
 });
 
-test('the plus of an open number is never closed, and a wall closes it exactly there', () => {
+test("the plus of an open number is never closed, and a wall closes it exactly there", () => {
   const { app } = opened();
-  app.commitTyped('players', '128');
-  app.commitTyped('boosterRate', '9');
-  app.commitTyped('participationBooster', '6');
-  for (const key of ['players', 'boosterRate', 'tournamentPacks', 'winnerPacks', 'displaySize',
-    'envelopeSize', 'envelopeYield', 'rankFloor']) {
+  app.commitTyped("players", "128");
+  app.commitTyped("boosterRate", "9");
+  app.commitTyped("participationBooster", "6");
+  for (const key of [
+    "players",
+    "boosterRate",
+    "tournamentPacks",
+    "winnerPacks",
+    "displaySize",
+    "envelopeSize",
+    "envelopeYield",
+    "rankFloor",
+  ]) {
     assert.equal(app.canStep(key, 1), true, `${key} + is open`);
   }
-  app.commitTyped('judgeBooster', '384');
-  assert.equal(app.canStep('judgeBooster', 1), false, 'the wall at 384 closes the plus');
-  assert.equal(app.canStep('judgeBooster', -1), true);
-  app.commitTyped('judgeBooster', '9999');
-  assert.equal(app.value('judgeBooster'), 384, 'a typed number past the wall holds at it');
+  app.commitTyped("judgeBooster", "384");
+  assert.equal(
+    app.canStep("judgeBooster", 1),
+    false,
+    "the wall at 384 closes the plus",
+  );
+  assert.equal(app.canStep("judgeBooster", -1), true);
+  app.commitTyped("judgeBooster", "9999");
+  assert.equal(
+    app.value("judgeBooster"),
+    384,
+    "a typed number past the wall holds at it",
+  );
 });
 
-test('a pinned value a wall sank under stands, and its minus still leaves it (ADR 0006)', () => {
+test("a pinned value a wall sank under stands, and its minus still leaves it (ADR 0006)", () => {
   const { app } = opened();
-  app.commitTyped('participationBooster', '3');
-  app.commitTyped('boosterRate', '1');
-  assert.equal(app.value('participationBooster'), 3, 'never cut');
-  assert.equal(app.canStep('participationBooster', 1), false);
-  assert.equal(app.canStep('participationBooster', -1), true);
-  app.step('participationBooster', -1);
-  assert.equal(app.value('participationBooster'), 2);
+  app.commitTyped("participationBooster", "3");
+  app.commitTyped("boosterRate", "1");
+  assert.equal(app.value("participationBooster"), 3, "never cut");
+  assert.equal(app.canStep("participationBooster", 1), false);
+  assert.equal(app.canStep("participationBooster", -1), true);
+  app.step("participationBooster", -1);
+  assert.equal(app.value("participationBooster"), 2);
 });
 
 /* ── The markup (#67 AC 1, AC 4, AC 7) ──────────────────────────────────── */
 
-const SHEET = readFileSync(new URL('../views/controls-sheet.php', import.meta.url), 'utf8');
-const DETAILS = readFileSync(new URL('../views/details.php', import.meta.url), 'utf8');
-const RAIL = readFileSync(new URL('../views/controls-hot.php', import.meta.url), 'utf8');
-const PLAN = readFileSync(new URL('../views/plan.php', import.meta.url), 'utf8');
-const ROW = readFileSync(new URL('../views/control-row.php', import.meta.url), 'utf8');
+const SHEET = readFileSync(
+  new URL("../views/controls-sheet.php", import.meta.url),
+  "utf8",
+);
+const DETAILS = readFileSync(
+  new URL("../views/details.php", import.meta.url),
+  "utf8",
+);
+const RAIL = readFileSync(
+  new URL("../views/controls-hot.php", import.meta.url),
+  "utf8",
+);
+const PLAN = readFileSync(
+  new URL("../views/plan.php", import.meta.url),
+  "utf8",
+);
+const ROW = readFileSync(
+  new URL("../views/control-row.php", import.meta.url),
+  "utf8",
+);
 
 /**
  * The screen word of a control and the word the question uses have to be the
  * same word, or the question names sliders the sheet does not have. They are
  * two files, so the pairing is held here rather than trusted.
  */
-test('the sheet labels and the question labels are the same words', () => {
-  const pattern = /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
+test("the sheet labels and the question labels are the same words", () => {
+  const pattern =
+    /(?:sheet_control|control_row)\('([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)*)'/g;
   const calls = [...SHEET.matchAll(pattern), ...RAIL.matchAll(pattern)];
   // Fourteen on the sheet and two on the rail (#143 took RankFloor off it).
-  assert.ok(calls.length >= 16, 'sheet and rail compose their numbers through the shared row');
+  assert.ok(
+    calls.length >= 16,
+    "sheet and rail compose their numbers through the shared row",
+  );
   for (const [, key, label] of calls) {
-    assert.equal(PIN_LABELS[key], label.replace(/\\'/g, "'"), `${key} is called the same in both places`);
+    assert.equal(
+      PIN_LABELS[key],
+      label.replace(/\\'/g, "'"),
+      `${key} is called the same in both places`,
+    );
   }
 });
 
@@ -661,31 +820,44 @@ test('the sheet labels and the question labels are the same words', () => {
  * where the control is written out by hand (`Served ranks`, `Curve`,
  * `Handout`).
  */
-test('every control on the sheet carries its state word and its own way back', () => {
+test("every control on the sheet carries its state word and its own way back", () => {
   assert.match(ROW, /function sheet_pin_head[^]*stateWord\('<\?= \$k \?>'\)/);
-  assert.match(ROW, /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/);
+  assert.match(
+    ROW,
+    /function sheet_pin_reset[^]*resetSlider\('<\?= \$k \?>'\)/,
+  );
   assert.match(ROW, /function control_row[^]*sheet_pin_head\(\$key\)/);
-  assert.match(ROW, /function control_row[^]*sheet_pin_reset\(\$key, \$label\)/);
+  assert.match(
+    ROW,
+    /function control_row[^]*sheet_pin_reset\(\$key, \$label\)/,
+  );
   assert.match(SHEET, /function sheet_control[^]*control_row\(\$key, \$label/);
   const drawn = (key, helper) =>
-    SHEET.includes(`sheet_control('${key}'`) || SHEET.includes(`control_row('${key}'`) ||
+    SHEET.includes(`sheet_control('${key}'`) ||
+    SHEET.includes(`control_row('${key}'`) ||
     SHEET.includes(`${helper}('${key}'`);
   for (const key of SHEET_KEYS) {
-    if (key === 'depthStep') continue; // the step grid inside `Served ranks`, not a control of its own
-    const marked = drawn(key, 'sheet_pin_head');
+    if (key === "depthStep") continue; // the step grid inside `Served ranks`, not a control of its own
+    const marked = drawn(key, "sheet_pin_head");
     assert.ok(marked, `${key} shows pinned or auto`);
-    const back = drawn(key, 'sheet_pin_reset');
+    const back = drawn(key, "sheet_pin_reset");
     assert.ok(back, `${key} has the single reach`);
   }
 });
 
-test('the rail under the plan marks its three the same way', () => {
+test("the rail under the plan marks its three the same way", () => {
   // Two through the shared row, which carries the word; the curve chips carry
   // their own head (#143).
-  for (const key of ['players', 'depth']) {
-    assert.ok(RAIL.includes(`control_row('${key}'`), `${key} is marked on the rail too`);
+  for (const key of ["players", "depth"]) {
+    assert.ok(
+      RAIL.includes(`control_row('${key}'`),
+      `${key} is marked on the rail too`,
+    );
   }
-  assert.ok(RAIL.includes(`sheet_pin_head('curve')`), 'curve is marked on the rail too');
+  assert.ok(
+    RAIL.includes(`sheet_pin_head('curve')`),
+    "curve is marked on the rail too",
+  );
 });
 
 /**
@@ -694,31 +866,50 @@ test('the rail under the plan marks its three the same way', () => {
  * the same list (`handSetKeys`), and still carries the count of that list —
  * the pin counter #67 AC 6 holds against the question.
  */
-test('the full reach hangs off the plan head, carries the count and asks before it acts (#143)', () => {
-  const head = PLAN.slice(PLAN.indexOf('<header class="col-head plan-head"'), PLAN.indexOf('</header>'));
+test("the full reach hangs off the plan head, carries the count and asks before it acts (#143)", () => {
+  const head = PLAN.slice(
+    PLAN.indexOf('<header class="col-head plan-head"'),
+    PLAN.indexOf("</header>"),
+  );
   const reset = head.slice(head.indexOf('class="plan-reset"'));
-  const button = reset.slice(0, reset.indexOf('</button>'));
+  const button = reset.slice(0, reset.indexOf("</button>"));
   assert.match(button, /data-drop-all/);
-  assert.match(button, /@click="askDrop\(\{ keys: handSetKeys, anchor: '\[data-drop-all\]' \}\)"/);
+  assert.match(
+    button,
+    /@click="askDrop\(\{ keys: handSetKeys, anchor: '\[data-drop-all\]' \}\)"/,
+  );
   assert.match(button, /:aria-label="dropAllLabel"/);
   assert.match(button, /:title="dropAllLabel"/);
   assert.match(button, /icon\('rotate-ccw'\)/);
   assert.match(button, /x-text="pinCount"/);
-  assert.ok(!/@click="applyDrop\(\)"/.test(button), 'the button never drops outright');
-  assert.doesNotMatch(SHEET, /data-drop-all|pin-chip/, 'Details carries it no more');
+  assert.ok(
+    !/@click="applyDrop\(\)"/.test(button),
+    "the button never drops outright",
+  );
+  assert.doesNotMatch(
+    SHEET,
+    /data-drop-all|pin-chip/,
+    "Details carries it no more",
+  );
 });
 
-test('the question is a bubble anchored at the button, and not the app one overlay', () => {
-  assert.ok(SHEET.includes(DROP_BUBBLE.replace(/[[\]]/g, '')), 'the bubble carries the anchor hook');
+test("the question is a bubble anchored at the button, and not the app one overlay", () => {
+  assert.ok(
+    SHEET.includes(DROP_BUBBLE.replace(/[[\]]/g, "")),
+    "the bubble carries the anchor hook",
+  );
   assert.match(SHEET, /placeConfirm\(\)/);
   assert.match(DETAILS, /data-bubble-frame/);
 });
 
-test('the bubble draws a title and a target per item, and no run-on list of names', () => {
+test("the bubble draws a title and a target per item, and no run-on list of names", () => {
   assert.match(SHEET, /x-for="item in dropQuestion\.items"/);
   assert.match(SHEET, /x-text="item\.label"/);
   assert.match(SHEET, /x-text="item\.to"/);
-  assert.ok(!SHEET.includes('dropQuestion.names'), 'the comma-separated line is gone');
+  assert.ok(
+    !SHEET.includes("dropQuestion.names"),
+    "the comma-separated line is gone",
+  );
 });
 
 /**
@@ -727,14 +918,26 @@ test('the bubble draws a title and a target per item, and no run-on list of name
  * once, in `DROP_NOUN`, and nothing in the bubble or at its chip spells it out
  * again; and no text on screen calls a control a slider any more (#113 AC 16).
  */
-test('the question\'s word for an item stands in one place, and it is value', () => {
-  const CONTROLS = readFileSync(new URL('../public/ui/controls.mjs', import.meta.url), 'utf8');
-  const code = CONTROLS.split('\n').filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line)).join('\n');
-  assert.equal((code.match(/'value/g) ?? []).length, 1, 'one literal, in DROP_NOUN');
-  assert.ok(!/'values?'/.test(SHEET.replace(/<!--[^]*?-->/g, '')), 'the markup takes the word from the code');
+test("the question's word for an item stands in one place, and it is value", () => {
+  const CONTROLS = readFileSync(
+    new URL("../public/ui/controls.mjs", import.meta.url),
+    "utf8",
+  );
+  const code = CONTROLS.split("\n")
+    .filter((line) => !/^\s*(\*|\/\*\*|\/\/)/.test(line))
+    .join("\n");
+  assert.equal(
+    (code.match(/'value/g) ?? []).length,
+    1,
+    "one literal, in DROP_NOUN",
+  );
+  assert.ok(
+    !/'values?'/.test(SHEET.replace(/<!--[^]*?-->/g, "")),
+    "the markup takes the word from the code",
+  );
   const { app } = opened();
-  app.setSlider('players', 24);
-  assert.equal(app.dropAllLabel, 'Drop 1 hand-set value');
+  app.setSlider("players", 24);
+  assert.equal(app.dropAllLabel, "Drop 1 hand-set value");
 });
 
 /**
@@ -749,12 +952,16 @@ function screenLiterals(source) {
   const found = [];
   const n = source.length;
   let i = 0;
-  let prev = '';
+  let prev = "";
   const quoted = (quote) => {
     let j = i + 1;
-    let text = '';
+    let text = "";
     while (j < n && source[j] !== quote) {
-      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
+      if (source[j] === "\\") {
+        text += source[j + 1];
+        j += 2;
+        continue;
+      }
       text += source[j++];
     }
     i = j + 1;
@@ -762,25 +969,29 @@ function screenLiterals(source) {
   };
   const template = () => {
     let j = i + 1;
-    let text = '';
-    while (j < n && source[j] !== '`') {
-      if (source[j] === '\\') { text += source[j + 1]; j += 2; continue; }
-      if (source[j] === '$' && source[j + 1] === '{') {
+    let text = "";
+    while (j < n && source[j] !== "`") {
+      if (source[j] === "\\") {
+        text += source[j + 1];
+        j += 2;
+        continue;
+      }
+      if (source[j] === "$" && source[j + 1] === "{") {
         let depth = 1;
         j += 2;
         while (j < n && depth > 0) {
           const c = source[j];
-          if (c === "'" || c === '"' || c === '`') {
+          if (c === "'" || c === '"' || c === "`") {
             i = j;
-            found.push(c === '`' ? template() : quoted(c));
+            found.push(c === "`" ? template() : quoted(c));
             j = i;
             continue;
           }
-          if (c === '{') depth++;
-          else if (c === '}') depth--;
+          if (c === "{") depth++;
+          else if (c === "}") depth--;
           j++;
         }
-        text += ' … ';
+        text += " … ";
         continue;
       }
       text += source[j++];
@@ -790,21 +1001,36 @@ function screenLiterals(source) {
   };
   while (i < n) {
     const c = source[i];
-    if (c === '/' && source[i + 1] === '/') { while (i < n && source[i] !== '\n') i++; continue; }
-    if (c === '/' && source[i + 1] === '*') { const close = source.indexOf('*/', i + 2); i = close < 0 ? n : close + 2; continue; }
-    if (c === "'" || c === '"') { found.push(quoted(c)); prev = 'x'; continue; }
-    if (c === '`') { found.push(template()); prev = 'x'; continue; }
-    if (c === '/' && (prev === '' || '(,=:[!&|?{};'.includes(prev))) {
+    if (c === "/" && source[i + 1] === "/") {
+      while (i < n && source[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && source[i + 1] === "*") {
+      const close = source.indexOf("*/", i + 2);
+      i = close < 0 ? n : close + 2;
+      continue;
+    }
+    if (c === "'" || c === '"') {
+      found.push(quoted(c));
+      prev = "x";
+      continue;
+    }
+    if (c === "`") {
+      found.push(template());
+      prev = "x";
+      continue;
+    }
+    if (c === "/" && (prev === "" || "(,=:[!&|?{};".includes(prev))) {
       let j = i + 1;
       let inClass = false;
-      while (j < n && (inClass || source[j] !== '/')) {
-        if (source[j] === '\\') j++;
-        else if (source[j] === '[') inClass = true;
-        else if (source[j] === ']') inClass = false;
+      while (j < n && (inClass || source[j] !== "/")) {
+        if (source[j] === "\\") j++;
+        else if (source[j] === "[") inClass = true;
+        else if (source[j] === "]") inClass = false;
         j++;
       }
       i = j + 1;
-      prev = 'x';
+      prev = "x";
       continue;
     }
     if (!/\s/.test(c)) prev = c;
@@ -826,47 +1052,80 @@ function screenLiterals(source) {
 const NOT_ON_SCREEN = [/slider/i, /\bsettings?\b(?!\.[A-Za-z_$]|\[)/i];
 
 function screenWords(text) {
-  return text.replace(/\b(set|reset)Slider\b/g, '');
+  return text.replace(/\b(set|reset)Slider\b/g, "");
 }
 
-test('no text on screen calls a control a slider, nor a setting (#113 AC 16)', () => {
-  const VIEWS = new URL('../views/', import.meta.url);
-  for (const file of readdirSync(VIEWS).filter((name) => name.endsWith('.php'))) {
-    const markup = readFileSync(new URL(file, VIEWS), 'utf8')
-      .replace(/<\?php[^]*?\?>/g, (block) => (block.includes('/**') || block.includes('//') ? '' : block))
-      .replace(/<!--[^]*?-->/g, '');
-    for (const word of NOT_ON_SCREEN) assert.doesNotMatch(screenWords(markup), word, `${file} says ${word} on screen`);
+test("no text on screen calls a control a slider, nor a setting (#113 AC 16)", () => {
+  const VIEWS = new URL("../views/", import.meta.url);
+  for (const file of readdirSync(VIEWS).filter((name) =>
+    name.endsWith(".php"),
+  )) {
+    const markup = readFileSync(new URL(file, VIEWS), "utf8")
+      .replace(/<\?php[^]*?\?>/g, (block) =>
+        block.includes("/**") || block.includes("//") ? "" : block,
+      )
+      .replace(/<!--[^]*?-->/g, "");
+    for (const word of NOT_ON_SCREEN)
+      assert.doesNotMatch(
+        screenWords(markup),
+        word,
+        `${file} says ${word} on screen`,
+      );
   }
-  const UI = new URL('../public/ui/', import.meta.url);
-  for (const file of readdirSync(UI).filter((name) => name.endsWith('.mjs'))) {
-    for (const literal of screenLiterals(readFileSync(new URL(file, UI), 'utf8'))) {
+  const UI = new URL("../public/ui/", import.meta.url);
+  for (const file of readdirSync(UI).filter((name) => name.endsWith(".mjs"))) {
+    for (const literal of screenLiterals(
+      readFileSync(new URL(file, UI), "utf8"),
+    )) {
       for (const word of NOT_ON_SCREEN) {
-        assert.doesNotMatch(screenWords(literal), word, `${file} puts ${JSON.stringify(literal)} on screen`);
+        assert.doesNotMatch(
+          screenWords(literal),
+          word,
+          `${file} puts ${JSON.stringify(literal)} on screen`,
+        );
       }
     }
   }
   const { app } = opened();
-  app.setSlider('players', 24);
-  app.setSlider('rankFloor', 3);
-  const question = dropConfirmation({ keys: app.pinnedKeys, typeTitle: 'Weekly' });
+  app.setSlider("players", 24);
+  app.setSlider("rankFloor", 3);
+  const question = dropConfirmation({
+    keys: app.pinnedKeys,
+    typeTitle: "Weekly",
+  });
   for (const word of NOT_ON_SCREEN) {
     assert.doesNotMatch(JSON.stringify(question), word);
     assert.doesNotMatch(app.dropAllLabel, word);
   }
 });
 
-test('the screen-text probe reads what a module composes, and not its comments', () => {
-  const literals = screenLiterals([
-    "// a slider in a comment is no screen text",
-    "/* nor is a setting in a block */",
-    "const re = /'not a string/g;",
-    "const line = `${n} pinned ${plural(n, 'slider')} stayed behind.`;",
-    "const report = 'not a setting of this app';",
-  ].join('\n'));
-  assert.deepEqual(literals, ['slider', ' …  pinned  …  stayed behind.', 'not a setting of this app']);
-  assert.ok(literals.some((text) => NOT_ON_SCREEN[0].test(text)), 'the #68 sentence would turn the probe red');
-  assert.ok(literals.some((text) => NOT_ON_SCREEN[1].test(text)), 'the #72 sentence would turn the probe red');
-  assert.ok(!NOT_ON_SCREEN[1].test('settings.curve'), 'a property read is code');
+test("the screen-text probe reads what a module composes, and not its comments", () => {
+  const literals = screenLiterals(
+    [
+      "// a slider in a comment is no screen text",
+      "/* nor is a setting in a block */",
+      "const re = /'not a string/g;",
+      "const line = `${n} pinned ${plural(n, 'slider')} stayed behind.`;",
+      "const report = 'not a setting of this app';",
+    ].join("\n"),
+  );
+  assert.deepEqual(literals, [
+    "slider",
+    " …  pinned  …  stayed behind.",
+    "not a setting of this app",
+  ]);
+  assert.ok(
+    literals.some((text) => NOT_ON_SCREEN[0].test(text)),
+    "the #68 sentence would turn the probe red",
+  );
+  assert.ok(
+    literals.some((text) => NOT_ON_SCREEN[1].test(text)),
+    "the #72 sentence would turn the probe red",
+  );
+  assert.ok(
+    !NOT_ON_SCREEN[1].test("settings.curve"),
+    "a property read is code",
+  );
 });
 
 /* ── A step grip lets `Served ranks` follow the sum again (#114) ─────────── */
@@ -879,92 +1138,107 @@ test('the screen-text probe reads what a module composes, and not its comments',
  * way a drop goes (`pinsWithout`, `resolvedFor`, `syncAddress`).
  */
 
-test('a step pressed over a hand-set depth unpins the number, and the number shows what the step yields (#114 AC 1)', () => {
+test("a step pressed over a hand-set depth unpins the number, and the number shows what the step yields (#114 AC 1)", () => {
   const { app, written } = opened();
-  app.setSlider('depth', 5);
-  assert.equal(app.value('depth'), 5);
+  app.setSlider("depth", 5);
+  assert.equal(app.value("depth"), 5);
   const before = written.length;
 
-  app.setStep('top8');
+  app.setStep("top8");
 
-  assert.equal('depth' in app.pins, false, 'the pin on the number is gone');
-  assert.equal(app.pins.depthStep, 'top8', 'the step is the pin now');
-  assert.equal(app.settings.depthStep, 'top8');
-  assert.equal(app.value('depth'), 8, 'the number shows what top 8 gives at this stand, not the 5 it was');
+  assert.equal("depth" in app.pins, false, "the pin on the number is gone");
+  assert.equal(app.pins.depthStep, "top8", "the step is the pin now");
+  assert.equal(app.settings.depthStep, "top8");
+  assert.equal(
+    app.value("depth"),
+    8,
+    "the number shows what top 8 gives at this stand, not the 5 it was",
+  );
   assert.equal(app.plan.depth, 8);
-  assert.equal(written.length, before + 1, 'the address bar was written once');
-  assert.ok(!written.at(-1).includes('depth=5'), written.at(-1));
-  assert.ok(written.at(-1).includes('depthStep=top8'), written.at(-1));
+  assert.equal(written.length, before + 1, "the address bar was written once");
+  assert.ok(!written.at(-1).includes("depth=5"), written.at(-1));
+  assert.ok(written.at(-1).includes("depthStep=top8"), written.at(-1));
 });
 
-test('the shown number is what a fresh start with that step yields, whatever else is pinned (#114 AC 1)', () => {
+test("the shown number is what a fresh start with that step yields, whatever else is pinned (#114 AC 1)", () => {
   const { app } = opened();
-  app.setSlider('players', 64);
-  app.setSlider('depth', 3);
-  app.setStep('topQuarter');
-  const reference = opened('?v=1&game=onepiece&type=weekly&players=64&depthStep=topQuarter').app;
-  assert.equal(app.value('depth'), reference.value('depth'));
+  app.setSlider("players", 64);
+  app.setSlider("depth", 3);
+  app.setStep("topQuarter");
+  const reference = opened(
+    "?v=1&game=onepiece&type=weekly&players=64&depthStep=topQuarter",
+  ).app;
+  assert.equal(app.value("depth"), reference.value("depth"));
   assert.equal(app.plan.depth, reference.plan.depth);
-  assert.equal(app.value('depth'), 16, 'a quarter of 64');
+  assert.equal(app.value("depth"), 16, "a quarter of 64");
 });
 
-test('with no pin on depth a step grip does what it did: it pins the step (#114 AC 2)', () => {
+test("with no pin on depth a step grip does what it did: it pins the step (#114 AC 2)", () => {
   const { app } = opened();
   const control = opened().app;
-  app.setStep('top8');
-  control.setSlider('depthStep', 'top8');
+  app.setStep("top8");
+  control.setSlider("depthStep", "top8");
   assert.deepEqual(app.pins, control.pins);
-  assert.equal(app.value('depth'), control.value('depth'));
-  assert.equal(app.stateWord('depth'), 'pinned');
+  assert.equal(app.value("depth"), control.value("depth"));
+  assert.equal(app.stateWord("depth"), "pinned");
 });
 
-test('the counter and the word follow the grip: one item before and after (#114 AC 3)', () => {
+test("the counter and the word follow the grip: one item before and after (#114 AC 3)", () => {
   const { app } = opened();
-  app.setSlider('rankFloor', 3);
-  app.setSlider('depth', 5);
+  app.setSlider("rankFloor", 3);
+  app.setSlider("depth", 5);
   assert.equal(app.pinCount, 2);
-  assert.equal(app.stateWord('depth'), 'pinned');
+  assert.equal(app.stateWord("depth"), "pinned");
 
-  app.setStep('top8');
+  app.setStep("top8");
 
   // `Served ranks` is one item (PIN_MEMBERS): its number gave the pin up and
   // its step took it over, so it is counted once, as before.
   assert.equal(app.pinCount, 2);
-  assert.equal(app.stateWord('depth'), 'pinned');
-  assert.deepEqual(app.handSetKeys, ['depth', 'rankFloor'].sort((a, b) => SHEET_KEYS.indexOf(a) - SHEET_KEYS.indexOf(b)));
+  assert.equal(app.stateWord("depth"), "pinned");
+  assert.deepEqual(
+    app.handSetKeys,
+    ["depth", "rankFloor"].sort(
+      (a, b) => SHEET_KEYS.indexOf(a) - SHEET_KEYS.indexOf(b),
+    ),
+  );
 });
 
-test('the way back of Served ranks after a grip takes the step with it and shows auto again', () => {
+test("the way back of Served ranks after a grip takes the step with it and shows auto again", () => {
   const { app } = opened();
-  const auto = app.value('depth');
-  app.setSlider('depth', 5);
-  app.setStep('top8');
-  app.resetSlider('depth');
+  const auto = app.value("depth");
+  app.setSlider("depth", 5);
+  app.setStep("top8");
+  app.resetSlider("depth");
   assert.deepEqual(app.pins, {});
-  assert.equal(app.stateWord('depth'), 'auto');
-  assert.equal(app.value('depth'), auto);
+  assert.equal(app.stateWord("depth"), "auto");
+  assert.equal(app.value("depth"), auto);
 });
 
-test('an unknown step writes nothing', () => {
+test("an unknown step writes nothing", () => {
   const { app, written } = opened();
-  app.setSlider('depth', 5);
+  app.setSlider("depth", 5);
   const before = written.length;
-  app.setStep('top3');
+  app.setStep("top3");
   assert.equal(app.pins.depth, 5);
-  assert.equal(app.value('depth'), 5);
+  assert.equal(app.value("depth"), 5);
   assert.equal(written.length, before);
 });
 
-test('an unconfirmed Served ranks draft: the first press on a step only confirms, the second unpins (#114, K4 of run 12)', () => {
+test("an unconfirmed Served ranks draft: the first press on a step only confirms, the second unpins (#114, K4 of run 12)", () => {
   const { app } = opened();
   const guard = confirmFirst(app, { focused: () => field });
-  const field = { dataset: { numberField: 'depth' }, value: '', closest: (s) => (s === '[data-number-field]' ? field : null) };
+  const field = {
+    dataset: { numberField: "depth" },
+    value: "",
+    closest: (s) => (s === "[data-number-field]" ? field : null),
+  };
   const chip = { dataset: {}, closest: () => null };
 
   // A hand-set number and a draft of another one, not yet confirmed.
-  app.setSlider('depth', 5);
-  app.draft('depth', '7');
-  assert.equal(app.pendingDraft, 'depth');
+  app.setSlider("depth", 5);
+  app.draft("depth", "7");
+  assert.equal(app.pendingDraft, "depth");
 
   // The press, as a browser delivers it: capture first, the chip's own handler only if not stopped.
   const press = () => {
@@ -973,21 +1247,25 @@ test('an unconfirmed Served ranks draft: the first press on a step only confirms
     guard.click({
       target: chip,
       preventDefault() {},
-      stopPropagation() { swallowed = true; },
-      stopImmediatePropagation() { swallowed = true; },
+      stopPropagation() {
+        swallowed = true;
+      },
+      stopImmediatePropagation() {
+        swallowed = true;
+      },
     });
-    if (!swallowed) app.setStep('top8');
+    if (!swallowed) app.setStep("top8");
     return swallowed;
   };
 
-  assert.equal(press(), true, 'the first press is swallowed');
-  assert.equal(app.pins.depth, 7, 'it confirmed the draft');
-  assert.equal(app.pins.depthStep, undefined, 'and set no step');
+  assert.equal(press(), true, "the first press is swallowed");
+  assert.equal(app.pins.depth, 7, "it confirmed the draft");
+  assert.equal(app.pins.depthStep, undefined, "and set no step");
 
-  assert.equal(press(), false, 'the second press goes through');
-  assert.equal('depth' in app.pins, false, 'and unpins the number');
-  assert.equal(app.pins.depthStep, 'top8');
-  assert.equal(app.value('depth'), 8);
+  assert.equal(press(), false, "the second press goes through");
+  assert.equal("depth" in app.pins, false, "and unpins the number");
+  assert.equal(app.pins.depthStep, "top8");
+  assert.equal(app.value("depth"), 8);
 });
 
 /**
@@ -996,18 +1274,24 @@ test('an unconfirmed Served ranks draft: the first press on a step only confirms
  * of #114 itself — would leave them all green. So the sheet's markup is read
  * the way `test/views-controls-hot.test.mjs` reads the rail.
  */
-test('the step grid in the sheet calls setStep, not setSlider on depthStep (#114 AC 1)', () => {
+test("the step grid in the sheet calls setStep, not setSlider on depthStep (#114 AC 1)", () => {
   const start = SHEET.indexOf('<div class="step-grid">');
-  assert.ok(start >= 0, 'the sheet still has the step grid');
-  const end = SHEET.indexOf('</div>', start);
-  assert.ok(end > start, 'the step grid is closed');
+  assert.ok(start >= 0, "the sheet still has the step grid");
+  const end = SHEET.indexOf("</div>", start);
+  assert.ok(end > start, "the step grid is closed");
   const grid = SHEET.slice(start, end);
 
   assert.doesNotMatch(
     grid,
     /setSlider\(\s*'depthStep'/,
-    'setSlider leaves the pin on depth standing — the number would not follow the step',
+    "setSlider leaves the pin on depth standing — the number would not follow the step",
   );
-  const clicks = [...grid.matchAll(/@click="([^"]*)"/g)].map((match) => match[1]);
-  assert.deepEqual(clicks, ['setStep(step.id)'], 'the chip goes through setStep(), the one way that unpins the number');
+  const clicks = [...grid.matchAll(/@click="([^"]*)"/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(
+    clicks,
+    ["setStep(step.id)"],
+    "the chip goes through setStep(), the one way that unpins the number",
+  );
 });

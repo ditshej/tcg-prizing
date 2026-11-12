@@ -24,9 +24,9 @@ export const CURRENT_VERSION = 1;
  * written.
  */
 export const BASE_KEYS = [
-  { key: 'v', type: 'version' },
-  { key: 'game', type: 'id' },
-  { key: 'type', type: 'id' },
+  { key: "v", type: "version" },
+  { key: "game", type: "id" },
+  { key: "type", type: "id" },
 ];
 
 /**
@@ -57,35 +57,37 @@ export const BASE_KEYS = [
  * slider (ADR 0003): the string layout `encode()`/`decode()` must agree on.
  */
 export const KEYS = [
-  { key: 'players', type: 'int', absent: 'leaf' },
-  { key: 'boosterRate', type: 'int', absent: 'leaf' },
-  { key: 'tournamentPacks', type: 'int', absent: 'null' },
-  { key: 'envelopeSize', type: 'int', absent: 'leaf' },
-  { key: 'envelopeYield', type: 'int', absent: 'leaf' },
-  { key: 'displaySize', type: 'int', absent: 'leaf' },
-  { key: 'participationBooster', type: 'int', absent: 'leaf' },
-  { key: 'participationPack', type: 'int', absent: 'leaf' },
-  { key: 'judgeBooster', type: 'int', absent: 'leaf' },
-  { key: 'judgeWinner', type: 'int', absent: 'leaf' },
-  { key: 'rankFloor', type: 'int', absent: 'leaf' },
-  { key: 'depth', type: 'int', absent: 'null' },
-  { key: 'depthStep', type: 'stepId', absent: 'leaf' },
-  { key: 'curve', type: 'curveId', absent: 'leaf' },
-  { key: 'ranked', type: 'int', absent: 'null' },
-  { key: 'winnerPacks', type: 'int', absent: 'null' },
+  { key: "players", type: "int", absent: "leaf" },
+  { key: "boosterRate", type: "int", absent: "leaf" },
+  { key: "tournamentPacks", type: "int", absent: "null" },
+  { key: "envelopeSize", type: "int", absent: "leaf" },
+  { key: "envelopeYield", type: "int", absent: "leaf" },
+  { key: "displaySize", type: "int", absent: "leaf" },
+  { key: "participationBooster", type: "int", absent: "leaf" },
+  { key: "participationPack", type: "int", absent: "leaf" },
+  { key: "judgeBooster", type: "int", absent: "leaf" },
+  { key: "judgeWinner", type: "int", absent: "leaf" },
+  { key: "rankFloor", type: "int", absent: "leaf" },
+  { key: "depth", type: "int", absent: "null" },
+  { key: "depthStep", type: "stepId", absent: "leaf" },
+  { key: "curve", type: "curveId", absent: "leaf" },
+  { key: "ranked", type: "int", absent: "null" },
+  { key: "winnerPacks", type: "int", absent: "null" },
   {
-    key: 'manualWinner',
-    type: 'rankCountMap',
-    absent: 'empty',
-    shape: 'rank:count pairs, comma-separated, ascending by rank — e.g. 3:1,7:2',
+    key: "manualWinner",
+    type: "rankCountMap",
+    absent: "empty",
+    shape:
+      "rank:count pairs, comma-separated, ascending by rank — e.g. 3:1,7:2",
   },
   {
-    key: 'displays',
-    type: 'vector',
-    absent: 'empty',
-    shape: 'dot-separated ints, index 0 = Rank 1, trailing zeros dropped — e.g. 2.1.1',
+    key: "displays",
+    type: "vector",
+    absent: "empty",
+    shape:
+      "dot-separated ints, index 0 = Rank 1, trailing zeros dropped — e.g. 2.1.1",
   },
-  { key: 'combinedHandout', type: 'bit', absent: 'leaf' },
+  { key: "combinedHandout", type: "bit", absent: "leaf" },
 ];
 
 /**
@@ -104,4 +106,6 @@ export const KEYS = [
  * did, and adding it needed no version bump (docs/agents/setup-link.md). Its
  * value is a range id out of `RANGES`.
  */
-export const CHOICE_KEYS = [{ key: 'raffleRange', type: 'rangeId', term: 'all' }];
+export const CHOICE_KEYS = [
+  { key: "raffleRange", type: "rangeId", term: "all" },
+];

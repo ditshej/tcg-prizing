@@ -1,9 +1,9 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { distribute } from '../public/core/distribute.mjs';
-import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
+import { distribute } from "../public/core/distribute.mjs";
+import { CURVES, DEPTH_STEPS } from "../public/core/rules.mjs";
+import { GAME, TOURNAMENT_TYPES } from "../public/sets/onepiece.mjs";
 
 /**
  * The presettable Settings fields, taken from `## Input: Settings` of #46 —
@@ -20,23 +20,23 @@ import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
  *   never preset something that names a Rank, so these always start neutral.
  */
 const PRESETTABLE_FIELDS = [
-  'players',
-  'boosterRate',
-  'envelopeSize',
-  'envelopeYield',
-  'displaySize',
-  'participationBooster',
-  'participationPack',
-  'judgeBooster',
-  'judgeWinner',
-  'rankFloor',
-  'depthStep',
-  'curve',
-  'combinedHandout',
+  "players",
+  "boosterRate",
+  "envelopeSize",
+  "envelopeYield",
+  "displaySize",
+  "participationBooster",
+  "participationPack",
+  "judgeBooster",
+  "judgeWinner",
+  "rankFloor",
+  "depthStep",
+  "curve",
+  "combinedHandout",
 ];
 
-const NEVER_PRESET = ['displays', 'manualWinner'];
-const TRAILING_SLIDERS = ['tournamentPacks', 'depth', 'ranked', 'winnerPacks'];
+const NEVER_PRESET = ["displays", "manualWinner"];
+const TRAILING_SLIDERS = ["tournamentPacks", "depth", "ranked", "winnerPacks"];
 
 /**
  * The Game sheet's values, transcribed from the resolution comment of #21 —
@@ -57,8 +57,8 @@ const EXPECTED_GAME = {
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
-  depthStep: 'topThird',
-  curve: 'moderate',
+  depthStep: "topThird",
+  curve: "moderate",
   combinedHandout: false,
 };
 
@@ -73,18 +73,18 @@ const EXPECTED_GAME = {
  * maintainer accepted that knowingly.
  */
 const EXPECTED_TYPES = [
-  { id: 'weekly', title: 'Weekly' },
-  { id: 'weekend', title: 'Weekend', participationBooster: 1, curve: 'firm' },
+  { id: "weekly", title: "Weekly" },
+  { id: "weekend", title: "Weekend", participationBooster: 1, curve: "firm" },
   {
-    id: 'release',
-    title: 'Release',
+    id: "release",
+    title: "Release",
     players: 64,
     boosterRate: 9,
     participationBooster: 6,
     envelopeSize: 32,
     envelopeYield: 2,
-    depthStep: 'all',
-    curve: 'gentle',
+    depthStep: "all",
+    curve: "gentle",
   },
 ];
 
@@ -102,11 +102,11 @@ function fieldsOf(sheet) {
   return fields;
 }
 
-test('the Game sheet names every presettable variable from #46, in the order the spec lists them', () => {
+test("the Game sheet names every presettable variable from #46, in the order the spec lists them", () => {
   assert.deepEqual(Object.keys(fieldsOf(GAME)), PRESETTABLE_FIELDS);
 });
 
-test('the Game sheet carries the values #21 wrote down and #145 decided anew, not values computed back from a plan', () => {
+test("the Game sheet carries the values #21 wrote down and #145 decided anew, not values computed back from a plan", () => {
   assert.deepEqual(fieldsOf(GAME), EXPECTED_GAME);
 });
 
@@ -117,34 +117,40 @@ test('the Game sheet carries the values #21 wrote down and #145 decided anew, no
  * (`link/decode.mjs`, `catchBase`: `games.find((entry) => entry.id === game)`),
  * and a catalogue can only fall out of the sheets if a sheet is named.
  */
-test('the Game sheet carries its own id, and it is the name a SetupLink writes', () => {
-  assert.equal(GAME.id, 'onepiece');
-  assert.equal(Object.keys(GAME)[0], 'id', 'the name leads the sheet');
+test("the Game sheet carries its own id, and it is the name a SetupLink writes", () => {
+  assert.equal(GAME.id, "onepiece");
+  assert.equal(Object.keys(GAME)[0], "id", "the name leads the sheet");
 });
 
-test('each TournamentType carries the deviations #21, #25 and #145 wrote down, and nothing else', () => {
+test("each TournamentType carries the deviations #21, #25 and #145 wrote down, and nothing else", () => {
   assert.deepEqual(TOURNAMENT_TYPES, EXPECTED_TYPES);
 });
 
-test('no sheet presets displays or the manual share of the WinnerPackAllocation — they always start neutral', () => {
+test("no sheet presets displays or the manual share of the WinnerPackAllocation — they always start neutral", () => {
   const sheets = [GAME, ...TOURNAMENT_TYPES];
   for (const sheet of sheets) {
     for (const field of NEVER_PRESET) {
-      assert.ok(!Object.hasOwn(sheet, field), `'${field}' must never appear in a sheet`);
+      assert.ok(
+        !Object.hasOwn(sheet, field),
+        `'${field}' must never appear in a sheet`,
+      );
     }
   }
 });
 
-test('the four trailing sliders sit in no sheet — their starting value is a calculation', () => {
+test("the four trailing sliders sit in no sheet — their starting value is a calculation", () => {
   const sheets = [GAME, ...TOURNAMENT_TYPES];
   for (const sheet of sheets) {
     for (const field of TRAILING_SLIDERS) {
-      assert.ok(!Object.hasOwn(sheet, field), `'${field}' must never appear in a sheet`);
+      assert.ok(
+        !Object.hasOwn(sheet, field),
+        `'${field}' must never appear in a sheet`,
+      );
     }
   }
 });
 
-test('TOURNAMENT_TYPES is a list in code — its order is meaningful, not a surface sort', () => {
+test("TOURNAMENT_TYPES is a list in code — its order is meaningful, not a surface sort", () => {
   assert.ok(Array.isArray(TOURNAMENT_TYPES));
 });
 
@@ -154,14 +160,18 @@ function deviationCount(entry) {
   return Object.keys(rest).length;
 }
 
-test('weekly carries nothing but its title — the first TournamentType is the Game as-is', () => {
-  const weekly = TOURNAMENT_TYPES.find((t) => t.id === 'weekly');
-  assert.equal(TOURNAMENT_TYPES[0], weekly, 'weekly must be the first entry (ADR 0003)');
+test("weekly carries nothing but its title — the first TournamentType is the Game as-is", () => {
+  const weekly = TOURNAMENT_TYPES.find((t) => t.id === "weekly");
+  assert.equal(
+    TOURNAMENT_TYPES[0],
+    weekly,
+    "weekly must be the first entry (ADR 0003)",
+  );
   assert.equal(deviationCount(weekly), 0);
 });
 
-test('weekend deviates from the Game sheet in exactly two values', () => {
-  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+test("weekend deviates from the Game sheet in exactly two values", () => {
+  const weekend = TOURNAMENT_TYPES.find((t) => t.id === "weekend");
   assert.equal(deviationCount(weekend), 2);
 });
 
@@ -174,8 +184,8 @@ test('weekend deviates from the Game sheet in exactly two values', () => {
  * seven deviating fields are `players`, `boosterRate`, `participationBooster`,
  * `envelopeSize`, `envelopeYield`, `depthStep` and `curve`.
  */
-test('release deviates from the Game sheet in exactly seven values', () => {
-  const release = TOURNAMENT_TYPES.find((t) => t.id === 'release');
+test("release deviates from the Game sheet in exactly seven values", () => {
+  const release = TOURNAMENT_TYPES.find((t) => t.id === "release");
   assert.equal(deviationCount(release), 7);
 });
 
@@ -186,7 +196,14 @@ test('release deviates from the Game sheet in exactly seven values', () => {
  */
 function settingsFor(id) {
   const type = TOURNAMENT_TYPES.find((t) => t.id === id);
-  return { ...GAME, ...type, tournamentPacks: null, depth: null, ranked: null, winnerPacks: null };
+  return {
+    ...GAME,
+    ...type,
+    tournamentPacks: null,
+    depth: null,
+    ranked: null,
+    winnerPacks: null,
+  };
 }
 
 /** The Booster share of every served Rank, as a row of numbers. */
@@ -209,31 +226,55 @@ function servedBoosters(plan) {
  * Release, 64 Players: RankPool 192, all 64 Ranks served, ShapedRemainder 63 —
  * the curve runs out at Rank 19.
  */
-test('weekly at 40 players distributes the measured 7·5·4·3·3 over nine floors of 2', () => {
-  assert.deepEqual(
-    servedBoosters(distribute(settingsFor('weekly'))),
-    [7, 5, 4, 3, 3, ...new Array(9).fill(2)],
-  );
+test("weekly at 40 players distributes the measured 7·5·4·3·3 over nine floors of 2", () => {
+  assert.deepEqual(servedBoosters(distribute(settingsFor("weekly"))), [
+    7,
+    5,
+    4,
+    3,
+    3,
+    ...new Array(9).fill(2),
+  ]);
 });
 
-test('weekend at 40 players distributes the measured 26·15·9·6·4·3·3 over seven floors of 2', () => {
-  assert.deepEqual(
-    servedBoosters(distribute(settingsFor('weekend'))),
-    [26, 15, 9, 6, 4, 3, 3, ...new Array(7).fill(2)],
-  );
+test("weekend at 40 players distributes the measured 26·15·9·6·4·3·3 over seven floors of 2", () => {
+  assert.deepEqual(servedBoosters(distribute(settingsFor("weekend"))), [
+    26,
+    15,
+    9,
+    6,
+    4,
+    3,
+    3,
+    ...new Array(7).fill(2),
+  ]);
 });
 
-test('release at 64 players serves all ranks, the curve running out at Rank 19', () => {
-  assert.deepEqual(
-    servedBoosters(distribute(settingsFor('release'))),
-    [13, 10, 9, 8, 7, 6, 6, 5, 5, 4, 4, 4, ...new Array(7).fill(3), ...new Array(45).fill(2)],
-  );
+test("release at 64 players serves all ranks, the curve running out at Rank 19", () => {
+  assert.deepEqual(servedBoosters(distribute(settingsFor("release"))), [
+    13,
+    10,
+    9,
+    8,
+    7,
+    6,
+    6,
+    5,
+    5,
+    4,
+    4,
+    4,
+    ...new Array(7).fill(3),
+    ...new Array(45).fill(2),
+  ]);
 });
 
-test('every curve and depthStep entry names a rule the core actually carries', () => {
+test("every curve and depthStep entry names a rule the core actually carries", () => {
   const curveIds = new Set(CURVES.map((c) => c.id));
   for (const sheet of [GAME, ...TOURNAMENT_TYPES]) {
-    if (Object.hasOwn(sheet, 'curve')) assert.ok(curveIds.has(sheet.curve), sheet.curve);
-    if (Object.hasOwn(sheet, 'depthStep')) assert.ok(DEPTH_STEPS.includes(sheet.depthStep), sheet.depthStep);
+    if (Object.hasOwn(sheet, "curve"))
+      assert.ok(curveIds.has(sheet.curve), sheet.curve);
+    if (Object.hasOwn(sheet, "depthStep"))
+      assert.ok(DEPTH_STEPS.includes(sheet.depthStep), sheet.depthStep);
   }
 });

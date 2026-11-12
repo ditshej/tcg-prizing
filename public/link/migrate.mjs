@@ -99,12 +99,21 @@ export const STEPS = [];
  * 0007, Nachtrag #44).
  */
 export function migrate(read, steps = STEPS) {
-  const { version, game, type, pins = {}, choices = {}, unknown = {}, report = null } = read;
+  const {
+    version,
+    game,
+    type,
+    pins = {},
+    choices = {},
+    unknown = {},
+    report = null,
+  } = read;
 
   // Nothing was lifted here, and nothing will be: the chain does not run for a
   // read whose version was never established, so `migrated` is false rather
   // than absent.
-  if (isUnversionedRead(report)) return { game, type, pins, choices, migrated: false, report };
+  if (isUnversionedRead(report))
+    return { game, type, pins, choices, migrated: false, report };
 
   const applicable = steps.slice(version - 1);
 
@@ -114,7 +123,12 @@ export function migrate(read, steps = STEPS) {
 
   for (const step of applicable) {
     const next = step({ ...state, unknown: remaining });
-    state = { game: next.game, type: next.type, pins: next.pins, choices: next.choices ?? state.choices };
+    state = {
+      game: next.game,
+      type: next.type,
+      pins: next.pins,
+      choices: next.choices ?? state.choices,
+    };
     remaining = next.unknown ?? {};
     entries.push(...(next.entries ?? []));
   }
@@ -122,7 +136,8 @@ export function migrate(read, steps = STEPS) {
   // Unconditional, on purpose (see docblock above): whatever no step ever
   // claimed is the chain's own last word over that name, whether or not the
   // loop above ran a single iteration.
-  for (const key of Object.keys(remaining)) entries.push({ kind: 'unknownKey', key });
+  for (const key of Object.keys(remaining))
+    entries.push({ kind: "unknownKey", key });
 
   const allEntries = [...(report?.entries ?? []), ...entries];
   const migrated = applicable.length > 0;
@@ -159,7 +174,8 @@ export function migrate(read, steps = STEPS) {
 function isUnversionedRead(report) {
   if (report == null) return false;
   return report.entries.some(
-    (entry) => entry.kind === 'futureVersion' || entry.kind === 'unreadableVersion',
+    (entry) =>
+      entry.kind === "futureVersion" || entry.kind === "unreadableVersion",
   );
 }
 

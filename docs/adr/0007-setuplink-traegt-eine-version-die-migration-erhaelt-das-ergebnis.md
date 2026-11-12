@@ -19,7 +19,7 @@ und fordert dazu auf, den Link neu abzuspeichern.
 ## Considered Options
 
 **Nur eine Versionszahl, ohne Umschreibregeln.** Billig, und sie sagt der App
-zuverlässig, *dass* ein Link alt ist — aber nicht, wie er zu lesen wäre. Übrig
+zuverlässig, _dass_ ein Link alt ist — aber nicht, wie er zu lesen wäre. Übrig
 bliebe ein Vorbehalt („prüf die Regler") ohne Vorschlag. Für ein Lesezeichen, das
 seinen Zweck erst beim Öffnen erfüllt, ist das die Aufforderung, den Zustand von
 Hand nachzubauen, den der Link gerade transportieren sollte.
@@ -55,7 +55,7 @@ Regler umbenennt und gar nicht an Links denkt.
 
 **Der Maintainer verantwortet die erfundenen Werte.** Eine ergebniserhaltende
 Migration setzt Regler, die im Link nie standen. Das ist die einzige zugelassene
-Form von Erfindung: *mechanisch* darf nichts erfunden werden — wo ein Regler
+Form von Erfindung: _mechanisch_ darf nichts erfunden werden — wo ein Regler
 ersatzlos verschwunden ist und die Kette keinen Nachfolger nennt, fällt der Wert
 weg und der Bericht nennt ihn beim Namen. Ein erfundener Ersatz stünde als `pinned`
 da und behauptete eine Entscheidung, die nie jemand getroffen hat.
@@ -70,7 +70,7 @@ greift der **erste** Typ des `Game` als Auffangnetz und der Bericht sagt es. Das
 die einzige Stelle mit einem automatischen Ersatz, und sie ist es nur, weil es nach
 ADR 0003 keinen typlosen Zustand gibt.
 
-> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen *wir* einen
+> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen _wir_ einen
 > `TournamentType` ab, muss die `LinkMigration` den Nachfolger **benennen** — das
 > Netz ist kein Weg für eine Migration. Es bleibt nur für Namen, die keine Kette
 > je kannte. Weiterlesen dort, bevor du dich auf diesen Absatz stützt.
@@ -91,7 +91,7 @@ die Kette tatsächlich gelaufen ist.
 > Kette lief", sondern **„der Bericht ist da, sobald irgendetwas nicht so
 > übernommen wurde, wie es dastand"** — sonst schweigt die App bei einem Link der
 > heutigen Version, in dem ein einzelner Schlüssel unlesbar ist. `## Nachtrag
-> (#51)` sagt zusätzlich, *wo* der Eintrag entsteht: am Ende der Kette.
+(#51)` sagt zusätzlich, _wo_ der Eintrag entsteht: am Ende der Kette.
 
 ## Nachtrag (#34): die Kette erreicht die Adresse nicht
 
@@ -131,8 +131,8 @@ Versionierung, sondern der Ausgang für eine Eingabe, die wir nicht lesen könne
 **Der Link nennt seine Basis immer.** `Game` und `TournamentType` stehen in jedem
 `SetupLink`, auch wenn der Absender die Startwahl nie angefasst hat. Das ist keine
 Ausnahme von ADR 0005s „nur Abweichungen": diese Regel trägt bei **Reglern**, weil ein
-ungenannter Regler weiter *rechnet* und mit der Spielerzahl nachzieht. Ein ungenannter
-Typ rechnet nicht nach, er würde *gewählt* — „erster der Liste" ist eine stille
+ungenannter Regler weiter _rechnet_ und mit der Spielerzahl nachzieht. Ein ungenannter
+Typ rechnet nicht nach, er würde _gewählt_ — „erster der Liste" ist eine stille
 Entscheidung, keine Fortschreibung. Die Basis, von der ein Link abweicht, muss er
 darum benennen, sonst zeigt jeder heutige Link auf den ersten Typ von morgen. Kosten:
 zwei Angaben mehr je URL, auch solange es genau ein `Game` gibt — gerade dann.

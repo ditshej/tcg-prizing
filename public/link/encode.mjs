@@ -5,7 +5,7 @@
  * carries a second idea of the key list (docs/agents/setup-link.md).
  */
 
-import { CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
+import { CHOICE_KEYS, CURRENT_VERSION, KEYS } from "./keys.mjs";
 
 /**
  * `{ game, type, pins, choices }` → the **copy form**: a complete query
@@ -38,7 +38,11 @@ import { CHOICE_KEYS, CURRENT_VERSION, KEYS } from './keys.mjs';
  * Reihenfolge ist fest").
  */
 export function encode({ game, type, pins = {}, choices = {} } = {}) {
-  const parts = [`v=${CURRENT_VERSION}`, `game=${field(game)}`, `type=${field(type)}`];
+  const parts = [
+    `v=${CURRENT_VERSION}`,
+    `game=${field(game)}`,
+    `type=${field(type)}`,
+  ];
   for (const { key, type: valueType } of KEYS) {
     const value = pins[key];
     // `null` is the four trailing sliders' "the core computes it" — that is a
@@ -52,7 +56,7 @@ export function encode({ game, type, pins = {}, choices = {} } = {}) {
     if (value === undefined || value === null || value === term) continue;
     parts.push(`${key}=${field(String(value))}`);
   }
-  return `?${parts.join('&')}`;
+  return `?${parts.join("&")}`;
 }
 
 /**
@@ -89,15 +93,15 @@ export function addressFor(setup) {
 }
 
 /** What a pinned value that says nothing writes as: nothing at all. */
-const ABSENT = Symbol('absent');
+const ABSENT = Symbol("absent");
 
 function writeValue(type, value) {
   switch (type) {
-    case 'bit':
-      return value ? '1' : '0';
-    case 'vector':
+    case "bit":
+      return value ? "1" : "0";
+    case "vector":
       return writeVector(value);
-    case 'rankCountMap':
+    case "rankCountMap":
       return writeRankCountMap(value);
     default:
       return String(value);
@@ -117,7 +121,7 @@ function writeValue(type, value) {
 function writeVector(value) {
   const limbs = [...value];
   while (limbs.length > 0 && limbs.at(-1) === 0) limbs.pop();
-  return limbs.length === 0 ? ABSENT : limbs.join('.');
+  return limbs.length === 0 ? ABSENT : limbs.join(".");
 }
 
 /**
@@ -131,7 +135,9 @@ function writeRankCountMap(value) {
   const pairs = Object.entries(value)
     .map(([rank, count]) => [Number(rank), count])
     .sort(([a], [b]) => a - b);
-  return pairs.length === 0 ? ABSENT : pairs.map(([rank, count]) => `${rank}:${count}`).join(',');
+  return pairs.length === 0
+    ? ABSENT
+    : pairs.map(([rank, count]) => `${rank}:${count}`).join(",");
 }
 
 /**
@@ -142,5 +148,7 @@ function writeRankCountMap(value) {
  * readable.
  */
 function field(value) {
-  return encodeURIComponent(value).replaceAll('%3A', ':').replaceAll('%2C', ',');
+  return encodeURIComponent(value)
+    .replaceAll("%3A", ":")
+    .replaceAll("%2C", ",");
 }

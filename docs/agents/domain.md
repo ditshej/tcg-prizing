@@ -56,13 +56,13 @@ Three things can happen to a decision that is already written down. They are
 told apart by one question: **does a _different_ ADR carry part of the answer
 now?**
 
-| What happened                                                                                      | Different ADR? | Where the text goes                                        | Stamp on the earlier ADR                                              |
-| -------------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| You sharpen your own text while writing it — a `Nachtrag`, a tightened bound, a case you thought of afterwards | no             | the body of that same ADR (ADR-0001 does this twice)         | none                                                                    |
-| A later ADR **extends** it — adds a level, a condition, a case — and overturns nothing             | yes            | the new ADR                                                  | `Ergänzt durch ADR-NNNN.`                                               |
-| A later ADR **overturns** it, in part or in whole                                                  | yes            | the new ADR                                                  | `Teilweise überholt durch ADR-NNNN.` / `Vollständig überholt durch ADR-NNNN.` |
-| A later `Nachtrag` in the **same** ADR retracts a sentence of its own body — tickets and months after it was written | no             | that ADR's `Nachtrag`                                        | no title stamp — a ⚠︎ note **at the retracted sentence** (see below)     |
-| A **ticket**, not an ADR, moves a place an ADR names — a button, a hint, a surface                  | no             | the ticket                                                   | no title stamp — a ⚠︎ note **at the sentence**, naming the ticket (see below) |
+| What happened                                                                                                        | Different ADR? | Where the text goes                                  | Stamp on the earlier ADR                                                      |
+| -------------------------------------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| You sharpen your own text while writing it — a `Nachtrag`, a tightened bound, a case you thought of afterwards       | no             | the body of that same ADR (ADR-0001 does this twice) | none                                                                          |
+| A later ADR **extends** it — adds a level, a condition, a case — and overturns nothing                               | yes            | the new ADR                                          | `Ergänzt durch ADR-NNNN.`                                                     |
+| A later ADR **overturns** it, in part or in whole                                                                    | yes            | the new ADR                                          | `Teilweise überholt durch ADR-NNNN.` / `Vollständig überholt durch ADR-NNNN.` |
+| A later `Nachtrag` in the **same** ADR retracts a sentence of its own body — tickets and months after it was written | no             | that ADR's `Nachtrag`                                | no title stamp — a ⚠︎ note **at the retracted sentence** (see below)           |
+| A **ticket**, not an ADR, moves a place an ADR names — a button, a hint, a surface                                   | no             | the ticket                                           | no title stamp — a ⚠︎ note **at the sentence**, naming the ticket (see below)  |
 
 Either stamp is a single line directly under the title of the earlier ADR:
 
@@ -126,7 +126,7 @@ at all. So the note goes where the wrong sentence is read:
 ```md
 … greift der **erste** Typ des `Game` als Auffangnetz und der Bericht sagt es.
 
-> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen *wir* einen
+> ⚠︎ **Teilweise zurückgezogen durch `## Nachtrag (#44)`.** Schaffen _wir_ einen
 > `TournamentType` ab, muss die `LinkMigration` den Nachfolger **benennen**.
 > Weiterlesen dort, bevor du dich auf diesen Absatz stützt.
 ```

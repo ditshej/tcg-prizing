@@ -13,17 +13,17 @@ Gemessen am echten App-Stand, nie „sieht gut aus".
 
 Alle 16 Fälle (2 Browser × 4 Breiten × hell/dunkel) gleich:
 
-| Grösse | Ziel | gemessen |
-|---|---|---|
-| Linie vor dem Block | `1px solid var(--line)` | `1px solid` in genau dem Wert von `--line` (hell `rgb(226, 213, 190)`, dunkel `rgb(53, 49, 42)`) |
-| Kopf unter der Linie | keiner | 0 Elemente `h1–h4`/`*head*` im Block |
-| Abstand letzte Gruppe → Linie | 26 (der einer Gruppe) | 26 |
-| Zeilen | zentriert | `text-align: center`, `justify-content: center`, beide |
-| Grösse | gleich, klein | beide `11.2px` (`0.7rem`) |
-| Farbe | `--muted` | Block, beide Zeilen und alle drei Links = `--muted` (hell `rgb(122, 106, 85)`, dunkel `rgb(154, 147, 132)`) |
-| Links | nur Gewicht | `font-weight` 700 gegen 400 der Zeile, `text-decoration-line: none`, Grösse `11.2px` wie die Zeile |
-| Reihenfolge | Discord, dann Urheberzeile | `about-contact` oben, `about-by` 44 darunter |
-| Lage | ganz unten, nach der letzten Gruppe | letztes Kind von `.page-details`, Spalte bis ans Ende gescrollt |
+| Grösse                        | Ziel                                | gemessen                                                                                                    |
+| ----------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Linie vor dem Block           | `1px solid var(--line)`             | `1px solid` in genau dem Wert von `--line` (hell `rgb(226, 213, 190)`, dunkel `rgb(53, 49, 42)`)            |
+| Kopf unter der Linie          | keiner                              | 0 Elemente `h1–h4`/`*head*` im Block                                                                        |
+| Abstand letzte Gruppe → Linie | 26 (der einer Gruppe)               | 26                                                                                                          |
+| Zeilen                        | zentriert                           | `text-align: center`, `justify-content: center`, beide                                                      |
+| Grösse                        | gleich, klein                       | beide `11.2px` (`0.7rem`)                                                                                   |
+| Farbe                         | `--muted`                           | Block, beide Zeilen und alle drei Links = `--muted` (hell `rgb(122, 106, 85)`, dunkel `rgb(154, 147, 132)`) |
+| Links                         | nur Gewicht                         | `font-weight` 700 gegen 400 der Zeile, `text-decoration-line: none`, Grösse `11.2px` wie die Zeile          |
+| Reihenfolge                   | Discord, dann Urheberzeile          | `about-contact` oben, `about-by` 44 darunter                                                                |
+| Lage                          | ganz unten, nach der letzten Gruppe | letztes Kind von `.page-details`, Spalte bis ans Ende gescrollt                                             |
 
 Bei 360 (und zusätzlich geprüft bei 320) brechen die Zeilen nicht um: jede bleibt 44 hoch.
 
@@ -33,17 +33,17 @@ Je Link: Ausdehnung der Fläche durch Abtasten mit `elementFromPoint` von der Mi
 die Mitte und 20 px darüber und darunter (Treffer gilt nur, wenn `closest('a')` **dieser** Link
 ist, verglichen über `href`).
 
-| Link | Fläche (alle 16 Fälle) | Mitte / −20 / +20 |
-|---|---|---|
-| `ditshej` → Discord | 44 × 44 | eigener Link |
-| `ditshej` → ditshej.ch | 44 × 44 | eigener Link |
-| `GitHub` → Repo | 44 × 44 | eigener Link |
+| Link                   | Fläche (alle 16 Fälle) | Mitte / −20 / +20 |
+| ---------------------- | ---------------------- | ----------------- |
+| `ditshej` → Discord    | 44 × 44                | eigener Link      |
+| `ditshej` → ditshej.ch | 44 × 44                | eigener Link      |
+| `GitHub` → Repo        | 44 × 44                | eigener Link      |
 
 Keine Fläche liegt über einem anderen Link: die beiden Zeilen stehen 44 auseinander, die zwei
 Links der Urheberzeile 96 (393) von Mitte zu Mitte, mit „with AI |“ dazwischen.
 
 Die Handout-Checkbox (`.sheet-check`) ist **nicht** das letzte Bedienelement über der
-Fusszeile — sie steht in *Split the pool*, darunter folgt noch die Gruppe *Winner packs*.
+Fusszeile — sie steht in _Split the pool_, darunter folgt noch die Gruppe _Winner packs_.
 Abstand ihrer Unterkante zur Linie: 371 (393), 424 (360), 457 (Spalte). Keine Berührung.
 
 ## Messfalle: WebKit-Scrollbalken in der Spalte

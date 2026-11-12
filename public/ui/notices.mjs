@@ -34,10 +34,14 @@
  * floor conflict standing beside it.
  */
 
-import { unfit } from '../core/distribute.mjs';
-import { offerFor, waysOut } from '../core/suggest.mjs';
-import { dropNoun, pinLabel } from './controls.mjs';
-import { overhangWaysOut, WINNER_PACK_OVERHANG, winnerPackOverhang } from './overhang.mjs';
+import { unfit } from "../core/distribute.mjs";
+import { offerFor, waysOut } from "../core/suggest.mjs";
+import { dropNoun, pinLabel } from "./controls.mjs";
+import {
+  overhangWaysOut,
+  WINNER_PACK_OVERHANG,
+  winnerPackOverhang,
+} from "./overhang.mjs";
 
 /**
  * Whether a ConflictNotice stands: one of the core's five sources (`unfit`)
@@ -73,7 +77,13 @@ export function searchesFor(plan) {
 }
 
 /** The five sources the core reports, in the order `CONTEXT.md` lists them. */
-const SOURCES = ['conflict', 'overtake', 'orphanedReservation', 'unclaimedRemainder', 'combinedHandoutDepth'];
+const SOURCES = [
+  "conflict",
+  "overtake",
+  "orphanedReservation",
+  "unclaimedRemainder",
+  "combinedHandoutDepth",
+];
 
 /**
  * The ConflictNotice's key: the names of the sources that hold, joined — or
@@ -86,7 +96,7 @@ export function conflictKind(plan) {
   if (!conflictStands(plan)) return null;
   const sources = SOURCES.filter((source) => plan[source]);
   if (winnerPackOverhang(plan)) sources.push(WINNER_PACK_OVERHANG);
-  return sources.join('+');
+  return sources.join("+");
 }
 
 /** The rule itself, over two keys: a different key reopens, the same does not. */
@@ -119,7 +129,7 @@ export function freshFold() {
  */
 function offerKey(plan, offer, dismissed) {
   if (!offer || conflictStands(plan)) return null;
-  return offer.key === dismissed ? null : 'offer';
+  return offer.key === dismissed ? null : "offer";
 }
 
 /**
@@ -131,7 +141,12 @@ function offerKey(plan, offer, dismissed) {
  */
 export function foldStep(
   fold,
-  { plan, offer = null, event = fold.carryOver.event, handoutEvent = fold.handoutOff.event },
+  {
+    plan,
+    offer = null,
+    event = fold.carryOver.event,
+    handoutEvent = fold.handoutOff.event,
+  },
 ) {
   const conflictNow = conflictKind(plan);
   const offerNow = offerKey(plan, offer, fold.offer.dismissed);
@@ -139,11 +154,15 @@ export function foldStep(
   return {
     conflict: {
       key: conflictNow,
-      open: switched || reopens(fold.conflict.key, conflictNow) ? true : fold.conflict.open,
+      open:
+        switched || reopens(fold.conflict.key, conflictNow)
+          ? true
+          : fold.conflict.open,
     },
     offer: {
       key: offerNow,
-      open: switched || reopens(fold.offer.key, offerNow) ? true : fold.offer.open,
+      open:
+        switched || reopens(fold.offer.key, offerNow) ? true : fold.offer.open,
       dismissed: fold.offer.dismissed,
     },
     carryOver: eventStep(fold.carryOver, event),
@@ -153,11 +172,13 @@ export function foldStep(
 
 /** The record of an event notice: a count it has not seen yet is a new event, and opens it. */
 function eventStep(record, event) {
-  return event === record.event ? record : { event, open: true, dismissed: false };
+  return event === record.event
+    ? record
+    : { event, open: true, dismissed: false };
 }
 
 /** The notices that report an event; a ✕ closes them until the next one. */
-const EVENT_NOTICES = new Set(['carryOver', 'handoutOff']);
+const EVENT_NOTICES = new Set(["carryOver", "handoutOff"]);
 
 /** Minimized: the notice shrinks to its chip. The chip only opens again. */
 export function minimize(fold, id) {
@@ -178,8 +199,13 @@ export function expand(fold, id) {
  * back unchanged.
  */
 export function dismiss(fold, id, offer = null) {
-  if (id === 'offer') return { ...fold, offer: { ...fold.offer, key: null, dismissed: offer?.key ?? null } };
-  if (EVENT_NOTICES.has(id)) return { ...fold, [id]: { ...fold[id], dismissed: true } };
+  if (id === "offer")
+    return {
+      ...fold,
+      offer: { ...fold.offer, key: null, dismissed: offer?.key ?? null },
+    };
+  if (EVENT_NOTICES.has(id))
+    return { ...fold, [id]: { ...fold[id], dismissed: true } };
   return fold;
 }
 
@@ -188,7 +214,7 @@ const plural = (n, one, many = `${one}s`) => (n === 1 ? one : many);
 /** `rank 3`, `ranks 3 and 4`, `ranks 1, 2 and 3` — the Ranks said in prose. */
 function rankList(ranks) {
   if (ranks.length === 1) return `rank ${ranks[0]}`;
-  return `ranks ${ranks.slice(0, -1).join(', ')} and ${ranks[ranks.length - 1]}`;
+  return `ranks ${ranks.slice(0, -1).join(", ")} and ${ranks[ranks.length - 1]}`;
 }
 
 const capital = (text) => text[0].toUpperCase() + text.slice(1);
@@ -210,34 +236,42 @@ function conflictLines(plan) {
     const { need, have } = plan.conflict;
     lines.push(
       have >= 0
-        ? `${have} ${plural(have, 'booster')} can't carry a floor of ${need}.`
-        : `The reserved displays take ${-have} ${plural(-have, 'booster')} more than the ranks hold.`,
+        ? `${have} ${plural(have, "booster")} can't carry a floor of ${need}.`
+        : `The reserved displays take ${-have} ${plural(-have, "booster")} more than the ranks hold.`,
     );
     const short = plan.flagged;
     if (short.length) {
-      lines.push(`${capital(rankList(short))} ${short.length === 1 ? 'gets' : 'get'} less than promised — the curve has nothing left to shape.`);
+      lines.push(
+        `${capital(rankList(short))} ${short.length === 1 ? "gets" : "get"} less than promised — the curve has nothing left to shape.`,
+      );
     }
   }
   if (plan.overtake) {
     const { under, over, has, gets } = plan.overtake;
-    lines.push(`Rank ${over} overtakes rank ${under}: rank ${over} gets ${gets}, rank ${under} only ${has}.`);
-    lines.push('A reserved display settles a rank at exactly its boxes — the rank-1 lead is off, so the curve below can overtake it.');
+    lines.push(
+      `Rank ${over} overtakes rank ${under}: rank ${over} gets ${gets}, rank ${under} only ${has}.`,
+    );
+    lines.push(
+      "A reserved display settles a rank at exactly its boxes — the rank-1 lead is off, so the curve below can overtake it.",
+    );
   }
   if (plan.orphanedReservation) {
     const ranks = plan.orphanedReservation.ranks;
     const many = ranks.length > 1;
     lines.push(
-      `${capital(rankList(ranks))} ${many ? 'hold' : 'holds a'} reserved ${plural(ranks.length, 'display')}, ` +
-        `but only ${plan.depth} ${plural(plan.depth, 'rank')} ${plan.depth === 1 ? 'is' : 'are'} served.`,
+      `${capital(rankList(ranks))} ${many ? "hold" : "holds a"} reserved ${plural(ranks.length, "display")}, ` +
+        `but only ${plan.depth} ${plural(plan.depth, "rank")} ${plan.depth === 1 ? "is" : "are"} served.`,
     );
-    lines.push(`${many ? 'They get' : 'It gets'} no tile, and the line under the tiles counts ${many ? 'them' : 'it'} among the ranks that get nothing.`);
+    lines.push(
+      `${many ? "They get" : "It gets"} no tile, and the line under the tiles counts ${many ? "them" : "it"} among the ranks that get nothing.`,
+    );
   }
   if (plan.unclaimedRemainder) {
     const depth = plan.unclaimedRemainder.depth;
     const rest = plan.shapedRemainder;
     lines.push(
-      `The reserved displays settle all ${depth} served ${plural(depth, 'rank')}, ` +
-        `so ${rest} ${plural(rest, 'booster')} ${rest === 1 ? 'has' : 'have'} no rank to go to.`,
+      `The reserved displays settle all ${depth} served ${plural(depth, "rank")}, ` +
+        `so ${rest} ${plural(rest, "booster")} ${rest === 1 ? "has" : "have"} no rank to go to.`,
     );
   }
   if (plan.combinedHandoutDepth) {
@@ -246,9 +280,11 @@ function conflictLines(plan) {
     const left = players - depth;
     lines.push(
       `Everything is handed out together, but only ${depth} of ${players} ranks are served — ` +
-        `${left === 1 ? 'the last one gets' : `the last ${left} get`} no boosters.`,
+        `${left === 1 ? "the last one gets" : `the last ${left} get`} no boosters.`,
     );
-    lines.push('With no participation boosters, serving every rank is what gives everyone something.');
+    lines.push(
+      "With no participation boosters, serving every rank is what gives everyone something.",
+    );
   }
   return lines;
 }
@@ -269,15 +305,15 @@ function overhangLines(plan) {
   const { placed, by, have, takeBack } = overhang;
   const ranks = takeBack.map((t) => t.rank).sort((a, b) => a - b);
   return [
-    `${placed} ${plural(placed, 'winner pack')} placed, ${by} over — the ranks hold ${have}.`,
-    `${by === 1 ? 'The one' : 'The ones'} past the stock ${by === 1 ? 'is' : 'are'} placed by hand on ${rankList(ranks)}.`,
+    `${placed} ${plural(placed, "winner pack")} placed, ${by} over — the ranks hold ${have}.`,
+    `${by === 1 ? "The one" : "The ones"} past the stock ${by === 1 ? "is" : "are"} placed by hand on ${rankList(ranks)}.`,
   ];
 }
 
 /** The Offer's prose: the prototype's `offerBox()`, sentence for sentence. */
 function offerLines(offer, displaySize) {
   const k = offer.value;
-  const displays = `${k} sealed ${plural(k, 'display')}`;
+  const displays = `${k} sealed ${plural(k, "display")}`;
   const exact = offer.from === offer.to;
   const head = exact
     ? `Rank ${offer.rank} could take ${displays} instead of ${offer.from} loose boosters.`
@@ -286,14 +322,16 @@ function offerLines(offer, displaySize) {
     ? `The tile keeps its ${offer.from} — what changes is the packaging: ${displays} of ${displaySize} instead of loose boosters, and the preparation list follows.`
     : `${offer.from} → ${offer.to} boosters — ${displays} of ${displaySize}, handed over unopened.`;
   const also = offer.also.length
-    ? ` Also moves ${plural(offer.also.length, 'rank')} ${offer.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(', ')}.`
-    : '';
+    ? ` Also moves ${plural(offer.also.length, "rank")} ${offer.also.map((a) => `${a.rank}: ${a.before}→${a.after}`).join(", ")}.`
+    : "";
   return [head, detail + also];
 }
 
 /** The CarryOverNotice's button, the prototype's `carryLabel()` (#41). */
 export function carryLabel(count, to) {
-  return count > 1 ? `Drop all ${count} and follow ${to}` : `Drop it and follow ${to}`;
+  return count > 1
+    ? `Drop all ${count} and follow ${to}`
+    : `Drop it and follow ${to}`;
 }
 
 /**
@@ -317,9 +355,11 @@ export function carryLabel(count, to) {
  * The sentence is still the builder's proposal from PR #118.
  */
 const NO_WAY_OUT = {
-  lines: [`With “${pinLabel('boosterRate')}” at 0, there are no boosters to give out.`],
+  lines: [
+    `With “${pinLabel("boosterRate")}” at 0, there are no boosters to give out.`,
+  ],
   actions: [],
-  chip: { glyph: '⚠', word: 'No boosters' },
+  chip: { glyph: "⚠", word: "No boosters" },
 };
 
 /**
@@ -339,7 +379,14 @@ const NO_WAY_OUT = {
  *   stand (`rankFloor`, `depth`); `null` where there is nothing to say.
  * - `fold` — the record `foldStep()` keeps.
  */
-export function noticeStack({ plan, ways = [], offer = null, carry = null, handout = null, fold }) {
+export function noticeStack({
+  plan,
+  ways = [],
+  offer = null,
+  carry = null,
+  handout = null,
+  fold,
+}) {
   const notices = [];
 
   if (conflictStands(plan)) {
@@ -350,38 +397,51 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, hando
     const coreWays = ways.filter((way) => way.source !== WINNER_PACK_OVERHANG);
     const mute = unfit(plan) && coreWays.length === 0;
     notices.push({
-      id: 'conflict',
+      id: "conflict",
       closable: false,
-      lines: [...(mute ? NO_WAY_OUT.lines : conflictLines(plan)), ...overhangLines(plan)],
+      lines: [
+        ...(mute ? NO_WAY_OUT.lines : conflictLines(plan)),
+        ...overhangLines(plan),
+      ],
       actions: ways.map((way) => ({ label: way.label, way })),
       chip: ways.length
-        ? { glyph: '⚠', word: `${ways.length} ${plural(ways.length, 'way')} out` }
+        ? {
+            glyph: "⚠",
+            word: `${ways.length} ${plural(ways.length, "way")} out`,
+          }
         : NO_WAY_OUT.chip,
     });
   } else if (offer && offer.key !== fold.offer.dismissed) {
     const displaySize = plan.settings?.displaySize ?? 1;
     notices.push({
-      id: 'offer',
+      id: "offer",
       closable: true,
       lines: offerLines(offer, displaySize),
-      actions: [{ label: `Reserve ${offer.value} ${plural(offer.value, 'display')} for rank ${offer.rank}`, offer }],
-      chip: { glyph: null, word: 'Offer' },
+      actions: [
+        {
+          label: `Reserve ${offer.value} ${plural(offer.value, "display")} for rank ${offer.rank}`,
+          offer,
+        },
+      ],
+      chip: { glyph: null, word: "Offer" },
     });
   }
 
   if (carry && carry.keys.length && !fold.carryOver.dismissed) {
     const n = carry.keys.length;
-    const names = carry.keys.map(pinLabel).join(', ');
+    const names = carry.keys.map(pinLabel).join(", ");
     notices.push({
-      id: 'carryOver',
+      id: "carryOver",
       closable: true,
       lines: [
         // The item's word is `dropNoun()`'s, never spelled out here: #113
         // swaps it from *slider* to *value* in one place (#113 AC 16).
         `${n} pinned ${dropNoun(n)} stayed behind.`,
-        `${names} — set by hand, so ${n > 1 ? 'they do' : 'it does'} not follow ${carry.to}.`,
+        `${names} — set by hand, so ${n > 1 ? "they do" : "it does"} not follow ${carry.to}.`,
       ],
-      actions: [{ label: carryLabel(n, carry.to), drop: carry.keys, reach: 'carry' }],
+      actions: [
+        { label: carryLabel(n, carry.to), drop: carry.keys, reach: "carry" },
+      ],
       chip: { glyph: null, word: `${n} kept` },
     });
   }
@@ -394,21 +454,29 @@ export function noticeStack({ plan, ways = [], offer = null, carry = null, hando
   // know where it came from, and that was the rejected option.
   if (handout && handout.keys.length && !fold.handoutOff.dismissed) {
     const n = handout.keys.length;
-    const names = handout.keys.map(pinLabel).join(', ');
+    const names = handout.keys.map(pinLabel).join(", ");
     notices.push({
-      id: 'handoutOff',
+      id: "handoutOff",
       closable: true,
       lines: [
-        `${pinLabel('combinedHandout')} is off, and ${n} pinned ${dropNoun(n)} stayed.`,
-        `${names} — still pinned, so the participation boosters now come on top of ${n > 1 ? 'them' : 'it'}.`,
+        `${pinLabel("combinedHandout")} is off, and ${n} pinned ${dropNoun(n)} stayed.`,
+        `${names} — still pinned, so the participation boosters now come on top of ${n > 1 ? "them" : "it"}.`,
       ],
-      actions: [{ label: carryLabel(n, handout.to), drop: handout.keys, reach: 'handout' }],
-      chip: { glyph: null, word: `${pinLabel('combinedHandout')} off` },
+      actions: [
+        {
+          label: carryLabel(n, handout.to),
+          drop: handout.keys,
+          reach: "handout",
+        },
+      ],
+      chip: { glyph: null, word: `${pinLabel("combinedHandout")} off` },
     });
   }
 
   return {
     open: notices.filter((notice) => fold[notice.id].open),
-    chips: notices.filter((notice) => !fold[notice.id].open).map((notice) => ({ id: notice.id, ...notice.chip })),
+    chips: notices
+      .filter((notice) => !fold[notice.id].open)
+      .map((notice) => ({ id: notice.id, ...notice.chip })),
   };
 }

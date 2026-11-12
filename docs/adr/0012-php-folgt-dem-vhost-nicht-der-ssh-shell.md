@@ -4,11 +4,11 @@ ADR 0004 pinnt PHP lokal auf **8.3**, „weil der Server nicht höher kann". Bei
 Scharfstellen des Deploys (#30, 2026-10-09) zeigte sich, dass der Satz zwei
 verschiedene PHPs auf demselben Server zusammenfasst:
 
-| Wo auf `goethe.metanet.ch`                          | höchste Fassung |
-| --------------------------------------------------- | --------------- |
-| Webserver, Plesk-Auswahl pro Vhost                  | **8.5**         |
+| Wo auf `goethe.metanet.ch`                            | höchste Fassung |
+| ----------------------------------------------------- | --------------- |
+| Webserver, Plesk-Auswahl pro Vhost                    | **8.5**         |
 | SSH-Shell im Jail (`/opt/php*/bin`, `/opt/plesk/php`) | 8.3.21          |
-| `php` im `PATH` der SSH-Shell                       | 8.2.6           |
+| `php` im `PATH` der SSH-Shell                         | 8.2.6           |
 
 Die Grenze von 8.3 gilt nur für die **Shell**. Sie stammt aus dem Hausmuster der
 Laravel-Geschwister, deren Deploy `composer` und `artisan` über SSH aufruft — dort

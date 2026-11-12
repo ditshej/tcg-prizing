@@ -21,7 +21,12 @@
  * calculation, not sheet data, so no DefaultSet carries them and the sheet has
  * nothing to fall back to.
  */
-export const TRAILING_SLIDERS = ['tournamentPacks', 'depth', 'ranked', 'winnerPacks'];
+export const TRAILING_SLIDERS = [
+  "tournamentPacks",
+  "depth",
+  "ranked",
+  "winnerPacks",
+];
 
 /**
  * The two that start neutral: absent means the empty value, because a
@@ -48,6 +53,7 @@ export function resolveSettings({ game, type, pins } = {}) {
   const { id, title, ...deviations } = type ?? {};
   const resolved = { ...game, ...deviations };
   for (const key of TRAILING_SLIDERS) resolved[key] = null;
-  for (const [key, empty] of Object.entries(NEUTRAL_SLIDERS)) resolved[key] = empty();
+  for (const [key, empty] of Object.entries(NEUTRAL_SLIDERS))
+    resolved[key] = empty();
   return { ...resolved, ...pins };
 }

@@ -14,7 +14,7 @@
  * form is `encode()`'s, the report is #51's data structure, read as it is.
  */
 
-import { PIN_LABELS } from './controls.mjs';
+import { PIN_LABELS } from "./controls.mjs";
 
 /**
  * The text that lands on the clipboard: the page the app runs on, with the
@@ -36,7 +36,7 @@ export function linkAddress(query, page) {
  * pointer plays no part: K3 dropped the `(pointer: coarse)` condition.
  */
 export function shareBranch({ share }) {
-  return typeof share === 'function' ? 'system' : 'bubble';
+  return typeof share === "function" ? "system" : "bubble";
 }
 
 /**
@@ -51,19 +51,19 @@ export function shareBranch({ share }) {
  * or a throw is not.
  */
 export async function copyText(text, clipboard, fallback) {
-  if (typeof clipboard?.writeText === 'function') {
+  if (typeof clipboard?.writeText === "function") {
     try {
       await clipboard.writeText(text);
-      return 'copied';
+      return "copied";
     } catch {
       // Refused: the fallback below gets its chance.
     }
   }
-  if (typeof fallback !== 'function') return 'manual';
+  if (typeof fallback !== "function") return "manual";
   try {
-    return fallback(text) === true ? 'copied' : 'manual';
+    return fallback(text) === true ? "copied" : "manual";
   } catch {
-    return 'manual';
+    return "manual";
   }
 }
 
@@ -74,16 +74,20 @@ export async function copyText(text, clipboard, fallback) {
  * copied (#155; #72 AC 4).
  */
 export function execCopy(text, doc) {
-  if (typeof doc?.createElement !== 'function' || typeof doc.execCommand !== 'function') return false;
-  const field = doc.createElement('textarea');
+  if (
+    typeof doc?.createElement !== "function" ||
+    typeof doc.execCommand !== "function"
+  )
+    return false;
+  const field = doc.createElement("textarea");
   field.value = text;
-  field.setAttribute('readonly', '');
-  field.style.position = 'fixed';
-  field.style.opacity = '0';
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.opacity = "0";
   doc.body.append(field);
   try {
     field.select();
-    return doc.execCommand('copy') === true;
+    return doc.execCommand("copy") === true;
   } catch {
     return false;
   } finally {
@@ -104,10 +108,13 @@ export const COPIED_MS = 2000;
  * A second copy inside the moment restarts it rather than stacking a second
  * fall-back on the first.
  */
-export function flashCopied(el, { later = setTimeout, cancel = clearTimeout } = {}) {
+export function flashCopied(
+  el,
+  { later = setTimeout, cancel = clearTimeout } = {},
+) {
   if (!el) return;
   if (el._linkTimer != null) cancel(el._linkTimer);
-  el.dataset.linkCopied = '';
+  el.dataset.linkCopied = "";
   el._linkTimer = later(() => {
     delete el.dataset.linkCopied;
     el._linkTimer = null;
@@ -117,7 +124,8 @@ export function flashCopied(el, { later = setTimeout, cancel = clearTimeout } = 
 /* ── The LinkMigration report (#72, the data from #51 and #52) ─────────── */
 
 /** The prompt, and it hangs on the address bar having been rewritten. */
-export const RESAVE_BOOKMARK = 'The address bar now holds this link as it was read. Save your bookmark again.';
+export const RESAVE_BOOKMARK =
+  "The address bar now holds this link as it was read. Save your bookmark again.";
 
 /**
  * #51's report → what the overlay says, or `null` when there is nothing to
@@ -141,14 +149,18 @@ export const RESAVE_BOOKMARK = 'The address bar now holds this link as it was re
 export function reportView(report, games = []) {
   if (!report) return null;
   const words = baseWords(games);
-  const lines = (report.entries ?? []).map((entry) => lineFor(entry, words)).filter(Boolean);
+  const lines = (report.entries ?? [])
+    .map((entry) => lineFor(entry, words))
+    .filter(Boolean);
   const resave = report.resaveBookmark === true;
   return { lines, resave, bookmark: resave ? RESAVE_BOOKMARK : null };
 }
 
 /** The screen word of a control, or the wire key in code type when it has none. */
 function control(key) {
-  return Object.hasOwn(PIN_LABELS, key) ? { text: PIN_LABELS[key] } : { wire: key };
+  return Object.hasOwn(PIN_LABELS, key)
+    ? { text: PIN_LABELS[key] }
+    : { wire: key };
 }
 
 /** The titles of the Games and TournamentTypes the catalogue knows, by id. */
@@ -171,32 +183,57 @@ const t = (text) => ({ text });
 
 function replaced(level, noun, entry, map) {
   const now = baseName(map, entry.now);
-  if (entry.was == null) return [t(`No ${noun} was named — opened as `), now, t('.')];
+  if (entry.was == null)
+    return [t(`No ${noun} was named — opened as `), now, t(".")];
   const was = { wire: String(entry.was) };
-  if (entry.by === 'migration') return [t(`${level} `), was, t(' is now '), now, t('.')];
-  return [t(`${level} `), was, t(' is unknown — opened as '), now, t('.')];
+  if (entry.by === "migration")
+    return [t(`${level} `), was, t(" is now "), now, t(".")];
+  return [t(`${level} `), was, t(" is unknown — opened as "), now, t(".")];
 }
 
 function lineFor(entry, words) {
   switch (entry.kind) {
-    case 'renamed':
-      return [{ wire: String(entry.was) }, t(' is now '), control(entry.key), t('.')];
-    case 'dropped':
-      return [control(entry.key), t(' no longer exists — its value was dropped.')];
-    case 'setByMigration':
-      return [control(entry.key), t(` was set to ${String(entry.value)}, so the plan stays the same.`)];
-    case 'typeReplaced':
-      return replaced('Type', 'type', entry, words.type);
-    case 'gameReplaced':
-      return replaced('Game', 'game', entry, words.game);
-    case 'unknownKey':
-      return [t('This app does not know '), { wire: String(entry.key) }, t(' — it was left out.')];
-    case 'unreadableValue':
-      return [control(entry.key), t(' could not be read — it was left out.')];
-    case 'futureVersion':
-      return [t('This link is newer than this app. Only its game and type were read.')];
-    case 'unreadableVersion':
-      return [t('This link is damaged: it names no version this app can read. Only its game and type were read.')];
+    case "renamed":
+      return [
+        { wire: String(entry.was) },
+        t(" is now "),
+        control(entry.key),
+        t("."),
+      ];
+    case "dropped":
+      return [
+        control(entry.key),
+        t(" no longer exists — its value was dropped."),
+      ];
+    case "setByMigration":
+      return [
+        control(entry.key),
+        t(` was set to ${String(entry.value)}, so the plan stays the same.`),
+      ];
+    case "typeReplaced":
+      return replaced("Type", "type", entry, words.type);
+    case "gameReplaced":
+      return replaced("Game", "game", entry, words.game);
+    case "unknownKey":
+      return [
+        t("This app does not know "),
+        { wire: String(entry.key) },
+        t(" — it was left out."),
+      ];
+    case "unreadableValue":
+      return [control(entry.key), t(" could not be read — it was left out.")];
+    case "futureVersion":
+      return [
+        t(
+          "This link is newer than this app. Only its game and type were read.",
+        ),
+      ];
+    case "unreadableVersion":
+      return [
+        t(
+          "This link is damaged: it names no version this app can read. Only its game and type were read.",
+        ),
+      ];
     default:
       return null;
   }

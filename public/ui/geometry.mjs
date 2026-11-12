@@ -126,7 +126,11 @@ export function diagramCap(leftoverHeight, covered = 0, max = Infinity) {
  * its top — so showing or hiding the diagram moves neither input, and the
  * verdict cannot flip itself.
  */
-export function diagramFits(leftoverHeight, covered = 0, floor = MIN_DIAGRAM_HEIGHT) {
+export function diagramFits(
+  leftoverHeight,
+  covered = 0,
+  floor = MIN_DIAGRAM_HEIGHT,
+) {
   return (leftoverHeight - covered) / 3 >= floor;
 }
 
@@ -228,7 +232,12 @@ export function raffleLift(barHeight) {
  * tile's ring needs at the top, not room a tile counts as seen in. The strip starts below
  * it, where the scroll window started before the padding came.
  */
-export function hitScrollDelta(windowRect, tileRect, barTop = Infinity, paddingTop = 0) {
+export function hitScrollDelta(
+  windowRect,
+  tileRect,
+  barTop = Infinity,
+  paddingTop = 0,
+) {
   const top = windowRect.top + paddingTop;
   const bottom = Math.min(windowRect.bottom, barTop - RAFFLE_CLEARANCE);
   if (tileRect.top >= top && tileRect.bottom <= bottom) return 0;
@@ -275,8 +284,11 @@ export function pulseReach(width, height) {
  */
 export function pulseClip(tileRect, windowRect, barTop = Infinity, reach = 0) {
   const visibleBottom = Math.min(windowRect.bottom, barTop);
-  const seen = tileRect.right > windowRect.left && tileRect.left < windowRect.right
-    && tileRect.bottom > windowRect.top && tileRect.top < visibleBottom;
+  const seen =
+    tileRect.right > windowRect.left &&
+    tileRect.left < windowRect.right &&
+    tileRect.bottom > windowRect.top &&
+    tileRect.top < visibleBottom;
   if (!seen) return null;
   return {
     top: windowRect.top - reach - tileRect.top,
@@ -295,7 +307,11 @@ export function pulseClip(tileRect, windowRect, barTop = Infinity, reach = 0) {
  */
 export function rowScrollEnds({ scrollLeft, scrollWidth, clientWidth }) {
   const max = scrollWidth - clientWidth;
-  return { overflow: max > 1, atStart: scrollLeft <= 1, atEnd: scrollLeft >= max - 1 };
+  return {
+    overflow: max > 1,
+    atStart: scrollLeft <= 1,
+    atEnd: scrollLeft >= max - 1,
+  };
 }
 
 /**
@@ -304,7 +320,10 @@ export function rowScrollEnds({ scrollLeft, scrollWidth, clientWidth }) {
  * „ein klick auf einen pfeil lässt einfach eine pille bewegen"), never past
  * either end. `lefts` are the pills' left edges in the row's own coordinates.
  */
-export function pillStep({ lefts, scrollLeft, scrollWidth, clientWidth }, direction) {
+export function pillStep(
+  { lefts, scrollLeft, scrollWidth, clientWidth },
+  direction,
+) {
   const max = Math.max(0, scrollWidth - clientWidth);
   if (direction > 0) {
     const next = lefts.find((left) => left > scrollLeft + 0.5);
@@ -323,7 +342,8 @@ export function pillStep({ lefts, scrollLeft, scrollWidth, clientWidth }, direct
  */
 export function chipIntoView(chip, scrollLeft, clientWidth) {
   if (chip.left < scrollLeft) return chip.left;
-  if (chip.left + chip.width > scrollLeft + clientWidth) return chip.left + chip.width - clientWidth;
+  if (chip.left + chip.width > scrollLeft + clientWidth)
+    return chip.left + chip.width - clientWidth;
   return scrollLeft;
 }
 
@@ -340,7 +360,12 @@ export const FADE_HEIGHT = 60;
  * Anschlag aus"). Two pixels of slack, because a scroll position lands on
  * fractions and a stop reached is not always a stop to the pixel.
  */
-export function fadeShown({ scrollHeight, clientHeight, scrollTop, paddingBottom = 0 }) {
+export function fadeShown({
+  scrollHeight,
+  clientHeight,
+  scrollTop,
+  paddingBottom = 0,
+}) {
   // The scroller's own padding under its content is no content: the tile grid
   // keeps a few pixels under its last row, and they claimed a band at every
   // count of ranks.

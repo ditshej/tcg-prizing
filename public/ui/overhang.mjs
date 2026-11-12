@@ -33,12 +33,12 @@
  * for stand, so no field is needed either.
  */
 
-import { distribute } from '../core/distribute.mjs';
-import { pinLabel } from './controls.mjs';
+import { distribute } from "../core/distribute.mjs";
+import { pinLabel } from "./controls.mjs";
 
 /** The name the source carries in code, the kind key and the ways out —
  *  CONTEXT.md, `ConflictNotice`: "`WinnerPack` overhang". */
-export const WINNER_PACK_OVERHANG = 'winnerPackOverhang';
+export const WINNER_PACK_OVERHANG = "winnerPackOverhang";
 
 /**
  * The overhang of a plan, or `null` where the RankPool's WinnerPacks suffice.
@@ -83,12 +83,12 @@ export function winnerPackOverhang(plan) {
   return { by, placed: ranked + manualCount, have, takeBack, ranks };
 }
 
-const plural = (n, word) => `${word}${n === 1 ? '' : 's'}`;
+const plural = (n, word) => `${word}${n === 1 ? "" : "s"}`;
 
 /** `a`, `a and b`, `a, b and c`. */
 function joined(items) {
-  if (items.length <= 1) return items.join('');
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
 /** Does the plan computed from these Settings stand without an overhang? */
@@ -145,26 +145,40 @@ export function overhangWaysOut(plan) {
   const judge = plan.judge.winners;
   for (let v = judge - overhang.by; v >= 0; v--) {
     if (clears({ ...settings, judgeWinner: v })) {
-      ways.push({ source, key: 'judgeWinner', value: v, label: `${pinLabel('judgeWinner')} down to ${v}` });
+      ways.push({
+        source,
+        key: "judgeWinner",
+        value: v,
+        label: `${pinLabel("judgeWinner")} down to ${v}`,
+      });
       break;
     }
   }
 
   const ranked = plan.allocation.ranked - overhang.by;
   if (ranked >= 0 && clears({ ...settings, ranked })) {
-    ways.push({ source, key: 'ranked', value: ranked, label: `${pinLabel('ranked')} down to ${ranked}` });
+    ways.push({
+      source,
+      key: "ranked",
+      value: ranked,
+      label: `${pinLabel("ranked")} down to ${ranked}`,
+    });
   }
 
   const back = overhang.takeBack.slice().sort((a, b) => a.rank - b.rank);
   ways.push({
     source,
-    key: 'manualWinner',
-    changes: back.map(({ rank, holds, take }) => ({ key: 'manualWinner', rank, value: holds - take })),
+    key: "manualWinner",
+    changes: back.map(({ rank, holds, take }) => ({
+      key: "manualWinner",
+      rank,
+      value: holds - take,
+    })),
     label: `Drop ${joined(
       back.map(({ rank, holds, take }) =>
         take === holds
-          ? `rank ${rank}'s ${plural(holds, 'winner pack')}`
-          : `${take} of rank ${rank}'s ${holds} ${plural(holds, 'winner pack')}`,
+          ? `rank ${rank}'s ${plural(holds, "winner pack")}`
+          : `${take} of rank ${rank}'s ${holds} ${plural(holds, "winner pack")}`,
       ),
     )}`,
   });

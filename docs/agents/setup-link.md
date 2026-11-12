@@ -44,7 +44,7 @@ A version bump without its migration is worse than no version: the app then clai
 a compatibility it does not have.
 
 **The example URLs in #47 are examples, not the start choice.** They all read
-`type=weekend`, and `weekend` is the *second* `TournamentType` — the first is
+`type=weekend`, and `weekend` is the _second_ `TournamentType` — the first is
 `weekly`, which is what a cold start shows. Copy an example string into a test as
 an expected value and you get a red run with nothing wrong in the code; it has
 cost one already. Read the list off `public/sets/onepiece.mjs`, never off a
@@ -52,20 +52,20 @@ sample link.
 
 ## What counts as a breaking change
 
-| Change | Migration needed? |
-|---|---|
-| Rename a slider key | **Yes** — rewrite old key to new |
-| Remove a slider | **Yes** — drop the value, and the report names it |
-| Change a slider's meaning or unit (count → fraction, absolute → rate) | **Yes** — this is the one a name-stability contract would miss |
-| Rename a named step (a `DistributionCurve` level, or a `RANGES` id — `depthStep` and `raffleRange` carry those since run 12) | **Yes** — rewrite old label to new |
-| Rename a `Game` or `TournamentType` identifier | **Yes** |
-| Remove a `Game` | **Yes** — name its successor |
-| Remove a `TournamentType` | **Yes** — name its successor; leaving it open is not an option |
-| Add a new slider | No — an absent key means "not `pinned`" |
-| Add a key that is not a slider (`CHOICE_KEYS`) | No — an absent key means its term constant (`all`) |
-| Insert or reorder `TournamentType`s | No — the link names them, not their position |
-| Change a default value in a `DefaultSet` | No — the link carries `pinned` sliders, not defaults |
-| Change a cap | No — see "Caps" below |
+| Change                                                                                                                       | Migration needed?                                              |
+| ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Rename a slider key                                                                                                          | **Yes** — rewrite old key to new                               |
+| Remove a slider                                                                                                              | **Yes** — drop the value, and the report names it              |
+| Change a slider's meaning or unit (count → fraction, absolute → rate)                                                        | **Yes** — this is the one a name-stability contract would miss |
+| Rename a named step (a `DistributionCurve` level, or a `RANGES` id — `depthStep` and `raffleRange` carry those since run 12) | **Yes** — rewrite old label to new                             |
+| Rename a `Game` or `TournamentType` identifier                                                                               | **Yes**                                                        |
+| Remove a `Game`                                                                                                              | **Yes** — name its successor                                   |
+| Remove a `TournamentType`                                                                                                    | **Yes** — name its successor; leaving it open is not an option |
+| Add a new slider                                                                                                             | No — an absent key means "not `pinned`"                        |
+| Add a key that is not a slider (`CHOICE_KEYS`)                                                                               | No — an absent key means its term constant (`all`)             |
+| Insert or reorder `TournamentType`s                                                                                          | No — the link names them, not their position                   |
+| Change a default value in a `DefaultSet`                                                                                     | No — the link carries `pinned` sliders, not defaults           |
+| Change a cap                                                                                                                 | No — see "Caps" below                                          |
 
 ## Writing a migration
 
@@ -110,15 +110,15 @@ Three cases, not two, and the third is the one a build keeps folding into the
 second (ADR 0007, `## Nachtrag (#89)`; Lauf 10, Entscheid K1, in the comments of
 #89):
 
-| What came in | What happens |
-|---|---|
-| Nothing at all — a cold start | Not read, not reported, address bar untouched |
-| `v` above today's | Base taken, no slider key read, **address bar untouched**, no call to save the bookmark again |
+| What came in                                            | What happens                                                                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Nothing at all — a cold start                           | Not read, not reported, address bar untouched                                                                      |
+| `v` above today's                                       | Base taken, no slider key read, **address bar untouched**, no call to save the bookmark again                      |
 | No readable `v` — absent, `v=`, `v=0`, `v=abc`, `v=1.0` | Base taken, no slider key read, **address bar cleaned up**, and the report asks for the bookmark to be saved again |
 
 The future link keeps its address because it would be complete again on an
 updated app. A link with no readable version never becomes complete on any later
-app, and `v=0` is a link from the *past* — calling either "newer than this app"
+app, and `v=0` is a link from the _past_ — calling either "newer than this app"
 is a false statement, not a rough edge. Its sliders still go unread: without a
 version we would be guessing which register to read them by.
 

@@ -11,13 +11,13 @@
  * what counts. There is no flat step.
  */
 export const CURVES = [
-  { id: 'gentle', ratio: 0.85 },
-  { id: 'mild', ratio: 0.75 },
-  { id: 'moderate', ratio: 0.65 },
-  { id: 'firm', ratio: 0.55 },
-  { id: 'steep', ratio: 0.45 },
-  { id: 'severe', ratio: 0.35 },
-  { id: 'extreme', ratio: 0.25 },
+  { id: "gentle", ratio: 0.85 },
+  { id: "mild", ratio: 0.75 },
+  { id: "moderate", ratio: 0.65 },
+  { id: "firm", ratio: 0.55 },
+  { id: "steep", ratio: 0.45 },
+  { id: "severe", ratio: 0.35 },
+  { id: "extreme", ratio: 0.25 },
 ];
 
 /**
@@ -27,19 +27,19 @@ export const CURVES = [
  * RankPoolDepth.
  */
 export const RANGES = [
-  { id: 'top8', abs: 8 },
-  { id: 'top16', abs: 16 },
-  { id: 'topQuarter', frac: 1 / 4 },
-  { id: 'topThird', frac: 1 / 3 },
-  { id: 'topHalf', frac: 1 / 2 },
-  { id: 'topTwoThirds', frac: 2 / 3 },
-  { id: 'topThreeQuarters', frac: 3 / 4 },
-  { id: 'all', frac: 1 },
-  { id: 'bottomThreeQuarters', comp: 'topQuarter' },
-  { id: 'bottomTwoThirds', comp: 'topThird' },
-  { id: 'bottomHalf', comp: 'topHalf' },
-  { id: 'bottomThird', comp: 'topTwoThirds' },
-  { id: 'bottomQuarter', comp: 'topThreeQuarters' },
+  { id: "top8", abs: 8 },
+  { id: "top16", abs: 16 },
+  { id: "topQuarter", frac: 1 / 4 },
+  { id: "topThird", frac: 1 / 3 },
+  { id: "topHalf", frac: 1 / 2 },
+  { id: "topTwoThirds", frac: 2 / 3 },
+  { id: "topThreeQuarters", frac: 3 / 4 },
+  { id: "all", frac: 1 },
+  { id: "bottomThreeQuarters", comp: "topQuarter" },
+  { id: "bottomTwoThirds", comp: "topThird" },
+  { id: "bottomHalf", comp: "topHalf" },
+  { id: "bottomThird", comp: "topTwoThirds" },
+  { id: "bottomQuarter", comp: "topThreeQuarters" },
 ];
 
 /**
@@ -53,7 +53,7 @@ const CURVE_BY_ID = new Map(CURVES.map((c) => [c.id, c]));
 
 /** The ratio of a named curve step; an unknown id falls back to `steep`. */
 export function curveRatio(id) {
-  return (CURVE_BY_ID.get(id) ?? CURVE_BY_ID.get('steep')).ratio;
+  return (CURVE_BY_ID.get(id) ?? CURVE_BY_ID.get("steep")).ratio;
 }
 
 /** How many ranks a named range step spans at a given player count. */
@@ -146,7 +146,9 @@ export function largestRemainder(weights, total) {
 
 /** Scales a list of non-negative doubles to exact BigInt numerators. */
 function asCommonDenominator(weights) {
-  const parts = weights.map((w) => (w > 0 && Number.isFinite(w) ? asDyadic(w) : { m: 0n, e: 0 }));
+  const parts = weights.map((w) =>
+    w > 0 && Number.isFinite(w) ? asDyadic(w) : { m: 0n, e: 0 },
+  );
   const shift = parts.reduce((a, p) => Math.max(a, p.e), 0);
   return parts.map((p) => p.m << BigInt(shift - p.e));
 }

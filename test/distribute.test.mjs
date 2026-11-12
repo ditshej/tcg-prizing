@@ -1,9 +1,9 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { resolveSettings } from '../public/core/defaults.mjs';
-import { derivePool, distribute, unfit } from '../public/core/distribute.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
+import { resolveSettings } from "../public/core/defaults.mjs";
+import { derivePool, distribute, unfit } from "../public/core/distribute.mjs";
+import { GAME, TOURNAMENT_TYPES } from "../public/sets/onepiece.mjs";
 
 /**
  * The Weekend sheet (#21/#25's resolution comments, transcribed into
@@ -20,10 +20,10 @@ import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
  * number is looked up, never back-computed"). `players` comes from each
  * scenario, which names it in its title.
  */
-const MEASURED_ON = { depthStep: 'top8', curve: 'steep' };
+const MEASURED_ON = { depthStep: "top8", curve: "steep" };
 
 function weekendSettings(overrides = {}) {
-  const weekend = TOURNAMENT_TYPES.find((t) => t.id === 'weekend');
+  const weekend = TOURNAMENT_TYPES.find((t) => t.id === "weekend");
   return {
     ...GAME,
     ...weekend,
@@ -57,9 +57,9 @@ function settings(overrides = {}) {
     judgeBooster: 0,
     judgeWinner: 0,
     rankFloor: 2,
-    depthStep: 'all',
+    depthStep: "all",
     depth: null,
-    curve: 'steep',
+    curve: "steep",
     ranked: null,
     winnerPacks: null,
     manualWinner: {},
@@ -70,10 +70,13 @@ function settings(overrides = {}) {
 }
 
 /** The Booster column of the served ranks, the shape a measured plan is read in. */
-const served = (plan) => plan.rows.filter((row) => row.served).map((row) => row.booster);
+const served = (plan) =>
+  plan.rows.filter((row) => row.served).map((row) => row.booster);
 
-test('the plan holds one row per Player, not only the served ranks', () => {
-  const plan = distribute(settings({ players: 32, boosterRate: 3, rankFloor: 2, depth: 8 }));
+test("the plan holds one row per Player, not only the served ranks", () => {
+  const plan = distribute(
+    settings({ players: 32, boosterRate: 3, rankFloor: 2, depth: 8 }),
+  );
   assert.equal(plan.rows.length, 32);
   assert.deepEqual(
     plan.rows.map((row) => row.rank),
@@ -83,7 +86,7 @@ test('the plan holds one row per Player, not only the served ranks', () => {
   assert.ok(plan.rows.slice(8).every((row) => row.booster === 0));
 });
 
-test('Weekend with 32 Players and no reservation gives 29·14·7·4·3·3·2·2', () => {
+test("Weekend with 32 Players and no reservation gives 29·14·7·4·3·3·2·2", () => {
   const plan = distribute(
     settings({
       players: 32,
@@ -91,14 +94,14 @@ test('Weekend with 32 Players and no reservation gives 29·14·7·4·3·3·2·2'
       participationBooster: 1,
       rankFloor: 2,
       depth: 8,
-      curve: 'steep',
+      curve: "steep",
     }),
   );
   assert.equal(plan.rank.booster, 64);
   assert.deepEqual(served(plan), [29, 14, 7, 4, 3, 3, 2, 2]);
 });
 
-test('the same stand without a set depth gives a depthCap of 31', () => {
+test("the same stand without a set depth gives a depthCap of 31", () => {
   const plan = distribute(
     settings({
       players: 32,
@@ -106,7 +109,7 @@ test('the same stand without a set depth gives a depthCap of 31', () => {
       participationBooster: 1,
       rankFloor: 2,
       depth: null,
-      curve: 'steep',
+      curve: "steep",
     }),
   );
   // 64 Boosters in the RankPool, floor 2 and the lead of 1: 2·31 + 1 = 63
@@ -115,29 +118,39 @@ test('the same stand without a set depth gives a depthCap of 31', () => {
   assert.equal(plan.depth, 31); // depthStep `all` gives 32, the cap binds
 });
 
-test('a pinned depth is never cut by the cap, only by the player count', () => {
+test("a pinned depth is never cut by the cap, only by the player count", () => {
   const base = {
     players: 32,
     boosterRate: 3,
     participationBooster: 1,
     rankFloor: 2,
-    curve: 'steep',
+    curve: "steep",
   };
   assert.equal(distribute(settings({ ...base, depth: 32 })).depth, 32);
   assert.equal(distribute(settings({ ...base, depth: 99 })).depth, 32);
   assert.equal(distribute(settings({ ...base, depth: 0 })).depth, 1);
 });
 
-test('a RankFloor of 0 is a reachable edge and the cap stays defined', () => {
+test("a RankFloor of 0 is a reachable edge and the cap stays defined", () => {
   const plan = distribute(
-    settings({ players: 32, boosterRate: 3, participationBooster: 1, rankFloor: 0, depth: null }),
+    settings({
+      players: 32,
+      boosterRate: 3,
+      participationBooster: 1,
+      rankFloor: 0,
+      depth: null,
+    }),
   );
   assert.equal(plan.depthCap, 32);
   assert.equal(plan.depth, 32);
-  assert.equal(plan.rows[0].booster + plan.rows.slice(1).reduce((a, r) => a + r.booster, 0), 64);
+  assert.equal(
+    plan.rows[0].booster +
+      plan.rows.slice(1).reduce((a, r) => a + r.booster, 0),
+    64,
+  );
 });
 
-test('the tie of ADR 0001 gives 9·3·2 on a valid stand', () => {
+test("the tie of ADR 0001 gives 9·3·2 on a valid stand", () => {
   // 8 Players, RankPool 14, RankFloor 2, depth 3, `extreme`. The RankPool is
   // built by hand: 2 Boosters per Player make 16, a JudgePool of 2 leaves 14.
   const plan = distribute(
@@ -147,7 +160,7 @@ test('the tie of ADR 0001 gives 9·3·2 on a valid stand', () => {
       judgeBooster: 2,
       rankFloor: 2,
       depth: 3,
-      curve: 'extreme',
+      curve: "extreme",
     }),
   );
   assert.equal(plan.rank.booster, 14);
@@ -155,10 +168,16 @@ test('the tie of ADR 0001 gives 9·3·2 on a valid stand', () => {
   assert.deepEqual(served(plan), [9, 3, 2]);
 });
 
-test('a ShapedRemainder of 0 is the pure floor, and curveSilent stands', () => {
+test("a ShapedRemainder of 0 is the pure floor, and curveSilent stands", () => {
   // 8 Players, RankPool 16, RankFloor 5, depth 3: 5·3 + 1 = 16 exactly.
   const plan = distribute(
-    settings({ players: 8, boosterRate: 2, rankFloor: 5, depth: 3, curve: 'gentle' }),
+    settings({
+      players: 8,
+      boosterRate: 2,
+      rankFloor: 5,
+      depth: 3,
+      curve: "gentle",
+    }),
   );
   assert.equal(plan.rank.booster, 16);
   assert.equal(plan.shapedRemainder, 0);
@@ -166,7 +185,14 @@ test('a ShapedRemainder of 0 is the pure floor, and curveSilent stands', () => {
   assert.deepEqual(served(plan), [6, 5, 5]);
 
   // The curve step has no effect at all on that stand.
-  for (const curve of ['mild', 'moderate', 'firm', 'steep', 'severe', 'extreme']) {
+  for (const curve of [
+    "mild",
+    "moderate",
+    "firm",
+    "steep",
+    "severe",
+    "extreme",
+  ]) {
     const other = distribute(
       settings({ players: 8, boosterRate: 2, rankFloor: 5, depth: 3, curve }),
     );
@@ -174,7 +200,7 @@ test('a ShapedRemainder of 0 is the pure floor, and curveSilent stands', () => {
   }
 });
 
-test('derivePool is exported on its own and needs no distribution', () => {
+test("derivePool is exported on its own and needs no distribution", () => {
   // envelopeSize 24, envelopeYield 1 (the fixture default): 32 packs open one
   // full envelope plus 8 loose ones. 8 is below the two-thirds mark of 16, so
   // the envelope has not yielded its WinnerPack yet; the one full envelope
@@ -189,12 +215,15 @@ test('derivePool is exported on its own and needs no distribution', () => {
     thresholds: [16],
   });
   // tournamentPacks is a trailing slider: null means the player count.
-  assert.equal(derivePool(settings({ players: 32, tournamentPacks: 7 })).packs, 7);
+  assert.equal(
+    derivePool(settings({ players: 32, tournamentPacks: 7 })).packs,
+    7,
+  );
   // The player count starts at 2 — the slider does (#15).
   assert.equal(derivePool(settings({ players: 1, boosterRate: 3 })).booster, 6);
 });
 
-test('the pool split is exhaustive: participation + judge + rank is the pool', () => {
+test("the pool split is exhaustive: participation + judge + rank is the pool", () => {
   // The narrow version of the sum rule, over the valid stands this ticket
   // builds. The full run over conflict, overtaking and orphaned reservations
   // belongs to #58.
@@ -220,7 +249,9 @@ test('the pool split is exhaustive: participation + judge + rank is the pool', (
               participationPack,
             });
             assert.equal(
-              plan.participation.booster + plan.judge.booster + plan.rank.booster,
+              plan.participation.booster +
+                plan.judge.booster +
+                plan.rank.booster,
               plan.pool.booster,
               `Booster sum at ${where}`,
             );
@@ -248,18 +279,34 @@ test('the pool split is exhaustive: participation + judge + rank is the pool', (
   }
 });
 
-test('the indivisible axes are exhaustive: the RankCycle spends the whole rank.packs, the WinnerPackAllocation the whole rank.winners', () => {
+test("the indivisible axes are exhaustive: the RankCycle spends the whole rank.packs, the WinnerPackAllocation the whole rank.winners", () => {
   for (const players of [2, 5, 8, 32]) {
     for (const tournamentPacks of [0, 1, 7, 40, 300]) {
       for (const winnerPacks of [0, 1, 5, 30]) {
         for (const judgeWinner of [0, 2, 100]) {
           for (const ranked of [null, 0, 3]) {
             const plan = distribute(
-              settings({ players, tournamentPacks, winnerPacks, judgeWinner, ranked }),
+              settings({
+                players,
+                tournamentPacks,
+                winnerPacks,
+                judgeWinner,
+                ranked,
+              }),
             );
-            const where = JSON.stringify({ players, tournamentPacks, winnerPacks, judgeWinner, ranked });
+            const where = JSON.stringify({
+              players,
+              tournamentPacks,
+              winnerPacks,
+              judgeWinner,
+              ranked,
+            });
 
-            assert.equal(plan.judge.winners + plan.rank.winners, plan.pool.winners, `winners sum at ${where}`);
+            assert.equal(
+              plan.judge.winners + plan.rank.winners,
+              plan.pool.winners,
+              `winners sum at ${where}`,
+            );
             assert.equal(
               plan.rows.reduce((a, row) => a + row.packs, 0),
               plan.rank.packs,
@@ -269,7 +316,8 @@ test('the indivisible axes are exhaustive: the RankCycle spends the whole rank.p
             // recipient by definition, so the row sum falls short by exactly
             // that count.
             assert.equal(
-              plan.rows.reduce((a, row) => a + row.winners, 0) + plan.allocation.open,
+              plan.rows.reduce((a, row) => a + row.winners, 0) +
+                plan.allocation.open,
               plan.rank.winners,
               `WinnerPackAllocation accounts for rank.winners at ${where}`,
             );
@@ -280,25 +328,31 @@ test('the indivisible axes are exhaustive: the RankCycle spends the whole rank.p
   }
 });
 
-test('the PromoEnvelope staffel <32, 2> gives 1 at 11 opened packs and 2 at 22', () => {
+test("the PromoEnvelope staffel <32, 2> gives 1 at 11 opened packs and 2 at 22", () => {
   const at = (opened) =>
-    derivePool(settings({ tournamentPacks: opened, envelopeSize: 32, envelopeYield: 2 }));
+    derivePool(
+      settings({ tournamentPacks: opened, envelopeSize: 32, envelopeYield: 2 }),
+    );
   assert.equal(at(11).partialYield, 1);
   assert.equal(at(11).winnersDerived, 1);
   assert.equal(at(22).partialYield, 2);
   assert.equal(at(22).winnersDerived, 2);
 });
 
-test('at Ausbeute 1 the staffel falls back exactly to the two-thirds threshold', () => {
+test("at Ausbeute 1 the staffel falls back exactly to the two-thirds threshold", () => {
   // envelopeSize 24, yieldPer 1: the old single threshold is ceil(2*24/3) = 16.
-  const below = derivePool(settings({ tournamentPacks: 15, envelopeSize: 24, envelopeYield: 1 }));
-  const at = derivePool(settings({ tournamentPacks: 16, envelopeSize: 24, envelopeYield: 1 }));
+  const below = derivePool(
+    settings({ tournamentPacks: 15, envelopeSize: 24, envelopeYield: 1 }),
+  );
+  const at = derivePool(
+    settings({ tournamentPacks: 16, envelopeSize: 24, envelopeYield: 1 }),
+  );
   assert.equal(below.winnersDerived, 0);
   assert.equal(at.winnersDerived, 1);
   assert.deepEqual(at.thresholds, [16]);
 });
 
-test('a Judge WinnerPack shortens the automatic ranked prefix, not the open rest', () => {
+test("a Judge WinnerPack shortens the automatic ranked prefix, not the open rest", () => {
   // 10 WinnerPacks, 2 to the Judge: rankWP = 8, rankedAuto = floor(8/2)+1 = 5.
   // Had the Judge instead eaten into `open`, rankedAuto would still read the
   // staffel off the full 10 (floor(10/2)+1 = 6).
@@ -310,7 +364,7 @@ test('a Judge WinnerPack shortens the automatic ranked prefix, not the open rest
   assert.equal(plan.allocation.open, 3);
 });
 
-test('at rankWP = 0 the ranked staffel itself falls to 0', () => {
+test("at rankWP = 0 the ranked staffel itself falls to 0", () => {
   const plan = distribute(settings({ winnerPacks: 0 }));
   assert.equal(plan.rank.winners, 0);
   assert.equal(plan.allocation.rankedAuto, 0);
@@ -318,7 +372,7 @@ test('at rankWP = 0 the ranked staffel itself falls to 0', () => {
   assert.equal(plan.allocation.open, 0);
 });
 
-test('the RankCycle starts at Rank 3 when two WinnerPacks are auto-assigned, and wraps from the last Rank back to Rank 1', () => {
+test("the RankCycle starts at Rank 3 when two WinnerPacks are auto-assigned, and wraps from the last Rank back to Rank 1", () => {
   // 5 Players, 7 TournamentPacks in the RankPool, ranked pinned to 2: the
   // cycle starts at index 2 (Rank 3) and wraps.
   // g=0..6 -> ranks 3,4,5,1,2,3,4 -> counts [1,1,2,2,1] for ranks 1..5.
@@ -332,9 +386,15 @@ test('the RankCycle starts at Rank 3 when two WinnerPacks are auto-assigned, and
   );
 });
 
-test('the RankCycle reaches beyond the RankPoolDepth', () => {
+test("the RankCycle reaches beyond the RankPoolDepth", () => {
   const plan = distribute(
-    settings({ players: 5, tournamentPacks: 7, winnerPacks: 4, ranked: 2, depth: 1 }),
+    settings({
+      players: 5,
+      tournamentPacks: 7,
+      winnerPacks: 4,
+      ranked: 2,
+      depth: 1,
+    }),
   );
   assert.equal(plan.depth, 1);
   const unserved = plan.rows.filter((row) => !row.served);
@@ -359,7 +419,10 @@ function assertPlanSum(plan, where) {
   // must name it, on top of the row sum, not instead of it.
   const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
   assert.equal(
-    plan.participation.booster + plan.judge.booster + rowSum('booster') + unclaimed,
+    plan.participation.booster +
+      plan.judge.booster +
+      rowSum("booster") +
+      unclaimed,
     plan.pool.booster,
     `Booster sum at ${where}`,
   );
@@ -367,18 +430,22 @@ function assertPlanSum(plan, where) {
   // all — the sum rule still names it, because leaving a term out silently is
   // exactly how the double count got through.
   assert.equal(
-    plan.participation.packs + (plan.judge.packs ?? 0) + rowSum('packs'),
+    plan.participation.packs + (plan.judge.packs ?? 0) + rowSum("packs"),
     plan.pool.packs,
     `TournamentPack sum at ${where}`,
   );
   // The other half of the same rule: the rank rows spend the RankPool down to
   // the last piece, so the Pool level and the row level tell one story.
   assert.equal(
-    rowSum('booster') + unclaimed,
+    rowSum("booster") + unclaimed,
     plan.rank.booster,
     `rank rows against the RankPool at ${where}`,
   );
-  assert.equal(rowSum('packs'), plan.rank.packs, `rank rows against the RankPool packs at ${where}`);
+  assert.equal(
+    rowSum("packs"),
+    plan.rank.packs,
+    `rank rows against the RankPool packs at ${where}`,
+  );
 }
 
 /**
@@ -398,7 +465,7 @@ function assertRowsWithinPayout(plan, where) {
   }
 }
 
-test('CombinedHandout empties the ParticipationPool and shapes the whole Booster share (#103, ADR 0010)', () => {
+test("CombinedHandout empties the ParticipationPool and shapes the whole Booster share (#103, ADR 0010)", () => {
   // 8 Players at 4 Boosters each make 32; a participation rate of 1 takes 8,
   // the Judge 2, so the RankPool carries 22. 16 TournamentPacks at a rate of
   // 1 take 8, leaving 8 in the RankPool.
@@ -416,16 +483,16 @@ test('CombinedHandout empties the ParticipationPool and shapes the whole Booster
   const rowSum = (plan, key) => plan.rows.reduce((a, row) => a + row[key], 0);
 
   // The sum rule holds on the plan itself, in both branches.
-  assertPlanSum(apart, 'combinedHandout false');
-  assertPlanSum(combined, 'combinedHandout true');
+  assertPlanSum(apart, "combinedHandout false");
+  assertPlanSum(combined, "combinedHandout true");
 
   // Apart: the participation block carries the shares, the rank rows do not.
   assert.equal(apart.participation.booster, 8);
   assert.equal(apart.participation.packs, 8);
   assert.equal(apart.rank.booster, 22);
   assert.equal(apart.rank.packs, 8);
-  assert.equal(rowSum(apart, 'booster'), 22);
-  assert.equal(rowSum(apart, 'packs'), 8);
+  assert.equal(rowSum(apart, "booster"), 22);
+  assert.equal(rowSum(apart, "packs"), 8);
 
   // Combined: the ParticipationPool is empty on both axes, and the rate is
   // still carried — the packs read it, and so does the way out.
@@ -435,13 +502,15 @@ test('CombinedHandout empties the ParticipationPool and shapes the whole Booster
   assert.deepEqual(combined.participation.rate, { booster: 1, packs: 1 });
   assert.equal(combined.rank.booster, 30);
   assert.equal(combined.rank.packs, 16);
-  assert.equal(rowSum(combined, 'booster'), 30);
-  assert.equal(rowSum(combined, 'packs'), 16);
+  assert.equal(rowSum(combined, "booster"), 30);
+  assert.equal(rowSum(combined, "packs"), 16);
 
   // The Boosters: the whole share after the JudgePool runs through the
   // shaping, with no flat rate on top. That is exactly the plan of the same
   // stand with no participation Booster at all.
-  const whole = distribute(settings({ ...base, participationBooster: 0, combinedHandout: false }));
+  const whole = distribute(
+    settings({ ...base, participationBooster: 0, combinedHandout: false }),
+  );
   assert.deepEqual(
     combined.rows.map((row) => row.booster),
     whole.rows.map((row) => row.booster),
@@ -451,40 +520,62 @@ test('CombinedHandout empties the ParticipationPool and shapes the whole Booster
 
   // The TournamentPacks are not shaped: every row takes the flat rate.
   for (let i = 0; i < apart.rows.length; i++) {
-    assert.equal(combined.rows[i].packs, apart.rows[i].packs + 1, `row ${i + 1} TournamentPacks`);
+    assert.equal(
+      combined.rows[i].packs,
+      apart.rows[i].packs + 1,
+      `row ${i + 1} TournamentPacks`,
+    );
   }
 });
 
-test('under CombinedHandout the participation slider takes nothing off the JudgePool ceiling (#103)', () => {
+test("under CombinedHandout the participation slider takes nothing off the JudgePool ceiling (#103)", () => {
   // 8 Players at 4 Boosters, a participation rate of 4 would take all 32. Apart,
   // the Judge can then get nothing; combined, the ParticipationPool is empty
   // and the Judge's ceiling is the whole pool.
-  const base = { players: 8, boosterRate: 4, participationBooster: 4, judgeBooster: 10, rankFloor: 0 };
-  assert.equal(distribute(settings({ ...base, combinedHandout: false })).judge.booster, 0);
+  const base = {
+    players: 8,
+    boosterRate: 4,
+    participationBooster: 4,
+    judgeBooster: 10,
+    rankFloor: 0,
+  };
+  assert.equal(
+    distribute(settings({ ...base, combinedHandout: false })).judge.booster,
+    0,
+  );
   const combined = distribute(settings({ ...base, combinedHandout: true }));
   assert.equal(combined.judge.booster, 10);
   assert.equal(combined.rank.booster, 22);
   assert.equal(combined.participation.rate.booster, 4);
 });
 
-test('CombinedHandout with a depth short of the players reports combinedHandoutDepth (#103)', () => {
-  const short = distribute(settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: true }));
+test("CombinedHandout with a depth short of the players reports combinedHandoutDepth (#103)", () => {
+  const short = distribute(
+    settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: true }),
+  );
   assert.deepEqual(short.combinedHandoutDepth, { depth: 5, players: 8 });
   assert.equal(unfit(short), true);
   // The rows below the depth get no Booster: that is what the state says.
-  assert.deepEqual(short.rows.slice(5).map((row) => row.booster), [0, 0, 0]);
+  assert.deepEqual(
+    short.rows.slice(5).map((row) => row.booster),
+    [0, 0, 0],
+  );
 
-  const full = distribute(settings({ players: 8, boosterRate: 4, depth: 8, combinedHandout: true }));
+  const full = distribute(
+    settings({ players: 8, boosterRate: 4, depth: 8, combinedHandout: true }),
+  );
   assert.equal(full.combinedHandoutDepth, null);
   assert.equal(unfit(full), false);
 
   // Apart, the same short depth is no such state: the participation Booster
   // reaches the Ranks below it before the tournament.
-  const apart = distribute(settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: false }));
+  const apart = distribute(
+    settings({ players: 8, boosterRate: 4, depth: 5, combinedHandout: false }),
+  );
   assert.equal(apart.combinedHandoutDepth, null);
 });
 
-test('the sum rule holds at the plan itself, in both handout branches', () => {
+test("the sum rule holds at the plan itself, in both handout branches", () => {
   for (const players of [2, 5, 8, 32]) {
     for (const boosterRate of [0, 1, 3, 12]) {
       for (const participationBooster of [0, 1, 4, 12]) {
@@ -509,14 +600,18 @@ test('the sum rule holds at the plan itself, in both handout branches', () => {
                     displays,
                     depth,
                   };
-                  const apart = distribute(settings({ ...base, combinedHandout: false }));
+                  const apart = distribute(
+                    settings({ ...base, combinedHandout: false }),
+                  );
                   // The conflict branch (#56) now pours from the top and
                   // keeps the row sum exhaustive even where the RankPool does
                   // not carry the DisplayReservation plus the floor of a
                   // single Rank, so the stand this used to skip is covered
                   // like any other — nothing left to jump over.
                   const where = JSON.stringify(base);
-                  const combined = distribute(settings({ ...base, combinedHandout: true }));
+                  const combined = distribute(
+                    settings({ ...base, combinedHandout: true }),
+                  );
                   assertPlanSum(apart, `${where} apart`);
                   assertPlanSum(combined, `${where} combined`);
                   // No Rank row promises more than it is handed — the half of
@@ -534,11 +629,16 @@ test('the sum rule holds at the plan itself, in both handout branches', () => {
   }
 });
 
-test('manual WinnerPack shares are free over the whole Ranking, several per Rank allowed, even on a ranked Rank', () => {
+test("manual WinnerPack shares are free over the whole Ranking, several per Rank allowed, even on a ranked Rank", () => {
   // rankWP 10, ranked pinned to 2 (Ranks 1-2 auto), manual gives Rank 1 one
   // more and Rank 5 three.
   const plan = distribute(
-    settings({ players: 8, winnerPacks: 10, ranked: 2, manualWinner: { 1: 1, 5: 3 } }),
+    settings({
+      players: 8,
+      winnerPacks: 10,
+      ranked: 2,
+      manualWinner: { 1: 1, 5: 3 },
+    }),
   );
   assert.equal(plan.allocation.manualCount, 4);
   assert.equal(plan.allocation.open, 10 - 2 - 4);
@@ -547,26 +647,26 @@ test('manual WinnerPack shares are free over the whole Ranking, several per Rank
   assert.equal(plan.rows[1].winners, 1); // ranked auto only
 });
 
-test('the core touches no DOM', () => {
-  assert.equal(typeof globalThis.document, 'undefined');
-  assert.equal(typeof globalThis.window, 'undefined');
+test("the core touches no DOM", () => {
+  assert.equal(typeof globalThis.document, "undefined");
+  assert.equal(typeof globalThis.window, "undefined");
   assert.ok(distribute(settings()).rows.length > 0);
 });
 
 // #55: DisplayReservation, settlement and overtaking.
 
-test('Weekend with 32 Players and d = (1) gives 24·16·9·5·3·3·2·2 (#55)', () => {
+test("Weekend with 32 Players and d = (1) gives 24·16·9·5·3·3·2·2 (#55)", () => {
   const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
   assert.equal(plan.rank.booster, 64);
   assert.deepEqual(served(plan), [24, 16, 9, 5, 3, 3, 2, 2]);
 });
 
-test('the same stand gives a depthCap of 21, not 31 — the reservation pays in (#43, #55)', () => {
+test("the same stand gives a depthCap of 21, not 31 — the reservation pays in (#43, #55)", () => {
   const plan = distribute(weekendSettings({ players: 32, displays: [1] }));
   assert.equal(plan.depthCap, 21);
 });
 
-test('Weekend with 48 Players and d = (1) gives 24·34·16·9·5·3·3·2 and reports the overtake', () => {
+test("Weekend with 48 Players and d = (1) gives 24·34·16·9·5·3·3·2 and reports the overtake", () => {
   const plan = distribute(weekendSettings({ players: 48, displays: [1] }));
   assert.equal(plan.rank.booster, 96);
   assert.deepEqual(served(plan), [24, 34, 16, 9, 5, 3, 3, 2]);
@@ -574,21 +674,40 @@ test('Weekend with 48 Players and d = (1) gives 24·34·16·9·5·3·3·2 and re
   assert.deepEqual(plan.flagged, [1, 2]);
 });
 
-test('a tie in the vector settles nobody, and only the topmost tie settles Rank 1', () => {
-  const base = { players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3 };
+test("a tie in the vector settles nobody, and only the topmost tie settles Rank 1", () => {
+  const base = {
+    players: 5,
+    boosterRate: 2,
+    displaySize: 1,
+    rankFloor: 2,
+    depth: 3,
+  };
 
   const tied = distribute(settings({ ...base, displays: [1, 1, 0] }));
   assert.equal(tied.settledCount, 0);
-  assert.deepEqual(tied.rows.slice(0, 3).map((r) => r.settled), [false, false, false]);
+  assert.deepEqual(
+    tied.rows.slice(0, 3).map((r) => r.settled),
+    [false, false, false],
+  );
 
   const broken = distribute(settings({ ...base, displays: [2, 1, 1, 0] }));
   assert.equal(broken.settledCount, 1);
-  assert.deepEqual(broken.rows.slice(0, 3).map((r) => r.settled), [true, false, false]);
+  assert.deepEqual(
+    broken.rows.slice(0, 3).map((r) => r.settled),
+    [true, false, false],
+  );
 });
 
-test('a settled Rank has floor 0 and gets exactly its Displays', () => {
+test("a settled Rank has floor 0 and gets exactly its Displays", () => {
   const plan = distribute(
-    settings({ players: 5, boosterRate: 2, displaySize: 1, rankFloor: 2, depth: 3, displays: [2, 1, 1, 0] }),
+    settings({
+      players: 5,
+      boosterRate: 2,
+      displaySize: 1,
+      rankFloor: 2,
+      depth: 3,
+      displays: [2, 1, 1, 0],
+    }),
   );
   assert.equal(plan.rows[0].settled, true);
   assert.equal(plan.rows[0].floor, 0);
@@ -597,21 +716,27 @@ test('a settled Rank has floor 0 and gets exactly its Displays', () => {
   assert.equal(plan.rows[0].booster, 2); // exactly its Displays, no floor, no lead, no curve
 });
 
-test('under CombinedHandout the overtake is read off the rows the tiles show (#103)', () => {
+test("under CombinedHandout the overtake is read off the rows the tiles show (#103)", () => {
   // Weekend 64 with d = (1), served to every Rank: the whole Booster share
   // is shaped, Rank 2 gets 25 against Rank 1's Display of 24, and the
   // overtake names the very numbers in the rows.
-  const plan = distribute({ ...weekendSettings({ players: 64, displays: [1] }), depth: 64, combinedHandout: true });
+  const plan = distribute({
+    ...weekendSettings({ players: 64, displays: [1] }),
+    depth: 64,
+    combinedHandout: true,
+  });
   assert.deepEqual(plan.overtake, { under: 1, over: 2, has: 24, gets: 25 });
   assert.equal(plan.overtake.has, plan.rows[plan.overtake.under - 1].booster);
   assert.equal(plan.overtake.gets, plan.rows[plan.overtake.over - 1].booster);
 });
 
-test('a DisplayReservation reaching the whole depth reports an unclaimedRemainder instead of losing the ShapedRemainder silently (#56 resolution on #56, 2026-09-27)', () => {
+test("a DisplayReservation reaching the whole depth reports an unclaimedRemainder instead of losing the ShapedRemainder silently (#56 resolution on #56, 2026-09-27)", () => {
   // Weekend, 32 Players, rank.booster 64 throughout — settledCount == depth
   // in all three stands, so curveCount is 0 and the curve has no Rank left
   // to receive the ShapedRemainder. Row sum 24 of 64 in every case.
-  const oneDeep = distribute(weekendSettings({ players: 32, depth: 1, displays: [1] }));
+  const oneDeep = distribute(
+    weekendSettings({ players: 32, depth: 1, displays: [1] }),
+  );
   assert.equal(oneDeep.rank.booster, 64);
   assert.equal(oneDeep.settledCount, 1);
   assert.equal(oneDeep.curveCount, 0);
@@ -619,7 +744,12 @@ test('a DisplayReservation reaching the whole depth reports an unclaimedRemainde
   assert.deepEqual(served(oneDeep), [24]);
 
   const twoDeep = distribute(
-    weekendSettings({ players: 32, depth: 2, displays: [2, 1], displaySize: 8 }),
+    weekendSettings({
+      players: 32,
+      depth: 2,
+      displays: [2, 1],
+      displaySize: 8,
+    }),
   );
   assert.equal(twoDeep.rank.booster, 64);
   assert.equal(twoDeep.settledCount, 2);
@@ -628,7 +758,12 @@ test('a DisplayReservation reaching the whole depth reports an unclaimedRemainde
   assert.deepEqual(served(twoDeep), [16, 8]);
 
   const threeDeep = distribute(
-    weekendSettings({ players: 32, depth: 3, displays: [3, 2, 1], displaySize: 4 }),
+    weekendSettings({
+      players: 32,
+      depth: 3,
+      displays: [3, 2, 1],
+      displaySize: 4,
+    }),
   );
   assert.equal(threeDeep.rank.booster, 64);
   assert.equal(threeDeep.settledCount, 3);
@@ -637,11 +772,13 @@ test('a DisplayReservation reaching the whole depth reports an unclaimedRemainde
   assert.deepEqual(served(threeDeep), [12, 8, 4]);
 });
 
-test('a DisplayReservation that does not reach the whole depth is not reported — the curve still has a Rank left', () => {
+test("a DisplayReservation that does not reach the whole depth is not reported — the curve still has a Rank left", () => {
   // Same sheet, same rank.booster 64, but d = (1) at depth 2: settledCount 1
   // stays below depth 2, so Rank 2 is still in the curve and the ShapedRemainder
   // lands there instead of going unclaimed. 24 and 40, together the full 64.
-  const plan = distribute(weekendSettings({ players: 32, depth: 2, displays: [1] }));
+  const plan = distribute(
+    weekendSettings({ players: 32, depth: 2, displays: [1] }),
+  );
   assert.equal(plan.rank.booster, 64);
   assert.equal(plan.settledCount, 1);
   assert.equal(plan.curveCount, 1);
@@ -651,7 +788,7 @@ test('a DisplayReservation that does not reach the whole depth is not reported �
 
 // #56: the conflict branch and the orphaned reservation.
 
-test('a pinned depth over the cap reports a conflict, pours from the top and never exceeds the RankPool', () => {
+test("a pinned depth over the cap reports a conflict, pours from the top and never exceeds the RankPool", () => {
   // players 32, boosterRate 3, participationBooster 1, rankFloor 2: rank.booster
   // 64, depthCap 31 (2·31 + 1 = 63 fits, 2·32 + 1 = 65 does not — the same
   // stand as "the same stand without a set depth gives a depthCap of 31").
@@ -663,7 +800,7 @@ test('a pinned depth over the cap reports a conflict, pours from the top and nev
       participationBooster: 1,
       rankFloor: 2,
       depth: 32,
-      curve: 'steep',
+      curve: "steep",
     }),
   );
   assert.equal(plan.depth, 32); // the pinned value stands, uncut by the cap
@@ -690,7 +827,7 @@ test('a pinned depth over the cap reports a conflict, pours from the top and nev
   );
 });
 
-test('a DisplayReservation alone bigger than the RankPool still never hands out more than the pool holds', () => {
+test("a DisplayReservation alone bigger than the RankPool still never hands out more than the pool holds", () => {
   // 8 Players, boosterRate 1: rank.booster 8. displaySize 24 reserves 24 for
   // the one settled Rank alone — the reservation by itself already outweighs
   // the whole RankPool, and depth 1 also settles the whole depth.
@@ -729,7 +866,7 @@ test('a DisplayReservation alone bigger than the RankPool still never hands out 
   assert.equal(unfit(plan), true);
 });
 
-test('a reservation below the depth is orphaned, reported and makes the plan unfit — the curve arithmetic stays untouched', () => {
+test("a reservation below the depth is orphaned, reported and makes the plan unfit — the curve arithmetic stays untouched", () => {
   // 5 Players, boosterRate 1: rank.booster 5. displays[2] = 3 sits on Rank 3,
   // which depth 2 does not serve — a promise the plan cannot keep. The
   // reservation condition at depth 2 itself holds exactly (available 5,
@@ -753,10 +890,17 @@ test('a reservation below the depth is orphaned, reported and makes the plan unf
   assert.deepEqual(served(plan), [3, 2]); // depth 2's own arithmetic is unaffected
 });
 
-test('unfit is true for exactly conflict, overtake, orphanedReservation and the depth-covering reservation, and false otherwise', () => {
+test("unfit is true for exactly conflict, overtake, orphanedReservation and the depth-covering reservation, and false otherwise", () => {
   // Conflict alone: the pinned-depth-over-the-cap stand above.
   const conflictOnly = distribute(
-    settings({ players: 32, boosterRate: 3, participationBooster: 1, rankFloor: 2, depth: 32, curve: 'steep' }),
+    settings({
+      players: 32,
+      boosterRate: 3,
+      participationBooster: 1,
+      rankFloor: 2,
+      depth: 32,
+      curve: "steep",
+    }),
   );
   assert.ok(conflictOnly.conflict);
   assert.equal(conflictOnly.overtake, null);
@@ -765,7 +909,9 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
   assert.equal(unfit(conflictOnly), true);
 
   // Overtake alone: Weekend 48 with d = (1) (#55).
-  const overtakeOnly = distribute(weekendSettings({ players: 48, displays: [1] }));
+  const overtakeOnly = distribute(
+    weekendSettings({ players: 48, displays: [1] }),
+  );
   assert.equal(overtakeOnly.conflict, null);
   assert.ok(overtakeOnly.overtake);
   assert.equal(overtakeOnly.orphanedReservation, null);
@@ -774,7 +920,14 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
 
   // Orphaned reservation alone: the stand above.
   const orphanedOnly = distribute(
-    settings({ players: 5, boosterRate: 1, rankFloor: 2, displaySize: 1, depth: 2, displays: [0, 0, 3] }),
+    settings({
+      players: 5,
+      boosterRate: 1,
+      rankFloor: 2,
+      displaySize: 1,
+      depth: 2,
+      displays: [0, 0, 3],
+    }),
   );
   assert.equal(orphanedOnly.conflict, null);
   assert.equal(orphanedOnly.overtake, null);
@@ -783,7 +936,9 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
   assert.equal(unfit(orphanedOnly), true);
 
   // The depth-covering reservation alone: Weekend 32 with d = (1) at depth 1 (#55).
-  const unclaimedOnly = distribute(weekendSettings({ players: 32, depth: 1, displays: [1] }));
+  const unclaimedOnly = distribute(
+    weekendSettings({ players: 32, depth: 1, displays: [1] }),
+  );
   assert.equal(unclaimedOnly.conflict, null);
   assert.equal(unclaimedOnly.overtake, null);
   assert.equal(unclaimedOnly.orphanedReservation, null);
@@ -792,7 +947,14 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
 
   // A clean plan: none of the four, and unfit is false.
   const clean = distribute(
-    settings({ players: 32, boosterRate: 3, participationBooster: 1, rankFloor: 2, depth: 8, curve: 'steep' }),
+    settings({
+      players: 32,
+      boosterRate: 3,
+      participationBooster: 1,
+      rankFloor: 2,
+      depth: 8,
+      curve: "steep",
+    }),
   );
   assert.equal(clean.conflict, null);
   assert.equal(clean.overtake, null);
@@ -806,19 +968,46 @@ test('unfit is true for exactly conflict, overtake, orphanedReservation and the 
  * **untrimmed**. `displayVector` is not that field — it is cut to the depth,
  * and it is exactly the Rank the cut removes that a way out has to clear.
  */
-test('the plan carries its slider stands untrimmed, where displayVector is cut to the depth', () => {
-  const input = settings({ players: 5, boosterRate: 1, rankFloor: 2, displaySize: 1, depth: 2, displays: [2, 1, 1] });
+test("the plan carries its slider stands untrimmed, where displayVector is cut to the depth", () => {
+  const input = settings({
+    players: 5,
+    boosterRate: 1,
+    rankFloor: 2,
+    displaySize: 1,
+    depth: 2,
+    displays: [2, 1, 1],
+  });
   const plan = distribute(input);
-  assert.deepEqual(plan.displayVector, [2, 1], 'displayVector stops at the depth');
-  assert.deepEqual(plan.settings.displays, [2, 1, 1], 'plan.settings keeps the third Rank');
-  assert.deepEqual(plan.settings, input, 'every stand of the input is carried, none of them changed');
+  assert.deepEqual(
+    plan.displayVector,
+    [2, 1],
+    "displayVector stops at the depth",
+  );
+  assert.deepEqual(
+    plan.settings.displays,
+    [2, 1, 1],
+    "plan.settings keeps the third Rank",
+  );
+  assert.deepEqual(
+    plan.settings,
+    input,
+    "every stand of the input is carried, none of them changed",
+  );
 });
 
-test('the carried stands recompute the plan they came from, and are a snapshot rather than the caller object', () => {
+test("the carried stands recompute the plan they came from, and are a snapshot rather than the caller object", () => {
   const input = settings({ players: 8, boosterRate: 3, displays: [1] });
   const plan = distribute(input);
-  assert.deepEqual(distribute(plan.settings), plan, 'the plan is reproducible from what it carries');
-  assert.notEqual(plan.settings, input, 'the plan holds a copy, so a later edit of the input cannot contradict it');
+  assert.deepEqual(
+    distribute(plan.settings),
+    plan,
+    "the plan is reproducible from what it carries",
+  );
+  assert.notEqual(
+    plan.settings,
+    input,
+    "the plan holds a copy, so a later edit of the input cannot contradict it",
+  );
   input.displays.push(1);
   input.players = 48;
   assert.deepEqual(plan.settings.displays, [1]);
@@ -831,16 +1020,25 @@ test('the carried stands recompute the plan they came from, and are a snapshot r
  * address line of #89 take what the plan states as set instead of knowing a
  * rule. This block is the shape those two build against.
  */
-test('plan.pinned holds the hand-set sliders alone, key by key, and nothing that was inherited', () => {
-  const pins = { players: 48, curve: 'flat', displays: [2, 1] };
-  const resolved = resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins });
+test("plan.pinned holds the hand-set sliders alone, key by key, and nothing that was inherited", () => {
+  const pins = { players: 48, curve: "flat", displays: [2, 1] };
+  const resolved = resolveSettings({
+    game: GAME,
+    type: TOURNAMENT_TYPES[0],
+    pins,
+  });
   const plan = distribute(resolved, pins);
 
-  assert.deepEqual(plan.pinned, pins, 'exactly the pins, key for key');
-  assert.equal(plan.pinned.rankFloor, undefined, 'an inherited slider is absent, and absent is the information');
+  assert.deepEqual(plan.pinned, pins, "exactly the pins, key for key");
+  assert.equal(
+    plan.pinned.rankFloor,
+    undefined,
+    "an inherited slider is absent, and absent is the information",
+  );
   // The agreement the caller gets for free: the resolved stand was built from
   // these very pins, so the two can never state different values.
-  for (const [key, value] of Object.entries(plan.pinned)) assert.deepEqual(plan.settings[key], value, key);
+  for (const [key, value] of Object.entries(plan.pinned))
+    assert.deepEqual(plan.settings[key], value, key);
 });
 
 /**
@@ -850,49 +1048,82 @@ test('plan.pinned holds the hand-set sliders alone, key by key, and nothing that
  * the nineteen, `depthStep`, has no key in the wire register at all and would
  * go missing without a word.
  */
-test('the resolved stand names every slider while plan.pinned names only the hand-set ones', () => {
-  const pins = { players: 48, curve: 'flat', displays: [2, 1] };
-  const plan = distribute(resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins }), pins);
+test("the resolved stand names every slider while plan.pinned names only the hand-set ones", () => {
+  const pins = { players: 48, curve: "flat", displays: [2, 1] };
+  const plan = distribute(
+    resolveSettings({ game: GAME, type: TOURNAMENT_TYPES[0], pins }),
+    pins,
+  );
 
   assert.equal(Object.keys(plan.pinned).length, 3);
   assert.ok(
     Object.keys(plan.settings).length > Object.keys(plan.pinned).length,
-    'the stand is the wider of the two, which is why it is the wrong one to encode',
+    "the stand is the wider of the two, which is why it is the wrong one to encode",
   );
-  assert.ok('depthStep' in plan.settings, 'the stand carries depthStep');
-  assert.equal('depthStep' in plan.pinned, false, 'the pins do not, and the wire register has no key for it');
+  assert.ok("depthStep" in plan.settings, "the stand carries depthStep");
+  assert.equal(
+    "depthStep" in plan.pinned,
+    false,
+    "the pins do not, and the wire register has no key for it",
+  );
 });
 
-test('a plan computed without pins states that nothing was set by hand, rather than stating nothing', () => {
+test("a plan computed without pins states that nothing was set by hand, rather than stating nothing", () => {
   const plan = distribute(settings({ players: 8, boosterRate: 3 }));
-  assert.deepEqual(plan.pinned, {}, 'the freshly opened app: base plus no deviations');
-  assert.deepEqual(distribute(settings({ players: 8, boosterRate: 3 }), undefined).pinned, {});
-  assert.deepEqual(distribute(settings({ players: 8, boosterRate: 3 }), null).pinned, {});
+  assert.deepEqual(
+    plan.pinned,
+    {},
+    "the freshly opened app: base plus no deviations",
+  );
+  assert.deepEqual(
+    distribute(settings({ players: 8, boosterRate: 3 }), undefined).pinned,
+    {},
+  );
+  assert.deepEqual(
+    distribute(settings({ players: 8, boosterRate: 3 }), null).pinned,
+    {},
+  );
 });
 
-test('the pins change no number in the plan — provenance is carried, not computed with', () => {
-  const input = settings({ players: 8, boosterRate: 3, rankFloor: 1, displays: [1] });
+test("the pins change no number in the plan — provenance is carried, not computed with", () => {
+  const input = settings({
+    players: 8,
+    boosterRate: 3,
+    rankFloor: 1,
+    displays: [1],
+  });
   const bare = distribute(input);
   const pinned = distribute(input, { players: 8, rankFloor: 1 });
-  assert.deepEqual({ ...pinned, pinned: undefined }, { ...bare, pinned: undefined });
+  assert.deepEqual(
+    { ...pinned, pinned: undefined },
+    { ...bare, pinned: undefined },
+  );
 });
 
-test('a pin is kept even where it matches the value it would have inherited (ADR 0006)', () => {
+test("a pin is kept even where it matches the value it would have inherited (ADR 0006)", () => {
   const type = TOURNAMENT_TYPES[0];
   const inherited = resolveSettings({ game: GAME, type, pins: {} });
   const pins = { rankFloor: inherited.rankFloor };
   const plan = distribute(resolveSettings({ game: GAME, type, pins }), pins);
-  assert.deepEqual(plan.pinned, pins, 'a pin is a stored state, not a comparison against the DefaultSet');
+  assert.deepEqual(
+    plan.pinned,
+    pins,
+    "a pin is a stored state, not a comparison against the DefaultSet",
+  );
 });
 
-test('the pins are a snapshot too, and plan plus pins recompute the plan', () => {
+test("the pins are a snapshot too, and plan plus pins recompute the plan", () => {
   const input = settings({ players: 8, boosterRate: 3, displays: [1] });
   const pins = { players: 8, displays: [1] };
   const plan = distribute(input, pins);
 
-  assert.deepEqual(distribute(plan.settings, plan.pinned), plan, 'a plan is reproducible from both its fields');
+  assert.deepEqual(
+    distribute(plan.settings, plan.pinned),
+    plan,
+    "a plan is reproducible from both its fields",
+  );
   assert.notEqual(plan.pinned, pins);
   pins.displays.push(1);
-  pins.curve = 'flat';
+  pins.curve = "flat";
   assert.deepEqual(plan.pinned, { players: 8, displays: [1] });
 });

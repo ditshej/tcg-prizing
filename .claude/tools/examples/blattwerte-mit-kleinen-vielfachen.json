@@ -19,12 +19,25 @@
             "description": "Zwei Säulendiagramme über acht Ränge. Die Zielreihe aus #46 ist als Silhouette hinterlegt. Das kanonische Blatt aus #21 liegt deckungsgleich darauf; das heutige Blatt beginnt bei 11 statt 7 und fällt danach zu steil.",
             "xLabel": "Rang",
             "max": 12,
-            "target": { "label": "Messung in #46 (Ziel)", "values": [7, 5, 4, 4, 3, 3, 3, 3] },
+            "target": {
+              "label": "Messung in #46 (Ziel)",
+              "values": [7, 5, 4, 4, 3, 3, 3, 3]
+            },
             "matchLabel": "trifft die Messung",
             "currentLabel": "steht heute im Blatt",
             "panels": [
-              { "label": "kanonisch (#21)", "tone": "match", "tag": "trifft exakt", "values": [7, 5, 4, 4, 3, 3, 3, 3] },
-              { "label": "heutiges Blatt", "tone": "current", "tag": "daneben", "values": [11, 6, 4, 3, 2, 2, 2, 2] }
+              {
+                "label": "kanonisch (#21)",
+                "tone": "match",
+                "tag": "trifft exakt",
+                "values": [7, 5, 4, 4, 3, 3, 3, 3]
+              },
+              {
+                "label": "heutiges Blatt",
+                "tone": "current",
+                "tag": "daneben",
+                "values": [11, 6, 4, 3, 2, 2, 2, 2]
+              }
             ]
           },
           "caption": "Die Messung in #46 nennt für `Weekly` 32 die Reihe `7·5·4·4·3·3·3·3`. Sie entsteht nur aus `boosterRate` 3 mit `participationBooster` 2 und `curve: 'mild'` — den Werten aus #21.",
@@ -39,12 +52,25 @@
             "description": "Zwei Säulendiagramme über die ersten fünfzehn Ränge. Die Zielreihe aus #46 ist als Silhouette hinterlegt. Das kanonische Blatt aus #25 liegt deckungsgleich darauf; das heutige Blatt beginnt bei 12 statt 8 und liegt über die ganze Breite zu hoch.",
             "xLabel": "Rang",
             "max": 13,
-            "target": { "label": "Messung in #46 (Ziel)", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+            "target": {
+              "label": "Messung in #46 (Ziel)",
+              "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3]
+            },
             "matchLabel": "trifft die Messung",
             "currentLabel": "steht heute im Blatt",
             "panels": [
-              { "label": "kanonisch (#25)", "tone": "match", "tag": "trifft exakt", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
-              { "label": "heutiges Blatt", "tone": "current", "tag": "daneben", "values": [12, 9, 7, 6, 6, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3] }
+              {
+                "label": "kanonisch (#25)",
+                "tone": "match",
+                "tag": "trifft exakt",
+                "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3]
+              },
+              {
+                "label": "heutiges Blatt",
+                "tone": "current",
+                "tag": "daneben",
+                "values": [12, 9, 7, 6, 6, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3]
+              }
             ]
           },
           "caption": "Gezeigt sind die ersten 15 von 32 Rängen — dort trennen sich die Reihen. Die kanonische Reihe steht ab Rang 16 durchgehend auf 2.",

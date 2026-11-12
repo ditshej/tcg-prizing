@@ -13,38 +13,38 @@ Gemessen am echten App-Stand, nie „sieht gut aus".
 
 Gleich in allen acht Fassungen (WebKit/Chromium × hell/dunkel × 393/360):
 
-| Zustand | Grösse | Hintergrund | Schatten | Haken |
-|---|---|---|---|---|
-| aus | 20 × 20 | = `--paper` | = `--btn-shadow` | `visibility: hidden` |
-| an | 20 × 20 | = `--accent` | = `--glow` | sichtbar, `stroke` = `--on-accent`, 14 × 14, `stroke-width` 2 (Datei unverändert) |
+| Zustand | Grösse  | Hintergrund  | Schatten         | Haken                                                                             |
+| ------- | ------- | ------------ | ---------------- | --------------------------------------------------------------------------------- |
+| aus     | 20 × 20 | = `--paper`  | = `--btn-shadow` | `visibility: hidden`                                                              |
+| an      | 20 × 20 | = `--accent` | = `--glow`       | sichtbar, `stroke` = `--on-accent`, 14 × 14, `stroke-width` 2 (Datei unverändert) |
 
 Ecke 2 px (`--r-ctl`), kein `border`. Aufgelöste Werte:
 
-| Token | hell | dunkel |
-|---|---|---|
-| `--paper` | `rgb(255, 253, 248)` | `rgb(30, 27, 22)` |
-| `--accent` | `rgb(140, 90, 43)` | `rgb(201, 153, 46)` |
-| `--on-accent` | `rgb(255, 248, 238)` | `rgb(20, 17, 12)` |
+| Token         | hell                 | dunkel              |
+| ------------- | -------------------- | ------------------- |
+| `--paper`     | `rgb(255, 253, 248)` | `rgb(30, 27, 22)`   |
+| `--accent`    | `rgb(140, 90, 43)`   | `rgb(201, 153, 46)` |
+| `--on-accent` | `rgb(255, 248, 238)` | `rgb(20, 17, 12)`   |
 
 **Kein System-Kästchen, kein Blau.** Das native `<input>` misst 1 × 1, `clip-path: inset(50%)`, `appearance: none`, `display: block`, `visibility: visible` — fokussierbar und im Barrierefreiheitsbaum. Pixel mit Blau-Überhang (B > R + 30 und B > G + 10) im Ausschnitt um das Kästchen, aus und an: **0** in allen acht Fassungen.
 
 ## Bedienung
 
-| Handlung | Ergebnis (alle acht Fassungen) |
-|---|---|
-| Tipp auf den Text des Labels | `checked` false → true, `settings.combinedHandout` false → true |
-| Tipp aufs Kästchen | true → false, Einstellung mit |
+| Handlung                          | Ergebnis (alle acht Fassungen)                                                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tipp auf den Text des Labels      | `checked` false → true, `settings.combinedHandout` false → true                                                                               |
+| Tipp aufs Kästchen                | true → false, Einstellung mit                                                                                                                 |
 | Tab auf das Input, dann Leertaste | `:focus-visible` = true, Ring am Kästchen `2px solid` in `--accent`; Leertaste schaltet an, zweite schaltet aus, Einstellung jedes Mal gleich |
-| Trefferfläche | Label 377 × 44 (393), 344 × 59 (360, umbrochen) |
+| Trefferfläche                     | Label 377 × 44 (393), 344 × 59 (360, umbrochen)                                                                                               |
 
 ## Lage zur ersten Textzeile
 
 Mitte des Kästchens minus Mitte der ersten Zeile (`getClientRects()[0]`):
 
-| Breite | Zeilen | WebKit | Chromium |
-|---|---|---|---|
-| 393 | 1 | 0,00 px | 0,00 px |
-| 360 | 2 | 0,00 px | 0,00 px |
+| Breite | Zeilen | WebKit  | Chromium |
+| ------ | ------ | ------- | -------- |
+| 393    | 1      | 0,00 px | 0,00 px  |
+| 360    | 2      | 0,00 px | 0,00 px  |
 
 Zeilenhöhe `normal`: 14,7 px in WebKit, 15 px in Chromium; das Kästchen folgt über `1lh`, darum in beiden 0.
 

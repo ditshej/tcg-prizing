@@ -1,10 +1,16 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { distribute, unfit } from '../public/core/distribute.mjs';
-import { CURVES } from '../public/core/rules.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
-import { combinedWayOut, curveStepDistance, suggestions, offerFor, waysOut as waysOutOf } from '../public/core/suggest.mjs';
+import { distribute, unfit } from "../public/core/distribute.mjs";
+import { CURVES } from "../public/core/rules.mjs";
+import { GAME, TOURNAMENT_TYPES } from "../public/sets/onepiece.mjs";
+import {
+  combinedWayOut,
+  curveStepDistance,
+  suggestions,
+  offerFor,
+  waysOut as waysOutOf,
+} from "../public/core/suggest.mjs";
 
 /**
  * A DefaultSet sheet read as Settings, the same way `test/onepiece.test.mjs`
@@ -21,8 +27,8 @@ import { combinedWayOut, curveStepDistance, suggestions, offerFor, waysOut as wa
  * moderate" still means the stand it was written against.
  */
 const MEASURED_ON = {
-  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
-  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  weekly: { players: 32, depthStep: "top8", curve: "mild" },
+  weekend: { players: 32, depthStep: "top8", curve: "steep" },
   release: { players: 32 },
 };
 
@@ -49,7 +55,8 @@ function settingsFor(id, overrides = {}) {
 const waysOut = (settings) => suggestions(distribute(settings));
 
 const labels = (list) => list.map((s) => s.label);
-const servedBoosters = (plan) => plan.rows.filter((r) => r.served).map((r) => r.booster);
+const servedBoosters = (plan) =>
+  plan.rows.filter((r) => r.served).map((r) => r.booster);
 
 /**
  * The overtake of #46 `## Tests`: `Weekend` at 48 players with `d` = (1)
@@ -58,23 +65,31 @@ const servedBoosters = (plan) => plan.rows.filter((r) => r.served).map((r) => r.
  * core — and this test asserts them first so every expectation below stands on
  * a plan that is known to be the one the spec means.
  */
-const OVERTAKE = settingsFor('weekend', { players: 48, displays: [1] });
+const OVERTAKE = settingsFor("weekend", { players: 48, displays: [1] });
 
-test('a valid plan has no ways out — the list is empty', () => {
-  const settings = settingsFor('weekend');
-  assert.equal(unfit(distribute(settings)), false, 'the measured Weekend 32 plan is valid');
+test("a valid plan has no ways out — the list is empty", () => {
+  const settings = settingsFor("weekend");
+  assert.equal(
+    unfit(distribute(settings)),
+    false,
+    "the measured Weekend 32 plan is valid",
+  );
   assert.deepEqual(waysOut(settings), []);
 });
 
-test('Weekend 48 with d = (1) is the measured overtake the ways out are searched from', () => {
+test("Weekend 48 with d = (1) is the measured overtake the ways out are searched from", () => {
   const plan = distribute(OVERTAKE);
   assert.deepEqual(servedBoosters(plan), [24, 34, 16, 9, 5, 3, 3, 2]);
   assert.deepEqual(plan.overtake, { under: 1, over: 2, has: 24, gets: 34 });
 });
 
-test('the overtake at Weekend 48 with d = (1) offers `Curve to moderate` first', () => {
+test("the overtake at Weekend 48 with d = (1) offers `Curve to moderate` first", () => {
   const out = waysOut(OVERTAKE);
-  assert.deepEqual(out[0], { key: 'curve', value: 'moderate', label: 'Curve to moderate' });
+  assert.deepEqual(out[0], {
+    key: "curve",
+    value: "moderate",
+    label: "Curve to moderate",
+  });
 });
 
 /**
@@ -84,23 +99,25 @@ test('the overtake at Weekend 48 with d = (1) offers `Curve to moderate` first',
  * set, not one value. Among themselves the higher value comes first, because
  * taking away is the more drastic grip.
  */
-test('two equally distant values of the same slider both stand there, the higher first', () => {
-  const rank1 = waysOut(OVERTAKE).filter((s) => s.key === 'displays' && s.rank === 1);
+test("two equally distant values of the same slider both stand there, the higher first", () => {
+  const rank1 = waysOut(OVERTAKE).filter(
+    (s) => s.key === "displays" && s.rank === 1,
+  );
   assert.deepEqual(rank1, [
-    { key: 'displays', rank: 1, value: 2, label: 'Rank 1 up to 2 displays' },
-    { key: 'displays', rank: 1, value: 0, label: "Drop rank 1's display" },
+    { key: "displays", rank: 1, value: 2, label: "Rank 1 up to 2 displays" },
+    { key: "displays", rank: 1, value: 0, label: "Drop rank 1's display" },
   ]);
 });
 
-test('the ways out of the measured overtake run promise against shaping, in that order', () => {
+test("the ways out of the measured overtake run promise against shaping, in that order", () => {
   assert.deepEqual(labels(waysOut(OVERTAKE)), [
-    'Curve to moderate',
-    'Floor up to 6',
-    'Serve 17 ranks',
-    'Rank 1 up to 2 displays',
+    "Curve to moderate",
+    "Floor up to 6",
+    "Serve 17 ranks",
+    "Rank 1 up to 2 displays",
     "Drop rank 1's display",
-    'Rank 2 up to 1 display',
-    'Participation boosters up to 2',
+    "Rank 2 up to 1 display",
+    "Participation boosters up to 2",
   ]);
 });
 
@@ -112,24 +129,27 @@ test('the ways out of the measured overtake run promise against shaping, in that
  * the curve drops out of the list by itself. Nothing in `suggest.mjs` asks
  * which case this is.
  */
-const FLOOR_CONFLICT = settingsFor('weekend', { depth: 32 });
+const FLOOR_CONFLICT = settingsFor("weekend", { depth: 32 });
 
-test('the floor conflict is a shortfall the DistributionCurve does not enter', () => {
+test("the floor conflict is a shortfall the DistributionCurve does not enter", () => {
   const plan = distribute(FLOOR_CONFLICT);
   assert.deepEqual(plan.conflict, { need: 65, have: 64 });
 });
 
-test('at a floor conflict the curve stays out of the list on its own', () => {
+test("at a floor conflict the curve stays out of the list on its own", () => {
   const out = waysOut(FLOOR_CONFLICT);
-  assert.ok(out.length > 0, 'the floor conflict has ways out, so the list is not empty by accident');
+  assert.ok(
+    out.length > 0,
+    "the floor conflict has ways out, so the list is not empty by accident",
+  );
   assert.deepEqual(
-    out.filter((s) => s.key === 'curve'),
+    out.filter((s) => s.key === "curve"),
     [],
   );
   assert.deepEqual(labels(out), [
-    'Floor down to 1',
-    'Serve 31 ranks',
-    'Participation boosters down to 0',
+    "Floor down to 1",
+    "Serve 31 ranks",
+    "Participation boosters down to 0",
   ]);
 });
 
@@ -142,25 +162,31 @@ test('at a floor conflict the curve stays out of the list on its own', () => {
  * `suggest.mjs` changes nothing. The same state also reaches `displays[i]` = 3,
  * so it pins the search range of #46 `## Slider ranges` at the same time.
  */
-const RISING_STEP = settingsFor('weekend', {
+const RISING_STEP = settingsFor("weekend", {
   players: 32,
   rankFloor: 0,
-  curve: 'extreme',
+  curve: "extreme",
   displays: [3, 1],
   displaySize: 8,
 });
 
 /** The states that have something to say — one per way a plan can be unfit. */
 const UNFIT_STATES = [
-  ['overtake', OVERTAKE],
-  ['floor conflict', FLOOR_CONFLICT],
-  ['orphaned reservation', settingsFor('weekend', { players: 48, depth: 2, displays: [1, 1, 1] })],
-  ['unclaimed remainder', settingsFor('weekend', { depth: 1, displays: [1] })],
-  ['rising step one Rank down', RISING_STEP],
-  ['reservation over the whole RankPool', settingsFor('weekend', { displays: [4, 2] })],
+  ["overtake", OVERTAKE],
+  ["floor conflict", FLOOR_CONFLICT],
+  [
+    "orphaned reservation",
+    settingsFor("weekend", { players: 48, depth: 2, displays: [1, 1, 1] }),
+  ],
+  ["unclaimed remainder", settingsFor("weekend", { depth: 1, displays: [1] })],
+  ["rising step one Rank down", RISING_STEP],
+  [
+    "reservation over the whole RankPool",
+    settingsFor("weekend", { displays: [4, 2] }),
+  ],
 ];
 
-test('every named unfit state really is unfit — the states below are not vacuous', () => {
+test("every named unfit state really is unfit — the states below are not vacuous", () => {
   for (const [name, settings] of UNFIT_STATES) {
     assert.ok(unfit(distribute(settings)), `${name} must be unfit`);
   }
@@ -174,23 +200,29 @@ test('every named unfit state really is unfit — the states below are not vacuo
  * (ADR 0002), and here there are none. The state is only reachable by lowering
  * a second value afterwards, the way ADR 0002 describes.
  */
-test('a state with no individually walkable way out yields an empty list, not a wrong one', () => {
-  const settings = settingsFor('weekend', { displays: [4, 2] });
+test("a state with no individually walkable way out yields an empty list, not a wrong one", () => {
+  const settings = settingsFor("weekend", { displays: [4, 2] });
   assert.ok(unfit(distribute(settings)));
   assert.deepEqual(waysOut(settings), []);
 });
 
-test('every unfit state but the last one has at least one way out', () => {
+test("every unfit state but the last one has at least one way out", () => {
   for (const [name, settings] of UNFIT_STATES.slice(0, -1)) {
-    assert.ok(waysOut(settings).length > 0, `${name} must have at least one way out`);
+    assert.ok(
+      waysOut(settings).length > 0,
+      `${name} must have at least one way out`,
+    );
   }
 });
 
-test('player count, Booster rate and Display size never appear as a way out', () => {
-  const forbidden = new Set(['players', 'boosterRate', 'displaySize']);
+test("player count, Booster rate and Display size never appear as a way out", () => {
+  const forbidden = new Set(["players", "boosterRate", "displaySize"]);
   for (const [name, settings] of UNFIT_STATES) {
     for (const s of waysOut(settings)) {
-      assert.ok(!forbidden.has(s.key), `${name} proposed '${s.key}', which is a fact about the evening`);
+      assert.ok(
+        !forbidden.has(s.key),
+        `${name} proposed '${s.key}', which is a fact about the evening`,
+      );
     }
   }
 });
@@ -198,14 +230,14 @@ test('player count, Booster rate and Display size never appear as a way out', ()
 /** A suggestion accepted: the slider it names set to the value it names. */
 function accepted(settings, s) {
   if (s.changes) return s.changes.reduce(accepted, settings);
-  if (s.key !== 'displays') return { ...settings, [s.key]: s.value };
+  if (s.key !== "displays") return { ...settings, [s.key]: s.value };
   const d = (settings.displays ?? []).slice();
   while (d.length < s.rank) d.push(0);
   d[s.rank - 1] = s.value;
   return { ...settings, displays: d };
 }
 
-test('no way out lowers the RankPoolDepth below the overtaking Rank', () => {
+test("no way out lowers the RankPoolDepth below the overtaking Rank", () => {
   const plan = distribute(OVERTAKE);
   for (const s of waysOut(OVERTAKE)) {
     const after = distribute(accepted(OVERTAKE, s));
@@ -216,12 +248,17 @@ test('no way out lowers the RankPoolDepth below the overtaking Rank', () => {
   }
 });
 
-test('no way out lets the DisplayReservation vector rise', () => {
+test("no way out lets the DisplayReservation vector rise", () => {
   for (const [name, settings] of UNFIT_STATES) {
     for (const s of waysOut(settings)) {
-      const d = (accepted(settings, s).displays ?? []).map((v) => Math.max(0, Math.trunc(v)));
+      const d = (accepted(settings, s).displays ?? []).map((v) =>
+        Math.max(0, Math.trunc(v)),
+      );
       for (let i = 1; i < d.length; i++) {
-        assert.ok(d[i] <= d[i - 1], `${name}: '${s.label}' makes the vector rise at Rank ${i + 1}`);
+        assert.ok(
+          d[i] <= d[i - 1],
+          `${name}: '${s.label}' makes the vector rise at Rank ${i + 1}`,
+        );
       }
     }
   }
@@ -234,14 +271,21 @@ test('no way out lets the DisplayReservation vector rise', () => {
  * because `d₁ ≥ d₂ ≥ …` is the one rule no suggestion may break. Without this
  * assertion the test above passes on a `suggest.mjs` that has no filter at all.
  */
-test('a rising candidate is withheld even though it clears the state', () => {
-  const rising = accepted(RISING_STEP, { key: 'displays', rank: 3, value: 2 });
+test("a rising candidate is withheld even though it clears the state", () => {
+  const rising = accepted(RISING_STEP, { key: "displays", rank: 3, value: 2 });
   assert.deepEqual(rising.displays, [3, 1, 2]);
   const after = distribute(rising);
-  assert.equal(unfit(after), false, '(3,1,2) really clears — the filter is what withholds it');
-  assert.ok(after.depth >= distribute(RISING_STEP).overtake.over, 'and it keeps the overtaking Rank');
+  assert.equal(
+    unfit(after),
+    false,
+    "(3,1,2) really clears — the filter is what withholds it",
+  );
+  assert.ok(
+    after.depth >= distribute(RISING_STEP).overtake.over,
+    "and it keeps the overtaking Rank",
+  );
   assert.deepEqual(
-    waysOut(RISING_STEP).filter((s) => s.key === 'displays' && s.rank === 3),
+    waysOut(RISING_STEP).filter((s) => s.key === "displays" && s.rank === 3),
     [],
   );
 });
@@ -252,20 +296,24 @@ test('a rising candidate is withheld even though it clears the state', () => {
  * range cut to 0…2 loses it silently — every other test in this file stays
  * green.
  */
-test('the DisplayReservation is searched up to 4, not to the current value', () => {
+test("the DisplayReservation is searched up to 4, not to the current value", () => {
   assert.deepEqual(labels(waysOut(RISING_STEP)), [
-    'Curve to gentle',
-    'Floor up to 5',
-    'Rank 1 down to 1 display',
-    'Rank 2 up to 3 displays',
-    'Participation boosters up to 2',
+    "Curve to gentle",
+    "Floor up to 5",
+    "Rank 1 down to 1 display",
+    "Rank 2 up to 3 displays",
+    "Participation boosters up to 2",
   ]);
 });
 
-test('every way out really clears the state it was offered for', () => {
+test("every way out really clears the state it was offered for", () => {
   for (const [name, settings] of UNFIT_STATES) {
     for (const s of waysOut(settings)) {
-      assert.equal(unfit(distribute(accepted(settings, s))), false, `${name}: '${s.label}' does not clear`);
+      assert.equal(
+        unfit(distribute(accepted(settings, s))),
+        false,
+        `${name}: '${s.label}' does not clear`,
+      );
     }
   }
 });
@@ -275,10 +323,17 @@ test('every way out really clears the state it was offered for', () => {
  * offers **both** ways — serve the Rank, or drop its Display. Neither the
  * curve nor the floor enters this condition, so neither appears.
  */
-test('an orphaned reservation gets both its ways out and nothing else', () => {
-  const settings = settingsFor('weekend', { players: 48, depth: 2, displays: [1, 1, 1] });
+test("an orphaned reservation gets both its ways out and nothing else", () => {
+  const settings = settingsFor("weekend", {
+    players: 48,
+    depth: 2,
+    displays: [1, 1, 1],
+  });
   assert.deepEqual(distribute(settings).orphanedReservation, { ranks: [3] });
-  assert.deepEqual(labels(waysOut(settings)), ['Serve 3 ranks', "Drop rank 3's display"]);
+  assert.deepEqual(labels(waysOut(settings)), [
+    "Serve 3 ranks",
+    "Drop rank 3's display",
+  ]);
 });
 
 /**
@@ -288,18 +343,24 @@ test('an orphaned reservation gets both its ways out and nothing else', () => {
  * the distance from `gentle` to `extreme` is 6 steps and 0.6 in ratio, and it
  * is the 6 that a suggestion counts.
  */
-test('the nearness of a curve step is counted in steps, not in the ratio value', () => {
-  assert.equal(curveStepDistance('steep', 'firm'), 1);
-  assert.equal(curveStepDistance('steep', 'moderate'), 2);
-  assert.equal(curveStepDistance('gentle', 'extreme'), CURVES.length - 1);
+test("the nearness of a curve step is counted in steps, not in the ratio value", () => {
+  assert.equal(curveStepDistance("steep", "firm"), 1);
+  assert.equal(curveStepDistance("steep", "moderate"), 2);
+  assert.equal(curveStepDistance("gentle", "extreme"), CURVES.length - 1);
   const ratioOf = (id) => CURVES.find((c) => c.id === id).ratio;
-  assert.notEqual(curveStepDistance('gentle', 'extreme'), ratioOf('gentle') - ratioOf('extreme'));
+  assert.notEqual(
+    curveStepDistance("gentle", "extreme"),
+    ratioOf("gentle") - ratioOf("extreme"),
+  );
 });
 
-test('a curve way out carries the step name, never the ratio behind it', () => {
+test("a curve way out carries the step name, never the ratio behind it", () => {
   const ids = new Set(CURVES.map((c) => c.id));
-  const curve = waysOut(OVERTAKE).find((s) => s.key === 'curve');
-  assert.ok(ids.has(curve.value), `'${curve.value}' must be one of the seven steps`);
+  const curve = waysOut(OVERTAKE).find((s) => s.key === "curve");
+  assert.ok(
+    ids.has(curve.value),
+    `'${curve.value}' must be one of the seven steps`,
+  );
 });
 
 /**
@@ -331,7 +392,7 @@ const EQUIVALENCE_AXES = {
   boosterRate: [0, 3],
   rankFloor: [0, 2],
   depth: [null, 3],
-  curve: ['gentle', 'extreme'],
+  curve: ["gentle", "extreme"],
   displays: [[], [1], [2, 1, 1]],
   displaySize: [1, 8],
   combinedHandout: [false, true],
@@ -342,7 +403,8 @@ function* grid(axes) {
   const counters = new Array(keys.length).fill(0);
   for (;;) {
     const overrides = {};
-    for (let k = 0; k < keys.length; k++) overrides[keys[k]] = axes[keys[k]][counters[k]];
+    for (let k = 0; k < keys.length; k++)
+      overrides[keys[k]] = axes[keys[k]][counters[k]];
     yield { overrides, where: JSON.stringify(overrides) };
     let k = keys.length - 1;
     while (k >= 0) {
@@ -355,15 +417,19 @@ function* grid(axes) {
   }
 }
 
-test('over a grid of stands the carried sliders recompute the plan and every way out still clears the input', () => {
+test("over a grid of stands the carried sliders recompute the plan and every way out still clears the input", () => {
   let stands = 0;
   let unfitStands = 0;
   let entries = 0;
   for (const { overrides, where } of grid(EQUIVALENCE_AXES)) {
-    const input = settingsFor('weekend', overrides);
+    const input = settingsFor("weekend", overrides);
     const plan = distribute(input);
     stands++;
-    assert.deepEqual(distribute(plan.settings), plan, `the carried sliders do not recompute the plan at ${where}`);
+    assert.deepEqual(
+      distribute(plan.settings),
+      plan,
+      `the carried sliders do not recompute the plan at ${where}`,
+    );
 
     const out = suggestions(plan);
     if (!unfit(plan)) {
@@ -409,12 +475,23 @@ test('over a grid of stands the carried sliders recompute the plan and every way
  * would have nothing to offer at the one stand where everything was set by
  * hand, which is exactly the stand a shared SetupLink arrives in.
  */
-test('the ways out do not depend on which sliders were set by hand', () => {
-  const everythingPinned = Object.fromEntries(Object.entries(OVERTAKE).filter(([, v]) => v !== null));
-  for (const pins of [{}, { curve: 'steep' }, { players: 48, displays: [1] }, everythingPinned]) {
+test("the ways out do not depend on which sliders were set by hand", () => {
+  const everythingPinned = Object.fromEntries(
+    Object.entries(OVERTAKE).filter(([, v]) => v !== null),
+  );
+  for (const pins of [
+    {},
+    { curve: "steep" },
+    { players: 48, displays: [1] },
+    everythingPinned,
+  ]) {
     const plan = distribute(OVERTAKE, pins);
     assert.ok(unfit(plan));
-    assert.deepEqual(suggestions(plan), waysOut(OVERTAKE), `pins: ${Object.keys(pins).join(',') || 'none'}`);
+    assert.deepEqual(
+      suggestions(plan),
+      waysOut(OVERTAKE),
+      `pins: ${Object.keys(pins).join(",") || "none"}`,
+    );
   }
 });
 
@@ -424,9 +501,13 @@ test('the ways out do not depend on which sliders were set by hand', () => {
  * CONTEXT.md "Offer"), so every state this file already knows is unfit must
  * answer `null` here.
  */
-test('an unfit plan always answers null — offerFor and ConflictNotice never meet', () => {
+test("an unfit plan always answers null — offerFor and ConflictNotice never meet", () => {
   for (const [name, settings] of UNFIT_STATES) {
-    assert.equal(offerFor(distribute(settings)), null, `${name} must not carry an Offer`);
+    assert.equal(
+      offerFor(distribute(settings)),
+      null,
+      `${name} must not carry an Offer`,
+    );
   }
 });
 
@@ -460,7 +541,7 @@ test('an unfit plan always answers null — offerFor and ConflictNotice never me
  * the players is unfit (`combinedHandoutDepth`), so the `combinedHandout`
  * half of the raster went unfit wherever it was not already.
  */
-test('over a raster of unfit stands, offerFor answers null every time', () => {
+test("over a raster of unfit stands, offerFor answers null every time", () => {
   let unfitStands = 0;
   let fitStands = 0;
   let fitOffers = 0;
@@ -469,13 +550,29 @@ test('over a raster of unfit stands, offerFor answers null every time', () => {
       for (const rankFloor of [0, 2]) {
         for (const displays of [[1], [2], [4], [1, 1], [3, 1], [4, 2]]) {
           for (const combinedHandout of [false, true]) {
-            const settings = settingsFor('weekend', { players, displaySize, rankFloor, displays, combinedHandout });
+            const settings = settingsFor("weekend", {
+              players,
+              displaySize,
+              rankFloor,
+              displays,
+              combinedHandout,
+            });
             const plan = distribute(settings);
-            const where = JSON.stringify({ players, displaySize, rankFloor, displays, combinedHandout });
+            const where = JSON.stringify({
+              players,
+              displaySize,
+              rankFloor,
+              displays,
+              combinedHandout,
+            });
             const off = offerFor(plan);
             if (unfit(plan)) {
               unfitStands++;
-              assert.equal(off, null, `unfit stand ${where} carries an Offer: ${JSON.stringify(off)}`);
+              assert.equal(
+                off,
+                null,
+                `unfit stand ${where} carries an Offer: ${JSON.stringify(off)}`,
+              );
             } else {
               fitStands++;
               if (off) fitOffers++;
@@ -487,7 +584,11 @@ test('over a raster of unfit stands, offerFor answers null every time', () => {
   }
   assert.equal(unfitStands, 3748);
   assert.equal(fitStands, 764);
-  assert.equal(fitOffers, 284, 'the fit half carries Offers — the raster is not null everywhere');
+  assert.equal(
+    fitOffers,
+    284,
+    "the fit half carries Offers — the raster is not null everywhere",
+  );
 });
 
 /**
@@ -497,12 +598,19 @@ test('over a raster of unfit stands, offerFor answers null every time', () => {
  * loose Boosters become one sealed Display, and nothing else moves (`also`
  * is empty, since Rank 1 already had every one of those Boosters).
  */
-test('Rank 1 landing exactly on a Display multiple still offers the trade, moving nothing else', () => {
-  const settings = settingsFor('weekend', { players: 27 });
+test("Rank 1 landing exactly on a Display multiple still offers the trade, moving nothing else", () => {
+  const settings = settingsFor("weekend", { players: 27 });
   const plan = distribute(settings);
   assert.equal(unfit(plan), false);
   assert.equal(plan.rows[0].booster, 24);
-  assert.deepEqual(offerFor(plan), { rank: 1, value: 1, from: 24, to: 24, also: [], key: '1:1:24' });
+  assert.deepEqual(offerFor(plan), {
+    rank: 1,
+    value: 1,
+    from: 24,
+    to: 24,
+    also: [],
+    key: "1:1:24",
+  });
 });
 
 /**
@@ -513,8 +621,8 @@ test('Rank 1 landing exactly on a Display multiple still offers the trade, movin
  * carrying the Rank 1 lead and its RankFloor — so the 5 freed Boosters
  * reshape among Ranks 2–4, which is exactly what `also` reports.
  */
-test('the measured Weekend 32 plan offers Rank 1 a Display, and names the Ranks it moves', () => {
-  const settings = settingsFor('weekend');
+test("the measured Weekend 32 plan offers Rank 1 a Display, and names the Ranks it moves", () => {
+  const settings = settingsFor("weekend");
   const plan = distribute(settings);
   assert.deepEqual(servedBoosters(plan), [29, 14, 7, 4, 3, 3, 2, 2]);
   assert.deepEqual(offerFor(plan), {
@@ -527,7 +635,7 @@ test('the measured Weekend 32 plan offers Rank 1 a Display, and names the Ranks 
       { rank: 3, before: 7, after: 9 },
       { rank: 4, before: 4, after: 5 },
     ],
-    key: '1:1:29',
+    key: "1:1:29",
   });
 });
 
@@ -538,8 +646,8 @@ test('the measured Weekend 32 plan offers Rank 1 a Display, and names the Ranks 
  * field stays silent rather than forcing a distant round number onto the
  * plan.
  */
-test('the window is silent when a Rank sits mid-way between two Displays', () => {
-  const settings = settingsFor('weekend', { players: 20 });
+test("the window is silent when a Rank sits mid-way between two Displays", () => {
+  const settings = settingsFor("weekend", { players: 20 });
   const plan = distribute(settings);
   assert.equal(unfit(plan), false);
   assert.equal(plan.rows[0].booster, 16);
@@ -555,13 +663,21 @@ test('the window is silent when a Rank sits mid-way between two Displays', () =>
  * would otherwise be the ShapedRemainder: `unclaimedRemainder`, one of the
  * four ways `unfit()` can hold (#56).
  */
-test('a candidate whose probe run would itself be unfit is not offered', () => {
-  const settings = settingsFor('weekend', { players: 4, displaySize: 1, rankFloor: 4 });
+test("a candidate whose probe run would itself be unfit is not offered", () => {
+  const settings = settingsFor("weekend", {
+    players: 4,
+    displaySize: 1,
+    rankFloor: 4,
+  });
   const plan = distribute(settings);
   assert.equal(unfit(plan), false);
   assert.equal(plan.depth, 1);
   const probe = distribute({ ...settings, displays: [plan.rows[0].booster] });
-  assert.deepEqual(probe.unclaimedRemainder, { depth: 1 }, 'the candidate really is unfit — that is what withholds it');
+  assert.deepEqual(
+    probe.unclaimedRemainder,
+    { depth: 1 },
+    "the candidate really is unfit — that is what withholds it",
+  );
   assert.equal(offerFor(plan), null);
 });
 
@@ -573,17 +689,29 @@ test('a candidate whose probe run would itself be unfit is not offered', () => {
  * but Rank 1 carries no reservation, so that candidate would make the vector
  * rise from 0 to 1. The Offer is withheld even though the candidate clears.
  */
-test('a candidate is withheld where it would make the DisplayReservation vector rise', () => {
-  const settings = settingsFor('weekend', { players: 9, displaySize: 4, rankFloor: 0 });
+test("a candidate is withheld where it would make the DisplayReservation vector rise", () => {
+  const settings = settingsFor("weekend", {
+    players: 9,
+    displaySize: 4,
+    rankFloor: 0,
+  });
   const plan = distribute(settings);
   assert.equal(unfit(plan), false);
   assert.deepEqual(
     plan.rows.slice(0, 2).map((r) => r.booster),
     [10, 4],
   );
-  assert.equal(plan.rows[0].displays, 0, 'Rank 1 carries no reservation for Rank 2 to rise above');
+  assert.equal(
+    plan.rows[0].displays,
+    0,
+    "Rank 1 carries no reservation for Rank 2 to rise above",
+  );
   const wouldClear = distribute({ ...settings, displays: [0, 1] });
-  assert.equal(unfit(wouldClear), false, 'the candidate really clears — the grip is what withholds it');
+  assert.equal(
+    unfit(wouldClear),
+    false,
+    "the candidate really clears — the grip is what withholds it",
+  );
   assert.equal(offerFor(plan), null);
 });
 
@@ -596,17 +724,23 @@ test('a candidate is withheld where it would make the DisplayReservation vector 
  * sentence says (E6). Accepting it gives Rank 1 the Display and nothing on top:
  * „wenn der Winner ein Display kriegt, dann kriegt er einfach ein Display".
  */
-test('under CombinedHandout the tile shows the number the Offer names (#103)', () => {
-  const opened = settingsFor('weekend', { combinedHandout: true });
+test("under CombinedHandout the tile shows the number the Offer names (#103)", () => {
+  const opened = settingsFor("weekend", { combinedHandout: true });
   const plan = distribute(opened);
   assert.deepEqual(plan.combinedHandoutDepth, { depth: 8, players: 32 });
-  assert.deepEqual(suggestions(plan), [{ key: 'depth', value: 32, label: 'Serve 32 ranks' }]);
+  assert.deepEqual(suggestions(plan), [
+    { key: "depth", value: 32, label: "Serve 32 ranks" },
+  ]);
 
   const served = distribute(accepted(opened, suggestions(plan)[0]));
   assert.equal(unfit(served), false);
   const offer = offerFor(served);
   assert.equal(offer.rank, 1);
-  assert.equal(offer.from, served.rows[0].booster, 'tile and sentence say the same number');
+  assert.equal(
+    offer.from,
+    served.rows[0].booster,
+    "tile and sentence say the same number",
+  );
   assert.deepEqual(offer, {
     rank: 1,
     value: 1,
@@ -617,12 +751,20 @@ test('under CombinedHandout the tile shows the number the Offer names (#103)', (
       { rank: 3, before: 5, after: 4 },
       { rank: 4, before: 4, after: 3 },
     ],
-    key: '1:1:20',
+    key: "1:1:20",
   });
-  for (const moved of offer.also) assert.equal(moved.before, served.rows[moved.rank - 1].booster);
+  for (const moved of offer.also)
+    assert.equal(moved.before, served.rows[moved.rank - 1].booster);
 
-  const after = distribute({ ...accepted(opened, suggestions(plan)[0]), displays: [1] });
-  assert.equal(after.rows[0].booster, 24, 'the Display and no participation Booster on top');
+  const after = distribute({
+    ...accepted(opened, suggestions(plan)[0]),
+    displays: [1],
+  });
+  assert.equal(
+    after.rows[0].booster,
+    24,
+    "the Display and no participation Booster on top",
+  );
 });
 
 /**
@@ -644,7 +786,7 @@ test('under CombinedHandout the tile shows the number the Offer names (#103)', (
  * Offer count on purpose (516 → 522): until then the toggle changed no Offer
  * by construction, and now the combined half is a different plan.
  */
-test('over a sweep, every Offer clears, never rises the vector, and names the tiles\' numbers', () => {
+test("over a sweep, every Offer clears, never rises the vector, and names the tiles' numbers", () => {
   const accept = (settings, off) => {
     const d = (settings.displays ?? []).slice();
     while (d.length < off.rank) d.push(0);
@@ -657,30 +799,68 @@ test('over a sweep, every Offer clears, never rises the vector, and names the ti
     for (const displaySize of [1, 4, 8, 24]) {
       for (const rankFloor of [0, 2]) {
         for (const combinedHandout of [false, true]) {
-          let settings = settingsFor('weekend', { players, displaySize, rankFloor, combinedHandout });
-          const where = JSON.stringify({ players, displaySize, rankFloor, combinedHandout });
+          let settings = settingsFor("weekend", {
+            players,
+            displaySize,
+            rankFloor,
+            combinedHandout,
+          });
+          const where = JSON.stringify({
+            players,
+            displaySize,
+            rankFloor,
+            combinedHandout,
+          });
           const opened = distribute(settings);
-          if (opened.combinedHandoutDepth) settings = accepted(settings, waysOutOf(opened)[0]);
+          if (opened.combinedHandoutDepth)
+            settings = accepted(settings, waysOutOf(opened)[0]);
           const plan = distribute(settings);
           stands++;
-          assert.equal(unfit(plan), false, `stand ${where} is unfit — the sweep no longer covers only fit stands`);
+          assert.equal(
+            unfit(plan),
+            false,
+            `stand ${where} is unfit — the sweep no longer covers only fit stands`,
+          );
 
           const off = offerFor(plan);
           if (!off) continue;
           offers++;
-          assert.equal(off.key, `${off.rank}:${off.value}:${off.from}`, `key does not carry the content at ${where}`);
-          assert.equal(off.from, plan.rows[off.rank - 1].booster, `the Offer does not name the tile's number at ${where}`);
+          assert.equal(
+            off.key,
+            `${off.rank}:${off.value}:${off.from}`,
+            `key does not carry the content at ${where}`,
+          );
+          assert.equal(
+            off.from,
+            plan.rows[off.rank - 1].booster,
+            `the Offer does not name the tile's number at ${where}`,
+          );
 
           const taken = accept(settings, off);
           const d = taken.displays.map((v) => Math.max(0, Math.trunc(v)));
           for (let i = 1; i < d.length; i++) {
-            assert.ok(d[i] <= d[i - 1], `Offer ${JSON.stringify(off)} makes the vector rise at ${where}`);
+            assert.ok(
+              d[i] <= d[i - 1],
+              `Offer ${JSON.stringify(off)} makes the vector rise at ${where}`,
+            );
           }
           const probe = distribute(taken);
-          assert.equal(unfit(probe), false, `Offer ${JSON.stringify(off)} does not clear at ${where}`);
+          assert.equal(
+            unfit(probe),
+            false,
+            `Offer ${JSON.stringify(off)} does not clear at ${where}`,
+          );
           for (const moved of off.also) {
-            assert.equal(moved.before, plan.rows[moved.rank - 1].booster, `'also' before is no tile at ${where}`);
-            assert.equal(moved.after, probe.rows[moved.rank - 1].booster, `'also' after is no tile at ${where}`);
+            assert.equal(
+              moved.before,
+              plan.rows[moved.rank - 1].booster,
+              `'also' before is no tile at ${where}`,
+            );
+            assert.equal(
+              moved.after,
+              probe.rows[moved.rank - 1].booster,
+              `'also' after is no tile at ${where}`,
+            );
           }
         }
       }
@@ -692,43 +872,61 @@ test('over a sweep, every Offer clears, never rises the vector, and names the ti
 
 /* ── The way out of a `combinedHandoutDepth` (#103, ADR 0010) ─────────── */
 
-test('the way out of a combinedHandoutDepth raises the floor to the rate and serves every Player', () => {
+test("the way out of a combinedHandoutDepth raises the floor to the rate and serves every Player", () => {
   // Weekend at 32, the floor pulled down to 0: the participation rate of 1 is
   // what every Player had before, so the floor goes back up to it.
-  const plan = distribute(settingsFor('weekend', { combinedHandout: true, rankFloor: 0 }));
+  const plan = distribute(
+    settingsFor("weekend", { combinedHandout: true, rankFloor: 0 }),
+  );
   assert.deepEqual(plan.combinedHandoutDepth, { depth: 8, players: 32 });
   assert.deepEqual(suggestions(plan), [
     {
-      key: 'combined',
+      key: "combined",
       changes: [
-        { key: 'rankFloor', value: 1, label: 'Floor up to 1' },
-        { key: 'depth', value: 32, label: 'Serve 32 ranks' },
+        { key: "rankFloor", value: 1, label: "Floor up to 1" },
+        { key: "depth", value: 32, label: "Serve 32 ranks" },
       ],
-      label: 'Floor up to 1 and serve 32 ranks',
+      label: "Floor up to 1 and serve 32 ranks",
     },
   ]);
 });
 
-test('the floor is only raised — one above the rate stays where it is', () => {
-  const plan = distribute(settingsFor('weekend', { combinedHandout: true, rankFloor: 2 }));
+test("the floor is only raised — one above the rate stays where it is", () => {
+  const plan = distribute(
+    settingsFor("weekend", { combinedHandout: true, rankFloor: 2 }),
+  );
   assert.equal(plan.participation.rate.booster, 1);
-  assert.deepEqual(suggestions(plan), [{ key: 'depth', value: 32, label: 'Serve 32 ranks' }]);
+  assert.deepEqual(suggestions(plan), [
+    { key: "depth", value: 32, label: "Serve 32 ranks" },
+  ]);
 });
 
-test('the floor follows the rate the plan computed with, not a pinned slider over its wall', () => {
+test("the floor follows the rate the plan computed with, not a pinned slider over its wall", () => {
   // `participationBooster` pinned at 6, `boosterRate` lowered to 1 under it:
   // the core takes 1 per Player, and that 1 is the floor (maintainer,
   // 2026-10-05). A floor of 6 would need six times the pool. A Display of
   // size 1 settles Rank 1, so no lead is owed and the pool of 16 carries
   // the floor of 1 over the 15 Ranks below it.
   const plan = distribute(
-    settingsFor('weekend', {
-      combinedHandout: true, rankFloor: 0, boosterRate: 1, participationBooster: 6, players: 16, displays: [1], displaySize: 1,
+    settingsFor("weekend", {
+      combinedHandout: true,
+      rankFloor: 0,
+      boosterRate: 1,
+      participationBooster: 6,
+      players: 16,
+      displays: [1],
+      displaySize: 1,
     }),
   );
   assert.equal(plan.participation.rate.booster, 1);
   const [way] = suggestions(plan);
-  assert.deepEqual(way.changes.map((c) => [c.key, c.value]), [['rankFloor', 1], ['depth', 16]]);
+  assert.deepEqual(
+    way.changes.map((c) => [c.key, c.value]),
+    [
+      ["rankFloor", 1],
+      ["depth", 16],
+    ],
+  );
 });
 
 /**
@@ -737,26 +935,32 @@ test('the floor follows the rate the plan computed with, not a pinned slider ove
  * clear and is not offered. The way over several sliders is what remains, and
  * it serves everyone with the floor it can carry (`combinedWayOut()`).
  */
-test('a rate that is the whole Booster rate cannot become the floor — the combined way serves everyone instead', () => {
+test("a rate that is the whole Booster rate cannot become the floor — the combined way serves everyone instead", () => {
   const plan = distribute(
-    settingsFor('weekend', { combinedHandout: true, rankFloor: 2, boosterRate: 1, participationBooster: 6, players: 16 }),
+    settingsFor("weekend", {
+      combinedHandout: true,
+      rankFloor: 2,
+      boosterRate: 1,
+      participationBooster: 6,
+      players: 16,
+    }),
   );
   assert.equal(plan.participation.rate.booster, 1);
   assert.deepEqual(suggestions(plan), []);
   assert.deepEqual(waysOutOf(plan), [
     {
-      key: 'combined',
+      key: "combined",
       changes: [
-        { key: 'rankFloor', value: 0, label: 'Floor down to 0' },
-        { key: 'depth', value: 16, label: 'Serve 16 ranks' },
+        { key: "rankFloor", value: 0, label: "Floor down to 0" },
+        { key: "depth", value: 16, label: "Serve 16 ranks" },
       ],
-      label: 'Floor down to 0 and serve 16 ranks',
+      label: "Floor down to 0 and serve 16 ranks",
     },
   ]);
 });
 
-test('apart, a short depth needs no such way — the depth search is the plain one', () => {
-  const plan = distribute(settingsFor('weekend', { combinedHandout: false }));
+test("apart, a short depth needs no such way — the depth search is the plain one", () => {
+  const plan = distribute(settingsFor("weekend", { combinedHandout: false }));
   assert.equal(plan.combinedHandoutDepth, null);
   assert.deepEqual(suggestions(plan), []);
 });
@@ -771,7 +975,7 @@ test('apart, a short depth needs no such way — the depth search is the plain o
  * A way exists wherever there are Boosters at all: at a `boosterRate` of 0 the
  * list is empty, the one case `NO_WAY_OUT` speaks for (`notices.mjs`).
  */
-test('over a grid, every way out of a combinedHandoutDepth leaves every unsettled Rank on the floor', () => {
+test("over a grid, every way out of a combinedHandoutDepth leaves every unsettled Rank on the floor", () => {
   let stands = 0;
   let handoutWays = 0;
   for (const players of [5, 8, 16, 32]) {
@@ -780,29 +984,65 @@ test('over a grid, every way out of a combinedHandoutDepth leaves every unsettle
         for (const rankFloor of [0, 1, 4]) {
           for (const displays of [[], [1], [2, 1]]) {
             for (const displaySize of [1, 8, 24]) {
-              const input = settingsFor('weekend', {
-                players, boosterRate, participationBooster, rankFloor, displays, displaySize, combinedHandout: true,
+              const input = settingsFor("weekend", {
+                players,
+                boosterRate,
+                participationBooster,
+                rankFloor,
+                displays,
+                displaySize,
+                combinedHandout: true,
               });
               const plan = distribute(input);
               if (!plan.combinedHandoutDepth) continue;
               stands++;
-              const where = JSON.stringify({ players, boosterRate, participationBooster, rankFloor, displays, displaySize });
+              const where = JSON.stringify({
+                players,
+                boosterRate,
+                participationBooster,
+                rankFloor,
+                displays,
+                displaySize,
+              });
               const ways = waysOutOf(plan);
-              assert.equal(ways.length > 0, boosterRate > 0, `ways out at ${where}: ${ways.length}`);
+              assert.equal(
+                ways.length > 0,
+                boosterRate > 0,
+                `ways out at ${where}: ${ways.length}`,
+              );
               for (const way of ways) {
                 const after = distribute(accepted(input, way));
-                assert.equal(unfit(after), false, `'${way.label}' does not clear at ${where}`);
-                assert.equal(after.depth, players, `'${way.label}' does not serve everyone at ${where}`);
+                assert.equal(
+                  unfit(after),
+                  false,
+                  `'${way.label}' does not clear at ${where}`,
+                );
+                assert.equal(
+                  after.depth,
+                  players,
+                  `'${way.label}' does not serve everyone at ${where}`,
+                );
                 for (const row of after.rows) {
                   if (row.settled) continue;
-                  assert.ok(row.booster >= after.rankFloor, `'${way.label}' leaves rank ${row.rank} under the floor at ${where}`);
+                  assert.ok(
+                    row.booster >= after.rankFloor,
+                    `'${way.label}' leaves rank ${row.rank} under the floor at ${where}`,
+                  );
                 }
               }
-              const own = suggestions(plan).find((way) => (way.changes ?? [way]).some((c) => c.key === 'depth'));
+              const own = suggestions(plan).find((way) =>
+                (way.changes ?? [way]).some((c) => c.key === "depth"),
+              );
               if (own) {
                 handoutWays++;
-                const floor = (own.changes ?? []).find((c) => c.key === 'rankFloor')?.value ?? plan.rankFloor;
-                assert.equal(floor, Math.max(plan.rankFloor, plan.participation.rate.booster), `floor at ${where}`);
+                const floor =
+                  (own.changes ?? []).find((c) => c.key === "rankFloor")
+                    ?.value ?? plan.rankFloor;
+                assert.equal(
+                  floor,
+                  Math.max(plan.rankFloor, plan.participation.rate.booster),
+                  `floor at ${where}`,
+                );
               }
             }
           }
@@ -810,7 +1050,10 @@ test('over a grid, every way out of a combinedHandoutDepth leaves every unsettle
       }
     }
   }
-  assert.ok(stands > 0 && handoutWays > 0, `the grid reaches the state (${stands}) and the way (${handoutWays})`);
+  assert.ok(
+    stands > 0 && handoutWays > 0,
+    `the grid reaches the state (${stands}) and the way (${handoutWays})`,
+  );
 });
 
 /* ── When no single slider clears (#68, ADR 0002 addendum, K1) ─────────── */
@@ -832,7 +1075,7 @@ const twoFacts = {
   displays: [1, 1, 1],
   depth: 2,
   rankFloor: 3,
-  curve: 'steep',
+  curve: "steep",
 };
 
 /** A way out applied to the Settings it was computed from, the way the
@@ -840,7 +1083,7 @@ const twoFacts = {
 function applyWay(settings, way) {
   const next = { ...settings, displays: [...(settings.displays ?? [])] };
   for (const change of way.changes ?? [way]) {
-    if (change.key === 'displays') {
+    if (change.key === "displays") {
       while (next.displays.length < change.rank) next.displays.push(0);
       next.displays[change.rank - 1] = change.value;
     } else {
@@ -850,7 +1093,7 @@ function applyWay(settings, way) {
   return next;
 }
 
-test('the two-fact stand really has no single way out', () => {
+test("the two-fact stand really has no single way out", () => {
   const plan = distribute(twoFacts);
   assert.deepEqual(plan.conflict, { need: 7, have: 4 });
   assert.deepEqual(plan.orphanedReservation, { ranks: [3] });
@@ -866,34 +1109,40 @@ test('the two-fact stand really has no single way out', () => {
  * orphaned at depth 2); the floor comes back to 1, since 3 needs 7 and 2
  * needs 5 out of the 4 the RankPool has left after the reservation.
  */
-test('where no single slider clears, one way over several sliders is computed', () => {
+test("where no single slider clears, one way over several sliders is computed", () => {
   const way = combinedWayOut(distribute(twoFacts));
   assert.deepEqual(way.changes, [
-    { key: 'rankFloor', value: 1, label: 'Floor down to 1' },
-    { key: 'displays', rank: 3, value: 0, label: "Drop rank 3's display" },
+    { key: "rankFloor", value: 1, label: "Floor down to 1" },
+    { key: "displays", rank: 3, value: 0, label: "Drop rank 3's display" },
   ]);
   assert.equal(way.label, "Floor down to 1 and drop rank 3's display");
 });
 
-test('the combined way out, applied, leaves a fit plan — checked by running the core', () => {
+test("the combined way out, applied, leaves a fit plan — checked by running the core", () => {
   const way = combinedWayOut(distribute(twoFacts));
   assert.equal(unfit(distribute(applyWay(twoFacts, way))), false);
 });
 
-test('a single way out stands alone: the combined one is only the case with nothing else', () => {
-  const overtake = settingsFor('weekend', { players: 48, displays: [1], depth: 8, rankFloor: 2, curve: 'severe' });
+test("a single way out stands alone: the combined one is only the case with nothing else", () => {
+  const overtake = settingsFor("weekend", {
+    players: 48,
+    displays: [1],
+    depth: 8,
+    rankFloor: 2,
+    curve: "severe",
+  });
   const plan = distribute(overtake);
   assert.ok(suggestions(plan).length > 0);
   assert.deepEqual(waysOutOf(plan), suggestions(plan));
 });
 
-test('on the two-fact stand the ways out are the one combined way', () => {
+test("on the two-fact stand the ways out are the one combined way", () => {
   const plan = distribute(twoFacts);
   assert.deepEqual(waysOutOf(plan), [combinedWayOut(plan)]);
 });
 
-test('a fit plan has no ways out at all, combined or single', () => {
-  const plan = distribute(settingsFor('weekend'));
+test("a fit plan has no ways out at all, combined or single", () => {
+  const plan = distribute(settingsFor("weekend"));
   assert.equal(unfit(plan), false);
   assert.equal(combinedWayOut(plan), null);
   assert.deepEqual(waysOutOf(plan), []);
@@ -916,9 +1165,15 @@ test('a fit plan has no ways out at all, combined or single', () => {
  * (`test/ui-notices.test.mjs`). The test after it is the proof, by
  * running the core over every searched slider.
  */
-const bench = { players: 8, boosterRate: 0, rankFloor: 2, depth: 3, curve: 'steep' };
+const bench = {
+  players: 8,
+  boosterRate: 0,
+  rankFloor: 2,
+  depth: 3,
+  curve: "steep",
+};
 
-test('K1 bench: there is no way out, combined or single — the evening has no boosters to give', () => {
+test("K1 bench: there is no way out, combined or single — the evening has no boosters to give", () => {
   const plan = distribute(bench);
   assert.equal(unfit(plan), true);
   assert.deepEqual(suggestions(plan), []);
@@ -926,15 +1181,33 @@ test('K1 bench: there is no way out, combined or single — the evening has no b
   assert.deepEqual(waysOutOf(plan), []);
 });
 
-test('K1 bench: no combination of the searched sliders clears it — only boosterRate, a fact, would', () => {
+test("K1 bench: no combination of the searched sliders clears it — only boosterRate, a fact, would", () => {
   let probes = 0;
   for (const curve of CURVES.map((c) => c.id)) {
     for (let rankFloor = 0; rankFloor <= 8; rankFloor++) {
       for (let depth = 1; depth <= bench.players; depth++) {
-        for (const displays of [[], [1], [1, 1], [2, 1], [4, 4, 4], [1, 1, 1, 1, 1, 1, 1, 1]]) {
+        for (const displays of [
+          [],
+          [1],
+          [1, 1],
+          [2, 1],
+          [4, 4, 4],
+          [1, 1, 1, 1, 1, 1, 1, 1],
+        ]) {
           probes++;
-          const plan = distribute({ ...bench, curve, rankFloor, depth, displays, participationBooster: 0 });
-          assert.equal(unfit(plan), true, `cleared at ${JSON.stringify({ curve, rankFloor, depth, displays })}`);
+          const plan = distribute({
+            ...bench,
+            curve,
+            rankFloor,
+            depth,
+            displays,
+            participationBooster: 0,
+          });
+          assert.equal(
+            unfit(plan),
+            true,
+            `cleared at ${JSON.stringify({ curve, rankFloor, depth, displays })}`,
+          );
         }
       }
     }
@@ -952,8 +1225,8 @@ test('K1 bench: no combination of the searched sliders clears it — only booste
  * the product of the searched ranges (reservation vectors from a small family)
  * and is the independent side here — it knows nothing of the two passes.
  */
-test('over a sweep, the combined way clears, and is missing only where no combination clears', () => {
-  const FACTS = new Set(['players', 'boosterRate', 'displaySize']);
+test("over a sweep, the combined way clears, and is missing only where no combination clears", () => {
+  const FACTS = new Set(["players", "boosterRate", "displaySize"]);
   const vectors = [[], [1], [1, 1], [2, 1], [1, 1, 1], [2, 1, 1, 1]];
   let stands = 0;
   let found = 0;
@@ -963,9 +1236,23 @@ test('over a sweep, the combined way clears, and is missing only where no combin
       for (const participationBooster of [0, 1]) {
         for (const rankFloor of [1, 3, 6]) {
           for (const depth of [1, 2, 3]) {
-            for (const displays of [[1, 1, 1], [2, 1, 1, 1], [3, 2], [1, 0, 0, 1]]) {
+            for (const displays of [
+              [1, 1, 1],
+              [2, 1, 1, 1],
+              [3, 2],
+              [1, 0, 0, 1],
+            ]) {
               for (const displaySize of [1, 3]) {
-                const settings = { players, boosterRate, participationBooster, rankFloor, depth, displays, displaySize, curve: 'steep' };
+                const settings = {
+                  players,
+                  boosterRate,
+                  participationBooster,
+                  rankFloor,
+                  depth,
+                  displays,
+                  displaySize,
+                  curve: "steep",
+                };
                 const plan = distribute(settings);
                 if (!unfit(plan) || suggestions(plan).length) continue;
                 stands++;
@@ -976,8 +1263,19 @@ test('over a sweep, the combined way clears, and is missing only where no combin
                     for (let t = 1; t <= players && !anything; t++) {
                       for (let pb = 0; pb <= boosterRate && !anything; pb++) {
                         for (const d of vectors) {
-                          const probe = distribute({ ...settings, curve, rankFloor: f, depth: t, participationBooster: pb, displays: d });
-                          if (!unfit(probe) && (!plan.overtake || probe.depth >= plan.overtake.over)) {
+                          const probe = distribute({
+                            ...settings,
+                            curve,
+                            rankFloor: f,
+                            depth: t,
+                            participationBooster: pb,
+                            displays: d,
+                          });
+                          if (
+                            !unfit(probe) &&
+                            (!plan.overtake ||
+                              probe.depth >= plan.overtake.over)
+                          ) {
                             anything = true;
                             break;
                           }
@@ -987,18 +1285,28 @@ test('over a sweep, the combined way clears, and is missing only where no combin
                   }
                 }
                 const where = JSON.stringify(settings);
-                assert.equal(way !== null, anything, `combined way and brute force disagree at ${where}`);
+                assert.equal(
+                  way !== null,
+                  anything,
+                  `combined way and brute force disagree at ${where}`,
+                );
                 if (!way) {
                   none++;
                   continue;
                 }
                 found++;
                 assert.ok(way.changes.length >= 1, `an empty way at ${where}`);
-                for (const change of way.changes) assert.ok(!FACTS.has(change.key), `a fact moved at ${where}`);
+                for (const change of way.changes)
+                  assert.ok(!FACTS.has(change.key), `a fact moved at ${where}`);
                 const applied = applyWay(settings, way);
                 const d = applied.displays;
-                for (let i = 1; i < d.length; i++) assert.ok(d[i] <= d[i - 1], `the vector rises at ${where}`);
-                assert.equal(unfit(distribute(applied)), false, `does not clear at ${where}`);
+                for (let i = 1; i < d.length; i++)
+                  assert.ok(d[i] <= d[i - 1], `the vector rises at ${where}`);
+                assert.equal(
+                  unfit(distribute(applied)),
+                  false,
+                  `does not clear at ${where}`,
+                );
               }
             }
           }

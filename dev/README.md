@@ -57,6 +57,7 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   nachgezogen. Der letzte Stand, der beim Gegenprüfen über das JSON-Textfeld
   eingespielt werden musste, war ein `combinedHandout`-Stand; das geht jetzt
   über den Schalter.
+
 - **Die Rangzeilen** mit dem `Booster` als Balken und `TournamentPacks` und
   `WinnerPack`s als Zahlenspalten daneben, bediente und unbediente
   unterscheidbar, dazu die Zahlenreihe (`29·14·7·…`) zum Abgleich mit den
@@ -74,6 +75,7 @@ Die Bank liegt ausserhalb von `public/`, und der Docroot zeigt später auf
   von Anfang bis Ende und trägt sein Label fett. Ein Rang, der an der
   gemeldeten `overtake` beteiligt ist, bekommt ein rotes Label und einen roten
   Rahmen um die Zeile — `flagged` sagt genau, welche zwei.
+
 - **Die abgeleiteten Grössen** beschriftet, plus einen Rohabzug des ganzen
   `DistributionPlan` als JSON — damit Felder, die #55 und #56 hinzufügen, von
   selbst auftauchen, ohne dass jemand die Bank anfasst. Genau so sind die Felder
@@ -243,7 +245,7 @@ Kein `✗`, und keine rote Invariante. Die beiden #56-Stände melden gelb
 `● the core's own verdict: unfit — true — conflict (need 7, have 0)` bzw.
 `… orphanedReservation (Rank 3)`. Von Hand nachgefahren: der Stand mit
 `conflict` und `unclaimedRemainder` zugleich (`{need: 0, have: −16}`) meldet
-gelb auf der Zahlenzeile *und* im Urteil, und der `overtake`-Stand aus #55
+gelb auf der Zahlenzeile _und_ im Urteil, und der `overtake`-Stand aus #55
 meldet unverändert gelb auf der Monotonie.
 
 ## Nachgezogen nach Lauf 7 — #49 · #59 · #58 (Stand `main` `8a949e7`, 2026-09-27)
@@ -394,7 +396,7 @@ Die Bank hat hinter ihrem laufenden Stand keine DefaultSet-Kette, kann einen Pin
 also nicht durch Vergleich herleiten. Sie hält stattdessen die **Geste** fest:
 einen Regler anfassen pinnt ihn, einen Weg heraus nehmen pinnt den Regler, den
 er bewegt, und ein nachziehender Schalter, der ausgeht, pinnt ab — bei einem
-nullbaren Regler *ist* `null` „nicht von Hand gesetzt" (ADR 0006), die beiden
+nullbaren Regler _ist_ `null` „nicht von Hand gesetzt" (ADR 0006), die beiden
 sagen dasselbe. Einen Stand laden — Blatt, Knopf, JSON-Feld — setzt die Pins auf
 genau die Schlüssel dieses Standes: ein DefaultSet ist ein Startstand und pinnt
 nichts, ein gemessener Stand ist ein handgemachter und pinnt, was er nennt.

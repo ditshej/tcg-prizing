@@ -21,12 +21,21 @@
  * ============================================================================
  */
 
-import { resolveSettings } from '../public/core/defaults.mjs';
-import { distribute, unfit } from '../public/core/distribute.mjs';
-import { CURVES, DEPTH_STEPS, RANGES, rafflePot } from '../public/core/rules.mjs';
-import { combinedWayOut, offerFor, waysOut as coreWaysOut } from '../public/core/suggest.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
-import { winnerPackOverhang } from '../public/ui/overhang.mjs';
+import { resolveSettings } from "../public/core/defaults.mjs";
+import { distribute, unfit } from "../public/core/distribute.mjs";
+import {
+  CURVES,
+  DEPTH_STEPS,
+  RANGES,
+  rafflePot,
+} from "../public/core/rules.mjs";
+import {
+  combinedWayOut,
+  offerFor,
+  waysOut as coreWaysOut,
+} from "../public/core/suggest.mjs";
+import { GAME, TOURNAMENT_TYPES } from "../public/sets/onepiece.mjs";
+import { winnerPackOverhang } from "../public/ui/overhang.mjs";
 
 /**
  * The bench's own neutral sheet: the presettable Settings fields only, with
@@ -48,8 +57,8 @@ const BENCH_SHEET = {
   judgeBooster: 0,
   judgeWinner: 0,
   rankFloor: 2,
-  depthStep: 'all',
-  curve: 'steep',
+  depthStep: "all",
+  curve: "steep",
   combinedHandout: false,
 };
 
@@ -75,7 +84,11 @@ function neutralSettings() {
  * sheet that grows a field shows up here without the bench being touched.
  */
 const SHEETS = [
-  { id: 'game', label: 'Game sheet (One Piece)', resolve: () => resolveSettings({ game: GAME, pins: {} }) },
+  {
+    id: "game",
+    label: "Game sheet (One Piece)",
+    resolve: () => resolveSettings({ game: GAME, pins: {} }),
+  },
   ...TOURNAMENT_TYPES.map((type) => ({
     id: type.id,
     label: `DefaultSet · ${type.title}`,
@@ -89,116 +102,134 @@ const SHEETS = [
  * reads would claim an effect it does not have.
  */
 const CONTROLS = [
-  { key: 'players', label: 'Players', kind: 'range', min: 2, max: 64 },
+  { key: "players", label: "Players", kind: "range", min: 2, max: 64 },
   {
-    key: 'boosterRate',
-    label: 'Booster per Player',
-    kind: 'range',
+    key: "boosterRate",
+    label: "Booster per Player",
+    kind: "range",
     min: 0,
     max: 12,
-    note: 'Rate 0 empties the RankPool — that is the conflict branch (#56).',
+    note: "Rate 0 empties the RankPool — that is the conflict branch (#56).",
   },
   {
-    key: 'tournamentPacks',
-    label: 'TournamentPacks',
-    kind: 'range',
+    key: "tournamentPacks",
+    label: "TournamentPacks",
+    kind: "range",
     min: 0,
     max: 128,
-    nullable: 'trailing (= Players)',
+    nullable: "trailing (= Players)",
   },
   {
-    key: 'envelopeSize',
-    label: 'PromoEnvelope · TournamentPacks per envelope',
-    kind: 'range',
+    key: "envelopeSize",
+    label: "PromoEnvelope · TournamentPacks per envelope",
+    kind: "range",
     min: 1,
     max: 64,
   },
   {
-    key: 'envelopeYield',
-    label: 'PromoEnvelope · WinnerPacks per envelope',
-    kind: 'range',
+    key: "envelopeYield",
+    label: "PromoEnvelope · WinnerPacks per envelope",
+    kind: "range",
     min: 1,
     max: 8,
-    note: 'At a yield of 1 the staffel is exactly the old single two-thirds threshold.',
+    note: "At a yield of 1 the staffel is exactly the old single two-thirds threshold.",
   },
   {
-    key: 'winnerPacks',
-    label: 'WinnerPacks',
-    kind: 'range',
+    key: "winnerPacks",
+    label: "WinnerPacks",
+    kind: "range",
     min: 0,
     max: 64,
-    nullable: 'trailing (= the envelope staffel)',
-    note: 'The staffel binds the starting value, not the amount (#29).',
+    nullable: "trailing (= the envelope staffel)",
+    note: "The staffel binds the starting value, not the amount (#29).",
   },
-  { key: 'participationBooster', label: 'ParticipationPool · Booster per Player', kind: 'range', min: 0, max: 12 },
-  { key: 'participationPack', label: 'ParticipationPool · TournamentPacks per Player', kind: 'range', min: 0, max: 12 },
-  { key: 'judgeBooster', label: 'JudgePool · Booster (absolute)', kind: 'range', min: 0, max: 96 },
   {
-    key: 'judgeWinner',
-    label: 'JudgePool · WinnerPacks (absolute)',
-    kind: 'range',
+    key: "participationBooster",
+    label: "ParticipationPool · Booster per Player",
+    kind: "range",
+    min: 0,
+    max: 12,
+  },
+  {
+    key: "participationPack",
+    label: "ParticipationPool · TournamentPacks per Player",
+    kind: "range",
+    min: 0,
+    max: 12,
+  },
+  {
+    key: "judgeBooster",
+    label: "JudgePool · Booster (absolute)",
+    kind: "range",
+    min: 0,
+    max: 96,
+  },
+  {
+    key: "judgeWinner",
+    label: "JudgePool · WinnerPacks (absolute)",
+    kind: "range",
     min: 0,
     max: 24,
-    note: 'Shortens the automatic prefix instead of eating into `open` (#29).',
+    note: "Shortens the automatic prefix instead of eating into `open` (#29).",
   },
-  { key: 'rankFloor', label: 'RankFloor', kind: 'range', min: 0, max: 12 },
+  { key: "rankFloor", label: "RankFloor", kind: "range", min: 0, max: 12 },
   {
-    key: 'depth',
-    label: 'RankPoolDepth',
-    kind: 'range',
+    key: "depth",
+    label: "RankPoolDepth",
+    kind: "range",
     min: 1,
     max: 64,
-    nullable: 'trailing (= min(step, depthCap))',
-    note: 'Pinned and trailing are two branches in the core, not one value (ADR 0006).',
+    nullable: "trailing (= min(step, depthCap))",
+    note: "Pinned and trailing are two branches in the core, not one value (ADR 0006).",
   },
   {
-    key: 'depthStep',
-    label: 'RankPoolDepth · starting step',
-    kind: 'select',
+    key: "depthStep",
+    label: "RankPoolDepth · starting step",
+    kind: "select",
     options: () => DEPTH_STEPS,
-    note: 'Only reaches the plan while the depth is trailing.',
+    note: "Only reaches the plan while the depth is trailing.",
   },
   {
-    key: 'curve',
-    label: 'DistributionCurve',
-    kind: 'select',
+    key: "curve",
+    label: "DistributionCurve",
+    kind: "select",
     options: () => CURVES.map((c) => c.id),
     render: (id) => `${id} · ${CURVES.find((c) => c.id === id).ratio}`,
   },
   {
-    key: 'displaySize',
-    label: 'Display size (Booster per Display)',
-    kind: 'range',
+    key: "displaySize",
+    label: "Display size (Booster per Display)",
+    kind: "range",
     min: 1,
     max: 48,
-    note: 'Feeds depthCap and, since #55, row.reserved for every settled or tied Rank.',
+    note: "Feeds depthCap and, since #55, row.reserved for every settled or tied Rank.",
   },
   {
-    key: 'displays',
-    label: 'DisplayReservation vector',
-    kind: 'list',
-    note: 'Comma-separated Displays per Rank. Since #55 the strict prefix above the topmost tie is settled: it gets exactly its Displays, no RankFloor, no lead. A reservation that reaches the whole depth leaves the ShapedRemainder unclaimed — the bars and the invariant line below name that as `unclaimedRemainder`, not as a defect.',
+    key: "displays",
+    label: "DisplayReservation vector",
+    kind: "list",
+    note: "Comma-separated Displays per Rank. Since #55 the strict prefix above the topmost tie is settled: it gets exactly its Displays, no RankFloor, no lead. A reservation that reaches the whole depth leaves the ShapedRemainder unclaimed — the bars and the invariant line below name that as `unclaimedRemainder`, not as a defect.",
   },
   {
-    key: 'ranked',
-    label: 'WinnerPackAllocation · ranked prefix',
-    kind: 'range',
+    key: "ranked",
+    label: "WinnerPackAllocation · ranked prefix",
+    kind: "range",
     min: 0,
     max: 64,
-    nullable: 'trailing (= ⌊RankPool WinnerPacks / 2⌋ + 1)',
-    note: 'Moves the RankCycle too: it starts at the first Rank after the prefix.',
+    nullable: "trailing (= ⌊RankPool WinnerPacks / 2⌋ + 1)",
+    note: "Moves the RankCycle too: it starts at the first Rank after the prefix.",
   },
   {
-    key: 'manualWinner',
-    label: 'WinnerPackAllocation · manual',
-    kind: 'map',
-    note: '`Rank:count` pairs, e.g. 1:2, 5:1. Free over the whole Ranking, independent of the depth.',
+    key: "manualWinner",
+    label: "WinnerPackAllocation · manual",
+    kind: "map",
+    note: "`Rank:count` pairs, e.g. 1:2, 5:1. Free over the whole Ranking, independent of the depth.",
   },
   {
-    key: 'combinedHandout',
-    label: 'CombinedHandout',
-    kind: 'check',
-    note: 'Shifts the participation shares into the rank rows instead of adding them — on the Pool level and in the rows at once.',
+    key: "combinedHandout",
+    label: "CombinedHandout",
+    kind: "check",
+    note: "Shifts the participation shares into the rank rows instead of adding them — on the Pool level and in the rows at once.",
   },
 ];
 
@@ -213,55 +244,55 @@ const CONTROLS = [
  */
 const PRESETS = [
   {
-    id: 'weekend',
-    label: '32 Players, rate 3, participation 1, floor 2, depth 8, steep',
+    id: "weekend",
+    label: "32 Players, rate 3, participation 1, floor 2, depth 8, steep",
     settings: {
       players: 32,
       boosterRate: 3,
       participationBooster: 1,
       rankFloor: 2,
       depth: 8,
-      curve: 'steep',
+      curve: "steep",
     },
-    expect: { what: 'series', value: '29·14·7·4·3·3·2·2' },
+    expect: { what: "series", value: "29·14·7·4·3·3·2·2" },
   },
   {
-    id: 'weekend-trailing',
-    label: 'the same stand with a trailing depth',
+    id: "weekend-trailing",
+    label: "the same stand with a trailing depth",
     settings: {
       players: 32,
       boosterRate: 3,
       participationBooster: 1,
       rankFloor: 2,
       depth: null,
-      curve: 'steep',
+      curve: "steep",
     },
-    expect: { what: 'depthCap', value: '31' },
+    expect: { what: "depthCap", value: "31" },
   },
   {
-    id: 'tie',
-    label: '8 Players, RankPool 14, floor 2, depth 3, extreme',
+    id: "tie",
+    label: "8 Players, RankPool 14, floor 2, depth 3, extreme",
     settings: {
       players: 8,
       boosterRate: 2,
       judgeBooster: 2,
       rankFloor: 2,
       depth: 3,
-      curve: 'extreme',
+      curve: "extreme",
     },
-    expect: { what: 'series', value: '9·3·2' },
+    expect: { what: "series", value: "9·3·2" },
   },
   {
-    id: 'silent',
-    label: '8 Players, RankPool 16, floor 5, depth 3 — a ShapedRemainder of 0',
+    id: "silent",
+    label: "8 Players, RankPool 16, floor 5, depth 3 — a ShapedRemainder of 0",
     settings: {
       players: 8,
       boosterRate: 2,
       rankFloor: 5,
       depth: 3,
-      curve: 'gentle',
+      curve: "gentle",
     },
-    expect: { what: 'curveSilent', value: 'true' },
+    expect: { what: "curveSilent", value: "true" },
   },
   {
     // Before #56 this stand handed out 3·2·2 from a RankPool of 0, and the
@@ -271,16 +302,17 @@ const PRESETS = [
     // on #56, first comment (from #53) — "ein leerer PrizePool ist von Haus
     // aus ein Konfliktstand" — and CONTEXT.md, "the conflict branch": a Rank 1
     // that gets nothing stands there as an empty tile, with the notice.
-    id: 'conflict',
-    label: 'not one of the four: rate 0, floor 2, depth 3 — the conflict branch, repaired by #56',
+    id: "conflict",
+    label:
+      "not one of the four: rate 0, floor 2, depth 3 — the conflict branch, repaired by #56",
     settings: {
       players: 8,
       boosterRate: 0,
       rankFloor: 2,
       depth: 3,
-      curve: 'steep',
+      curve: "steep",
     },
-    expect: { what: 'series', value: '0·0·0' },
+    expect: { what: "series", value: "0·0·0" },
   },
   {
     // The WinnerPack overhang (#70), the stand the bench had no line for
@@ -294,8 +326,9 @@ const PRESETS = [
     //
     // The expected number is #70's formula applied to these Settings —
     // 2 + 2 − 2 = 2 — not a number read back out of a plan.
-    id: 'overhang',
-    label: '8 Players, winnerPacks 2, ranked 2, 2 by hand on Rank 3 — the WinnerPack overhang (#70)',
+    id: "overhang",
+    label:
+      "8 Players, winnerPacks 2, ranked 2, 2 by hand on Rank 3 — the WinnerPack overhang (#70)",
     settings: {
       players: 8,
       boosterRate: 3,
@@ -304,7 +337,11 @@ const PRESETS = [
       ranked: 2,
       manualWinner: { 3: 2 },
     },
-    expect: { what: 'overhang', value: '2', read: (plan) => String(overhang(plan)) },
+    expect: {
+      what: "overhang",
+      value: "2",
+      read: (plan) => String(overhang(plan)),
+    },
   },
   {
     // The second conflict case #56 introduced, and the one the bench had no
@@ -313,8 +350,9 @@ const PRESETS = [
     // 5 Players at rate 1 give a RankPool of 5, depth 2's own arithmetic is
     // untouched (3·2), and the Displays parked on Rank 3 are reported rather
     // than quietly read as though they stopped at the depth (ADR 0002).
-    id: 'orphaned',
-    label: '5 Players, depth 2, Displays on Rank 3 — the orphaned reservation (#56)',
+    id: "orphaned",
+    label:
+      "5 Players, depth 2, Displays on Rank 3 — the orphaned reservation (#56)",
     settings: {
       players: 5,
       boosterRate: 1,
@@ -324,10 +362,10 @@ const PRESETS = [
       displays: [0, 0, 3],
     },
     expect: {
-      what: 'orphanedReservation',
-      value: '3·2 · orphaned Rank 3',
+      what: "orphanedReservation",
+      value: "3·2 · orphaned Rank 3",
       read: (plan) =>
-        `${seriesOf(plan)} · orphaned ${plan.orphanedReservation ? plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ') : 'none'}`,
+        `${seriesOf(plan)} · orphaned ${plan.orphanedReservation ? plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(", ") : "none"}`,
     },
   },
   {
@@ -339,8 +377,9 @@ const PRESETS = [
     // the first and leaves the second, dropping Rank 3 the reverse, so only
     // both together clear. `participationBooster` and `judgeBooster` are 0 on
     // the bench sheet already and named here only because the test names them.
-    id: 'twoFacts',
-    label: '8 Players, rate 1, floor 3, depth 2, a Display on Ranks 1–3 — no single slider clears (#68)',
+    id: "twoFacts",
+    label:
+      "8 Players, rate 1, floor 3, depth 2, a Display on Ranks 1–3 — no single slider clears (#68)",
     settings: {
       players: 8,
       boosterRate: 1,
@@ -350,12 +389,12 @@ const PRESETS = [
       displays: [1, 1, 1],
       depth: 2,
       rankFloor: 3,
-      curve: 'steep',
+      curve: "steep",
     },
     expect: {
-      what: 'combinedWayOut',
+      what: "combinedWayOut",
       value: "Floor down to 1 and drop rank 3's display",
-      read: (plan) => combinedWayOut(plan)?.label ?? 'null',
+      read: (plan) => combinedWayOut(plan)?.label ?? "null",
     },
   },
 ];
@@ -384,18 +423,19 @@ const INVARIANTS = [
     // (#55, folded into `unfit` by #56). That is a reported state, not a
     // broken invariant; a shortfall the plan does *not* name stays a failure.
     // Same distinction `assertPlanSum` makes in test/distribute.test.mjs.
-    name: 'sum rule: Σ row.booster = RankPool',
+    name: "sum rule: Σ row.booster = RankPool",
     check: (plan) => {
       const sum = plan.rows.reduce((a, row) => a + row.booster, 0);
-      if (sum === plan.rank.booster) return { state: 'ok', detail: `${sum} vs ${plan.rank.booster}` };
+      if (sum === plan.rank.booster)
+        return { state: "ok", detail: `${sum} vs ${plan.rank.booster}` };
       const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
       if (unclaimed > 0 && sum + unclaimed === plan.rank.booster) {
         return {
-          state: 'reported',
+          state: "reported",
           detail: `${sum} vs ${plan.rank.booster} — unclaimedRemainder at depth ${plan.unclaimedRemainder.depth}, ${unclaimed} Booster unclaimed`,
         };
       }
-      return { state: 'fail', detail: `${sum} vs ${plan.rank.booster}` };
+      return { state: "fail", detail: `${sum} vs ${plan.rank.booster}` };
     },
   },
   // The rule at the plan's own level, on both divisible-by-Rank axes. Its
@@ -405,28 +445,35 @@ const INVARIANTS = [
   // same amount. Only the sum against the PrizePool catches that. Carries the
   // same unclaimedRemainder distinction as the rule above, for the same reason.
   {
-    name: 'sum rule: participation + judge + Σ rows = PrizePool · Booster',
+    name: "sum rule: participation + judge + Σ rows = PrizePool · Booster",
     check: (plan) => {
       const rowSum = plan.rows.reduce((a, row) => a + row.booster, 0);
       const sum = plan.participation.booster + plan.judge.booster + rowSum;
-      if (sum === plan.pool.booster) return { state: 'ok', detail: `${sum} vs ${plan.pool.booster}` };
+      if (sum === plan.pool.booster)
+        return { state: "ok", detail: `${sum} vs ${plan.pool.booster}` };
       const unclaimed = plan.unclaimedRemainder ? plan.shapedRemainder : 0;
       if (unclaimed > 0 && sum + unclaimed === plan.pool.booster) {
         return {
-          state: 'reported',
+          state: "reported",
           detail: `${sum} vs ${plan.pool.booster} — unclaimedRemainder at depth ${plan.unclaimedRemainder.depth}, ${unclaimed} Booster unclaimed`,
         };
       }
-      return { state: 'fail', detail: `${sum} vs ${plan.pool.booster}` };
+      return { state: "fail", detail: `${sum} vs ${plan.pool.booster}` };
     },
   },
   {
-    name: 'sum rule: participation + judge + Σ rows = PrizePool · TournamentPacks',
+    name: "sum rule: participation + judge + Σ rows = PrizePool · TournamentPacks",
     check: (plan) => {
       // The JudgePool never touches TournamentPacks, so its term is 0 by
       // construction and the plan carries no field for it.
-      const sum = plan.participation.packs + (plan.judge.packs ?? 0) + plan.rows.reduce((a, row) => a + row.packs, 0);
-      return { held: sum === plan.pool.packs, detail: `${sum} vs ${plan.pool.packs}` };
+      const sum =
+        plan.participation.packs +
+        (plan.judge.packs ?? 0) +
+        plan.rows.reduce((a, row) => a + row.packs, 0);
+      return {
+        held: sum === plan.pool.packs,
+        detail: `${sum} vs ${plan.pool.packs}`,
+      };
     },
   },
   // ---- The WinnerPack axis (G5). ------------------------------------------
@@ -440,13 +487,22 @@ const INVARIANTS = [
   // stand grid of the WinnerPack axis: 0 misses without an overhang, 1 183 of
   // 1 183 with one, and never by any other amount.
   {
-    name: 'sum rule: Σ row.winners + open = RankPool · WinnerPacks',
-    check: (plan) => winnerSumRule(plan, sumOf(plan, 'winners') + plan.allocation.open, plan.rank.winners),
+    name: "sum rule: Σ row.winners + open = RankPool · WinnerPacks",
+    check: (plan) =>
+      winnerSumRule(
+        plan,
+        sumOf(plan, "winners") + plan.allocation.open,
+        plan.rank.winners,
+      ),
   },
   {
-    name: 'sum rule: judge + Σ row.winners + open = PrizePool · WinnerPacks',
+    name: "sum rule: judge + Σ row.winners + open = PrizePool · WinnerPacks",
     check: (plan) =>
-      winnerSumRule(plan, plan.judge.winners + sumOf(plan, 'winners') + plan.allocation.open, plan.pool.winners),
+      winnerSumRule(
+        plan,
+        plan.judge.winners + sumOf(plan, "winners") + plan.allocation.open,
+        plan.pool.winners,
+      ),
   },
   {
     // The overhang itself, and the one line here that is not a statement about
@@ -466,22 +522,24 @@ const INVARIANTS = [
     // the counter-check found the two agree stand for stand (318 of 318,
     // finding B2, filed at #70), and the same grid as above reproduces it over
     // 1 800 more — so there is nothing to gain by restating it.
-    name: 'no WinnerPack over-assignment: ranked + manual ≤ RankPool · WinnerPacks',
+    name: "no WinnerPack over-assignment: ranked + manual ≤ RankPool · WinnerPacks",
     check: (plan) => {
       const over = overhang(plan);
       const terms = `${plan.allocation.ranked} + ${plan.allocation.manualCount} vs ${plan.rank.winners}`;
-      if (over <= 0) return { state: 'ok', detail: terms };
+      if (over <= 0) return { state: "ok", detail: terms };
       return {
-        state: 'fail',
+        state: "fail",
         detail: `${terms} — ${over} WinnerPack(s) over-assigned; the core does not report this (unfit stays ${unfit(plan)}), the shell's ConflictNotice reports it (#70)`,
       };
     },
   },
   {
-    name: 'the rows fall monotonically',
+    name: "the rows fall monotonically",
     check: (plan) => {
-      const at = plan.rows.findIndex((row, i) => i > 0 && row.booster > plan.rows[i - 1].booster);
-      if (at === -1) return { state: 'ok', detail: 'yes' };
+      const at = plan.rows.findIndex(
+        (row, i) => i > 0 && row.booster > plan.rows[i - 1].booster,
+      );
+      if (at === -1) return { state: "ok", detail: "yes" };
       // Rank 1's lead is a guarantee only *inside* the curve, and lapses the
       // moment a DisplayReservation settles it out — the core reports that as
       // `overtake`/`flagged` instead of preventing it (ADR 0001, ADR 0002;
@@ -490,19 +548,22 @@ const INVARIANTS = [
       // rise it does not name is a real breach.
       if (plan.overtake) {
         return {
-          state: 'reported',
+          state: "reported",
           detail: `rises at Rank ${at + 1} — reported as overtake (Rank ${plan.overtake.under} overtaken by Rank ${plan.overtake.over})`,
         };
       }
-      return { state: 'fail', detail: `rises at Rank ${at + 1}` };
+      return { state: "fail", detail: `rises at Rank ${at + 1}` };
     },
   },
   {
-    name: 'RankPoolDepth ≤ Players',
-    check: (plan) => ({ held: plan.depth <= plan.players, detail: `${plan.depth} ≤ ${plan.players}` }),
+    name: "RankPoolDepth ≤ Players",
+    check: (plan) => ({
+      held: plan.depth <= plan.players,
+      detail: `${plan.depth} ≤ ${plan.players}`,
+    }),
   },
   {
-    name: 'one row per Player',
+    name: "one row per Player",
     check: (plan) => ({
       held: plan.rows.length === plan.players,
       detail: `${plan.rows.length} vs ${plan.players}`,
@@ -517,15 +578,20 @@ const INVARIANTS = [
     // reported fact, not a payout; no Rank ever receives it. So it reads as a
     // reported state — named, never hidden — while a negative anywhere the
     // plan actually pays out of stays a breach.
-    name: 'no negative number anywhere in the plan',
+    name: "no negative number anywhere in the plan",
     check: (plan) => {
       const bad = negativesIn(plan);
-      if (bad.length === 0) return { state: 'ok', detail: 'none' };
-      const outsideConflict = bad.filter((entry) => !entry.startsWith('plan.conflict.'));
+      if (bad.length === 0) return { state: "ok", detail: "none" };
+      const outsideConflict = bad.filter(
+        (entry) => !entry.startsWith("plan.conflict."),
+      );
       if (outsideConflict.length === 0 && plan.conflict) {
-        return { state: 'reported', detail: `${bad.join(', ')} — the reported conflict condition, not a payout` };
+        return {
+          state: "reported",
+          detail: `${bad.join(", ")} — the reported conflict condition, not a payout`,
+        };
       }
-      return { state: 'fail', detail: outsideConflict.join(', ') };
+      return { state: "fail", detail: outsideConflict.join(", ") };
     },
   },
   {
@@ -540,14 +606,18 @@ const INVARIANTS = [
     name: "the core's own verdict: unfit",
     check: (plan) => {
       const named = [
-        plan.conflict && `conflict (need ${plan.conflict.need}, have ${plan.conflict.have})`,
-        plan.overtake && `overtake (Rank ${plan.overtake.under} by Rank ${plan.overtake.over})`,
+        plan.conflict &&
+          `conflict (need ${plan.conflict.need}, have ${plan.conflict.have})`,
+        plan.overtake &&
+          `overtake (Rank ${plan.overtake.under} by Rank ${plan.overtake.over})`,
         plan.orphanedReservation &&
-          `orphanedReservation (${plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ')})`,
-        plan.unclaimedRemainder && `unclaimedRemainder (depth ${plan.unclaimedRemainder.depth})`,
+          `orphanedReservation (${plan.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(", ")})`,
+        plan.unclaimedRemainder &&
+          `unclaimedRemainder (depth ${plan.unclaimedRemainder.depth})`,
       ].filter(Boolean);
-      if (!unfit(plan)) return { state: 'ok', detail: 'false — none of the four' };
-      return { state: 'reported', detail: `true — ${named.join(' / ')}` };
+      if (!unfit(plan))
+        return { state: "ok", detail: "false — none of the four" };
+      return { state: "reported", detail: `true — ${named.join(" / ")}` };
     },
   },
 ];
@@ -563,108 +633,124 @@ const overhang = (plan) => winnerPackOverhang(plan)?.by ?? 0;
 
 /** One side of the WinnerPack sum rule, with the overhang as its reported case. */
 function winnerSumRule(plan, sum, expected) {
-  if (sum === expected) return { state: 'ok', detail: `${sum} vs ${expected}` };
+  if (sum === expected) return { state: "ok", detail: `${sum} vs ${expected}` };
   const over = overhang(plan);
   if (over > 0 && sum - over === expected) {
     return {
-      state: 'reported',
+      state: "reported",
       detail: `${sum} vs ${expected} — over by exactly the overhang of ${over}; the cap belongs to Spec 2 at the control (#46, #70)`,
     };
   }
-  return { state: 'fail', detail: `${sum} vs ${expected}` };
+  return { state: "fail", detail: `${sum} vs ${expected}` };
 }
 
 /** Every numeric leaf of the plan below zero, named by its path. */
-function negativesIn(value, path = 'plan', out = []) {
-  if (typeof value === 'number') {
+function negativesIn(value, path = "plan", out = []) {
+  if (typeof value === "number") {
     if (value < 0) out.push(`${path} = ${value}`);
   } else if (Array.isArray(value)) {
     value.forEach((item, i) => negativesIn(item, `${path}[${i}]`, out));
-  } else if (value && typeof value === 'object') {
-    for (const [key, item] of Object.entries(value)) negativesIn(item, `${path}.${key}`, out);
+  } else if (value && typeof value === "object") {
+    for (const [key, item] of Object.entries(value))
+      negativesIn(item, `${path}.${key}`, out);
   }
   return out;
 }
 
 /** The derived quantities, in the order they are reasoned about. */
 const DERIVED = [
-  ['PrizePool · Booster', (p) => p.pool.booster],
-  ['PrizePool · TournamentPacks', (p) => p.pool.packs],
-  ['PrizePool · WinnerPacks', (p) => p.pool.winners],
-  ['WinnerPacks · staffel value (auto)', (p) => p.pool.winnersDerived],
-  ['PromoEnvelope · opened packs', (p) => p.pool.opened],
-  ['PromoEnvelope · partial yield', (p) => p.pool.partialYield],
-  ['PromoEnvelope · thresholds', (p) => p.pool.thresholds.join('·')],
-  ['CombinedHandout', (p) => String(p.combinedHandout)],
-  ['ParticipationPool · Booster', (p) => p.participation.booster],
-  ['ParticipationPool · TournamentPacks', (p) => p.participation.packs],
-  ['ParticipationPool · rate (Booster / Packs)', (p) => `${p.participation.rate.booster} / ${p.participation.rate.packs}`],
-  ['JudgePool · Booster', (p) => p.judge.booster],
-  ['JudgePool · WinnerPacks', (p) => p.judge.winners],
-  ['RankPool · Booster', (p) => p.rank.booster],
-  ['RankPool · TournamentPacks', (p) => p.rank.packs],
-  ['RankPool · WinnerPacks', (p) => p.rank.winners],
-  ['WinnerPackAllocation · ranked', (p) => p.allocation.ranked],
-  ['WinnerPackAllocation · rankedAuto', (p) => p.allocation.rankedAuto],
-  ['WinnerPackAllocation · manualCount', (p) => p.allocation.manualCount],
-  ['WinnerPackAllocation · open', (p) => p.allocation.open],
+  ["PrizePool · Booster", (p) => p.pool.booster],
+  ["PrizePool · TournamentPacks", (p) => p.pool.packs],
+  ["PrizePool · WinnerPacks", (p) => p.pool.winners],
+  ["WinnerPacks · staffel value (auto)", (p) => p.pool.winnersDerived],
+  ["PromoEnvelope · opened packs", (p) => p.pool.opened],
+  ["PromoEnvelope · partial yield", (p) => p.pool.partialYield],
+  ["PromoEnvelope · thresholds", (p) => p.pool.thresholds.join("·")],
+  ["CombinedHandout", (p) => String(p.combinedHandout)],
+  ["ParticipationPool · Booster", (p) => p.participation.booster],
+  ["ParticipationPool · TournamentPacks", (p) => p.participation.packs],
+  [
+    "ParticipationPool · rate (Booster / Packs)",
+    (p) => `${p.participation.rate.booster} / ${p.participation.rate.packs}`,
+  ],
+  ["JudgePool · Booster", (p) => p.judge.booster],
+  ["JudgePool · WinnerPacks", (p) => p.judge.winners],
+  ["RankPool · Booster", (p) => p.rank.booster],
+  ["RankPool · TournamentPacks", (p) => p.rank.packs],
+  ["RankPool · WinnerPacks", (p) => p.rank.winners],
+  ["WinnerPackAllocation · ranked", (p) => p.allocation.ranked],
+  ["WinnerPackAllocation · rankedAuto", (p) => p.allocation.rankedAuto],
+  ["WinnerPackAllocation · manualCount", (p) => p.allocation.manualCount],
+  ["WinnerPackAllocation · open", (p) => p.allocation.open],
   // Not a field of the plan: the derivation #70 defines over three that are.
   // It sits here because a value read without hunting for it is what this
   // table is for, and because the raw dump below cannot show it.
-  ['WinnerPackAllocation · overhang (#70)', (p) => overhang(p)],
-  ['RankPoolDepth', (p) => p.depth],
-  ['depthCap', (p) => p.depthCap],
-  ['depthStepValue', (p) => p.depthStepValue],
-  ['RankFloor', (p) => p.rankFloor],
-  ['floorReserved', (p) => p.floorReserved],
-  ['ShapedRemainder', (p) => p.shapedRemainder],
-  ['curveSilent', (p) => String(p.curveSilent)],
-  ['curveCount', (p) => p.curveCount],
-  ['DisplayReservation · read vector', (p) => p.displayVector.join('·')],
-  ['DisplayReservation · reserved Booster', (p) => p.displayReserved],
-  ['DisplayReservation · settledCount', (p) => p.settledCount],
-  ['unclaimedRemainder', (p) => (p.unclaimedRemainder ? `depth ${p.unclaimedRemainder.depth}` : 'null')],
+  ["WinnerPackAllocation · overhang (#70)", (p) => overhang(p)],
+  ["RankPoolDepth", (p) => p.depth],
+  ["depthCap", (p) => p.depthCap],
+  ["depthStepValue", (p) => p.depthStepValue],
+  ["RankFloor", (p) => p.rankFloor],
+  ["floorReserved", (p) => p.floorReserved],
+  ["ShapedRemainder", (p) => p.shapedRemainder],
+  ["curveSilent", (p) => String(p.curveSilent)],
+  ["curveCount", (p) => p.curveCount],
+  ["DisplayReservation · read vector", (p) => p.displayVector.join("·")],
+  ["DisplayReservation · reserved Booster", (p) => p.displayReserved],
+  ["DisplayReservation · settledCount", (p) => p.settledCount],
   [
-    'overtake',
+    "unclaimedRemainder",
+    (p) =>
+      p.unclaimedRemainder ? `depth ${p.unclaimedRemainder.depth}` : "null",
+  ],
+  [
+    "overtake",
     (p) =>
       p.overtake
         ? `Rank ${p.overtake.under} (${p.overtake.has}) overtaken by Rank ${p.overtake.over} (${p.overtake.gets})`
-        : 'null',
+        : "null",
   ],
   // The three fields #56 added, in the row the plan itself lists them in.
   // They arrive in the raw dump by themselves, but the derived table is where
   // a value is read without hunting for it — the same nachziehen #55's
   // unclaimedRemainder and overtake got.
   [
-    'conflict',
-    (p) => (p.conflict ? `need ${p.conflict.need}, have ${p.conflict.have}` : 'null'),
+    "conflict",
+    (p) =>
+      p.conflict ? `need ${p.conflict.need}, have ${p.conflict.have}` : "null",
   ],
   [
-    'orphanedReservation',
-    (p) => (p.orphanedReservation ? p.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(', ') : 'null'),
+    "orphanedReservation",
+    (p) =>
+      p.orphanedReservation
+        ? p.orphanedReservation.ranks.map((r) => `Rank ${r}`).join(", ")
+        : "null",
   ],
-  ['flagged', (p) => (p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(', ') : 'none')],
-  ['unfit', (p) => String(unfit(p))],
+  [
+    "flagged",
+    (p) =>
+      p.flagged.length ? p.flagged.map((r) => `Rank ${r}`).join(", ") : "none",
+  ],
+  ["unfit", (p) => String(unfit(p))],
   // The one way over several sliders (#68), computed on every unfit stand and
   // shown raw — also where single ways exist and `waysOut()` therefore
   // withholds it, so the bench shows what the ranking leaves out.
   [
-    'combinedWayOut (#68)',
+    "combinedWayOut (#68)",
     (p) => {
       const way = combinedWayOut(p);
-      if (!way) return 'null';
-      const used = waysOut(p)[0]?.key === 'combined';
-      return `${way.label} — ${way.changes.length} change(s), ${used ? 'offered' : 'withheld: a single way stands alone'}`;
+      if (!way) return "null";
+      const used = waysOut(p)[0]?.key === "combined";
+      return `${way.label} — ${way.changes.length} change(s), ${used ? "offered" : "withheld: a single way stands alone"}`;
     },
   ],
   // The provenance half of the input (#86): which sliders were set by hand.
   // Only the keys — a value here is the one the row above it already shows,
   // and the whole information of a pin is that the key is present at all.
   [
-    'pinned (#86)',
+    "pinned (#86)",
     (p) => {
       const keys = Object.keys(p.pinned).sort();
-      return keys.length ? `${keys.length} · ${keys.join(', ')}` : 'none';
+      return keys.length ? `${keys.length} · ${keys.join(", ")}` : "none";
     },
   ],
 ];
@@ -712,7 +798,7 @@ function offer(plan) {
  * through a button or the JSON field touches it. It starts on `all`, the step
  * that excludes nothing but the Ranks already holding a WinnerPack.
  */
-let raffleRange = 'all';
+let raffleRange = "all";
 function pot(plan) {
   return rafflePot(plan, raffleRange);
 }
@@ -751,19 +837,19 @@ function resetPins(stand = {}) {
   for (const [key, value] of Object.entries(stand)) pin(key, value);
 }
 const el = {
-  controls: document.getElementById('controls'),
-  presets: document.getElementById('presets'),
-  sheets: document.getElementById('sheets'),
-  waysOut: document.getElementById('waysOut'),
-  offer: document.getElementById('offer'),
-  raffleRange: document.getElementById('raffleRange'),
-  rafflePot: document.getElementById('rafflePot'),
-  bars: document.getElementById('bars'),
-  series: document.getElementById('series'),
-  derived: document.getElementById('derived'),
-  raw: document.getElementById('raw'),
-  invariants: document.getElementById('invariants'),
-  banner: document.getElementById('invariantBanner'),
+  controls: document.getElementById("controls"),
+  presets: document.getElementById("presets"),
+  sheets: document.getElementById("sheets"),
+  waysOut: document.getElementById("waysOut"),
+  offer: document.getElementById("offer"),
+  raffleRange: document.getElementById("raffleRange"),
+  rafflePot: document.getElementById("rafflePot"),
+  bars: document.getElementById("bars"),
+  series: document.getElementById("series"),
+  derived: document.getElementById("derived"),
+  raw: document.getElementById("raw"),
+  invariants: document.getElementById("invariants"),
+  banner: document.getElementById("invariantBanner"),
 };
 
 buildControls();
@@ -774,57 +860,57 @@ render();
 
 function buildControls() {
   for (const control of CONTROLS) {
-    const field = document.createElement('div');
-    field.className = 'field';
+    const field = document.createElement("div");
+    field.className = "field";
     field.dataset.key = control.key;
 
-    const label = document.createElement('label');
+    const label = document.createElement("label");
     label.textContent = control.label;
-    const value = document.createElement('output');
+    const value = document.createElement("output");
     field.append(label, value);
 
     let input;
-    if (control.kind === 'select') {
-      input = document.createElement('select');
+    if (control.kind === "select") {
+      input = document.createElement("select");
       for (const id of control.options()) {
-        const option = document.createElement('option');
+        const option = document.createElement("option");
         option.value = id;
         option.textContent = control.render ? control.render(id) : id;
         input.append(option);
       }
-    } else if (control.kind === 'list') {
-      input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'e.g. 1,0,0';
-    } else if (control.kind === 'map') {
-      input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'e.g. 1:2, 5:1';
-    } else if (control.kind === 'check') {
-      input = document.createElement('input');
-      input.type = 'checkbox';
+    } else if (control.kind === "list") {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "e.g. 1,0,0";
+    } else if (control.kind === "map") {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "e.g. 1:2, 5:1";
+    } else if (control.kind === "check") {
+      input = document.createElement("input");
+      input.type = "checkbox";
     } else {
-      input = document.createElement('input');
-      input.type = 'range';
+      input = document.createElement("input");
+      input.type = "range";
       input.min = String(control.min);
       input.max = String(control.max);
-      input.step = '1';
+      input.step = "1";
     }
     field.append(input);
 
     let toggle = null;
     if (control.nullable) {
-      const wrap = document.createElement('div');
-      wrap.className = 'toggle';
-      toggle = document.createElement('input');
-      toggle.type = 'checkbox';
+      const wrap = document.createElement("div");
+      wrap.className = "toggle";
+      toggle = document.createElement("input");
+      toggle.type = "checkbox";
       toggle.id = `pin-${control.key}`;
-      const pinLabel = document.createElement('label');
+      const pinLabel = document.createElement("label");
       pinLabel.htmlFor = toggle.id;
       pinLabel.textContent = `pinned — off means ${control.nullable}`;
       wrap.append(toggle, pinLabel);
       field.append(wrap);
-      toggle.addEventListener('change', () => {
+      toggle.addEventListener("change", () => {
         settings[control.key] = toggle.checked ? Number(input.value) : null;
         pin(control.key, settings[control.key]);
         render();
@@ -832,20 +918,20 @@ function buildControls() {
     }
 
     if (control.note) {
-      const note = document.createElement('p');
-      note.className = 'note';
+      const note = document.createElement("p");
+      note.className = "note";
       note.textContent = control.note;
       field.append(note);
     }
 
-    input.addEventListener('input', () => {
-      if (control.kind === 'list') {
+    input.addEventListener("input", () => {
+      if (control.kind === "list") {
         settings[control.key] = parseVector(input.value);
-      } else if (control.kind === 'map') {
+      } else if (control.kind === "map") {
         settings[control.key] = parseRankMap(input.value);
-      } else if (control.kind === 'check') {
+      } else if (control.kind === "check") {
         settings[control.key] = input.checked;
-      } else if (control.kind === 'select') {
+      } else if (control.kind === "select") {
         settings[control.key] = input.value;
       } else {
         settings[control.key] = Number(input.value);
@@ -866,18 +952,24 @@ function buildControls() {
 function parseVector(text) {
   return text
     .split(/[\s,]+/)
-    .filter((part) => part !== '')
+    .filter((part) => part !== "")
     .map((part) => Math.max(0, Math.trunc(Number(part)) || 0));
 }
 
 /** `Rank:count` pairs for the manual WinnerPacks, e.g. `1:2, 5:1`. */
 function parseRankMap(text) {
   const map = {};
-  for (const pair of text.split(/[\s,]+/).filter((part) => part !== '')) {
-    const [rankText, countText] = pair.split(':');
+  for (const pair of text.split(/[\s,]+/).filter((part) => part !== "")) {
+    const [rankText, countText] = pair.split(":");
     const rank = Math.trunc(Number(rankText));
     const count = Math.trunc(Number(countText ?? 1));
-    if (Number.isFinite(rank) && rank >= 1 && Number.isFinite(count) && count > 0) map[rank] = count;
+    if (
+      Number.isFinite(rank) &&
+      rank >= 1 &&
+      Number.isFinite(count) &&
+      count > 0
+    )
+      map[rank] = count;
   }
   return map;
 }
@@ -886,20 +978,20 @@ function parseRankMap(text) {
 function formatRankMap(map) {
   return Object.entries(map ?? {})
     .map(([rank, count]) => `${rank}:${count}`)
-    .join(', ');
+    .join(", ");
 }
 
 function buildPresets() {
   for (const preset of PRESETS) {
-    const row = document.createElement('div');
-    row.className = 'preset';
-    const button = document.createElement('button');
-    button.type = 'button';
+    const row = document.createElement("div");
+    row.className = "preset";
+    const button = document.createElement("button");
+    button.type = "button";
     button.textContent = preset.label;
-    const verdict = document.createElement('span');
-    verdict.className = 'verdict';
+    const verdict = document.createElement("span");
+    verdict.className = "verdict";
     preset.verdict = verdict;
-    button.addEventListener('click', () => {
+    button.addEventListener("click", () => {
       Object.assign(settings, neutralSettings(), preset.settings);
       resetPins(preset.settings);
       render();
@@ -916,10 +1008,10 @@ function buildPresets() {
  */
 function buildSheets() {
   for (const sheet of SHEETS) {
-    const button = document.createElement('button');
-    button.type = 'button';
+    const button = document.createElement("button");
+    button.type = "button";
     button.textContent = sheet.label;
-    button.addEventListener('click', () => {
+    button.addEventListener("click", () => {
       Object.assign(settings, sheet.resolve());
       resetPins();
       render();
@@ -945,13 +1037,13 @@ function render() {
 /** The thirteen `RaffleRange` steps, straight from `RANGES` — ids, not labels. */
 function buildRaffleRange() {
   for (const step of RANGES) {
-    const option = document.createElement('option');
+    const option = document.createElement("option");
     option.value = step.id;
     option.textContent = step.id;
     el.raffleRange.append(option);
   }
   el.raffleRange.value = raffleRange;
-  el.raffleRange.addEventListener('change', () => {
+  el.raffleRange.addEventListener("change", () => {
     raffleRange = el.raffleRange.value;
     render();
   });
@@ -967,21 +1059,23 @@ function buildRaffleRange() {
 function renderRafflePot(plan) {
   el.rafflePot.replaceChildren();
   const ranks = pot(plan);
-  const holding = plan.rows.flatMap((row, i) => (row.winners > 0 ? [i + 1] : []));
+  const holding = plan.rows.flatMap((row, i) =>
+    row.winners > 0 ? [i + 1] : [],
+  );
 
-  const line = document.createElement('p');
+  const line = document.createElement("p");
   line.textContent =
     ranks.length === 0
       ? `${raffleRange}: the pot is empty`
-      : `${raffleRange}: ${ranks.length} Rank(s) — ${ranks.join(' · ')}`;
+      : `${raffleRange}: ${ranks.length} Rank(s) — ${ranks.join(" · ")}`;
   el.rafflePot.append(line);
 
-  const note = document.createElement('p');
-  note.className = 'note';
+  const note = document.createElement("p");
+  note.className = "note";
   note.textContent =
     holding.length === 0
-      ? 'no Rank holds a WinnerPack yet'
-      : `holding a WinnerPack, never in the pot: ${holding.join(' · ')}`;
+      ? "no Rank holds a WinnerPack yet"
+      : `holding a WinnerPack, never in the pot: ${holding.join(" · ")}`;
   el.rafflePot.append(note);
 }
 
@@ -1002,32 +1096,35 @@ function renderRafflePot(plan) {
 function renderWaysOut(plan) {
   el.waysOut.replaceChildren();
   if (!unfit(plan)) {
-    const note = document.createElement('p');
-    note.className = 'note';
-    note.textContent = 'the plan is fit — waysOut() returns nothing to show';
+    const note = document.createElement("p");
+    note.className = "note";
+    note.textContent = "the plan is fit — waysOut() returns nothing to show";
     el.waysOut.append(note);
     return;
   }
   const entries = waysOut(plan);
   if (entries.length === 0) {
-    const note = document.createElement('p');
-    note.className = 'note';
+    const note = document.createElement("p");
+    note.className = "note";
     note.textContent =
-      'unfit, and no slider the search may move clears it, alone or together — combinedWayOut() is null; only a fact about the evening would (#68, run 12 K2 satz-zur-tatsache)';
+      "unfit, and no slider the search may move clears it, alone or together — combinedWayOut() is null; only a fact about the evening would (#68, run 12 K2 satz-zur-tatsache)";
     el.waysOut.append(note);
     return;
   }
-  const list = document.createElement('div');
-  list.className = 'ways';
+  const list = document.createElement("div");
+  list.className = "ways";
   list.append(
     ...entries.map((entry) => {
-      const button = document.createElement('button');
-      button.type = 'button';
+      const button = document.createElement("button");
+      button.type = "button";
       button.textContent = entry.label;
       button.title = (entry.changes ?? [entry])
-        .map((change) => `${change.key}${change.rank ? ` · Rank ${change.rank}` : ''} = ${change.value}`)
-        .join('; ');
-      button.addEventListener('click', () => {
+        .map(
+          (change) =>
+            `${change.key}${change.rank ? ` · Rank ${change.rank}` : ""} = ${change.value}`,
+        )
+        .join("; ");
+      button.addEventListener("click", () => {
         applyWayOut(entry);
         render();
       });
@@ -1054,39 +1151,41 @@ function renderOffer(plan) {
   el.offer.replaceChildren();
   const entry = offer(plan);
   if (!entry) {
-    const note = document.createElement('p');
-    note.className = 'note';
+    const note = document.createElement("p");
+    note.className = "note";
     note.textContent = unfit(plan)
-      ? 'the plan is unfit — offerFor() stays silent and the ways out speak instead'
-      : 'fit, and no Rank sits close enough to a full Display — offerFor() returns null';
+      ? "the plan is unfit — offerFor() stays silent and the ways out speak instead"
+      : "fit, and no Rank sits close enough to a full Display — offerFor() returns null";
     el.offer.append(note);
     return;
   }
 
-  const line = document.createElement('p');
+  const line = document.createElement("p");
   line.textContent =
     `Rank ${entry.rank}: ${entry.value} Display(s), ${entry.from} → ${entry.to} Booster` +
-    (entry.from === entry.to ? ' (exactly on a multiple — the trade, not the distance)' : '');
+    (entry.from === entry.to
+      ? " (exactly on a multiple — the trade, not the distance)"
+      : "");
   el.offer.append(line);
 
-  const also = document.createElement('p');
-  also.className = 'note';
+  const also = document.createElement("p");
+  also.className = "note";
   also.textContent =
     entry.also.length === 0
-      ? 'also: no other Rank moves'
-      : `also: ${entry.also.map((m) => `Rank ${m.rank} ${m.before} → ${m.after}`).join(', ')}`;
+      ? "also: no other Rank moves"
+      : `also: ${entry.also.map((m) => `Rank ${m.rank} ${m.before} → ${m.after}`).join(", ")}`;
   el.offer.append(also);
 
-  const key = document.createElement('p');
-  key.className = 'note';
+  const key = document.createElement("p");
+  key.className = "note";
   key.textContent = `key: ${entry.key}`;
   el.offer.append(key);
 
-  const button = document.createElement('button');
-  button.type = 'button';
+  const button = document.createElement("button");
+  button.type = "button";
   button.textContent = `Take it — displays[${entry.rank}] = ${entry.value}`;
-  button.addEventListener('click', () => {
-    applyWayOut({ key: 'displays', rank: entry.rank, value: entry.value });
+  button.addEventListener("click", () => {
+    applyWayOut({ key: "displays", rank: entry.rank, value: entry.value });
     render();
   });
   el.offer.append(button);
@@ -1102,11 +1201,11 @@ function renderOffer(plan) {
  * could have reached by hand, and a SetupLink written from it must say so.
  */
 function applyWayOut(entry) {
-  if (entry.key === 'combined') {
+  if (entry.key === "combined") {
     for (const change of entry.changes) applyWayOut(change);
     return;
   }
-  if (entry.key !== 'displays') {
+  if (entry.key !== "displays") {
     settings[entry.key] = entry.value;
     pin(entry.key, entry.value);
     return;
@@ -1115,7 +1214,7 @@ function applyWayOut(entry) {
   while (d.length < entry.rank) d.push(0);
   d[entry.rank - 1] = entry.value;
   settings.displays = d;
-  pin('displays', d);
+  pin("displays", d);
 }
 
 /** The number row the tickets quote, e.g. `29·14·7·4·3·3·2·2`. */
@@ -1123,34 +1222,36 @@ function seriesOf(plan) {
   return plan.rows
     .filter((row) => row.served)
     .map((row) => row.booster)
-    .join('·');
+    .join("·");
 }
 
 function syncControls() {
   for (const control of CONTROLS) {
     const value = settings[control.key];
-    if (control.kind === 'list') {
-      if (document.activeElement !== control.input) control.input.value = (value ?? []).join(',');
+    if (control.kind === "list") {
+      if (document.activeElement !== control.input)
+        control.input.value = (value ?? []).join(",");
       control.output.textContent = `${(value ?? []).length} Rank(s)`;
       continue;
     }
-    if (control.kind === 'map') {
-      if (document.activeElement !== control.input) control.input.value = formatRankMap(value);
+    if (control.kind === "map") {
+      if (document.activeElement !== control.input)
+        control.input.value = formatRankMap(value);
       const count = Object.values(value ?? {}).reduce((a, b) => a + b, 0);
       control.output.textContent = `${count} WinnerPack(s)`;
       continue;
     }
-    if (control.kind === 'check') {
+    if (control.kind === "check") {
       control.input.checked = !!value;
-      control.output.textContent = value ? 'on' : 'off';
+      control.output.textContent = value ? "on" : "off";
       continue;
     }
-    if (control.kind === 'select') {
+    if (control.kind === "select") {
       control.input.value = value;
-      control.output.textContent = '';
+      control.output.textContent = "";
       continue;
     }
-    if (control.key === 'depth' || control.key === 'ranked') {
+    if (control.key === "depth" || control.key === "ranked") {
       control.input.max = String(settings.players);
     }
     const trailing = value == null;
@@ -1158,7 +1259,7 @@ function syncControls() {
     if (!trailing) control.input.value = String(value);
     // A trailing slider stays draggable on purpose: moving it is how you pin
     // it, which is the same gesture the app will use (ADR 0006).
-    control.output.textContent = trailing ? 'trailing' : String(value);
+    control.output.textContent = trailing ? "trailing" : String(value);
   }
 }
 
@@ -1175,24 +1276,26 @@ function renderBars(plan) {
   const peak = Math.max(1, ...plan.rows.map((row) => row.booster));
   el.bars.replaceChildren(
     ...plan.rows.map((row) => {
-      const classes = ['row'];
-      if (!row.served) classes.push('unserved');
-      if (row.settled) classes.push('settled');
-      if (plan.flagged.includes(row.rank)) classes.push('flagged');
-      const line = document.createElement('div');
-      line.className = classes.join(' ');
+      const classes = ["row"];
+      if (!row.served) classes.push("unserved");
+      if (row.settled) classes.push("settled");
+      if (plan.flagged.includes(row.rank)) classes.push("flagged");
+      const line = document.createElement("div");
+      line.className = classes.join(" ");
 
-      const rank = document.createElement('span');
-      rank.className = 'rank';
-      rank.textContent = row.settled ? `Rank ${row.rank} · settled` : `Rank ${row.rank}`;
+      const rank = document.createElement("span");
+      rank.className = "rank";
+      rank.textContent = row.settled
+        ? `Rank ${row.rank} · settled`
+        : `Rank ${row.rank}`;
 
       // The bar splits into the reserved Booster (the DisplayReservation, #55)
       // and the rest (RankFloor plus the DistributionCurve's share) — a
       // settled Rank is reserved end to end, a Rank inside the curve mixes
       // both, and an unclaimedRemainder shows up as the gap between the last
       // bar's end and the RankPool line, not as a colour.
-      const bar = document.createElement('div');
-      bar.className = 'bar';
+      const bar = document.createElement("div");
+      bar.className = "bar";
       // `row.reserved` is what the reservation pass actually paid out, not
       // what it promised (#56) — it cannot exceed `row.booster`, so the bar
       // takes it as it stands. It used to be clamped here, from the time
@@ -1200,15 +1303,21 @@ function renderBars(plan) {
       // (0 of 87 480 rows) and is gone, because a clamp that never bites
       // reads as evidence that `reserved` is still nominal.
       const rest = row.booster - row.reserved;
-      const reservedSeg = document.createElement('span');
-      reservedSeg.className = 'seg reserved';
+      const reservedSeg = document.createElement("span");
+      reservedSeg.className = "seg reserved";
       reservedSeg.style.width = `${(row.reserved / peak) * 100}%`;
-      const restSeg = document.createElement('span');
-      restSeg.className = 'seg rest';
+      const restSeg = document.createElement("span");
+      restSeg.className = "seg rest";
       restSeg.style.width = `${(rest / peak) * 100}%`;
       bar.append(reservedSeg, restSeg);
 
-      line.append(rank, count(row.booster, 'booster'), count(row.packs, 'packs'), count(row.winners, 'winners'), bar);
+      line.append(
+        rank,
+        count(row.booster, "booster"),
+        count(row.packs, "packs"),
+        count(row.winners, "winners"),
+        bar,
+      );
       return line;
     }),
   );
@@ -1216,7 +1325,7 @@ function renderBars(plan) {
 
 /** One numeric column of a rank row; a zero is dimmed rather than hidden. */
 function count(value, axis) {
-  const span = document.createElement('span');
+  const span = document.createElement("span");
   span.className = value === 0 ? `value ${axis} zero` : `value ${axis}`;
   span.textContent = String(value);
   return span;
@@ -1225,11 +1334,11 @@ function count(value, axis) {
 function renderDerived(plan) {
   el.derived.replaceChildren(
     ...DERIVED.map(([name, read]) => {
-      const tr = document.createElement('tr');
-      const th = document.createElement('th');
+      const tr = document.createElement("tr");
+      const th = document.createElement("th");
       th.textContent = name;
-      const td = document.createElement('td');
-      td.className = 'num';
+      const td = document.createElement("td");
+      td.className = "num";
       td.textContent = String(read(plan));
       tr.append(th, td);
       return tr;
@@ -1246,25 +1355,27 @@ function renderDerived(plan) {
 function renderInvariants(plan) {
   const results = INVARIANTS.map((inv) => {
     const result = inv.check(plan);
-    const state = result.state ?? (result.held ? 'ok' : 'fail');
+    const state = result.state ?? (result.held ? "ok" : "fail");
     return { name: inv.name, state, detail: result.detail };
   });
-  const broken = results.filter((result) => result.state === 'fail');
-  const reported = results.filter((result) => result.state === 'reported');
-  el.banner.className = broken.length > 0 ? 'broken' : reported.length > 0 ? 'reported' : 'held';
+  const broken = results.filter((result) => result.state === "fail");
+  const reported = results.filter((result) => result.state === "reported");
+  el.banner.className =
+    broken.length > 0 ? "broken" : reported.length > 0 ? "reported" : "held";
   el.banner.textContent =
     broken.length > 0
-      ? `${broken.length} invariant(s) BROKEN: ${broken.map((b) => b.name).join(' / ')}`
+      ? `${broken.length} invariant(s) BROKEN: ${broken.map((b) => b.name).join(" / ")}`
       : reported.length > 0
-        ? `all invariants hold — ${reported.length} reported state(s), not a defect: ${reported.map((r) => r.name).join(' / ')}`
-        : 'all invariants hold';
+        ? `all invariants hold — ${reported.length} reported state(s), not a defect: ${reported.map((r) => r.name).join(" / ")}`
+        : "all invariants hold";
 
-  const list = document.createElement('ul');
+  const list = document.createElement("ul");
   list.append(
     ...results.map((result) => {
-      const li = document.createElement('li');
+      const li = document.createElement("li");
       li.className = result.state;
-      const icon = result.state === 'ok' ? '✓' : result.state === 'reported' ? '●' : '✗';
+      const icon =
+        result.state === "ok" ? "✓" : result.state === "reported" ? "●" : "✗";
       li.textContent = `${icon} ${result.name} — ${result.detail}`;
       return li;
     }),
@@ -1280,35 +1391,39 @@ function renderPresetVerdicts() {
     // its own reader; `series` and the plain scalar fields need none.
     const actual = preset.expect.read
       ? preset.expect.read(plan)
-      : preset.expect.what === 'series'
+      : preset.expect.what === "series"
         ? seriesOf(plan)
         : String(plan[preset.expect.what]);
     const held = actual === preset.expect.value;
-    preset.verdict.className = `verdict ${held ? 'ok' : 'fail'}`;
+    preset.verdict.className = `verdict ${held ? "ok" : "fail"}`;
     preset.verdict.textContent = held
       ? `✓ ${preset.expect.what} ${actual}`
       : `✗ ${preset.expect.what} ${actual}, expected ${preset.expect.value}`;
   }
 }
 
-document.getElementById('copySettings').addEventListener('click', async () => {
-  const state = document.getElementById('copyState');
+document.getElementById("copySettings").addEventListener("click", async () => {
+  const state = document.getElementById("copyState");
   try {
     await navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
-    state.textContent = 'copied';
+    state.textContent = "copied";
   } catch {
-    state.textContent = 'clipboard refused — use the textarea below';
-    document.getElementById('settingsIn').value = JSON.stringify(settings, null, 2);
+    state.textContent = "clipboard refused — use the textarea below";
+    document.getElementById("settingsIn").value = JSON.stringify(
+      settings,
+      null,
+      2,
+    );
   }
 });
 
-document.getElementById('loadSettings').addEventListener('click', () => {
-  const state = document.getElementById('loadState');
+document.getElementById("loadSettings").addEventListener("click", () => {
+  const state = document.getElementById("loadState");
   try {
-    const parsed = JSON.parse(document.getElementById('settingsIn').value);
+    const parsed = JSON.parse(document.getElementById("settingsIn").value);
     Object.assign(settings, neutralSettings(), parsed);
     resetPins(parsed);
-    state.textContent = 'loaded';
+    state.textContent = "loaded";
     render();
   } catch (error) {
     state.textContent = `not JSON: ${error.message}`;
