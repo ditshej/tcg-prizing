@@ -1,0 +1,4 @@
+# The maintainer's public Discord user ID, linked on purpose from the about
+# block (#159, views/discord-profile.php). Not a secret; prettier re-quoted the
+# line, so the PR scan saw it again.
+a97a36f83b6f5eb897be8821e70fbff4c9cbb646:test/views-about.test.mjs:discord-client-id:30

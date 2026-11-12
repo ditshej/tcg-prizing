@@ -27,7 +27,7 @@ const CSS = readFileSync(
 );
 const CONTEXT = readFileSync(new URL("../CONTEXT.md", import.meta.url), "utf8");
 
-const DISCORD_ID = "428891117220659241";
+const DISCORD_ID = "428891117220659241"; // gitleaks:allow (public profile ID)
 const DISCORD_URL = `https://discord.com/users/${DISCORD_ID}`;
 const READS_PROFILE = `href="<?= htmlspecialchars(require __DIR__ . '/discord-profile.php') ?>"`;
 
