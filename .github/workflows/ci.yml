@@ -1,36 +1,125 @@
+# rig-enforcement base 5 (CI template for Node, adapted for tcg-prizing: no packages, PHP templates)
 name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+
+permissions:
+  contents: read
 
 # `_deploy.sh` pulls `main` onto the server unchecked and there is no build
 # artifact where a mistake could surface first: this check is the only net
 # before going live (#22). No install step — the core runs without packages.
 jobs:
-  tests:
+  quality:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+          node-version: 22 # same version as production
+      - name: Install npm packages
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           coverage: none
-
-      - name: Run tests
-        run: node --test
-
+      - name: Prettier
+        run: |
+          if [ -x node_modules/.bin/prettier ]; then
+            node_modules/.bin/prettier --check .
+          else
+            npx --yes prettier@3 --check .
+          fi
+      - name: TypeScript
+        if: hashFiles('tsconfig.json') != ''
+        run: |
+          if [ -x node_modules/.bin/tsc ]; then
+            node_modules/.bin/tsc --noEmit
+          else
+            npx --yes -p typescript tsc --noEmit
+          fi
       - name: Lint PHP templates
         run: |
           find views -name '*.php' -print0 | xargs -0 -n1 php -l
           php -l public/index.php
+      - name: Tests with coverage
+        run: |
+          if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['test:coverage'] ? 0 : 1)"; then
+            npm run test:coverage
+          else
+            node --test --experimental-test-coverage --test-coverage-lines=70
+          fi
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lockfiles
+        run: |
+          status=0
+          if [ -f composer.json ] && [ ! -f composer.lock ]; then
+            echo "::error file=composer.json::composer.json without composer.lock. Commit the lockfile."
+            status=1
+          fi
+          if [ -f package.json ] && [ ! -f package-lock.json ]; then
+            echo "::error file=package.json::package.json without package-lock.json. Commit the lockfile."
+            status=1
+          fi
+          exit $status
+      - uses: shivammathur/setup-php@v2
+        if: (success() || failure()) && hashFiles('composer.lock') != ''
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+      - name: composer audit
+        if: (success() || failure()) && hashFiles('composer.lock') != ''
+        run: composer audit --locked
+      - name: npm audit
+        if: (success() || failure()) && hashFiles('package-lock.json') != ''
+        run: npm audit --audit-level=high
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  claude-md:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: CLAUDE.md length (warning only)
+        run: |
+          # With Laravel Boost the project part lives in .ai/guidelines/project.md.
+          if [ -f .ai/guidelines/project.md ]; then
+            lines=$(wc -l < .ai/guidelines/project.md)
+          elif [ -d .ai/guidelines ]; then
+            lines=$(cat .ai/guidelines/*.md 2>/dev/null | wc -l)
+          elif [ -f CLAUDE.md ]; then
+            lines=$(wc -l < CLAUDE.md)
+            # Follow @imports one level deep (files in the repository only).
+            for f in $(grep -oE '(^|[[:space:]])@[^[:space:]]+' CLAUDE.md | sed 's/^[[:space:]]*@//' | sort -u); do
+              case "$f" in /*|~*|*..*) continue ;; esac
+              if [ -f "$f" ]; then
+                lines=$((lines + $(wc -l < "$f")))
+              fi
+            done
+          else
+            exit 0
+          fi
+          if [ "$lines" -gt 60 ]; then
+            echo "::warning file=CLAUDE.md::The project part of CLAUDE.md has $lines lines (guide: about 60)."
+          fi
