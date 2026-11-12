@@ -4,7 +4,10 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/base/pre-bash.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/base/pre-bash.py\""
+          }
         ]
       }
     ],
@@ -12,7 +15,10 @@
       {
         "matcher": "Edit|MultiEdit|Write",
         "hooks": [
-          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/base/post-edit.sh\"" }
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/base/post-edit.sh\""
+          }
         ]
       }
     ]

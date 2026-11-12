@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# rig-enforcement base 4. Do not edit; project rules go into
+# rig-enforcement base 5. Do not edit; project rules go into
 # .claude/hooks/project/pre-bash/.
 #
 # Claude Code PreToolUse hook for Bash. Blocks (exit 2, reason on stderr):
 # - git identity changes (git config user.*, git -c user.*)
 # - skipping or redirecting the git hooks (--no-verify, core.hooksPath)
+# - commits and pushes while core.hooksPath is not .githooks/base
 # - commits and pushes to main/master
 # - git tag v* and gh release create without an AI review note with
 #   "Status: pass" on the release commit (refs/notes/ai-review)
@@ -19,6 +20,7 @@ import sys
 
 PROTECTED = {"main", "master"}
 NOTES_REF = "ai-review"
+HOOKS_PATH = ".githooks/base"
 OPERATORS = {"&&", "||", ";", "|", "&", "\n", "(", ")", ";;", "|&"}
 GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 TAG_OPTS_WITH_VALUE = {"-m", "--message", "-F", "--file", "-u", "--local-user", "--cleanup"}
@@ -80,6 +82,15 @@ def current_branch():
     return git("symbolic-ref", "--short", "-q", "HEAD")
 
 
+def check_hooks_path():
+    # Only in a repository that has the base hooks.
+    top = git("rev-parse", "--show-toplevel")
+    if not top or not os.path.isdir(os.path.join(top, HOOKS_PATH)):
+        return
+    if git("config", "core.hooksPath") != HOOKS_PATH:
+        block(f"core.hooksPath is not {HOOKS_PATH}, so the Git hooks do not run. Run: git config core.hooksPath {HOOKS_PATH}")
+
+
 def check_review(commit_ref, label):
     commit = git("rev-parse", "--verify", "-q", f"{commit_ref}^{{commit}}")
     if not commit:
@@ -120,10 +131,12 @@ def check_git(words):
         reading = not unset and (any(a.startswith("--get") for a in args) or len(keys) == 1)
         if not reading and any(k.startswith("user.") for k in keys):
             block("do not set or override the git identity (git config user.*).")
-        if not reading and "core.hookspath" in keys and (unset or keys[-1] != ".githooks/base"):
-            block("core.hooksPath must stay .githooks/base. The rig-enforcement hooks must run.")
+        if not reading and "core.hookspath" in keys and (unset or keys[-1] != HOOKS_PATH):
+            block(f"core.hooksPath must stay {HOOKS_PATH}. The rig-enforcement hooks must run.")
     if sub in {"commit", "push", "merge", "rebase", "cherry-pick", "am", "revert"} and "--no-verify" in args:
         block("do not skip the git hooks (--no-verify).")
+    if sub in {"commit", "push"}:
+        check_hooks_path()
     if sub == "commit":
         if skips_hooks(args):
             block("do not skip the git hooks (git commit -n).")

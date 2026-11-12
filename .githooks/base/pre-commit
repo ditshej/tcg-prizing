@@ -1,5 +1,5 @@
 #!/bin/sh
-# rig-enforcement base 4. Do not edit; project checks go into
+# rig-enforcement base 5. Do not edit; project checks go into
 # .githooks/project/pre-commit/.
 #
 # Blocks commits on main/master, files under .github/workflows/ and secrets.
