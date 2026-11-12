@@ -41,7 +41,12 @@
       body {
         margin: 0;
         padding: 0 0 4rem;
-        font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font:
+          14px/1.45 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
         color: var(--ink);
         background: var(--bench);
       }
@@ -96,14 +101,14 @@
         font-variant-numeric: tabular-nums;
         color: var(--dim);
       }
-      .field input[type='range'],
+      .field input[type="range"],
       .field select,
-      .field input[type='text'] {
+      .field input[type="text"] {
         grid-column: 1 / -1;
         width: 100%;
         font: inherit;
       }
-      .field input[type='checkbox'] {
+      .field input[type="checkbox"] {
         grid-column: 1 / -1;
         justify-self: start;
         margin: 0;
@@ -308,25 +313,31 @@
   </head>
   <body>
     <p class="warning">
-      <strong>Developer workbench — not a prototype and not a template.</strong> Nothing here is a
-      decision about the app's surface. Spec 2 (#61) builds that from CONTEXT.md and its own
-      tickets, in Alpine over plain ES modules (ADR 0004). Do not copy out of this file. It exists
-      only so the core can be pulled by hand while #54&ndash;#60 extend it.
+      <strong>Developer workbench — not a prototype and not a template.</strong>
+      Nothing here is a decision about the app's surface. Spec 2 (#61) builds
+      that from CONTEXT.md and its own tickets, in Alpine over plain ES modules
+      (ADR 0004). Do not copy out of this file. It exists only so the core can
+      be pulled by hand while #54&ndash;#60 extend it.
     </p>
 
     <header>
       <h1>Core workbench &mdash; distribute(settings, pinned)</h1>
       <p class="note" style="color: var(--dim); font-size: 12px; margin: 0">
-        Imported live from <code>../public/core/</code> &mdash; <code>distribute.mjs</code>,
-        <code>rules.mjs</code>, <code>defaults.mjs</code> (#49) and <code>suggest.mjs</code> (#59) &mdash;
-        plus the sheets in <code>../public/sets/</code>. No copy, no build step, no dependencies.
+        Imported live from <code>../public/core/</code> &mdash;
+        <code>distribute.mjs</code>, <code>rules.mjs</code>,
+        <code>defaults.mjs</code> (#49) and <code>suggest.mjs</code> (#59)
+        &mdash; plus the sheets in <code>../public/sets/</code>. No copy, no
+        build step, no dependencies.
       </p>
     </header>
 
     <main>
       <div>
         <section>
-          <h2>Measured stands (#53), the conflict stands (#56), the overhang (#70) and two facts (#68)</h2>
+          <h2>
+            Measured stands (#53), the conflict stands (#56), the overhang (#70)
+            and two facts (#68)
+          </h2>
           <div id="presets"></div>
         </section>
 
@@ -336,7 +347,8 @@
             Resolved through <code>resolveSettings()</code> in
             <code>../public/core/defaults.mjs</code> over the sheets in
             <code>../public/sets/</code> &mdash; the same chain
-            <code>public/ui/plan.mjs</code> starts from. Replaces the whole Settings.
+            <code>public/ui/plan.mjs</code> starts from. Replaces the whole
+            Settings.
           </p>
           <div id="sheets"></div>
         </section>
@@ -349,13 +361,22 @@
         <section>
           <h2>Settings as JSON</h2>
           <p class="note">
-            No URL encoding here on purpose: that is <code>SetupLink</code>, a versioned public
-            interface (#48). A bench must not invent a second one.
+            No URL encoding here on purpose: that is <code>SetupLink</code>, a
+            versioned public interface (#48). A bench must not invent a second
+            one.
           </p>
-          <button id="copySettings" type="button">Copy Settings to clipboard</button>
+          <button id="copySettings" type="button">
+            Copy Settings to clipboard
+          </button>
           <span id="copyState" class="note"></span>
-          <textarea id="settingsIn" spellcheck="false" placeholder="paste Settings JSON here"></textarea>
-          <button id="loadSettings" type="button">Load Settings from JSON</button>
+          <textarea
+            id="settingsIn"
+            spellcheck="false"
+            placeholder="paste Settings JSON here"
+          ></textarea>
+          <button id="loadSettings" type="button">
+            Load Settings from JSON
+          </button>
           <span id="loadState" class="note"></span>
         </section>
       </div>
@@ -370,11 +391,14 @@
         <section>
           <h2>Ways out (#59, #68)</h2>
           <p class="note">
-            <code>waysOut()</code> from <code>../public/core/suggest.mjs</code>, computed live
-            whenever the core calls the plan <code>unfit</code>. One slider per entry (#59) where any
-            slider clears alone; only where none does, the one <code>combinedWayOut()</code> over
-            several sliders instead (#68). Click one to take it. The <code>WinnerPack</code> overhang is not one of the four facts and has no
-            entries here &mdash; its ways out live in the shell's ConflictNotice (<code>public/ui/overhang.mjs</code>, #70).
+            <code>waysOut()</code> from <code>../public/core/suggest.mjs</code>,
+            computed live whenever the core calls the plan <code>unfit</code>.
+            One slider per entry (#59) where any slider clears alone; only where
+            none does, the one <code>combinedWayOut()</code> over several
+            sliders instead (#68). Click one to take it. The
+            <code>WinnerPack</code> overhang is not one of the four facts and
+            has no entries here &mdash; its ways out live in the shell's
+            ConflictNotice (<code>public/ui/overhang.mjs</code>, #70).
           </p>
           <div id="waysOut"></div>
         </section>
@@ -382,12 +406,14 @@
         <section>
           <h2>Offer (#60)</h2>
           <p class="note">
-            <code>offerFor()</code> from <code>../public/core/suggest.mjs</code>, the mirror of the
-            ways out: it computes only where the plan is <em>fit</em>, so the two are never both
-            filled. There is one Offer, not a list. The fields are raw &mdash; how the sentence reads
-            on screen is Spec 2's decision and lives in <code>prototypes/</code>, not here. Watch
-            <code>also</code>: those are the Ranks the proposal moves along with it, and they are the
-            price it has to name.
+            <code>offerFor()</code> from
+            <code>../public/core/suggest.mjs</code>, the mirror of the ways out:
+            it computes only where the plan is <em>fit</em>, so the two are
+            never both filled. There is one Offer, not a list. The fields are
+            raw &mdash; how the sentence reads on screen is Spec 2's decision
+            and lives in <code>prototypes/</code>, not here. Watch
+            <code>also</code>: those are the Ranks the proposal moves along with
+            it, and they are the price it has to name.
           </p>
           <div id="offer"></div>
         </section>
@@ -395,11 +421,12 @@
         <section>
           <h2>RafflePot (#69)</h2>
           <p class="note">
-            <code>rafflePot()</code> from <code>../public/core/rules.mjs</code>: the
-            <code>RaffleRange</code> minus every Rank that already holds a <code>WinnerPack</code>,
-            <code>ranked</code> and <code>manual</code> alike. The range is session state, not a
-            Settings field &mdash; it is held beside the Settings, never pinned, and no stand resets
-            it. No throw here: the core has none.
+            <code>rafflePot()</code> from <code>../public/core/rules.mjs</code>:
+            the <code>RaffleRange</code> minus every Rank that already holds a
+            <code>WinnerPack</code>, <code>ranked</code> and
+            <code>manual</code> alike. The range is session state, not a
+            Settings field &mdash; it is held beside the Settings, never pinned,
+            and no stand resets it. No throw here: the core has none.
           </p>
           <select id="raffleRange"></select>
           <div id="rafflePot"></div>
@@ -409,22 +436,28 @@
           <h2>Rank rows</h2>
           <p class="barlegend">
             Only the <code>Booster</code> gets a bar &mdash; it is the axis the
-            <code>DistributionCurve</code> shapes. <code>TournamentPacks</code> and
-            <code>WinnerPacks</code> run past it as whole counts (#57).<br />
-            <span class="swatch" style="background: var(--served)"></span> served &mdash;
-            <span class="swatch" style="background: var(--unserved)"></span> unserved (beyond the
-            <code>RankPoolDepth</code>) &mdash; the <code>RankCycle</code> and
-            <code>manual</code> reach past the depth on purpose.<br />
-            <span class="swatch" style="background: var(--reserved)"></span> the reserved share
-            (<code>row.reserved</code>, the <code>DisplayReservation</code> at <code>displaySize</code>
-            per <code>Display</code>) inside each bar, the rest of the bar is <code>RankFloor</code>
-            plus the curve's share &mdash; a <strong>settled</strong> Rank (bold label, the strict
-            prefix above the topmost tie, #55) is reserved end to end and gets neither. A Rank whose
-            label is red is <strong>flagged</strong>: it took part in the reported <code>overtake</code>,
-            or &mdash; since #56 &mdash; the pour from the top left it short of its quota in the
-            conflict branch. When <code>unclaimedRemainder</code> is set, the bars stop short of the
-            <code>RankPool</code> on purpose &mdash; the invariant line names the gap instead of
-            hiding it in a row.
+            <code>DistributionCurve</code> shapes.
+            <code>TournamentPacks</code> and <code>WinnerPacks</code> run past
+            it as whole counts (#57).<br />
+            <span class="swatch" style="background: var(--served)"></span>
+            served &mdash;
+            <span class="swatch" style="background: var(--unserved)"></span>
+            unserved (beyond the <code>RankPoolDepth</code>) &mdash; the
+            <code>RankCycle</code> and <code>manual</code> reach past the depth
+            on purpose.<br />
+            <span class="swatch" style="background: var(--reserved)"></span> the
+            reserved share (<code>row.reserved</code>, the
+            <code>DisplayReservation</code> at <code>displaySize</code> per
+            <code>Display</code>) inside each bar, the rest of the bar is
+            <code>RankFloor</code> plus the curve's share &mdash; a
+            <strong>settled</strong> Rank (bold label, the strict prefix above
+            the topmost tie, #55) is reserved end to end and gets neither. A
+            Rank whose label is red is <strong>flagged</strong>: it took part in
+            the reported <code>overtake</code>, or &mdash; since #56 &mdash; the
+            pour from the top left it short of its quota in the conflict branch.
+            When <code>unclaimedRemainder</code> is set, the bars stop short of
+            the <code>RankPool</code> on purpose &mdash; the invariant line
+            names the gap instead of hiding it in a row.
           </p>
           <div class="row head">
             <span class="rank">Rank</span>
@@ -451,8 +484,9 @@
         <section>
           <h2>Raw DistributionPlan</h2>
           <p class="note">
-            Dumped whole, so fields added by #55 and #56 show up without anyone touching the
-            bench &mdash; that is how the fields of #57 first appeared here.
+            Dumped whole, so fields added by #55 and #56 show up without anyone
+            touching the bench &mdash; that is how the fields of #57 first
+            appeared here.
           </p>
           <pre id="raw"></pre>
         </section>

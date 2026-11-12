@@ -1,7 +1,7 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { distribute } from '../public/core/distribute.mjs';
+import { distribute } from "../public/core/distribute.mjs";
 
 /**
  * The sum rule as a property (#58), not as an assertion at one measured stand.
@@ -81,9 +81,9 @@ function settings(overrides = {}) {
     judgeBooster: 0,
     judgeWinner: 0,
     rankFloor: 2,
-    depthStep: 'all',
+    depthStep: "all",
     depth: null,
-    curve: 'steep',
+    curve: "steep",
     ranked: null,
     winnerPacks: null,
     manualWinner: {},
@@ -104,7 +104,8 @@ function* combinations(axes) {
   const counters = new Array(keys.length).fill(0);
   for (;;) {
     const overrides = {};
-    for (let k = 0; k < keys.length; k++) overrides[keys[k]] = axes[keys[k]][counters[k]];
+    for (let k = 0; k < keys.length; k++)
+      overrides[keys[k]] = axes[keys[k]][counters[k]];
     yield { overrides, where: JSON.stringify(overrides) };
     let k = keys.length - 1;
     while (k >= 0) {
@@ -139,14 +140,15 @@ const sumOf = (plan, key) => plan.rows.reduce((a, row) => a + row[key], 0);
  * enters the sum rule as a **term**, on top of the row sum. A tolerance would
  * say something else entirely: that a few `Booster` may go missing.
  */
-const unclaimed = (plan) => (plan.unclaimedRemainder ? plan.shapedRemainder : 0);
+const unclaimed = (plan) =>
+  plan.unclaimedRemainder ? plan.shapedRemainder : 0;
 
 /**
  * Every numeric leaf of the plan, with its path, so a negative one can be
  * named rather than merely counted.
  */
 function numericLeaves(value, path, out) {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     out.push([path, value]);
     return out;
   }
@@ -154,8 +156,9 @@ function numericLeaves(value, path, out) {
     value.forEach((entry, i) => numericLeaves(entry, `${path}[${i}]`, out));
     return out;
   }
-  if (value && typeof value === 'object') {
-    for (const [key, entry] of Object.entries(value)) numericLeaves(entry, `${path}.${key}`, out);
+  if (value && typeof value === "object") {
+    for (const [key, entry] of Object.entries(value))
+      numericLeaves(entry, `${path}.${key}`, out);
   }
   return out;
 }
@@ -202,16 +205,20 @@ function assertSumRule(plan, where, tally) {
   // *inside* these equations. That is the whole point of the Pool/recipient
   // distinction: a PrizeItem without a recipient is filed, not lost.
   assert.equal(
-    sumOf(plan, 'booster') + unclaimed(plan),
+    sumOf(plan, "booster") + unclaimed(plan),
     plan.rank.booster,
     `rank rows against the RankPool Booster at ${where}`,
   );
-  assert.equal(sumOf(plan, 'packs'), plan.rank.packs, `rank rows against the RankPool TournamentPacks at ${where}`);
+  assert.equal(
+    sumOf(plan, "packs"),
+    plan.rank.packs,
+    `rank rows against the RankPool TournamentPacks at ${where}`,
+  );
 
   const assignedWinners = plan.allocation.ranked + plan.allocation.manualCount;
   if (assignedWinners <= plan.rank.winners) {
     assert.equal(
-      sumOf(plan, 'winners') + plan.allocation.open,
+      sumOf(plan, "winners") + plan.allocation.open,
       plan.rank.winners,
       `rank rows plus open against the RankPool WinnerPacks at ${where}`,
     );
@@ -223,27 +230,34 @@ function assertSumRule(plan, where, tally) {
     // more WinnerPacks than the RankPool holds; the core's documented answer
     // is exactly this, and the rule at the Pool level above still holds.
     tally.overAssignedWinners++;
-    assert.equal(plan.allocation.open, 0, `open WinnerPacks over-assigned at ${where}`);
+    assert.equal(
+      plan.allocation.open,
+      0,
+      `open WinnerPacks over-assigned at ${where}`,
+    );
     assert.ok(
-      sumOf(plan, 'winners') > plan.rank.winners,
+      sumOf(plan, "winners") > plan.rank.winners,
       `over-assignment does not show at the recipient level at ${where}`,
     );
   }
 
   // ---- The rule spelled out from the PrizePool to the last recipient. ------
   assert.equal(
-    plan.participation.booster + plan.judge.booster + sumOf(plan, 'booster') + unclaimed(plan),
+    plan.participation.booster +
+      plan.judge.booster +
+      sumOf(plan, "booster") +
+      unclaimed(plan),
     plan.pool.booster,
     `Booster from the PrizePool to the rows at ${where}`,
   );
   assert.equal(
-    plan.participation.packs + (plan.judge.packs ?? 0) + sumOf(plan, 'packs'),
+    plan.participation.packs + (plan.judge.packs ?? 0) + sumOf(plan, "packs"),
     plan.pool.packs,
     `TournamentPacks from the PrizePool to the rows at ${where}`,
   );
   if (assignedWinners <= plan.rank.winners) {
     assert.equal(
-      plan.judge.winners + sumOf(plan, 'winners') + plan.allocation.open,
+      plan.judge.winners + sumOf(plan, "winners") + plan.allocation.open,
       plan.pool.winners,
       `WinnerPacks from the PrizePool to the rows at ${where}`,
     );
@@ -256,8 +270,8 @@ function assertSumRule(plan, where, tally) {
   // the equality above ever loosens, this line still holds the roof up.
   if (plan.conflict) {
     assert.ok(
-      sumOf(plan, 'booster') <= plan.rank.booster,
-      `the rank rows hand out ${sumOf(plan, 'booster')} of a RankPool of ${plan.rank.booster} at ${where}`,
+      sumOf(plan, "booster") <= plan.rank.booster,
+      `the rank rows hand out ${sumOf(plan, "booster")} of a RankPool of ${plan.rank.booster} at ${where}`,
     );
   }
 
@@ -268,8 +282,12 @@ function assertSumRule(plan, where, tally) {
   // exemption dev/bench.mjs made in PR #82). A reservation that by itself
   // outweighs the RankPool makes it negative, on purpose. Every other leaf is
   // a count or a payout and a negative one there is a breach.
-  const negatives = numericLeaves(plan, 'plan', []).filter(([, value]) => value < 0);
-  const unexpected = negatives.filter(([path]) => path !== 'plan.conflict.have');
+  const negatives = numericLeaves(plan, "plan", []).filter(
+    ([, value]) => value < 0,
+  );
+  const unexpected = negatives.filter(
+    ([path]) => path !== "plan.conflict.have",
+  );
   assert.deepEqual(unexpected, [], `negative numbers in the plan at ${where}`);
 }
 
@@ -306,7 +324,7 @@ const DIVISIBLE_AXES = {
   judgeBooster: [0, 40],
   rankFloor: [2],
   depth: [null, 40],
-  curve: ['gentle', 'extreme'],
+  curve: ["gentle", "extreme"],
   displays: [[], [3, 2, 1, 0, 0, 0, 0, 0, 0, 2]],
   displaySize: [1, 24],
   combinedHandout: [false, true],
@@ -357,17 +375,17 @@ function sweep(axes) {
   return tally;
 }
 
-test('the sum rule holds per PrizeItem axis over the divisible axis and everything that shapes it', () => {
+test("the sum rule holds per PrizeItem axis over the divisible axis and everything that shapes it", () => {
   const tally = sweep(DIVISIBLE_AXES);
   assert.equal(tally.total, 512);
 });
 
-test('the sum rule holds per PrizeItem axis over the two indivisible axes and the envelope numbers', () => {
+test("the sum rule holds per PrizeItem axis over the two indivisible axes and the envelope numbers", () => {
   const tally = sweep(INDIVISIBLE_AXES);
   assert.equal(tally.total, 512);
 });
 
-test('the sweep reaches conflict, overtaking, an orphaned reservation and a reservation covering the depth', () => {
+test("the sweep reaches conflict, overtaking, an orphaned reservation and a reservation covering the depth", () => {
   // The coverage claim of #58's second acceptance criterion, counted rather
   // than asserted: a sweep that happens to contain no orphaned reservation
   // passes a careless reading of that line. The numbers are exact on purpose
@@ -430,18 +448,31 @@ test('the sweep reaches conflict, overtaking, an orphaned reservation and a rese
   // WinnerPackAllocation it has to cover: states where every WinnerPack finds
   // a recipient, and states where `manual` promises more than the RankPool
   // holds and `open` is clamped at 0.
-  assert.ok(indivisible.overAssignedWinners > 0, 'no over-assigned WinnerPack stand in the sweep');
+  assert.ok(
+    indivisible.overAssignedWinners > 0,
+    "no over-assigned WinnerPack stand in the sweep",
+  );
   assert.equal(indivisible.overAssignedWinners, 64);
   assert.equal(indivisible.total - indivisible.overAssignedWinners, 448);
 });
 
-test('a negative conflict.have is the one exemption, and the sweep really produces it', () => {
+test("a negative conflict.have is the one exemption, and the sweep really produces it", () => {
   // The trap #58's comment defuses, pinned at a single stand so the exemption
   // in `assertSumRule` is not merely asserted in prose: `d` = (1) at a
   // `displaySize` of 24 reserves 24 Booster out of a RankPool of 0.
-  const plan = distribute(settings({ players: 8, boosterRate: 0, displays: [1], displaySize: 24 }));
+  const plan = distribute(
+    settings({ players: 8, boosterRate: 0, displays: [1], displaySize: 24 }),
+  );
   assert.equal(plan.conflict.have, -24);
-  assert.equal(plan.rows.reduce((a, row) => a + row.booster, 0), 0);
-  const negatives = numericLeaves(plan, 'plan', []).filter(([, value]) => value < 0);
-  assert.deepEqual(negatives.map(([path]) => path), ['plan.conflict.have']);
+  assert.equal(
+    plan.rows.reduce((a, row) => a + row.booster, 0),
+    0,
+  );
+  const negatives = numericLeaves(plan, "plan", []).filter(
+    ([, value]) => value < 0,
+  );
+  assert.deepEqual(
+    negatives.map(([path]) => path),
+    ["plan.conflict.have"],
+  );
 });

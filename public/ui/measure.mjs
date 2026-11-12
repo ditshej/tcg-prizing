@@ -10,7 +10,23 @@
  * strip explicitly as the one part of the shell that stays untested.
  */
 
-import { chipIntoView, diagramCap, diagramFits, fadeHeight, fadeShown as fadeLeft, hitScrollDelta, pillStep, PULSE_MS, pulseClip, pulseReach, raffleCover, raffleLift, raffleScrollPadding, rowScrollEnds, tileColumnsFor } from './geometry.mjs';
+import {
+  chipIntoView,
+  diagramCap,
+  diagramFits,
+  fadeHeight,
+  fadeShown as fadeLeft,
+  hitScrollDelta,
+  pillStep,
+  PULSE_MS,
+  pulseClip,
+  pulseReach,
+  raffleCover,
+  raffleLift,
+  raffleScrollPadding,
+  rowScrollEnds,
+  tileColumnsFor,
+} from "./geometry.mjs";
 
 /**
  * Measures `stageEl` (the whole Plan column) and `fixedEls` (every fixed part
@@ -41,18 +57,23 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
   const width = stageEl.clientWidth;
   const height = stageEl.clientHeight;
   const shown = (el) => el && el.getClientRects().length > 0;
-  const fixedHeight = fixedEls.reduce((sum, el) => sum + (shown(el) ? el.getBoundingClientRect().height : 0), 0);
+  const fixedHeight = fixedEls.reduce(
+    (sum, el) => sum + (shown(el) ? el.getBoundingClientRect().height : 0),
+    0,
+  );
 
   const style = getComputedStyle(stageEl);
   const gap = parseFloat(style.rowGap || style.gap) || 0;
-  const padding = parseFloat(style.paddingTop || 0) + parseFloat(style.paddingBottom || 0);
+  const padding =
+    parseFloat(style.paddingTop || 0) + parseFloat(style.paddingBottom || 0);
   /* Only the children that actually render pay for a gap. Fullscreen hides
      several of them (`x-show` → `display: none`), and counting those would
      charge the leftover for gaps the browser never draws — pixels the tile
      grid would then not get. The diagram counts as rendering, so the
      leftover is the one it would stand in. */
-  const visibleChildren = Array.from(stageEl.children)
-    .filter((el) => shown(el) || el.classList.contains('plan-diagram')).length;
+  const visibleChildren = Array.from(stageEl.children).filter(
+    (el) => shown(el) || el.classList.contains("plan-diagram"),
+  ).length;
   const gapCount = Math.max(0, visibleChildren - 1);
   const overhead = fixedHeight + gap * gapCount + padding;
 
@@ -60,20 +81,30 @@ export function applyGeometry(stageEl, fixedEls = [], barEl = null) {
      the stage's side padding, and at a width where that padding decides a
      column (412px on the flat 812 × 375 stage) the grid got seven columns for
      a box that holds six, and its first tile was cut at the left edge (#71). */
-  const sides = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
-  stageEl.style.setProperty('--plan-columns', String(tileColumnsFor(width - sides)));
+  const sides =
+    parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRight || 0);
+  stageEl.style.setProperty(
+    "--plan-columns",
+    String(tileColumnsFor(width - sides)),
+  );
   /* An open raffle bar over the tile window is no shared area: the diagram's
      third is taken of what is left above it (#73, K1; #157) — and the diagram
      goes where that third is under its floor (#129, #157). A bar whose page is
      hidden has no box and covers nothing. */
-  const gridEl = stageEl.querySelector('.plan-grid');
-  const bar = barEl && barEl.getClientRects().length > 0 ? barEl.getBoundingClientRect() : null;
+  const gridEl = stageEl.querySelector(".plan-grid");
+  const bar =
+    barEl && barEl.getClientRects().length > 0
+      ? barEl.getBoundingClientRect()
+      : null;
   const covered = gridEl ? raffleCover(gridEl.getBoundingClientRect(), bar) : 0;
   const leftover = Math.max(0, height - overhead);
   /* The diagram's upper bound on this stage (#142), written by the fold onto
      the app root and inherited here; read, not reckoned. */
-  const max = parseFloat(style.getPropertyValue('--diagram-max')) || Infinity;
-  stageEl.style.setProperty('--diagram-height', `${diagramCap(leftover, covered, max)}px`);
+  const max = parseFloat(style.getPropertyValue("--diagram-max")) || Infinity;
+  stageEl.style.setProperty(
+    "--diagram-height",
+    `${diagramCap(leftover, covered, max)}px`,
+  );
   return diagramFits(leftover, covered);
 }
 
@@ -97,8 +128,13 @@ export function hasBox(el) {
  * reading is discarded — no verdict, no size written, and `diagramFits()` is
  * neither asked nor changed. The page comes back to what it left.
  */
-export function attachMeasuring(stageEl, fixedEls = [], barOf = () => null, onRoom = () => {}) {
-  if (!stageEl || typeof ResizeObserver === 'undefined') return () => {};
+export function attachMeasuring(
+  stageEl,
+  fixedEls = [],
+  barOf = () => null,
+  onRoom = () => {},
+) {
+  if (!stageEl || typeof ResizeObserver === "undefined") return () => {};
   const run = () => {
     if (hasBox(stageEl)) onRoom(applyGeometry(stageEl, fixedEls, barOf()));
   };
@@ -125,7 +161,7 @@ export function applyRafflePadding(gridEl, barEl) {
     gridEl.getBoundingClientRect(),
     barEl ? barEl.getBoundingClientRect() : null,
   );
-  gridEl.style.paddingBottom = pad ? `${pad}px` : '';
+  gridEl.style.paddingBottom = pad ? `${pad}px` : "";
 }
 
 /**
@@ -143,7 +179,7 @@ export function applyRafflePadding(gridEl, barEl) {
 export function applyRaffleLift(layerEl, barEl) {
   if (!layerEl) return;
   const lift = raffleLift(barEl ? barEl.getBoundingClientRect().height : 0);
-  layerEl.style.setProperty('--raffle-lift', `${lift}px`);
+  layerEl.style.setProperty("--raffle-lift", `${lift}px`);
 }
 
 /**
@@ -159,22 +195,35 @@ export function readRowEnds(listEl) {
 
 /** One arrow click: the row moves by one pill (`direction` `1` on, `-1` back). */
 export function stepRow(listEl, direction) {
-  const chips = listEl ? listEl.querySelectorAll('.raffle-chip') : [];
+  const chips = listEl ? listEl.querySelectorAll(".raffle-chip") : [];
   if (!chips.length) return;
-  const lefts = Array.from(chips, (chip) => chip.offsetLeft - chips[0].offsetLeft);
-  const left = pillStep({
-    lefts, scrollLeft: listEl.scrollLeft, scrollWidth: listEl.scrollWidth, clientWidth: listEl.clientWidth,
-  }, direction);
-  listEl.scrollTo({ left, behavior: 'smooth' });
+  const lefts = Array.from(
+    chips,
+    (chip) => chip.offsetLeft - chips[0].offsetLeft,
+  );
+  const left = pillStep(
+    {
+      lefts,
+      scrollLeft: listEl.scrollLeft,
+      scrollWidth: listEl.scrollWidth,
+      clientWidth: listEl.clientWidth,
+    },
+    direction,
+  );
+  listEl.scrollTo({ left, behavior: "smooth" });
 }
 
 /** Brings the chip of `rank` into the row, and leaves the row alone where it is in view. */
 export function showChipInRow(listEl, rank) {
   const chip = listEl?.querySelector(`.raffle-chip[data-rank="${rank}"]`);
   if (!chip) return;
-  const origin = listEl.querySelector('.raffle-chip').offsetLeft;
-  const left = chipIntoView({ left: chip.offsetLeft - origin, width: chip.offsetWidth }, listEl.scrollLeft, listEl.clientWidth);
-  if (left !== listEl.scrollLeft) listEl.scrollTo({ left, behavior: 'smooth' });
+  const origin = listEl.querySelector(".raffle-chip").offsetLeft;
+  const left = chipIntoView(
+    { left: chip.offsetLeft - origin, width: chip.offsetWidth },
+    listEl.scrollLeft,
+    listEl.clientWidth,
+  );
+  if (left !== listEl.scrollLeft) listEl.scrollTo({ left, behavior: "smooth" });
 }
 
 /**
@@ -199,7 +248,8 @@ export function showRaffleHit(gridEl, barEl, rank) {
     barEl ? barEl.getBoundingClientRect().top : Infinity,
     parseFloat(getComputedStyle(gridEl).paddingTop) || 0,
   );
-  if (delta !== 0) gridEl.scrollTo({ top: gridEl.scrollTop + delta, behavior: 'smooth' });
+  if (delta !== 0)
+    gridEl.scrollTo({ top: gridEl.scrollTop + delta, behavior: "smooth" });
 
   startPulse(gridEl, barEl, tileEl);
 }
@@ -218,14 +268,16 @@ const DIRECTIVE = /^(x-|:|@)/;
  * `tile(row)` on it with no `row` in scope.
  */
 function copyFace(tileEl, face) {
-  face.className = `${tileEl.className.replace(/\btile-pulsing\b/g, ' ').trim()} tile-hit`;
-  const open = tileEl.getAttribute('aria-expanded');
-  if (open == null) face.removeAttribute('aria-expanded');
-  else face.setAttribute('aria-expanded', open);
+  face.className = `${tileEl.className.replace(/\btile-pulsing\b/g, " ").trim()} tile-hit`;
+  const open = tileEl.getAttribute("aria-expanded");
+  if (open == null) face.removeAttribute("aria-expanded");
+  else face.setAttribute("aria-expanded", open);
   const content = tileEl.cloneNode(true);
-  for (const template of content.querySelectorAll('template')) template.remove();
-  for (const el of content.querySelectorAll('*')) {
-    for (const { name } of Array.from(el.attributes)) if (DIRECTIVE.test(name)) el.removeAttribute(name);
+  for (const template of content.querySelectorAll("template"))
+    template.remove();
+  for (const el of content.querySelectorAll("*")) {
+    for (const { name } of Array.from(el.attributes))
+      if (DIRECTIVE.test(name)) el.removeAttribute(name);
   }
   face.replaceChildren(...Array.from(content.childNodes));
 }
@@ -255,12 +307,12 @@ function startPulse(gridEl, barEl, tileEl) {
   const host = gridEl.parentElement;
   if (!host) return;
 
-  const layer = document.createElement('div');
-  layer.className = 'tile-pulse';
-  layer.setAttribute('aria-hidden', 'true');
+  const layer = document.createElement("div");
+  layer.className = "tile-pulse";
+  layer.setAttribute("aria-hidden", "true");
   layer.inert = true;
   const face = document.createElement(tileEl.tagName.toLowerCase());
-  if (face.tagName === 'BUTTON') face.type = 'button';
+  if (face.tagName === "BUTTON") face.type = "button";
   face.tabIndex = -1;
   copyFace(tileEl, face);
   layer.appendChild(face);
@@ -280,14 +332,17 @@ function startPulse(gridEl, barEl, tileEl) {
     layer.style.top = `${r.top}px`;
     layer.style.width = `${r.width}px`;
     layer.style.height = `${r.height}px`;
-    layer.style.visibility = clip ? '' : 'hidden';
-    if (clip) layer.style.clipPath = `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px)`;
+    layer.style.visibility = clip ? "" : "hidden";
+    if (clip)
+      layer.style.clipPath = `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px)`;
   };
 
   /* The tile can change while it pulses — a hit puts its winner mark on it —
      and the copy follows, without restarting its animation. */
-  const observer = typeof MutationObserver === 'undefined' ? null
-    : new MutationObserver(() => copyFace(tileEl, face));
+  const observer =
+    typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver(() => copyFace(tileEl, face));
 
   let frame = 0;
   let timer = 0;
@@ -297,9 +352,9 @@ function startPulse(gridEl, barEl, tileEl) {
       cancelAnimationFrame(frame);
       clearTimeout(timer);
       if (observer) observer.disconnect();
-      if (layer.matches?.(':popover-open')) layer.hidePopover();
+      if (layer.matches?.(":popover-open")) layer.hidePopover();
       layer.remove();
-      tileEl.classList.remove('tile-pulsing');
+      tileEl.classList.remove("tile-pulsing");
       if (running === pulse) running = null;
     },
   };
@@ -307,16 +362,26 @@ function startPulse(gridEl, barEl, tileEl) {
 
   place();
   host.appendChild(layer);
-  if (typeof layer.showPopover === 'function') {
-    layer.popover = 'manual';
+  if (typeof layer.showPopover === "function") {
+    layer.popover = "manual";
     layer.showPopover();
   }
-  tileEl.classList.add('tile-pulsing');
-  if (observer) observer.observe(tileEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'aria-expanded'] });
+  tileEl.classList.add("tile-pulsing");
+  if (observer)
+    observer.observe(tileEl, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["class", "aria-expanded"],
+    });
 
-  const follow = () => { place(); frame = requestAnimationFrame(follow); };
+  const follow = () => {
+    place();
+    frame = requestAnimationFrame(follow);
+  };
   frame = requestAnimationFrame(follow);
-  face.addEventListener('animationend', () => pulse.end(), { once: true });
+  face.addEventListener("animationend", () => pulse.end(), { once: true });
   timer = setTimeout(() => pulse.end(), PULSE_MS + 300);
 }
 
@@ -346,7 +411,7 @@ function startPulse(gridEl, barEl, tileEl) {
  * the stylesheet paints it — the flat stage keeps its full height.
  */
 export function attachStage(appEl, onSize, railEl = null) {
-  if (!appEl || typeof ResizeObserver === 'undefined') return () => {};
+  if (!appEl || typeof ResizeObserver === "undefined") return () => {};
   const run = () => {
     const inset = safeInsets(appEl);
     const width = appEl.clientWidth - inset.left - inset.right;
@@ -378,7 +443,12 @@ export function attachStage(appEl, onSize, railEl = null) {
 export function safeInsets(el) {
   const style = getComputedStyle(el);
   const read = (name) => parseFloat(style.getPropertyValue(name)) || 0;
-  return { top: read('--inset-top'), right: read('--inset-right'), bottom: read('--inset-bottom'), left: read('--inset-left') };
+  return {
+    top: read("--inset-top"),
+    right: read("--inset-right"),
+    bottom: read("--inset-bottom"),
+    left: read("--inset-left"),
+  };
 }
 
 /**
@@ -401,20 +471,25 @@ export function safeInsets(el) {
  */
 export function measureRail(appEl, railEl, width) {
   if (!railEl) return undefined;
-  if (appEl.dataset.rail === 'bar' && !appEl.dataset.fullscreen && railEl.getClientRects().length > 0) {
+  if (
+    appEl.dataset.rail === "bar" &&
+    !appEl.dataset.fullscreen &&
+    railEl.getClientRects().length > 0
+  ) {
     return railEl.getBoundingClientRect().height;
   }
   const probe = railEl.cloneNode(true);
-  for (const el of [probe, ...probe.querySelectorAll('*')]) {
+  for (const el of [probe, ...probe.querySelectorAll("*")]) {
     for (const { name } of Array.from(el.attributes)) {
-      if (name.startsWith('x-') || name.startsWith('@') || name.startsWith(':')) el.removeAttribute(name);
+      if (name.startsWith("x-") || name.startsWith("@") || name.startsWith(":"))
+        el.removeAttribute(name);
     }
-    el.removeAttribute('id');
+    el.removeAttribute("id");
   }
-  probe.removeAttribute('style');
-  probe.setAttribute('x-ignore', '');
-  probe.setAttribute('aria-hidden', 'true');
-  probe.classList.add('rail-probe');
+  probe.removeAttribute("style");
+  probe.setAttribute("x-ignore", "");
+  probe.setAttribute("aria-hidden", "true");
+  probe.classList.add("rail-probe");
   probe.style.width = `${width}px`;
   appEl.appendChild(probe);
   const height = probe.getBoundingClientRect().height;
@@ -443,26 +518,40 @@ export function attachFades(rootEl, selectors) {
       const box = rootEl.querySelector(selector);
       let band = bands.get(selector);
       if (!band) {
-        band = document.createElement('div');
-        band.className = 'fade';
-        band.setAttribute('aria-hidden', 'true');
+        band = document.createElement("div");
+        band.className = "fade";
+        band.setAttribute("aria-hidden", "true");
         rootEl.appendChild(band);
         bands.set(selector, band);
       }
       const visible = box && box.getClientRects().length > 0;
       const boxStyle = visible ? getComputedStyle(box) : null;
-      const paddingBottom = visible ? parseFloat(boxStyle.paddingBottom) || 0 : 0;
-      if (!visible || !fadeLeft({
-        scrollHeight: box.scrollHeight, clientHeight: box.clientHeight, scrollTop: box.scrollTop, paddingBottom,
-      })) { band.style.display = 'none'; continue; }
+      const paddingBottom = visible
+        ? parseFloat(boxStyle.paddingBottom) || 0
+        : 0;
+      if (
+        !visible ||
+        !fadeLeft({
+          scrollHeight: box.scrollHeight,
+          clientHeight: box.clientHeight,
+          scrollTop: box.scrollTop,
+          paddingBottom,
+        })
+      ) {
+        band.style.display = "none";
+        continue;
+      }
       const root = rootEl.getBoundingClientRect();
       const r = box.getBoundingClientRect();
       /* Sized off the window less its top padding: the tile grid's is room
          for the ring above its top row (#168) and gives the band nothing.
          The pages' 8 comes off too; they stand above 248 px wherever they
          scroll, so their band stays at the full 60. */
-      const height = fadeHeight(box.clientHeight, parseFloat(boxStyle.paddingTop) || 0);
-      band.style.display = 'block';
+      const height = fadeHeight(
+        box.clientHeight,
+        parseFloat(boxStyle.paddingTop) || 0,
+      );
+      band.style.display = "block";
       band.style.left = `${r.left - root.left + box.clientLeft}px`;
       band.style.width = `${box.clientWidth}px`;
       band.style.height = `${height}px`;
@@ -471,18 +560,22 @@ export function attachFades(rootEl, selectors) {
     }
   };
   // Scrolling does not bubble, so it is caught on the way down.
-  rootEl.addEventListener('scroll', paint, true);
+  rootEl.addEventListener("scroll", paint, true);
   /* A resize is painted a frame later: the tile grid's column count is
      written by another observer in the same round (`applyGeometry`), and a
      band painted in that round measures the layout the grid is just leaving. */
   let frame = 0;
-  const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(paint); };
-  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+  const later = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(paint);
+  };
+  const observer =
+    typeof ResizeObserver === "undefined" ? null : new ResizeObserver(later);
   if (observer) observer.observe(rootEl);
   return {
     paint: later,
     detach() {
-      rootEl.removeEventListener('scroll', paint, true);
+      rootEl.removeEventListener("scroll", paint, true);
       if (observer) observer.disconnect();
       cancelAnimationFrame(frame);
       for (const band of bands.values()) band.remove();
@@ -494,7 +587,8 @@ export function attachFades(rootEl, selectors) {
 function backgroundOf(el) {
   for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
     const colour = getComputedStyle(node).backgroundColor;
-    if (colour && colour !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(colour)) return colour;
+    if (colour && colour !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(colour))
+      return colour;
   }
-  return 'transparent';
+  return "transparent";
 }

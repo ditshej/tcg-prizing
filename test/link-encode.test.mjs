@@ -1,13 +1,13 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-import { decode } from '../public/link/decode.mjs';
-import { addressFor, encode } from '../public/link/encode.mjs';
-import { BASE_KEYS, CURRENT_VERSION, KEYS } from '../public/link/keys.mjs';
+import { decode } from "../public/link/decode.mjs";
+import { addressFor, encode } from "../public/link/encode.mjs";
+import { BASE_KEYS, CURRENT_VERSION, KEYS } from "../public/link/keys.mjs";
 
-const WEEKEND = { game: 'onepiece', type: 'weekend' };
+const WEEKEND = { game: "onepiece", type: "weekend" };
 
 /**
  * One value per register key, so "all nineteen keys at once" is a stand this
@@ -28,8 +28,8 @@ const EVERY_SLIDER = {
   judgeWinner: 2,
   rankFloor: 2,
   depth: 8,
-  depthStep: 'topQuarter',
-  curve: 'steep',
+  depthStep: "topQuarter",
+  curve: "steep",
   ranked: 17,
   winnerPacks: 5,
   manualWinner: { 3: 1, 7: 2 },
@@ -37,8 +37,11 @@ const EVERY_SLIDER = {
   combinedHandout: true,
 };
 
-test('a link names its base in every case, pinned sliders or none', () => {
-  assert.equal(encode({ ...WEEKEND, pins: {} }), '?v=1&game=onepiece&type=weekend');
+test("a link names its base in every case, pinned sliders or none", () => {
+  assert.equal(
+    encode({ ...WEEKEND, pins: {} }),
+    "?v=1&game=onepiece&type=weekend",
+  );
 });
 
 /**
@@ -46,22 +49,31 @@ test('a link names its base in every case, pinned sliders or none', () => {
  * base first, then the pinned sliders in the register's order — not in the
  * order they were pinned.
  */
-test('the pinned sliders follow the base in the register order, never in the order they were pinned', () => {
-  const pins = { curve: 'steep', rankFloor: 2, depth: 8 };
-  assert.equal(encode({ ...WEEKEND, pins }), '?v=1&game=onepiece&type=weekend&rankFloor=2&depth=8&curve=steep');
+test("the pinned sliders follow the base in the register order, never in the order they were pinned", () => {
+  const pins = { curve: "steep", rankFloor: 2, depth: 8 };
+  assert.equal(
+    encode({ ...WEEKEND, pins }),
+    "?v=1&game=onepiece&type=weekend&rankFloor=2&depth=8&curve=steep",
+  );
 });
 
 /** One key each, because it is one slider each — one bit per slider (ADR 0003). */
-test('the two composite values are one key each, in the shape the register names', () => {
+test("the two composite values are one key each, in the shape the register names", () => {
   const pins = { manualWinner: { 3: 1, 7: 2 }, displays: [2, 1, 1] };
   const query = encode({ ...WEEKEND, pins });
   assert.match(query, /&manualWinner=3:1,7:2&/);
   assert.match(query, /&displays=2\.1\.1$/);
 });
 
-test('a pinned no is a value, a pinned yes is a value — combinedHandout writes both', () => {
-  assert.match(encode({ ...WEEKEND, pins: { combinedHandout: false } }), /&combinedHandout=0$/);
-  assert.match(encode({ ...WEEKEND, pins: { combinedHandout: true } }), /&combinedHandout=1$/);
+test("a pinned no is a value, a pinned yes is a value — combinedHandout writes both", () => {
+  assert.match(
+    encode({ ...WEEKEND, pins: { combinedHandout: false } }),
+    /&combinedHandout=0$/,
+  );
+  assert.match(
+    encode({ ...WEEKEND, pins: { combinedHandout: true } }),
+    /&combinedHandout=1$/,
+  );
 });
 
 /**
@@ -69,19 +81,34 @@ test('a pinned no is a value, a pinned yes is a value — combinedHandout writes
  * follow a calculation, so their pin has no effect on the result and would
  * only lengthen the link (#47, "Die zwei zusammengesetzten Werte").
  */
-test('trailing zeros fall off the vector, and an all-zero vector encodes as absent', () => {
-  assert.match(encode({ ...WEEKEND, pins: { displays: [2, 1, 0, 0] } }), /&displays=2\.1$/);
-  assert.equal(encode({ ...WEEKEND, pins: { displays: [0, 0, 0] } }), '?v=1&game=onepiece&type=weekend');
-  assert.equal(encode({ ...WEEKEND, pins: { displays: [] } }), '?v=1&game=onepiece&type=weekend');
+test("trailing zeros fall off the vector, and an all-zero vector encodes as absent", () => {
+  assert.match(
+    encode({ ...WEEKEND, pins: { displays: [2, 1, 0, 0] } }),
+    /&displays=2\.1$/,
+  );
+  assert.equal(
+    encode({ ...WEEKEND, pins: { displays: [0, 0, 0] } }),
+    "?v=1&game=onepiece&type=weekend",
+  );
+  assert.equal(
+    encode({ ...WEEKEND, pins: { displays: [] } }),
+    "?v=1&game=onepiece&type=weekend",
+  );
 });
 
-test('an empty allocation card encodes as absent', () => {
-  assert.equal(encode({ ...WEEKEND, pins: { manualWinner: {} } }), '?v=1&game=onepiece&type=weekend');
+test("an empty allocation card encodes as absent", () => {
+  assert.equal(
+    encode({ ...WEEKEND, pins: { manualWinner: {} } }),
+    "?v=1&game=onepiece&type=weekend",
+  );
 });
 
-test('the allocation card is written ascending by rank, whatever order it was filled in', () => {
+test("the allocation card is written ascending by rank, whatever order it was filled in", () => {
   const filled = { 7: 2, 3: 1 };
-  assert.match(encode({ ...WEEKEND, pins: { manualWinner: filled } }), /&manualWinner=3:1,7:2$/);
+  assert.match(
+    encode({ ...WEEKEND, pins: { manualWinner: filled } }),
+    /&manualWinner=3:1,7:2$/,
+  );
 });
 
 /**
@@ -100,18 +127,27 @@ test('the allocation card is written ascending by rank, whatever order it was fi
  * 8; the wiring is #89). What is held here is the half that is a rule about the
  * wire: a key the register does not name never reaches a link.
  */
-test('a key the register does not name never reaches the link', () => {
-  const strays = { raffleRange: 'topHalf', nonsense: 'x' };
-  assert.equal(encode({ ...WEEKEND, pins: strays }), '?v=1&game=onepiece&type=weekend');
+test("a key the register does not name never reaches the link", () => {
+  const strays = { raffleRange: "topHalf", nonsense: "x" };
+  assert.equal(
+    encode({ ...WEEKEND, pins: strays }),
+    "?v=1&game=onepiece&type=weekend",
+  );
   assert.equal(addressFor({ ...WEEKEND, pins: strays }), null);
 
   const query = encode({ ...WEEKEND, pins: { ...EVERY_SLIDER, ...strays } });
   const written = [...new URLSearchParams(query.slice(1)).keys()];
-  assert.deepEqual(written, [...BASE_KEYS, ...KEYS].map((entry) => entry.key));
+  assert.deepEqual(
+    written,
+    [...BASE_KEYS, ...KEYS].map((entry) => entry.key),
+  );
 });
 
-test('the round-trip corpus covers every key the register names, and the register names nineteen', () => {
-  assert.deepEqual(Object.keys(EVERY_SLIDER), KEYS.map((entry) => entry.key));
+test("the round-trip corpus covers every key the register names, and the register names nineteen", () => {
+  assert.deepEqual(
+    Object.keys(EVERY_SLIDER),
+    KEYS.map((entry) => entry.key),
+  );
   assert.equal(KEYS.length, 19);
 });
 
@@ -134,13 +170,22 @@ test('the round-trip corpus covers every key the register names, and the registe
  * else. The strict form fell over the moment a field was added that the wire
  * format never lost anything to (#50, "Entscheid K1" from run 8).
  */
-const STAND_OF = ({ version, game, type, pins, unreadable }) => ({ version, game, type, pins, unreadable });
+const STAND_OF = ({ version, game, type, pins, unreadable }) => ({
+  version,
+  game,
+  type,
+  pins,
+  unreadable,
+});
 
-test('decode(encode(x)) is x, over the whole corpus', () => {
+test("decode(encode(x)) is x, over the whole corpus", () => {
   const corpus = [
     {},
     ...KEYS.map(({ key }) => ({ [key]: EVERY_SLIDER[key] })),
-    { displays: EVERY_SLIDER.displays, manualWinner: EVERY_SLIDER.manualWinner },
+    {
+      displays: EVERY_SLIDER.displays,
+      manualWinner: EVERY_SLIDER.manualWinner,
+    },
     EVERY_SLIDER,
   ];
 
@@ -148,7 +193,13 @@ test('decode(encode(x)) is x, over the whole corpus', () => {
     const read = decode(encode({ ...WEEKEND, pins }));
     assert.deepEqual(
       STAND_OF(read),
-      { version: CURRENT_VERSION, game: 'onepiece', type: 'weekend', pins, unreadable: [] },
+      {
+        version: CURRENT_VERSION,
+        game: "onepiece",
+        type: "weekend",
+        pins,
+        unreadable: [],
+      },
       `round trip lost something at ${JSON.stringify(pins)}`,
     );
   }
@@ -159,14 +210,20 @@ test('decode(encode(x)) is x, over the whole corpus', () => {
  * address must not re-sort itself because someone pinned the floor before the
  * depth (#47, "Die Reihenfolge ist fest").
  */
-test('the same stand yields the same string, whatever order the pins were set in', () => {
+test("the same stand yields the same string, whatever order the pins were set in", () => {
   const forwards = {};
   for (const { key } of KEYS) forwards[key] = EVERY_SLIDER[key];
   const backwards = {};
   for (const { key } of [...KEYS].reverse()) backwards[key] = EVERY_SLIDER[key];
 
-  assert.equal(encode({ ...WEEKEND, pins: backwards }), encode({ ...WEEKEND, pins: forwards }));
-  assert.equal(encode({ ...WEEKEND, pins: { depth: 8, rankFloor: 2 } }), encode({ ...WEEKEND, pins: { rankFloor: 2, depth: 8 } }));
+  assert.equal(
+    encode({ ...WEEKEND, pins: backwards }),
+    encode({ ...WEEKEND, pins: forwards }),
+  );
+  assert.equal(
+    encode({ ...WEEKEND, pins: { depth: 8, rankFloor: 2 } }),
+    encode({ ...WEEKEND, pins: { rankFloor: 2, depth: 8 } }),
+  );
 });
 
 /**
@@ -186,13 +243,16 @@ test('the same stand yields the same string, whatever order the pins were set in
  * someone's address bar is worth a test, and this is the only layer where it
  * gets one.
  */
-test('without a single pin the address bar stays untouched', () => {
+test("without a single pin the address bar stays untouched", () => {
   assert.equal(addressFor({ ...WEEKEND, pins: {} }), null);
   assert.equal(addressFor({ ...WEEKEND }), null);
 });
 
-test('the first pin writes the full base along with it, in one go', () => {
-  assert.equal(addressFor({ ...WEEKEND, pins: { rankFloor: 2 } }), '?v=1&game=onepiece&type=weekend&rankFloor=2');
+test("the first pin writes the full base along with it, in one go", () => {
+  assert.equal(
+    addressFor({ ...WEEKEND, pins: { rankFloor: 2 } }),
+    "?v=1&game=onepiece&type=weekend&rankFloor=2",
+  );
 });
 
 /**
@@ -200,11 +260,14 @@ test('the first pin writes the full base along with it, in one go', () => {
  * the copy form of that stand is the bare base, and writing it would be the
  * very movement without a counterpart that the rule forbids.
  */
-test('a pin that encodes as absent leaves the address bar alone too', () => {
-  assert.equal(addressFor({ ...WEEKEND, pins: { displays: [], manualWinner: {} } }), null);
+test("a pin that encodes as absent leaves the address bar alone too", () => {
+  assert.equal(
+    addressFor({ ...WEEKEND, pins: { displays: [], manualWinner: {} } }),
+    null,
+  );
 });
 
-test('past the first pin the address bar is exactly the copy form', () => {
+test("past the first pin the address bar is exactly the copy form", () => {
   const setup = { ...WEEKEND, pins: EVERY_SLIDER };
   assert.equal(addressFor(setup), encode(setup));
 });
@@ -222,7 +285,8 @@ test('past the first pin the address bar is exactly the copy form', () => {
  * comment: naming the rule is not reaching for the API, and a file that may
  * not *call* `writeLocation`'s insides must still be free to say why.
  */
-const CODE_ONLY = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const CODE_ONLY = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 /**
  * A module specifier is not a reach for the API. The seam exists to be
@@ -233,23 +297,38 @@ const CODE_ONLY = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^
  * before the scan and nothing else is: a third place that reaches for either
  * API still turns this red, with or without an import.
  */
-const WITHOUT_SPECIFIERS = (source) => source.replace(/from\s+(['"])[^'"]*\1/g, 'from _');
+const WITHOUT_SPECIFIERS = (source) =>
+  source.replace(/from\s+(['"])[^'"]*\1/g, "from _");
 
-test('location and replaceState occur in exactly one file, and that file carries no logic', () => {
-  const root = new URL('..', import.meta.url);
-  const shipped = ['public', 'views', 'dev']
-    .flatMap((dir) => readdirSync(new URL(dir, root), { recursive: true, withFileTypes: true })
-      .filter((entry) => entry.isFile() && /\.(mjs|js|php|html)$/.test(entry.name))
-      .map((entry) => `${entry.parentPath.slice(fileURLToPath(root).length)}/${entry.name}`))
-    .filter((path) => !path.startsWith('public/vendor/'));
+test("location and replaceState occur in exactly one file, and that file carries no logic", () => {
+  const root = new URL("..", import.meta.url);
+  const shipped = ["public", "views", "dev"]
+    .flatMap((dir) =>
+      readdirSync(new URL(dir, root), { recursive: true, withFileTypes: true })
+        .filter(
+          (entry) => entry.isFile() && /\.(mjs|js|php|html)$/.test(entry.name),
+        )
+        .map(
+          (entry) =>
+            `${entry.parentPath.slice(fileURLToPath(root).length)}/${entry.name}`,
+        ),
+    )
+    .filter((path) => !path.startsWith("public/vendor/"));
 
   const touching = shipped.filter((path) => {
-    const source = WITHOUT_SPECIFIERS(CODE_ONLY(readFileSync(new URL(path, root), 'utf8')));
+    const source = WITHOUT_SPECIFIERS(
+      CODE_ONLY(readFileSync(new URL(path, root), "utf8")),
+    );
     return /\blocation\b/.test(source) || /\breplaceState\b/.test(source);
   });
-  assert.deepEqual(touching, ['public/link/location.mjs']);
+  assert.deepEqual(touching, ["public/link/location.mjs"]);
 
   // No logic: nothing imported, nothing branched, nothing looped.
-  const code = CODE_ONLY(readFileSync(new URL('public/link/location.mjs', root), 'utf8'));
-  assert.equal(/\b(import|if|for|while|switch|catch|\?\?|&&|\|\|)\b|\?\./.test(code), false);
+  const code = CODE_ONLY(
+    readFileSync(new URL("public/link/location.mjs", root), "utf8"),
+  );
+  assert.equal(
+    /\b(import|if|for|while|switch|catch|\?\?|&&|\|\|)\b|\?\./.test(code),
+    false,
+  );
 });

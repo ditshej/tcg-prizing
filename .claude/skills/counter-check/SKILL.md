@@ -96,8 +96,8 @@ ever run: **count the ticket pairs that read the same place in the source, and
 cross one against the other.** They are enumerable before you start. The parent
 session crosses the pairs it thought of; the pairs it did not think of are
 where the defects sit. In the first run the parent crossed the key register
-against the data sheet and found them sound — crossing the *sheet* against the
-*core*, a pair nobody had named, produced the batch's one undiscovered defect
+against the data sheet and found them sound — crossing the _sheet_ against the
+_core_, a pair nobody had named, produced the batch's one undiscovered defect
 in a single command. One Node process, absolute imports from two worktrees.
 
 Done when every ticket pair that reads the same place in the source has been

@@ -47,7 +47,13 @@
             ],
             "brackets": [
               { "bar": 1, "from": 0, "to": 8, "label": "participation 8" },
-              { "bar": 1, "from": 32, "to": 40, "label": "Überhang +8 — dieselbe Breite", "tone": "critical" }
+              {
+                "bar": 1,
+                "from": 32,
+                "to": 40,
+                "label": "Überhang +8 — dieselbe Breite",
+                "tone": "critical"
+              }
             ],
             "overhangLegend": "Überhang über den Pool"
           },
@@ -92,18 +98,46 @@
             "title": "Sieben Kurvenstufen gegen die in #46 gemessene Reihe",
             "description": "Je ein Diagramm pro Kurvenstufe, Booster je Rang für die Ränge 1 bis 15, dahinter als helle Silhouette die in #46 gemessene Reihe. Bei gentle decken sich Stufe und Silhouette vollständig. Bei den übrigen sechs ragt der vordere Teil der Reihe über die Silhouette hinaus: mild beginnt mit 11 statt 8, moderate mit 14, firm mit 17, steep mit 20, severe mit 23, extreme mit 26.",
             "xLabel": "Rang",
-            "target": { "label": "Messung in #46 (Ziel)", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
+            "target": {
+              "label": "Messung in #46 (Ziel)",
+              "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3]
+            },
             "matchLabel": "trifft die Messung",
             "currentLabel": "steht heute im Blatt",
             "contextLabel": "übrige Stufen",
             "panels": [
-              { "label": "gentle", "tone": "match", "tag": "trifft exakt", "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3] },
-              { "label": "mild", "tone": "current", "tag": "Blattwert heute", "values": [11, 8, 6, 5, 5, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2] },
-              { "label": "moderate", "values": [14, 9, 7, 5, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2] },
-              { "label": "firm", "values": [17, 10, 6, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2] },
-              { "label": "steep", "values": [20, 10, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
-              { "label": "severe", "values": [23, 9, 5, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
-              { "label": "extreme", "values": [26, 8, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] }
+              {
+                "label": "gentle",
+                "tone": "match",
+                "tag": "trifft exakt",
+                "values": [8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3]
+              },
+              {
+                "label": "mild",
+                "tone": "current",
+                "tag": "Blattwert heute",
+                "values": [11, 8, 6, 5, 5, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2]
+              },
+              {
+                "label": "moderate",
+                "values": [14, 9, 7, 5, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2]
+              },
+              {
+                "label": "firm",
+                "values": [17, 10, 6, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2]
+              },
+              {
+                "label": "steep",
+                "values": [20, 10, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+              },
+              {
+                "label": "severe",
+                "values": [23, 9, 5, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+              },
+              {
+                "label": "extreme",
+                "values": [26, 8, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+              }
             ]
           },
           "caption": "Gezeigt sind die Ränge 1–15. Ab Rang 16 stehen alle sieben Stufen und die Messung auf 2 — dort ist nichts mehr zu unterscheiden.",

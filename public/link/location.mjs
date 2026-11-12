@@ -29,5 +29,5 @@ export function readLocation() {
 
 /** Puts `url` in the address bar without adding a history entry. */
 export function writeLocation(url) {
-  window.history.replaceState(null, '', url);
+  window.history.replaceState(null, "", url);
 }

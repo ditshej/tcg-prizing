@@ -1,7 +1,11 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { NEUTRAL_SLIDERS, resolveSettings, TRAILING_SLIDERS } from '../public/core/defaults.mjs';
+import {
+  NEUTRAL_SLIDERS,
+  resolveSettings,
+  TRAILING_SLIDERS,
+} from "../public/core/defaults.mjs";
 
 /**
  * "Absence yields `null`, not a leaf value" (#49, AK 3) is built and right —
@@ -31,36 +35,60 @@ const INVENTED_GAME = {
 };
 
 const INVENTED_TYPE = {
-  id: 'invented',
-  title: 'Invented',
+  id: "invented",
+  title: "Invented",
   rankFloor: 5,
   depth: 88,
   winnerPacks: 33,
 };
 
-test('a trailing slider on the sheet does not come out — absent means null, never 99', () => {
-  const settings = resolveSettings({ game: INVENTED_GAME, type: undefined, pins: {} });
-  assert.equal(settings.depth, null, 'depth must be null, not the sheet value 99');
+test("a trailing slider on the sheet does not come out — absent means null, never 99", () => {
+  const settings = resolveSettings({
+    game: INVENTED_GAME,
+    type: undefined,
+    pins: {},
+  });
+  assert.equal(
+    settings.depth,
+    null,
+    "depth must be null, not the sheet value 99",
+  );
   for (const key of TRAILING_SLIDERS) {
-    assert.equal(settings[key], null, `${key} should be null even with the sheet naming it`);
+    assert.equal(
+      settings[key],
+      null,
+      `${key} should be null even with the sheet naming it`,
+    );
   }
 });
 
-test('a trailing slider in the type deviations does not come out either', () => {
-  const settings = resolveSettings({ game: INVENTED_GAME, type: INVENTED_TYPE, pins: {} });
-  assert.equal(settings.depth, null, 'neither the game 99 nor the type 88');
+test("a trailing slider in the type deviations does not come out either", () => {
+  const settings = resolveSettings({
+    game: INVENTED_GAME,
+    type: INVENTED_TYPE,
+    pins: {},
+  });
+  assert.equal(settings.depth, null, "neither the game 99 nor the type 88");
   assert.equal(settings.winnerPacks, null);
-  assert.equal(settings.rankFloor, 5, 'a non-trailing slider still takes the type deviation');
+  assert.equal(
+    settings.rankFloor,
+    5,
+    "a non-trailing slider still takes the type deviation",
+  );
 });
 
-test('a pin is above the null: what the link names comes out, what it omits does not', () => {
+test("a pin is above the null: what the link names comes out, what it omits does not", () => {
   const settings = resolveSettings({
     game: INVENTED_GAME,
     type: INVENTED_TYPE,
     pins: { depth: 10 },
   });
-  assert.equal(settings.depth, 10, 'the pin wins over the null');
-  assert.equal(settings.tournamentPacks, null, 'the unpinned one stays for the core to compute');
+  assert.equal(settings.depth, 10, "the pin wins over the null");
+  assert.equal(
+    settings.tournamentPacks,
+    null,
+    "the unpinned one stays for the core to compute",
+  );
 });
 
 /**
@@ -68,10 +96,18 @@ test('a pin is above the null: what the link names comes out, what it omits does
  * names a Rank (ADR 0003), and no sheet on disk does — so an invented one has
  * to say it.
  */
-test('a neutral slider on the sheet does not come out — absent means the empty value', () => {
-  const settings = resolveSettings({ game: INVENTED_GAME, type: INVENTED_TYPE, pins: {} });
+test("a neutral slider on the sheet does not come out — absent means the empty value", () => {
+  const settings = resolveSettings({
+    game: INVENTED_GAME,
+    type: INVENTED_TYPE,
+    pins: {},
+  });
   for (const key of Object.keys(NEUTRAL_SLIDERS)) {
-    assert.notEqual(settings[key], INVENTED_GAME[key], `${key} must not be the sheet value`);
+    assert.notEqual(
+      settings[key],
+      INVENTED_GAME[key],
+      `${key} must not be the sheet value`,
+    );
   }
   assert.deepEqual(settings.displays, []);
   assert.deepEqual(settings.manualWinner, {});

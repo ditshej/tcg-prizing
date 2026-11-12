@@ -44,7 +44,7 @@ Commit messages are written in English.
 **Invoke a skill, don't read it first.** Invoking loads its text; reading it
 beforehand buys the same tokens twice, and a long skill plus its companion doc
 is a measurable share of a session's context. Read a skill file only when the
-task is to *change* it. (Cost of ignoring this, measured on 2026-09-27:
+task is to _change_ it. (Cost of ignoring this, measured on 2026-09-27:
 `/fan-out`'s text, bought twice, for nothing.)
 
 Vendored skills live in `.agents/skills/`, symlinked into `.claude/skills/` and hashed by `skills-lock.json` — never edit them, the next update overwrites the change. Repo-local corrections belong in `docs/agents/*`, in a map's Notes block, or in a skill of our own. Our own skills are real directories in `.claude/skills/`, beside the vendored symlinks; the lock file only knows vendored names, so there is no collision. `/map-closure`, `/fan-out`, `/counter-check`, `/ask-hard-questions` and `/round` are ours.
@@ -124,7 +124,7 @@ Run 6 cost two sessions to learn it. The fullscreen mode of #63 was built
 keeping the diagram and letting it grow; the prototype's `fsContent()` is four
 lines long and contains legend, tile grid and tile foot — **no diagram** — and
 #61 calls it „Kachel-Vollbild" throughout. The review then raised it as a
-*decision*, with three layouts to choose from, and the maintainer had to answer
+_decision_, with three layouts to choose from, and the maintainer had to answer
 what the repo already said. A question whose answer is on disk is the most
 expensive kind: it costs the asking, the evidence, and the answering.
 
@@ -166,3 +166,9 @@ carries the one command that starts it.
 ### SetupLink encoding
 
 The URL encoding is a versioned public interface. Renaming or removing a slider key, or changing what one means, requires a version bump and a `LinkMigration` in the same commit. See `docs/agents/setup-link.md`.
+
+## Enforcement
+
+- Hooks and CI come from the rig-enforcement skill (base version 5). Do not edit `.claude/settings.json`, `.claude/hooks/base/`, `.githooks/base/` or `docs/ai-review/base.md`; project rules go into the `project/` folders and `docs/ai-review/project.md`.
+- Releases are tags `vX.Y.Z` (semantic versioning). Before tagging, run the AI review from the rig-enforcement skill; the hook blocks the tag without `Status: pass`.
+- After cloning, run `git config core.hooksPath .githooks/base` once; there is no Composer that sets it.

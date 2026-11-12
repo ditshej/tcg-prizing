@@ -27,7 +27,7 @@
  * (ADR 0002).
  */
 
-import { curveRatio, largestRemainder, rangeSize } from './rules.mjs';
+import { curveRatio, largestRemainder, rangeSize } from "./rules.mjs";
 
 /** Reads a settings field as a whole number, with a fallback for an absent one. */
 function int(value, fallback = 0) {
@@ -52,12 +52,29 @@ export function derivePool(settings) {
   const yieldPer = Math.max(1, int(settings.envelopeYield, 1));
 
   const opened = packs % envelopeSize;
-  const partialYield = Math.min(yieldPer, Math.floor((3 * yieldPer * opened) / (2 * envelopeSize)));
-  const winnersDerived = Math.floor(packs / envelopeSize) * yieldPer + partialYield;
-  const winners = Math.max(0, settings.winnerPacks == null ? winnersDerived : int(settings.winnerPacks));
-  const thresholds = Array.from({ length: yieldPer }, (_, k) => thresholdAt(k + 1, envelopeSize, yieldPer));
+  const partialYield = Math.min(
+    yieldPer,
+    Math.floor((3 * yieldPer * opened) / (2 * envelopeSize)),
+  );
+  const winnersDerived =
+    Math.floor(packs / envelopeSize) * yieldPer + partialYield;
+  const winners = Math.max(
+    0,
+    settings.winnerPacks == null ? winnersDerived : int(settings.winnerPacks),
+  );
+  const thresholds = Array.from({ length: yieldPer }, (_, k) =>
+    thresholdAt(k + 1, envelopeSize, yieldPer),
+  );
 
-  return { booster, packs, winners, winnersDerived, opened, partialYield, thresholds };
+  return {
+    booster,
+    packs,
+    winners,
+    winnersDerived,
+    opened,
+    partialYield,
+    thresholds,
+  };
 }
 
 /** The number of opened packs at which the k-th WinnerPack starts counting. */
@@ -88,8 +105,16 @@ function thresholdAt(k, envelopeSize, yieldPer) {
  */
 function splitPool(pool, settings, players, combinedHandout) {
   const participationRate = {
-    booster: clamp(int(settings.participationBooster), 0, Math.floor(pool.booster / players)),
-    packs: clamp(int(settings.participationPack), 0, Math.floor(pool.packs / players)),
+    booster: clamp(
+      int(settings.participationBooster),
+      0,
+      Math.floor(pool.booster / players),
+    ),
+    packs: clamp(
+      int(settings.participationPack),
+      0,
+      Math.floor(pool.packs / players),
+    ),
   };
   const participation = {
     rate: participationRate,
@@ -97,7 +122,11 @@ function splitPool(pool, settings, players, combinedHandout) {
     packs: combinedHandout ? 0 : participationRate.packs * players,
   };
   const judge = {
-    booster: clamp(int(settings.judgeBooster), 0, pool.booster - participation.booster),
+    booster: clamp(
+      int(settings.judgeBooster),
+      0,
+      pool.booster - participation.booster,
+    ),
     winners: clamp(int(settings.judgeWinner), 0, pool.winners),
   };
   const rank = {
@@ -143,15 +172,23 @@ function reservedBoosters(d, displaySize) {
  */
 function settlement(d) {
   let k = 0;
-  while (k < d.length && d[k] > 0 && (k + 1 === d.length || d[k] > d[k + 1])) k++;
+  while (k < d.length && d[k] > 0 && (k + 1 === d.length || d[k] > d[k + 1]))
+    k++;
   const settledCount = k > 0 && d[0] > 0 ? k : 0;
   return { settledCount };
 }
 
 /** The largest depth the RankPool still carries, at least 1. */
-function deriveDepthCap(players, rankBooster, displays, displaySize, rankFloor) {
+function deriveDepthCap(
+  players,
+  rankBooster,
+  displays,
+  displaySize,
+  rankFloor,
+) {
   for (let depth = players; depth >= 1; depth--) {
-    if (needAt(depth, displays, displaySize, rankFloor) <= rankBooster) return depth;
+    if (needAt(depth, displays, displaySize, rankFloor) <= rankBooster)
+      return depth;
   }
   return 1;
 }
@@ -173,7 +210,9 @@ function allocateWinners(settings, rankWinners, players) {
   const manual = {};
   let manualCount = 0;
   const manualWinner =
-    settings.manualWinner && typeof settings.manualWinner === 'object' ? settings.manualWinner : {};
+    settings.manualWinner && typeof settings.manualWinner === "object"
+      ? settings.manualWinner
+      : {};
   for (const [rankKey, count] of Object.entries(manualWinner)) {
     const rank = Math.trunc(Number(rankKey));
     const c = Math.max(0, int(count));
@@ -250,7 +289,7 @@ function carriedSettings(settings) {
  * the caller, which picked the sheets in the first place.
  */
 function carriedPins(pinned) {
-  return pinned && typeof pinned === 'object' ? snapshot(pinned) : {};
+  return pinned && typeof pinned === "object" ? snapshot(pinned) : {};
 }
 
 /**
@@ -261,7 +300,7 @@ function carriedPins(pinned) {
 function snapshot(source) {
   const copy = { ...source };
   if (Array.isArray(source.displays)) copy.displays = source.displays.slice();
-  if (source.manualWinner && typeof source.manualWinner === 'object') {
+  if (source.manualWinner && typeof source.manualWinner === "object") {
     copy.manualWinner = { ...source.manualWinner };
   }
   return copy;
@@ -285,14 +324,25 @@ export function distribute(settings, pinned = {}) {
   const players = Math.max(2, int(settings.players, 2));
   const pool = derivePool(settings);
   const combinedHandout = !!settings.combinedHandout;
-  const { participation, judge, rank, cyclePacks } = splitPool(pool, settings, players, combinedHandout);
+  const { participation, judge, rank, cyclePacks } = splitPool(
+    pool,
+    settings,
+    players,
+    combinedHandout,
+  );
 
   const rankFloor = Math.max(0, int(settings.rankFloor));
   const displaySize = Math.max(1, int(settings.displaySize, 1));
   const displays = Array.isArray(settings.displays) ? settings.displays : [];
 
   const depthStepValue = rangeSize(settings.depthStep, players);
-  const depthCap = deriveDepthCap(players, rank.booster, displays, displaySize, rankFloor);
+  const depthCap = deriveDepthCap(
+    players,
+    rank.booster,
+    displays,
+    displaySize,
+    rankFloor,
+  );
   // A pinned depth is never cut by the cap (ADR 0006) — only by the player
   // count, and that is not a cut in its sense: no slider addresses a Rank
   // beyond the players, and the stored value returns when the count rises.
@@ -323,7 +373,8 @@ export function distribute(settings, pinned = {}) {
   // the same two quantities the ShapedRemainder is built from, carried
   // outright so a ConflictNotice never has to re-read other plan fields
   // (same reasoning as `overtake.has`/`.gets`, CONTEXT.md "ShapedRemainder").
-  const conflict = shapedRaw < 0 ? { need: floorReserved, have: available } : null;
+  const conflict =
+    shapedRaw < 0 ? { need: floorReserved, have: available } : null;
 
   // A DisplayReservation that settles every Rank up to the depth
   // (`settledCount === depth`, so `curveCount === 0`) leaves no Rank inside
@@ -353,7 +404,8 @@ export function distribute(settings, pinned = {}) {
   for (let i = depth; i < displays.length; i++) {
     if (Math.max(0, int(displays[i])) > 0) orphanedRanks.push(i + 1);
   }
-  const orphanedReservation = orphanedRanks.length > 0 ? { ranks: orphanedRanks } : null;
+  const orphanedReservation =
+    orphanedRanks.length > 0 ? { ranks: orphanedRanks } : null;
 
   // The RankPool poured from the top: DisplayReservation, then the Rank 1
   // lead, then RankFloor — three passes over all served Ranks, not one pass
@@ -405,7 +457,12 @@ export function distribute(settings, pinned = {}) {
   outer: for (let i = 0; i < depth; i++) {
     for (let j = i + 1; j < depth; j++) {
       if (booster[j] > booster[i]) {
-        overtake = { under: i + 1, over: j + 1, has: booster[i], gets: booster[j] };
+        overtake = {
+          under: i + 1,
+          over: j + 1,
+          has: booster[i],
+          gets: booster[j],
+        };
         break outer;
       }
     }
@@ -416,13 +473,19 @@ export function distribute(settings, pinned = {}) {
   const conflictFlags = [];
   if (conflict) {
     for (let i = 0; i < depth; i++) {
-      const quota = d[i] * displaySize + (i === 0 && lead ? 1 : 0) + (i >= curveFrom ? rankFloor : 0);
+      const quota =
+        d[i] * displaySize +
+        (i === 0 && lead ? 1 : 0) +
+        (i >= curveFrom ? rankFloor : 0);
       if (booster[i] < quota) conflictFlags.push(i + 1);
     }
   }
-  const flagged = [...new Set([...(overtake ? [overtake.under, overtake.over] : []), ...conflictFlags])].sort(
-    (a, b) => a - b,
-  );
+  const flagged = [
+    ...new Set([
+      ...(overtake ? [overtake.under, overtake.over] : []),
+      ...conflictFlags,
+    ]),
+  ].sort((a, b) => a - b);
 
   // The two indivisible axes run past the DistributionCurve (#57): the
   // RankCycle hands out the RankPool's TournamentPacks, and the
@@ -446,7 +509,8 @@ export function distribute(settings, pinned = {}) {
   // count leaves the Ranks below it with nothing, so the state is reported
   // here, not prevented: `combinedHandout` travels in the SetupLink and the
   // state is reachable and legal (ADR 0002, ADR 0010).
-  const combinedHandoutDepth = combinedHandout && depth < players ? { depth, players } : null;
+  const combinedHandoutDepth =
+    combinedHandout && depth < players ? { depth, players } : null;
 
   const rows = Array.from({ length: players }, (_, i) => ({
     rank: i + 1,

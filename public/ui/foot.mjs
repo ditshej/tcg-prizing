@@ -46,20 +46,26 @@ export function markBox(footRect, itemRect) {
  * the active one, so no entry is marked there and nothing slides.
  */
 export function placeMark(footEl, { slide = false, shownBefore = false } = {}) {
-  const mark = footEl.querySelector('.foot-mark');
+  const mark = footEl.querySelector(".foot-mark");
   if (!mark) return false;
-  const active = Array.from(footEl.querySelectorAll('.foot-item'))
-    .find((item) => item.classList.contains('foot-active') && item.getClientRects().length > 0);
-  const box = markBox(footEl.getBoundingClientRect(), active ? active.getBoundingClientRect() : null);
-  if (slide && shownBefore && box) footEl.dataset.markSlide = '';
+  const active = Array.from(footEl.querySelectorAll(".foot-item")).find(
+    (item) =>
+      item.classList.contains("foot-active") &&
+      item.getClientRects().length > 0,
+  );
+  const box = markBox(
+    footEl.getBoundingClientRect(),
+    active ? active.getBoundingClientRect() : null,
+  );
+  if (slide && shownBefore && box) footEl.dataset.markSlide = "";
   else delete footEl.dataset.markSlide;
   if (box) {
-    mark.style.setProperty('--mark-x', `${box.x}px`);
-    mark.style.setProperty('--mark-y', `${box.y}px`);
-    mark.style.setProperty('--mark-width', `${box.width}px`);
-    mark.style.setProperty('--mark-height', `${box.height}px`);
+    mark.style.setProperty("--mark-x", `${box.x}px`);
+    mark.style.setProperty("--mark-y", `${box.y}px`);
+    mark.style.setProperty("--mark-width", `${box.width}px`);
+    mark.style.setProperty("--mark-height", `${box.height}px`);
   }
-  mark.style.setProperty('--mark-shown', box ? '1' : '0');
+  mark.style.setProperty("--mark-shown", box ? "1" : "0");
   return !!box;
 }
 
@@ -75,12 +81,19 @@ export function footMark() {
     init() {
       const foot = this.$el;
       let shown = false;
-      const place = (slide) => { shown = placeMark(foot, { slide, shownBefore: shown }); };
-      this.$watch('activePage', () => this.$nextTick(() => place(true)));
-      if (typeof ResizeObserver === 'undefined') { this.$nextTick(() => place(false)); return; }
+      const place = (slide) => {
+        shown = placeMark(foot, { slide, shownBefore: shown });
+      };
+      this.$watch("activePage", () => this.$nextTick(() => place(true)));
+      if (typeof ResizeObserver === "undefined") {
+        this.$nextTick(() => place(false));
+        return;
+      }
       this._footObserver = new ResizeObserver(() => place(false));
       this._footObserver.observe(foot);
-      foot.querySelectorAll('.foot-item').forEach((item) => this._footObserver.observe(item));
+      foot
+        .querySelectorAll(".foot-item")
+        .forEach((item) => this._footObserver.observe(item));
     },
     destroy() {
       if (this._footObserver) this._footObserver.disconnect();

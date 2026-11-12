@@ -386,7 +386,7 @@ Bedienschritts `WinnerRaffle`: sie kommt in `Settings` nicht vor und geht in
 sie stehen. Der Reset-Knopf im Plan-Kopf zählt sie trotzdem mit,
 wo sie von `all` abweicht, und sein Rückweg in voller Reichweite stellt sie auf
 `all` (Maintainer, Lauf 12, Phase G an #72) — als von Hand gesetzter Posten,
-nicht als Pin; *Drop all N and follow* im `CarryOverNotice` kennt sie nicht. Sie **steht im `SetupLink`**, als
+nicht als Pin; _Drop all N and follow_ im `CarryOverNotice` kennt sie nicht. Sie **steht im `SetupLink`**, als
 eigener Schlüssel `raffleRange` neben den Reglern und nie als einer von ihnen
 (Maintainer, Lauf 12, K1b an #72: „Auch die RaffleRange reist im Link mit"):
 geschrieben nur, wenn sie von `all` abweicht, und ein Link, der sie nennt,
@@ -497,7 +497,7 @@ daraus fallen die Bruchstellen als **Summen** von Erstbreiten, nie als gewählte
 Zahlen; alles zwischen ihnen geht an den `Plan`. Die Höhenachse trägt die
 **Ersthöhe** des `Plan`s: sein fester Teil, der Boden des Diagramms, zwei
 Kachelreihen und der Streifen darunter. Ist die Bühne flacher, steht nur eine
-Seite (die *flache Bühne*), die Breite geht nach innen, und der Fuss dreht sich
+Seite (die _flache Bühne_), die Breite geht nach innen, und der Fuss dreht sich
 an die rechte Kante. Wo der `Plan` seitlich aufhört, sind die zwei **Einzüge**;
 an ihnen hängen `NoticeStack` und Verlosungsleiste, und das Vollbild setzt beide
 auf null.
@@ -577,7 +577,7 @@ App, der eine Sitzung überdauert — und **nie im `SetupLink`**; ein geteilter
 Link öffnet sich im `Theme` des Empfängers. Ein Speicher, der wirft (privates
 Fenster), liest sich als System; der Modus wechselt dann für die Seite und wird
 nur nicht behalten. Keine Eingabe in `distribute()`.
-_Label_: **Mode** — der Knopf sagt „Mode: System / Light / Dark". *Theme* klingt
+_Label_: **Mode** — der Knopf sagt „Mode: System / Light / Dark". _Theme_ klingt
 am Schirm nach einem auswechselbaren Farbschema; es gibt aber nur den einen
 Entwurf in zwei Modi. Der Term bleibt, weil `theme` zugleich der Schlüssel im
 `localStorage` ist — ihn umzubenennen hiesse, gemerkte Wahlen zu verlieren.
@@ -596,7 +596,7 @@ im Streifen —, damit die Leiste keine Meldung zudeckt, die nach ADR 0002 anwes
 sein muss (Prototyp `.stack`/`#badges`, Runde 16 und 21; #73). Die gehobene Meldung
 deckt dann Kacheln zu; das ist dasselbe Zudecken, und Einklappen gibt sie frei.
 **Schicht und Fläche sind zwei Aussagen.** „Über der ganzen App" ist die
-Schicht: der Stapel liegt über jeder Seite und gehört keiner. Seine *Fläche*
+Schicht: der Stapel liegt über jeder Seite und gehört keiner. Seine _Fläche_
 ist so breit wie der Platz, den der `DistributionPlan` gerade einnimmt — am
 schmalen Schirm der ganze, klappt die Breite die Regler daneben, endet er vor
 ihnen. **Am schmalen Schirm deckt die offene Meldung die Regler zu**, samt
@@ -610,8 +610,8 @@ dort ihre eigenen Belege zudeckt, wo sie es nicht muss, ist keine Meldung. Die
 Fläche hängt dafür an den zwei Einzügen des `Fold` (#71) — derselben Grösse, an
 der die Verlosungsleiste hängt; auf der flachen Bühne ist nur eine Seite vorne,
 und die Meldung deckt dort zu wie am Handy.
-Jede Meldung hat **zwei Zustände und keinen dazwischen**: *offen* mit Satz und
-Wegen, oder *Chip* — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
+Jede Meldung hat **zwei Zustände und keinen dazwischen**: _offen_ mit Satz und
+Wegen, oder _Chip_ — eine kurze Pille in einer Farbe. Ein Chip steht **nie für
 mehrere** Meldungen, und er öffnet nur: er nimmt nichts an und löst nichts aus.
 Einklappen hält die **Schicht**, nicht den Punkt: der Chip bleibt auf derselben
 Schicht wie die offene Meldung, überlebt darum jeden Seitenwechsel und liegt nie
@@ -685,6 +685,7 @@ Quellen nach drei verschiedenen Zählungen. Die Konfliktfelder des
 `unclaimedRemainder` und `combinedHandoutDepth`; ihr Name ist der Feldname,
 `unfit(plan)` ist ihre Disjunktion, und ihre Wege holt `waysOut(plan)` — woher sie
 kommen, steht unten bei den Herkünften:
+
 - `conflict` — die Unterdeckung: Tiefe über dem Deckel, oder eine Reservation,
   die den `RankPool` allein schon übersteigt.
 - `overtake` — die Überholung ohne Verlierer.
@@ -707,6 +708,7 @@ kommen, steht unten bei den Herkünften:
   Entscheid aus Lauf 11, Phase G heisst die Quelle darum wie dieses Feld.
 
 Eine ist gebaut und kommt nicht aus dem Kern:
+
 - `WinnerPack` overhang (#70) — `ranked + manualCount` über dem Bestand
   (`rank.winners`). Der einzige Zustand, den der Kern nicht selbst meldet: kein
   Feld des `DistributionPlan` und **nicht** in `unfit(plan)`, sondern aus dem
@@ -849,10 +851,10 @@ steht vorn, weil sie das Überraschende ist: der Knopf liest sich sonst als
 alle auf einmal, und seit ADR 0006 ohne Undo. `Drop` beschriftet schon die Wege aus der `ConflictNotice`,
 also trägt dieselbe Art Handlung dasselbe Wort. Der Satz benennt eine
 **Handlung** und steht nicht für einen Term ein, braucht also keine
-`_Label_`-Zeile. Mitbewertet und verworfen: *Unpin all N — <Typ> takes over*
+`_Label_`-Zeile. Mitbewertet und verworfen: _Unpin all N — <Typ> takes over_
 (deckungsgleich mit dem Modell, `pinned` steht ohnehin am Schirm, benennt aber
-den Zustand statt den Verlust) und *Let <Typ> set all N* (die ruhigste Fassung,
-und darum hier die falsche). Ausgeschlossen war *Release them to …*: `Release`
+den Zustand statt den Verlust) und _Let <Typ> set all N_ (die ruhigste Fassung,
+und darum hier die falsche). Ausgeschlossen war _Release them to …_: `Release`
 ist selbst ein `TournamentType`, und ein Etikett, das ein anderer Glossarbegriff
 ist, zeigt auf den falschen Eintrag.
 Wegklickbar und reiner Sitzungszustand,
@@ -876,6 +878,7 @@ vorher beim Einchecken herauszugeben. Ein Bit am `Tournament`. Seit #103
 (ADR 0010) ist es auch ein Rechenschritt: bei eingeschaltetem `combinedHandout`
 gibt es **keinen** `ParticipationPool`, er ist auf beiden Achsen leer, weil
 nichts mehr vorher ausgeteilt wird. Die zwei Achsen gehen dabei verschiedene Wege:
+
 - **Booster** — der ganze Anteil nach dem `JudgePool` läuft durch die
   Formgebung, also durch Tiefendeckel, `ShapedRemainder`, `DistributionCurve`
   und `RankFloor`. Kein flaches `+ Rate` je Zeile mehr. Ein `Rank`, der ein
@@ -946,8 +949,8 @@ beide Richtungen, als Herkunftsangabe und nicht als zweiter Hinweis. Kein Zustan
 Bedienmodus, sondern eine Ableitung, die schon vollständig ist, bevor es ein
 `Ranking` gibt.
 _Label_: **Prepare** — das Wort bietet eine Handlung an („was muss ich
-vorbereiten?") statt einen Gegenstand zu benennen. *Preparation* wäre
-deckungsgleich, liest sich aber wie eine Überschrift; *List* ist am Schirm
+vorbereiten?") statt einen Gegenstand zu benennen. _Preparation_ wäre
+deckungsgleich, liest sich aber wie eine Überschrift; _List_ ist am Schirm
 ohnehin falsch, weil die Sicht kein Verzeichnis ist. Erste gezogene
 `_Label_`-Zeile seit der Regel aus #27. Was es benennt, hängt seit #37 von der
 Breite ab — eine Seite für sich, der Platz des `Plan` bei zwei Spalten, oder
@@ -971,7 +974,7 @@ zulässiger Zustand, weil der Rückfall eines `TournamentType` sonst ins Leere
 zeigt. Diese Werte sind zugleich die des ersten `TournamentType` — keine
 neutrale Grundlinie, sondern der häufigste Fall.
 Am Schirm steht die Ebene **immer**, auch solange sie genau einen Eintrag hat
-(#41). Ein *Umschalter* mit einem Knopf wäre Ballast; eine *Ebene* mit einem
+(#41). Ein _Umschalter_ mit einem Knopf wäre Ballast; eine _Ebene_ mit einem
 Eintrag ist es nicht, denn sie sagt, dass hier ein zweites Spiel stehen könnte.
 Der Knopf ist darum keine Bedienung, sondern die **Einladung** — angetippt tut
 er nichts, weil er schon gewählt ist. Der Weg zu einem zweiten `Game` steht
@@ -1008,7 +1011,7 @@ Details-Spalte, über den heissen Reglern und `RankFloor`, und scrollt mit ihnen
 im Spaltenkopf hätte er gemessen 101 px dauerhaft gekostet, im
 Handy-Querformat ein Viertel der Höhe, für eine Reihe, die man einmal am Abend
 anfasst. Zuoberst ist damit auch für ihn eine Anordnung und keine Zusicherung.
-Das Etikett der Reihe steht *neben* den Knöpfen und lautet dort `Type` — sonst
+Das Etikett der Reihe steht _neben_ den Knöpfen und lautet dort `Type` — sonst
 kostet jede Ebene zwei Zeilen, und ausgeschrieben bleiben daneben auf der
 286 px breiten Details-Spalte keine 220 px für drei Knöpfe. Eine **Kürzung**
 des Terms und damit keine Ersetzung, also ohne `_Label_`-Zeile, gleiche Bauart
@@ -1054,7 +1057,7 @@ und ohne diese Regel stünde ein Pin aus blossem Antippen in der Rückfrage. Sol
 eine getippte Zahl **unbestätigt** im Feld steht, löst **kein anderes
 Bedienelement** etwas aus: ein Druck ausserhalb des Felds bestätigt nur die Zahl
 und wird dann verschluckt. Das gilt für jedes Bedienelement, auch für `−`/`+`,
-Share (`Copy link`), das `Offer` und *Drop all N and follow*. Ein Feld, das nur den Fokus
+Share (`Copy link`), das `Offer` und _Drop all N and follow_. Ein Feld, das nur den Fokus
 hat, sperrt nichts (Lauf 12, K4 an #113). `−` und `+` pinnen sofort. Aufgehoben wird er auf genau zwei Wegen, und beide sind ein
 bewusster Griff: der Knopf neben dem Regler stellt **einen** auf das `DefaultSet`
 zurück, der Reset-Knopf oben rechts im Plan-Kopf **alle** — und dazu die
@@ -1108,8 +1111,7 @@ _Avoid_: Override (behauptet die Abweichung, die gerade nicht definierend ist), 
 **SetupLink**:
 Die verschickbare Fassung eines eingestellten `Tournament`: die URL, die alle
 `pinned` Regler trägt — die neutral startenden eingeschlossen, also auch die
-`DisplayReservation` und den `manual`-Anteil der `WinnerPackAllocation` (ADR
-0006) — und dazu die `RaffleRange`, wo sie von `all` abweicht. Dritte Ebene der Kette `Game` → `TournamentType` →
+`DisplayReservation` und den `manual`-Anteil der `WinnerPackAllocation` (ADR 0006) — und dazu die `RaffleRange`, wo sie von `all` abweicht. Dritte Ebene der Kette `Game` → `TournamentType` →
 `SetupLink`, und wie die zweite trägt sie **nur den Unterschied** — was sie nicht
 nennt, ist nicht `pinned` und zieht mit der Spielerzahl nach. Ein Bit je Regler
 genügt dafür, weil der Wert selbst die Aussage ist; dass die genannten Regler

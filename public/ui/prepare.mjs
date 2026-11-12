@@ -56,7 +56,16 @@
 function ordinal(n) {
   const tens = n % 100;
   const ones = n % 10;
-  const suffix = tens >= 11 && tens <= 13 ? 'th' : ones === 1 ? 'st' : ones === 2 ? 'nd' : ones === 3 ? 'rd' : 'th';
+  const suffix =
+    tens >= 11 && tens <= 13
+      ? "th"
+      : ones === 1
+        ? "st"
+        : ones === 2
+          ? "nd"
+          : ones === 3
+            ? "rd"
+            : "th";
   return `${n}${suffix}`;
 }
 
@@ -66,7 +75,7 @@ function plural(n, one, many = `${one}s`) {
 }
 
 /** A step of a derivation: what it says, what it says beside it, what it adds up to. */
-function line(text, { aside, value, tone = 'plain', id } = {}) {
+function line(text, { aside, value, tone = "plain", id } = {}) {
   const step = { text, tone };
   if (aside !== undefined) step.aside = aside;
   if (value !== undefined) step.value = value;
@@ -105,26 +114,40 @@ function displaysItem(plan) {
 
   const lines = [
     line(`${plan.players} players × ${rate} each`, { value: total }),
-    line(`÷ ${perDisplay} per display`, { tone: 'muted' }),
+    line(`÷ ${perDisplay} per display`, { tone: "muted" }),
     line(`${sealed} sealed`, { value: sealed * perDisplay }),
   ];
   if (loose > 0) {
-    lines.push(line(`+ ${loose} loose from the ${ordinal(sealed + 1)}`, { value: total }));
-    lines.push(line(`${perDisplay - loose} stay in the box`, { tone: 'muted' }));
+    lines.push(
+      line(`+ ${loose} loose from the ${ordinal(sealed + 1)}`, {
+        value: total,
+      }),
+    );
+    lines.push(
+      line(`${perDisplay - loose} stay in the box`, { tone: "muted" }),
+    );
   } else {
-    lines.push(line('comes out even', { tone: 'muted' }));
+    lines.push(line("comes out even", { tone: "muted" }));
   }
   if (staySealed > 0) {
     lines.push(
-      line(`${staySealed} of the ${fetch} ${plural(staySealed, 'stays', 'stay')} sealed`, {
-        aside: `${fetch - staySealed} to open`,
-        tone: 'keep',
-        id: 'reservation',
-      }),
+      line(
+        `${staySealed} of the ${fetch} ${plural(staySealed, "stays", "stay")} sealed`,
+        {
+          aside: `${fetch - staySealed} to open`,
+          tone: "keep",
+          id: "reservation",
+        },
+      ),
     );
   }
 
-  return { fetch, unit: plural(fetch, 'display'), total: `${total} ${plural(total, 'booster')}`, lines };
+  return {
+    fetch,
+    unit: plural(fetch, "display"),
+    total: `${total} ${plural(total, "booster")}`,
+    lines,
+  };
 }
 
 /**
@@ -146,15 +169,19 @@ function envelopesItem(plan) {
     line(`${sealed} sealed`, { value: sealed * perEnvelope }),
   ];
   if (opened > 0) {
-    lines.push(line(`+ ${opened} loose from the ${ordinal(sealed + 1)}`, { value: packs }));
+    lines.push(
+      line(`+ ${opened} loose from the ${ordinal(sealed + 1)}`, {
+        value: packs,
+      }),
+    );
   } else {
-    lines.push(line('comes out even', { tone: 'muted' }));
+    lines.push(line("comes out even", { tone: "muted" }));
   }
 
   return {
     fetch,
-    unit: plural(fetch, 'Promo-Envelope'),
-    total: `${packs} tournament ${plural(packs, 'pack')}`,
+    unit: plural(fetch, "Promo-Envelope"),
+    total: `${packs} tournament ${plural(packs, "pack")}`,
     lines,
   };
 }
@@ -186,15 +213,20 @@ function winnersItem(plan) {
   // itself it would land on the `getOwnPropertyDescriptor` trap, which nothing
   // tracks (#67). The `Prepare` row of `READ_SITES` (test/ui-pins.test.mjs)
   // turns red if that ever stops holding.
-  const pinned = Object.prototype.hasOwnProperty.call(plan.pinned, 'winnerPacks');
+  const pinned = Object.prototype.hasOwnProperty.call(
+    plan.pinned,
+    "winnerPacks",
+  );
 
   const lines = [
-    line(`${sealed} sealed ${plural(sealed, 'envelope')}`, {
+    line(`${sealed} sealed ${plural(sealed, "envelope")}`, {
       aside: yieldPer > 1 ? `× ${yieldPer} each` : undefined,
       value: sealed * yieldPer,
     }),
     line(`${plan.pool.opened} loose`, {
-      aside: plan.pool.thresholds.map((at, k) => `${k + 1} at ${at}`).join(', '),
+      aside: plan.pool.thresholds
+        .map((at, k) => `${k + 1} at ${at}`)
+        .join(", "),
       value: plan.pool.partialYield,
     }),
   ];
@@ -202,23 +234,23 @@ function winnersItem(plan) {
     off > 0
       ? `${off} more set by hand`
       : off < 0
-        ? `${-off} ${plural(-off, 'stays', 'stay')} in the box`
+        ? `${-off} ${plural(-off, "stays", "stay")} in the box`
         : undefined;
   lines.push(
     line(`${derived} from the envelopes`, {
       aside: half,
       value: winners,
-      tone: off === 0 ? 'plain' : 'keep',
-      id: 'yield',
+      tone: off === 0 ? "plain" : "keep",
+      id: "yield",
     }),
   );
 
   return {
     fetch: winners,
-    unit: plural(winners, 'winner pack'),
+    unit: plural(winners, "winner pack"),
     // No piece count beside the headline: here the headline **is** the piece
     // count. What the aside says instead is where it comes from.
-    source: pinned ? 'set by hand' : 'from the envelopes',
+    source: pinned ? "set by hand" : "from the envelopes",
     lines,
   };
 }
@@ -237,6 +269,6 @@ export function preparationList(plan) {
     displays: displaysItem(plan),
     envelopes: envelopesItem(plan),
     winners: winnersItem(plan),
-    note: 'Nothing here is an extra order — the judge pool and the reserved displays are the same pool, moved around.',
+    note: "Nothing here is an extra order — the judge pool and the reserved displays are the same pool, moved around.",
   };
 }

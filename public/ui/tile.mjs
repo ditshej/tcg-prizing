@@ -41,8 +41,8 @@
  * The two ways that were weighed and rejected are in that comment too.
  */
 
-import { canPlaceWinner, canReserveDisplays } from './controls.mjs';
-import { winnerPackOverhang } from './overhang.mjs';
+import { canPlaceWinner, canReserveDisplays } from "./controls.mjs";
+import { winnerPackOverhang } from "./overhang.mjs";
 
 /**
  * Whether the tile of `rank` carries the red mark: a `Rank` in the core's
@@ -54,18 +54,21 @@ import { winnerPackOverhang } from './overhang.mjs';
  * on purpose. A Rank carrying its pack only through `ranked` stays unmarked.
  */
 function marked(rank, plan) {
-  return plan.flagged.includes(rank) || (winnerPackOverhang(plan)?.ranks.includes(rank) ?? false);
+  return (
+    plan.flagged.includes(rank) ||
+    (winnerPackOverhang(plan)?.ranks.includes(rank) ?? false)
+  );
 }
 
 /** `1 display` / `2 displays` — the count stands in the tile because two tiles
  *  are otherwise the same size while one carries twice as much (#61). */
 function displayCount(n) {
-  return `${n} ${n === 1 ? 'display' : 'displays'}`;
+  return `${n} ${n === 1 ? "display" : "displays"}`;
 }
 
 /** The sentence under a counter: its parts in order, each said once. */
 function sentence(parts) {
-  return [...new Set(parts.filter(Boolean))].join(' · ');
+  return [...new Set(parts.filter(Boolean))].join(" · ");
 }
 
 /**
@@ -82,10 +85,10 @@ export function tileView(row, plan) {
   const flagged = marked(row.rank, plan);
   return {
     classes: [
-      row.displays > 0 ? 'tile-reserved' : null,
-      row.settled ? 'tile-settled' : null,
-      row.served ? null : 'tile-unserved',
-      flagged ? 'tile-flagged' : null,
+      row.displays > 0 ? "tile-reserved" : null,
+      row.settled ? "tile-settled" : null,
+      row.served ? null : "tile-unserved",
+      flagged ? "tile-flagged" : null,
     ].filter(Boolean),
     displayLabel: row.displays > 0 ? displayCount(row.displays) : null,
   };
@@ -154,7 +157,9 @@ function wayInSentence(rank, plan) {
  *  `orphanedReservation` names the `Rank` for, read out of the stored vector. */
 function orphanedDisplaysAt(rank, plan) {
   if (!plan.orphanedReservation?.ranks.includes(rank)) return 0;
-  const vector = Array.isArray(plan.settings?.displays) ? plan.settings.displays : [];
+  const vector = Array.isArray(plan.settings?.displays)
+    ? plan.settings.displays
+    : [];
   return Math.max(0, Math.trunc(Number(vector[rank - 1])) || 0);
 }
 
@@ -180,9 +185,11 @@ function winnerCounter(rank, row, stand) {
   const addReason = canAdd
     ? null
     : manual > 0
-      ? 'all placed'
-      : 'all placed — take one off another rank first';
-  const removeReason = canRemove ? null : (byRankLine ?? 'nothing placed by hand here');
+      ? "all placed"
+      : "all placed — take one off another rank first";
+  const removeReason = canRemove
+    ? null
+    : (byRankLine ?? "nothing placed by hand here");
 
   return {
     value: row.winners,
@@ -193,7 +200,12 @@ function winnerCounter(rank, row, stand) {
     canRemove,
     addReason,
     removeReason,
-    note: sentence([byRankLine, open > 0 ? `${open} still open` : null, addReason, removeReason]),
+    note: sentence([
+      byRankLine,
+      open > 0 ? `${open} still open` : null,
+      addReason,
+      removeReason,
+    ]),
   };
 }
 
@@ -207,7 +219,8 @@ function displayCounter(rank, row, settings, stand) {
   const size = Math.max(1, Math.trunc(Number(settings.displaySize)) || 1);
   const value = row.displays;
   const vector = Array.isArray(settings.displays) ? settings.displays : [];
-  const above = rank > 1 ? Math.max(0, Math.trunc(Number(vector[rank - 2])) || 0) : null;
+  const above =
+    rank > 1 ? Math.max(0, Math.trunc(Number(vector[rank - 2])) || 0) : null;
   const below = Math.max(0, Math.trunc(Number(vector[rank])) || 0);
 
   const canAdd = canReserveDisplays(rank, value + 1, stand);
@@ -219,16 +232,16 @@ function displayCounter(rank, row, settings, stand) {
     ? null
     : above != null && value >= above
       ? `rank ${rank - 1} caps this at ${above}`
-      : 'the rank pool cannot carry another display';
+      : "the rank pool cannot carry another display";
   const removeReason = canRemove
     ? null
     : value === 0
-      ? 'nothing reserved here'
+      ? "nothing reserved here"
       : `rank ${rank + 1} holds ${below} — lower it first`;
 
   const base =
     value > 0
-      ? `${value * size} boosters reserved · ${row.settled ? 'settled, out of the curve' : 'tied, still in the curve'}`
+      ? `${value * size} boosters reserved · ${row.settled ? "settled, out of the curve" : "tied, still in the curve"}`
       : `${size} boosters each`;
 
   return {

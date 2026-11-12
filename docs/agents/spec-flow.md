@@ -14,14 +14,14 @@ the smart zone, about 150k tokens.
 
 Measured on the Prizing map (#1) on 2026-09-23, for the surface spec alone:
 
-| Source | Size |
-|---|---|
-| the twelve surface tickets, **with comments** (#15, #23, #26, #31, #32, #35–#41) | 164 KB |
-| `CONTEXT.md` | 52 KB |
-| `docs/adr/` | 49 KB |
-| the map body (#1) | 106 KB |
-| `prototypes/cockpit.prototype.html` | 198 KB |
-| **total** | **≈ 570 KB ≈ 140k tokens** |
+| Source                                                                           | Size                       |
+| -------------------------------------------------------------------------------- | -------------------------- |
+| the twelve surface tickets, **with comments** (#15, #23, #26, #31, #32, #35–#41) | 164 KB                     |
+| `CONTEXT.md`                                                                     | 52 KB                      |
+| `docs/adr/`                                                                      | 49 KB                      |
+| the map body (#1)                                                                | 106 KB                     |
+| `prototypes/cockpit.prototype.html`                                              | 198 KB                     |
+| **total**                                                                        | **≈ 570 KB ≈ 140k tokens** |
 
 That is the whole smart zone spent on **reading**, before a word of spec is
 written — and two more specs and `/to-tickets` would have to fit after it. Drop
@@ -56,11 +56,11 @@ are the facts that fall **between** them. They live here because this file is
 the first thing every spec session is told to read — a fact parked anywhere else
 is a fact that session never meets.
 
-| Spec | Issue | Tickets | State |
-|---|---|---|---|
-| 1 — the core, `distribute(settings)` | #46 | #53–#60 | building; #53 landed |
-| 2 — the surface and the `NoticeStack` | #61 | #62–#73 | spec written, ticketed |
-| 3 — `SetupLink` and `LinkMigration` | #47 | #48–#52 | spec written, ticketed |
+| Spec                                  | Issue | Tickets | State                  |
+| ------------------------------------- | ----- | ------- | ---------------------- |
+| 1 — the core, `distribute(settings)`  | #46   | #53–#60 | building; #53 landed   |
+| 2 — the surface and the `NoticeStack` | #61   | #62–#73 | spec written, ticketed |
+| 3 — `SetupLink` and `LinkMigration`   | #47   | #48–#52 | spec written, ticketed |
 
 All three specs are written and ticketed. Building has started: **#53** (the bare
 distribution) landed with PR #74, so `public/core/` and `test/` exist and the

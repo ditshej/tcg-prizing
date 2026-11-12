@@ -128,12 +128,12 @@ instructions). Two or three sentences of context before each one.
 
 Exactly four outcomes, no fifth:
 
-| Outcome              | What happens                                                                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Ticket**           | New child issue of the map, `wayfinder:<type>`, wired into blocking. The map is not closed.                                  |
-| **Nebel**            | A bullet under `## Not yet specified` — real, but not sharp enough to phrase as a question yet.                              |
-| **Bereichsgrenze**   | A line under `## Out of scope`, with the reason it sits past the destination.                                                |
-| **Doku-Lücke**       | The decision exists but was never filed: write it into `CONTEXT.md`, a new ADR, or the earlier ADR's stamp line.            |
+| Outcome            | What happens                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Ticket**         | New child issue of the map, `wayfinder:<type>`, wired into blocking. The map is not closed.                      |
+| **Nebel**          | A bullet under `## Not yet specified` — real, but not sharp enough to phrase as a question yet.                  |
+| **Bereichsgrenze** | A line under `## Out of scope`, with the reason it sits past the destination.                                    |
+| **Doku-Lücke**     | The decision exists but was never filed: write it into `CONTEXT.md`, a new ADR, or the earlier ADR's stamp line. |
 
 ## The stopping criterion
 

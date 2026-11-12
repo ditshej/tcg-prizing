@@ -13,7 +13,7 @@ Damit ist der `SetupLink` die dritte Ebene der Kette, die ADR 0003 begonnen hat:
 zieht weiter mit der Spielerzahl nach.
 
 Das ist keine zweite Buchführung: ADR 0003 hat festgelegt, dass „abweichend" und
-„angefasst" **ein** Bit sind. Die Menge der Abweichungen *ist* die Menge der
+„angefasst" **ein** Bit sind. Die Menge der Abweichungen _ist_ die Menge der
 angefassten Regler, also kodiert der Link mit einer Angabe beides. Ein Schnappschuss
 hätte dieselbe Information mit zwei Angaben je Regler transportieren müssen — oder
 das Nachziehen für alle Regler auf einmal stillgelegt.
@@ -35,7 +35,7 @@ Aussage. Zwei Angaben, die nie widersprechen dürfen, sind eine Gelegenheit, das
 sie es doch tun.
 
 **Kein Zustand in der URL, Presets nur als `TournamentType` im Code.** Der
-ursprüngliche Vorschlag, und er ist für *wiederkehrende* Einstellungen weiterhin
+ursprüngliche Vorschlag, und er ist für _wiederkehrende_ Einstellungen weiterhin
 der bessere Ort: versioniert, für jedes Turnier gültig, ohne Pflegeaufwand am Link.
 Er scheitert am einmaligen Fall — eine Einstellung an jemanden schicken, ohne sie
 vorher ins Repository zu tragen. Genau dafür ist der `SetupLink` da, und er
@@ -68,12 +68,12 @@ Zustand `Pinned` genannt und festgelegt, dass er bei der Bedienhandlung gesetzt
 wird statt aus einem Vergleich abgeleitet. Die URL trägt damit die **`pinned`
 Regler**, und die sind eine Obermenge der abweichenden: ein Regler darf im Link
 stehen mit demselben Wert, den sein Default ohnehin liefert. Der Satz oben, die
-Menge der Abweichungen *sei* die Menge der angefassten Regler, ist entsprechend
+Menge der Abweichungen _sei_ die Menge der angefassten Regler, ist entsprechend
 zu lesen — es bleibt **ein** Bit je Regler, wie ADR 0003 verlangt, aber die
 Gleichsetzung der beiden Mengen gilt nicht mehr. Am Format ändert das nichts.
 
 Nachtrag: Die Lebensdauer eines Links ist länger, als der Abschnitt „Kein Zustand
-in der URL" oben unterstellt. Dort steht, der `SetupLink` sei für den *einmaligen*
+in der URL" oben unterstellt. Dort steht, der `SetupLink` sei für den _einmaligen_
 Fall da und Wiederkehrendes gehöre in den `TournamentType`. Das bleibt als
 Empfehlung richtig, beschreibt aber nicht, wie der Link benutzt wird: er wird als
 **Lesezeichen** abgelegt — im Discord gepinnt, in einer Notiz aufbewahrt, Monate

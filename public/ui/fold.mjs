@@ -20,7 +20,7 @@ import {
   columnsFor,
   columnsWidth,
   rowsHeight,
-} from './geometry.mjs';
+} from "./geometry.mjs";
 
 /**
  * The first widths. `Plan`'s and `Prepare`'s are the prototype's round 19
@@ -32,7 +32,11 @@ import {
  * the heads allowed to wrap. The prototype's 352 was measured with sliders
  * and no longer holds.
  */
-export const FIRST_WIDTH = Object.freeze({ plan: 388, details: 286, prepare: 356 });
+export const FIRST_WIDTH = Object.freeze({
+  plan: 388,
+  details: 286,
+  prepare: 356,
+});
 
 /** `Plan | Details` from here on — 674 at the decided first widths (#71, K-B9). */
 export const TWO_COLUMNS = FIRST_WIDTH.plan + FIRST_WIDTH.details;
@@ -54,7 +58,11 @@ export const PLAN_PADDING = 16;
  * width by the same 66 px as both breakpoints. The prototype's 1674 is the
  * same sum with the old 352, its own 24 px of padding and two frame lines.
  */
-export const DECK = columnsWidth(MAX_COLUMNS) + PLAN_PADDING + FIRST_WIDTH.details + FIRST_WIDTH.prepare;
+export const DECK =
+  columnsWidth(MAX_COLUMNS) +
+  PLAN_PADDING +
+  FIRST_WIDTH.details +
+  FIRST_WIDTH.prepare;
 
 /* ── The height axis ─────────────────────────────────────────────────────── */
 
@@ -117,7 +125,8 @@ export const RAIL_AT_MASTER = 124;
  * Kept as decided; since #157 the 173 left of it hold no diagram (a third is
  * 57.7), so the cramped stage, which draws exactly this floor, has none.
  */
-export const PLAN_FLOOR = PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS);
+export const PLAN_FLOOR =
+  PLAN_FIXED + MIN_DIAGRAM_HEIGHT + rowsHeight(MIN_ROWS);
 
 /**
  * The **first height of the `Plan`** (#71, #40): its floor plus the strip it
@@ -162,7 +171,12 @@ export function firstHeightOneColumn(railHeight) {
  * values are kept. Whether the diagram stands at all (a third of at least 60)
  * is `diagramFits()`'s.
  */
-export const DIAGRAM_MAX = Object.freeze({ flat: 96, low: 96, columns: 190, oneColumn: 280 });
+export const DIAGRAM_MAX = Object.freeze({
+  flat: 96,
+  low: 96,
+  columns: 190,
+  oneColumn: 280,
+});
 
 /** Under this stage height the diagram keeps its flat bound (prototype, `h < 460`). */
 export const DIAGRAM_LOW_HEIGHT = 460;
@@ -187,13 +201,21 @@ export const DIAGRAM_LOW_HEIGHT = 460;
  * side. Phone, two columns, three columns, flat and fullscreen all come out
  * of them with no `if` on the surface; the fullscreen sets both to zero.
  */
-export function fold({ width, height = Infinity, fullscreen = false, railHeight = RAIL_AT_MASTER, insetBottom = 0 }) {
+export function fold({
+  width,
+  height = Infinity,
+  fullscreen = false,
+  railHeight = RAIL_AT_MASTER,
+  insetBottom = 0,
+}) {
   const stage = Math.min(width, DECK);
   const wide = stage >= THREE_COLUMNS ? 3 : stage >= TWO_COLUMNS ? 2 : 1;
   // The form that is asked about stands on a bottom foot, and that foot
   // carries the strip over the home indicator (#158, K4) — so it is asked
   // with the strip. Turned flat, the strip goes and the height comes back.
-  const low = height - insetBottom < (wide === 1 ? firstHeightOneColumn(railHeight) : FIRST_HEIGHT);
+  const low =
+    height - insetBottom <
+    (wide === 1 ? firstHeightOneColumn(railHeight) : FIRST_HEIGHT);
   // Flat means too little height for columns but width enough that it has to
   // go somewhere: the turned strip takes 48 px off the side, and the `Plan`
   // must keep its first width beside it. From 436 on, not only from the
@@ -208,8 +230,17 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
   const detailsWidth = columns >= 2 ? FIRST_WIDTH.details : 0;
   const prepareWidth = columns === 3 ? FIRST_WIDTH.prepare : 0;
   const stripWidth = flat && !fullscreen ? STRIP_WIDTH : 0;
-  const hotColumn = flat && stage - STRIP_WIDTH >= FIRST_WIDTH.plan + FIRST_WIDTH.details;
-  const rail = fullscreen ? 'none' : columns >= 2 ? 'none' : flat ? (hotColumn ? 'column' : 'none') : 'bar';
+  const hotColumn =
+    flat && stage - STRIP_WIDTH >= FIRST_WIDTH.plan + FIRST_WIDTH.details;
+  const rail = fullscreen
+    ? "none"
+    : columns >= 2
+      ? "none"
+      : flat
+        ? hotColumn
+          ? "column"
+          : "none"
+        : "bar";
 
   const planLeft = fullscreen ? 0 : prepareWidth;
   const planRight = fullscreen ? 0 : detailsWidth + stripWidth;
@@ -217,13 +248,27 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
   // stands at the bottom it carries it as a strip in its paper (`plan.css`,
   // `.foot`); turned flat or hidden in fullscreen, there is no strip.
   const footInset = fullscreen || flat ? 0 : insetBottom;
-  const stripBottom = fullscreen || flat ? 0 : (columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT) + footInset;
-  const planWidth = stage - planLeft - planRight - (rail === 'column' ? FIRST_WIDTH.details : 0);
-  const planHeight = cramped ? PLAN_FLOOR : height - stripBottom - (rail === 'bar' ? railHeight : 0);
+  const stripBottom =
+    fullscreen || flat
+      ? 0
+      : (columns === 1 ? FOOT_HEIGHT : STRIP_HEIGHT) + footInset;
+  const planWidth =
+    stage -
+    planLeft -
+    planRight -
+    (rail === "column" ? FIRST_WIDTH.details : 0);
+  const planHeight = cramped
+    ? PLAN_FLOOR
+    : height - stripBottom - (rail === "bar" ? railHeight : 0);
 
-  const diagramMax = flat || height - footInset < DIAGRAM_LOW_HEIGHT
-    ? (flat ? DIAGRAM_MAX.flat : DIAGRAM_MAX.low)
-    : columns >= 2 ? DIAGRAM_MAX.columns : DIAGRAM_MAX.oneColumn;
+  const diagramMax =
+    flat || height - footInset < DIAGRAM_LOW_HEIGHT
+      ? flat
+        ? DIAGRAM_MAX.flat
+        : DIAGRAM_MAX.low
+      : columns >= 2
+        ? DIAGRAM_MAX.columns
+        : DIAGRAM_MAX.oneColumn;
 
   return {
     columns,
@@ -253,16 +298,19 @@ export function fold({ width, height = Infinity, fullscreen = false, railHeight 
  * (#61). Three: all of them. Fullscreen: the `Plan` alone.
  */
 export function pageShown(f, active, page) {
-  if (f.fullscreen) return page === 'plan';
+  if (f.fullscreen) return page === "plan";
   if (f.columns === 3) return true;
-  if (f.columns === 2) return page === 'details' || page === (active === 'prepare' ? 'prepare' : 'plan');
+  if (f.columns === 2)
+    return (
+      page === "details" || page === (active === "prepare" ? "prepare" : "plan")
+    );
   return page === active;
 }
 
 /** The active page once `f` is applied: a page that stands as a column is no longer one. */
 export function foldPage(f, active) {
-  if (f.columns >= 2 && active === 'details') return 'plan';
-  if (f.columns === 3 && active === 'prepare') return 'plan';
+  if (f.columns >= 2 && active === "details") return "plan";
+  if (f.columns === 3 && active === "prepare") return "plan";
   return active;
 }
 
@@ -289,25 +337,29 @@ export function foldProperties(f) {
   const chipsInStrip = f.stripBottom - (f.footInset ?? 0) === STRIP_HEIGHT;
   const px = (n) => `${n}px`;
   return {
-    '--deck': px(DECK),
-    '--col-details': px(FIRST_WIDTH.details),
-    '--col-prepare': px(FIRST_WIDTH.prepare),
-    '--strip-width': px(STRIP_WIDTH),
+    "--deck": px(DECK),
+    "--col-details": px(FIRST_WIDTH.details),
+    "--col-prepare": px(FIRST_WIDTH.prepare),
+    "--strip-width": px(STRIP_WIDTH),
     // The `Plan`'s floor as the cramped stage draws it (#73, K4): two tile
     // rows, the page scrolling under them — and no diagram (#157).
-    '--two-rows': px(rowsHeight(MIN_ROWS)),
+    "--two-rows": px(rowsHeight(MIN_ROWS)),
     // The diagram's upper bound on this stage (#142); the rind hands it to
     // `diagramCap()`.
-    '--diagram-max': px(f.diagramMax),
-    '--plan-left': px(f.planLeft),
-    '--plan-right': px(f.planRight),
-    '--strip-bottom': px(f.stripBottom),
-    '--chip-right': px(f.stripWidth),
-    '--chip-bottom': px(chipsInStrip ? (f.footInset ?? 0) + (STRIP_HEIGHT - CHIP_HEIGHT) / 2 : f.stripBottom + CHIP_AIR),
-    '--chip-lift': px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
+    "--diagram-max": px(f.diagramMax),
+    "--plan-left": px(f.planLeft),
+    "--plan-right": px(f.planRight),
+    "--strip-bottom": px(f.stripBottom),
+    "--chip-right": px(f.stripWidth),
+    "--chip-bottom": px(
+      chipsInStrip
+        ? (f.footInset ?? 0) + (STRIP_HEIGHT - CHIP_HEIGHT) / 2
+        : f.stripBottom + CHIP_AIR,
+    ),
+    "--chip-lift": px(chipsInStrip ? 0 : CHIP_HEIGHT + CHIP_AIR),
     // Whether the chips share the open raffle bar's corner and rise above it
     // with the stack (`--raffle-lift`, measured by the rind): everywhere but
     // in the strip, which lies under the bar (#73; the prototype's `#badges`).
-    '--chip-raffle': chipsInStrip ? '0' : '1',
+    "--chip-raffle": chipsInStrip ? "0" : "1",
   };
 }

@@ -139,7 +139,7 @@ back as free text asking to be shown the situation.
 
 **Run the evidence yourself.** Each finding carries a repeatable `**Beleg:**`
 command. Run it — absolute path into the worktree under test, per
-`docs/agents/fan-out.md` — and draw the card from *that* output. This costs two
+`docs/agents/fan-out.md` — and draw the card from _that_ output. This costs two
 or three commands, not eight, because it happens after the gates. A number
 copied from the findings file arrives with the derivation that produced it, and
 that is the failure class `/counter-check` exists for.
@@ -174,7 +174,7 @@ können."
 
 **Hold the path, not the evidence.** The rule above already says where a
 screenshot goes — beside the question file, as an `"type": "image"` entry. What
-run 9 added is that the session must not then *open* it. The picture is for the
+run 9 added is that the session must not then _open_ it. The picture is for the
 maintainer, in the questionnaire; a session that looks at it has bought it once
 for nothing. The same goes for a tool README, a worked example, a long output
 block: produce it, file it, carry the path.
@@ -306,7 +306,7 @@ node .claude/tools/fragebogen.mjs review/<batch>-fragen.json
 ```
 
 **Look at it once, in one pass.** Parse the JSON, start the server, take
-**one** screenshot of the chart *element* — not the full page, which costs
+**one** screenshot of the chart _element_ — not the full page, which costs
 several times as much — and collect every defect from that single look before
 touching the file. Run 5 spent five screenshots on three rounds, two of them
 chasing typos the writer had put there himself.
@@ -333,12 +333,12 @@ note.
 
 Four roles, no fifth:
 
-| Role              | The line says                                                     |
-| ----------------- | ----------------------------------------------------------------- |
-| **Karte**         | which card it became                                              |
+| Role               | The line says                                                    |
+| ------------------ | ---------------------------------------------------------------- |
+| **Karte**          | which card it became                                             |
 | **Nachgeschlagen** | the location that settles it — ticket comment, ADR, spec section |
-| **Agentenarbeit** | a repair with one way; no decision in it                          |
-| **Notiz**         | nothing to do, and why not                                        |
+| **Agentenarbeit**  | a repair with one way; no decision in it                         |
+| **Notiz**          | nothing to do, and why not                                       |
 
 A finding that appeared only in Stage 1 gets its own line, as **Karte** with
 origin `neu`. Half a sentence of reason per line is enough — the point is that

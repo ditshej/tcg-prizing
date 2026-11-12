@@ -7,10 +7,10 @@
 // Identifiers and comments are English; everything on screen is German,
 // because this is a planning artifact, not part of the app. See README.md.
 
-import { createServer } from 'node:http';
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
-import { spawn } from 'node:child_process';
-import { basename, dirname, extname, join, resolve, sep } from 'node:path';
+import { createServer } from "node:http";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 
 const FIRST_PORT = 7777;
 const LAST_PORT = 7797;
@@ -23,14 +23,16 @@ function fail(message) {
 
 function loadQuestions(argPath) {
   if (!argPath) {
-    fail('Keine Fragendatei angegeben.\n  node .claude/tools/fragebogen.mjs review/<name>-fragen.json');
+    fail(
+      "Keine Fragendatei angegeben.\n  node .claude/tools/fragebogen.mjs review/<name>-fragen.json",
+    );
   }
   const file = resolve(process.cwd(), argPath);
   let raw;
   try {
-    raw = readFileSync(file, 'utf8');
+    raw = readFileSync(file, "utf8");
   } catch (error) {
-    if (error.code === 'ENOENT') fail(`Fragendatei nicht gefunden: ${file}`);
+    if (error.code === "ENOENT") fail(`Fragendatei nicht gefunden: ${file}`);
     fail(`Fragendatei nicht lesbar: ${file} (${error.code})`);
   }
   let data;
@@ -53,15 +55,16 @@ function loadQuestions(argPath) {
 
 // `<name>-fragen.json` -> `<name>-antworten.json`, next to the source.
 function answerPath(questionFile) {
-  const name = basename(questionFile).replace(/-fragen\.json$/, '') || 'fragebogen';
+  const name =
+    basename(questionFile).replace(/-fragen\.json$/, "") || "fragebogen";
   return join(dirname(questionFile), `${name}-antworten.json`);
 }
 
 function listen(server, port) {
   return new Promise((ok, no) => {
-    server.once('error', no);
-    server.listen(port, '127.0.0.1', () => {
-      server.removeListener('error', no);
+    server.once("error", no);
+    server.listen(port, "127.0.0.1", () => {
+      server.removeListener("error", no);
       ok(port);
     });
   });
@@ -72,7 +75,7 @@ async function listenOnFreePort(server) {
     try {
       return await listen(server, port);
     } catch (error) {
-      if (error.code !== 'EADDRINUSE') throw error;
+      if (error.code !== "EADDRINUSE") throw error;
     }
   }
   fail(`Kein freier Port zwischen ${FIRST_PORT} und ${LAST_PORT} gefunden.`);
@@ -89,32 +92,32 @@ async function listenOnFreePort(server) {
 
 const VIZ = {
   light: {
-    surface: '#ffffff',
-    grid: '#e1e0d9',
-    axis: '#c3c2b7',
-    s1: '#2a78d6',
-    s2: '#eb6834',
-    s3: '#1baf7a',
-    critical: '#d03b3b',
-    context: '#9a988f',
-    ghost: '#e4e3dc',
-    target: '#8a887f'
+    surface: "#ffffff",
+    grid: "#e1e0d9",
+    axis: "#c3c2b7",
+    s1: "#2a78d6",
+    s2: "#eb6834",
+    s3: "#1baf7a",
+    critical: "#d03b3b",
+    context: "#9a988f",
+    ghost: "#e4e3dc",
+    target: "#8a887f",
   },
   dark: {
-    surface: '#201e1b',
-    grid: '#2f2d29',
-    axis: '#45423c',
-    s1: '#3987e5',
-    s2: '#d95926',
-    s3: '#199e70',
-    critical: '#d03b3b',
-    context: '#78756e',
-    ghost: '#3a3833',
-    target: '#8a877f'
-  }
+    surface: "#201e1b",
+    grid: "#2f2d29",
+    axis: "#45423c",
+    s1: "#3987e5",
+    s2: "#d95926",
+    s3: "#199e70",
+    critical: "#d03b3b",
+    context: "#78756e",
+    ghost: "#3a3833",
+    target: "#8a877f",
+  },
 };
 
-const INK_CANDIDATES = ['#ffffff', '#141312'];
+const INK_CANDIDATES = ["#ffffff", "#141312"];
 
 function relativeLuminance(hex) {
   const channels = [1, 3, 5].map((offset) => {
@@ -125,23 +128,28 @@ function relativeLuminance(hex) {
 }
 
 function contrastRatio(a, b) {
-  const [high, low] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  const [high, low] = [relativeLuminance(a), relativeLuminance(b)].sort(
+    (x, y) => y - x,
+  );
   return (high + 0.05) / (low + 0.05);
 }
 
 // A label set inside a coloured fill takes whichever ink clears contrast better.
 function inkOn(fill) {
   return INK_CANDIDATES.reduce((best, ink) =>
-    contrastRatio(ink, fill) > contrastRatio(best, fill) ? ink : best);
+    contrastRatio(ink, fill) > contrastRatio(best, fill) ? ink : best,
+  );
 }
 
 function vizCssVars(mode) {
   const palette = VIZ[mode];
-  const lines = Object.entries(palette).map(([role, hex]) => `  --viz-${role}: ${hex};`);
-  for (const slot of ['s1', 's2', 's3', 'critical', 'context']) {
+  const lines = Object.entries(palette).map(
+    ([role, hex]) => `  --viz-${role}: ${hex};`,
+  );
+  for (const slot of ["s1", "s2", "s3", "critical", "context"]) {
     lines.push(`  --viz-on-${slot}: ${inkOn(palette[slot])};`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 let svgSeq = 0;
@@ -149,13 +157,18 @@ let svgSeq = 0;
 // Rough advance width; used only to decide whether a label fits inside a mark.
 const textWidth = (value, size) => String(value).length * size * 0.58;
 
-function svgText(x, y, value, { cls = 'viz-muted', anchor = 'start', size = 12, weight = 400 } = {}) {
+function svgText(
+  x,
+  y,
+  value,
+  { cls = "viz-muted", anchor = "start", size = 12, weight = 400 } = {},
+) {
   return `<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}">${escapeHtml(value)}</text>`;
 }
 
 // Horizontal bar: square at the baseline, rounded data-end.
 function barPath(x, y, width, height, radius) {
-  if (width <= 0.5) return '';
+  if (width <= 0.5) return "";
   const r = Math.max(0, Math.min(radius, width, height / 2));
   if (r === 0) return `M${x} ${y}h${width}v${height}h${-width}z`;
   return `M${x} ${y}h${width - r}a${r} ${r} 0 0 1 ${r} ${r}v${height - 2 * r}a${r} ${r} 0 0 1 ${-r} ${r}h${-(width - r)}z`;
@@ -163,7 +176,7 @@ function barPath(x, y, width, height, radius) {
 
 // Vertical column: square at the baseline, rounded cap.
 function colPath(x, y, width, height, radius) {
-  if (height <= 0.5) return '';
+  if (height <= 0.5) return "";
   const r = Math.max(0, Math.min(radius, width / 2, height));
   if (r === 0) return `M${x} ${y}h${width}v${height}h${-width}z`;
   return `M${x} ${y + height}V${y + r}a${r} ${r} 0 0 1 ${r} ${-r}h${width - 2 * r}a${r} ${r} 0 0 1 ${r} ${r}V${y + height}z`;
@@ -172,15 +185,16 @@ function colPath(x, y, width, height, radius) {
 function legendHtml(items) {
   const keys = items.map((item) => {
     let style = `background: var(--viz-${item.tone})`;
-    if (item.tone === 'hatch') {
-      style = 'background: repeating-linear-gradient(45deg, var(--viz-critical) 0 3px, var(--viz-surface) 3px 5px)';
-    } else if (item.tone === 'ghost') {
+    if (item.tone === "hatch") {
+      style =
+        "background: repeating-linear-gradient(45deg, var(--viz-critical) 0 3px, var(--viz-surface) 3px 5px)";
+    } else if (item.tone === "ghost") {
       // The silhouette's key carries its edge, the way it appears in the panel.
-      style += '; box-shadow: inset 0 2px 0 var(--viz-target)';
+      style += "; box-shadow: inset 0 2px 0 var(--viz-target)";
     }
     return `<li><span class="viz-key" style="${style}"></span>${richHtml(item.label)}</li>`;
   });
-  return `<ul class="viz-legend">${keys.join('')}</ul>`;
+  return `<ul class="viz-legend">${keys.join("")}</ul>`;
 }
 
 // Stacked bars against a reference line. Anything a bar pushes past the
@@ -198,38 +212,60 @@ function renderStackedBars(spec) {
   const bracketBand = brackets.length ? 46 : 12;
   const height = topPad + spec.bars.length * (barHeight + rowGap) + bracketBand;
 
-  const totals = spec.bars.map((bar) => bar.segments.reduce((sum, seg) => sum + seg.value, 0));
+  const totals = spec.bars.map((bar) =>
+    bar.segments.reduce((sum, seg) => sum + seg.value, 0),
+  );
   const reference = spec.reference?.value ?? null;
   const max = spec.max || Math.max(...totals, reference ?? 0) * 1.06;
   const toX = (value) => plotX + (value / max) * plotWidth;
   const toneOf = {};
-  spec.series.forEach((series, index) => { toneOf[series.key] = `s${index + 1}`; });
+  spec.series.forEach((series, index) => {
+    toneOf[series.key] = `s${index + 1}`;
+  });
 
   const id = `viz${++svgSeq}`;
   const parts = [];
 
-  parts.push(`<defs><pattern id="${id}-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`
-    + `<rect width="7" height="7" fill="var(--viz-critical)"/>`
-    + `<line x1="0" y1="0" x2="0" y2="7" stroke="var(--viz-surface)" stroke-width="2.6"/>`
-    + `</pattern></defs>`);
+  parts.push(
+    `<defs><pattern id="${id}-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">` +
+      `<rect width="7" height="7" fill="var(--viz-critical)"/>` +
+      `<line x1="0" y1="0" x2="0" y2="7" stroke="var(--viz-surface)" stroke-width="2.6"/>` +
+      `</pattern></defs>`,
+  );
 
   const rowY = (index) => topPad + index * (barHeight + rowGap);
   const lastBarBottom = rowY(spec.bars.length - 1) + barHeight;
 
   if (spec.rowsLabel) {
-    parts.push(svgText(0, topPad - 10, spec.rowsLabel, { anchor: 'start', size: 12 }));
+    parts.push(
+      svgText(0, topPad - 10, spec.rowsLabel, { anchor: "start", size: 12 }),
+    );
   }
 
   if (reference !== null) {
     const x = toX(reference);
-    parts.push(`<line x1="${x}" y1="${topPad - 16}" x2="${x}" y2="${lastBarBottom + 8}" class="viz-ref"/>`);
-    parts.push(svgText(x, topPad - 22, spec.reference.label, { anchor: 'middle', size: 12, weight: 600 }));
+    parts.push(
+      `<line x1="${x}" y1="${topPad - 16}" x2="${x}" y2="${lastBarBottom + 8}" class="viz-ref"/>`,
+    );
+    parts.push(
+      svgText(x, topPad - 22, spec.reference.label, {
+        anchor: "middle",
+        size: 12,
+        weight: 600,
+      }),
+    );
   }
 
   spec.bars.forEach((bar, barIndex) => {
     const y = rowY(barIndex);
-    parts.push(svgText(plotX - 12, y + barHeight / 2 + 5, bar.label,
-      { cls: 'viz-strong', anchor: 'end', size: 14, weight: 600 }));
+    parts.push(
+      svgText(plotX - 12, y + barHeight / 2 + 5, bar.label, {
+        cls: "viz-strong",
+        anchor: "end",
+        size: 14,
+        weight: 600,
+      }),
+    );
 
     // Fill pieces: a segment that crosses the reference is cut in two.
     const pieces = [];
@@ -242,7 +278,12 @@ function renderStackedBars(spec) {
         pieces.push({ key: segment.key, start, end: reference, over: false });
         pieces.push({ key: segment.key, start: reference, end, over: true });
       } else {
-        pieces.push({ key: segment.key, start, end, over: reference !== null && start >= reference });
+        pieces.push({
+          key: segment.key,
+          start,
+          end,
+          over: reference !== null && start >= reference,
+        });
       }
     }
 
@@ -251,8 +292,12 @@ function renderStackedBars(spec) {
       const isLast = index === pieces.length - 1;
       const x0 = toX(piece.start) + (isFirst ? 0 : 1);
       const x1 = toX(piece.end) - (isLast ? 0 : 1);
-      const fill = piece.over ? `url(#${id}-hatch)` : `var(--viz-${toneOf[piece.key]})`;
-      parts.push(`<path d="${barPath(x0, y, x1 - x0, barHeight, isLast ? 4 : 0)}" fill="${fill}"/>`);
+      const fill = piece.over
+        ? `url(#${id}-hatch)`
+        : `var(--viz-${toneOf[piece.key]})`;
+      parts.push(
+        `<path d="${barPath(x0, y, x1 - x0, barHeight, isLast ? 4 : 0)}" fill="${fill}"/>`,
+      );
     });
 
     // Labels belong to whole segments, not to the pieces the reference cut.
@@ -266,14 +311,25 @@ function renderStackedBars(spec) {
       if (boxWidth < textWidth(label, 12) + 18) continue;
       const centre = (start + end) / 2;
       const overCentre = reference !== null && centre >= reference;
-      const tone = overCentre ? 'critical' : toneOf[segment.key];
-      parts.push(svgText(toX(centre), y + barHeight / 2 + 4, label,
-        { cls: `viz-on-${tone}`, anchor: 'middle', size: 12, weight: 600 }));
+      const tone = overCentre ? "critical" : toneOf[segment.key];
+      parts.push(
+        svgText(toX(centre), y + barHeight / 2 + 4, label, {
+          cls: `viz-on-${tone}`,
+          anchor: "middle",
+          size: 12,
+          weight: 600,
+        }),
+      );
     }
 
     if (bar.total) {
-      parts.push(svgText(toX(totals[barIndex]) + 10, y + barHeight / 2 + 5, bar.total,
-        { cls: 'viz-strong', size: 13, weight: 600 }));
+      parts.push(
+        svgText(toX(totals[barIndex]) + 10, y + barHeight / 2 + 5, bar.total, {
+          cls: "viz-strong",
+          size: 13,
+          weight: 600,
+        }),
+      );
     }
   });
 
@@ -282,19 +338,30 @@ function renderStackedBars(spec) {
     const x0 = toX(bracket.from);
     const x1 = toX(bracket.to);
     parts.push(`<path d="M${x0} ${y}v6h${x1 - x0}v-6" class="viz-bracket"/>`);
-    parts.push(svgText((x0 + x1) / 2, y + 22, bracket.label,
-      { cls: bracket.tone === 'critical' ? 'viz-strong' : 'viz-muted', anchor: 'middle', size: 12 }));
+    parts.push(
+      svgText((x0 + x1) / 2, y + 22, bracket.label, {
+        cls: bracket.tone === "critical" ? "viz-strong" : "viz-muted",
+        anchor: "middle",
+        size: 12,
+      }),
+    );
   }
 
-  const svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-t ${id}-d">`
-    + `<title id="${id}-t">${escapeHtml(spec.title)}</title>`
-    + `<desc id="${id}-d">${escapeHtml(spec.description || spec.title)}</desc>`
-    + parts.join('')
-    + `</svg>`;
+  const svg =
+    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-t ${id}-d">` +
+    `<title id="${id}-t">${escapeHtml(spec.title)}</title>` +
+    `<desc id="${id}-d">${escapeHtml(spec.description || spec.title)}</desc>` +
+    parts.join("") +
+    `</svg>`;
 
   const legend = legendHtml([
-    ...spec.series.map((series, index) => ({ tone: `s${index + 1}`, label: series.label })),
-    ...(spec.overhangLegend ? [{ tone: 'hatch', label: spec.overhangLegend }] : [])
+    ...spec.series.map((series, index) => ({
+      tone: `s${index + 1}`,
+      label: series.label,
+    })),
+    ...(spec.overhangLegend
+      ? [{ tone: "hatch", label: spec.overhangLegend }]
+      : []),
   ]);
   return { svg, legend };
 }
@@ -311,91 +378,133 @@ function renderSmallMultiples(spec) {
   const panelGap = 18;
   const axisBand = 24;
   const topPad = 12;
-  const height = topPad + spec.panels.length * (panelHeight + panelGap) + axisBand;
+  const height =
+    topPad + spec.panels.length * (panelHeight + panelGap) + axisBand;
 
-  const count = Math.max(spec.target.values.length, ...spec.panels.map((p) => p.values.length));
+  const count = Math.max(
+    spec.target.values.length,
+    ...spec.panels.map((p) => p.values.length),
+  );
   const band = plotWidth / count;
   const barWidth = Math.min(24, band - 8);
-  const max = spec.max || Math.max(...spec.target.values, ...spec.panels.flatMap((p) => p.values));
+  const max =
+    spec.max ||
+    Math.max(...spec.target.values, ...spec.panels.flatMap((p) => p.values));
   const toX = (index) => plotX + index * band + (band - barWidth) / 2;
   const toY = (value, top) => top + panelHeight - (value / max) * panelHeight;
-  const TONES = { match: 's1', current: 's2' };
+  const TONES = { match: "s1", current: "s2" };
 
   const id = `viz${++svgSeq}`;
   const parts = [];
 
   spec.panels.forEach((panel, panelIndex) => {
     const top = topPad + panelIndex * (panelHeight + panelGap);
-    const tone = TONES[panel.tone] || 'context';
+    const tone = TONES[panel.tone] || "context";
 
-    parts.push(`<line x1="${plotX}" y1="${top + panelHeight}" x2="${plotX + plotWidth}" y2="${top + panelHeight}" class="viz-base"/>`);
+    parts.push(
+      `<line x1="${plotX}" y1="${top + panelHeight}" x2="${plotX + plotWidth}" y2="${top + panelHeight}" class="viz-base"/>`,
+    );
 
     // The target row is one continuous step area, edge to edge, so the bars'
     // own air shows it too: where a row matches, the silhouette has no lip.
     const base = top + panelHeight;
     const steps = spec.target.values
-      .map((value, index) => `V${toY(value, top)}H${plotX + (index + 1) * band}`)
-      .join('');
-    parts.push(`<path d="M${plotX} ${base}${steps}V${base}z" fill="var(--viz-ghost)"/>`);
+      .map(
+        (value, index) => `V${toY(value, top)}H${plotX + (index + 1) * band}`,
+      )
+      .join("");
+    parts.push(
+      `<path d="M${plotX} ${base}${steps}V${base}z" fill="var(--viz-ghost)"/>`,
+    );
 
     panel.values.forEach((value, index) => {
       const y = toY(value, top);
-      parts.push(`<path d="${colPath(toX(index), y, barWidth, base - y, 4)}" fill="var(--viz-${tone})"/>`);
+      parts.push(
+        `<path d="${colPath(toX(index), y, barWidth, base - y, 4)}" fill="var(--viz-${tone})"/>`,
+      );
     });
 
     // The silhouette's own edge, drawn last: it is never hidden by a row, and
     // where the row matches it lies flat on every cap.
-    parts.push(`<path d="M${plotX} ${toY(spec.target.values[0], top)}${steps}" class="viz-target"/>`);
+    parts.push(
+      `<path d="M${plotX} ${toY(spec.target.values[0], top)}${steps}" class="viz-target"/>`,
+    );
 
     // One direct label per panel: the opening rank, where the rows differ most.
     const first = panel.values[0];
     const headY = toY(first, top);
     const inside = headY - top < 16;
-    parts.push(svgText(toX(0) + barWidth / 2, inside ? headY + 14 : headY - 6, String(first), {
-      cls: inside ? `viz-on-${tone}` : 'viz-strong',
-      anchor: 'middle',
-      size: 12,
-      weight: 600
-    }));
+    parts.push(
+      svgText(
+        toX(0) + barWidth / 2,
+        inside ? headY + 14 : headY - 6,
+        String(first),
+        {
+          cls: inside ? `viz-on-${tone}` : "viz-strong",
+          anchor: "middle",
+          size: 12,
+          weight: 600,
+        },
+      ),
+    );
 
     // The gutter label sits on the baseline, beside the data, not floating in
     // the empty air above a flat row.
-    parts.push(svgText(plotX - 14, base - (panel.tag ? 16 : 3), panel.label,
-      { cls: 'viz-strong', anchor: 'end', size: 14, weight: 600 }));
+    parts.push(
+      svgText(plotX - 14, base - (panel.tag ? 16 : 3), panel.label, {
+        cls: "viz-strong",
+        anchor: "end",
+        size: 14,
+        weight: 600,
+      }),
+    );
     if (panel.tag) {
-      parts.push(svgText(plotX - 14, base - 2, panel.tag, { anchor: 'end', size: 11 }));
+      parts.push(
+        svgText(plotX - 14, base - 2, panel.tag, { anchor: "end", size: 11 }),
+      );
     }
   });
 
   const axisY = topPad + spec.panels.length * (panelHeight + panelGap) + 6;
   for (const index of [0, 4, 9, count - 1]) {
-    parts.push(svgText(toX(index) + barWidth / 2, axisY, String(index + 1), { anchor: 'middle', size: 11 }));
+    parts.push(
+      svgText(toX(index) + barWidth / 2, axisY, String(index + 1), {
+        anchor: "middle",
+        size: 11,
+      }),
+    );
   }
-  parts.push(svgText(plotX - 14, axisY, spec.xLabel || 'Rang', { anchor: 'end', size: 11 }));
+  parts.push(
+    svgText(plotX - 14, axisY, spec.xLabel || "Rang", {
+      anchor: "end",
+      size: 11,
+    }),
+  );
 
-  const svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-t ${id}-d">`
-    + `<title id="${id}-t">${escapeHtml(spec.title)}</title>`
-    + `<desc id="${id}-d">${escapeHtml(spec.description || spec.title)}</desc>`
-    + parts.join('')
-    + `</svg>`;
+  const svg =
+    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-t ${id}-d">` +
+    `<title id="${id}-t">${escapeHtml(spec.title)}</title>` +
+    `<desc id="${id}-d">${escapeHtml(spec.description || spec.title)}</desc>` +
+    parts.join("") +
+    `</svg>`;
 
   const legend = legendHtml([
-    { tone: 'ghost', label: spec.target.label },
-    { tone: 's1', label: spec.matchLabel || 'Treffer' },
-    { tone: 's2', label: spec.currentLabel || 'aktueller Wert' },
-    { tone: 'context', label: spec.contextLabel || 'übrige' }
+    { tone: "ghost", label: spec.target.label },
+    { tone: "s1", label: spec.matchLabel || "Treffer" },
+    { tone: "s2", label: spec.currentLabel || "aktueller Wert" },
+    { tone: "context", label: spec.contextLabel || "übrige" },
   ]);
   return { svg, legend };
 }
 
 const CHART_KINDS = {
-  'stacked-bars': renderStackedBars,
-  'small-multiples': renderSmallMultiples
+  "stacked-bars": renderStackedBars,
+  "small-multiples": renderSmallMultiples,
 };
 
 // Inline `code` spans; the server's twin of the client's `rich`.
 function richHtml(value) {
-  return escapeHtml(value).replace(/`([^`]+)`/g, '<code>$1</code>');
+  return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
 // Walks the question data and replaces every chart spec with rendered markup,
@@ -403,9 +512,12 @@ function richHtml(value) {
 function renderCharts(data) {
   for (const decision of data.decisions) {
     for (const entry of decision.evidence || []) {
-      if (entry.type !== 'chart') continue;
+      if (entry.type !== "chart") continue;
       const render = CHART_KINDS[entry.chart?.kind];
-      if (!render) fail(`Unbekannter Diagrammtyp "${entry.chart?.kind}" bei Entscheid "${decision.id}".`);
+      if (!render)
+        fail(
+          `Unbekannter Diagrammtyp "${entry.chart?.kind}" bei Entscheid "${decision.id}".`,
+        );
       const { svg, legend } = render(entry.chart);
       entry.svg = svg;
       entry.legend = legend;
@@ -426,33 +538,43 @@ function renderCharts(data) {
 // that holds.
 
 const IMAGE_TYPES = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.svg': 'image/svg+xml'
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
 };
 
-const IMAGE_ROUTE = '/bild/';
+const IMAGE_ROUTE = "/bild/";
 
 // `{ ok: true, full, mime }`, or `{ ok: false, reason }` — the callers differ in
 // what they do with a refusal, so refusing is not allowed to exit here.
 function safeImagePath(baseDir, src) {
-  if (typeof src !== 'string' || src === '') return { ok: false, reason: 'kein Pfad angegeben' };
-  if (src.startsWith('/')) return { ok: false, reason: `absoluter Pfad nicht erlaubt: ${src}` };
-  if (src.split(/[\\/]/).includes('..')) return { ok: false, reason: `".." im Pfad nicht erlaubt: ${src}` };
+  if (typeof src !== "string" || src === "")
+    return { ok: false, reason: "kein Pfad angegeben" };
+  if (src.startsWith("/"))
+    return { ok: false, reason: `absoluter Pfad nicht erlaubt: ${src}` };
+  if (src.split(/[\\/]/).includes(".."))
+    return { ok: false, reason: `".." im Pfad nicht erlaubt: ${src}` };
   const mime = IMAGE_TYPES[extname(src).toLowerCase()];
   if (!mime) {
-    return { ok: false, reason: `keine bekannte Bildendung (${Object.keys(IMAGE_TYPES).join(', ')}): ${src}` };
+    return {
+      ok: false,
+      reason: `keine bekannte Bildendung (${Object.keys(IMAGE_TYPES).join(", ")}): ${src}`,
+    };
   }
   const full = resolve(baseDir, src);
   if (full !== baseDir && !full.startsWith(baseDir + sep)) {
-    return { ok: false, reason: `Bild liegt nicht neben der Fragendatei: ${src}` };
+    return {
+      ok: false,
+      reason: `Bild liegt nicht neben der Fragendatei: ${src}`,
+    };
   }
   return { ok: true, full, mime };
 }
 
-const imageUrl = (src) => IMAGE_ROUTE + src.split('/').map(encodeURIComponent).join('/');
+const imageUrl = (src) =>
+  IMAGE_ROUTE + src.split("/").map(encodeURIComponent).join("/");
 
 // Alt text is mandatory in spirit: an own `alt` wins, otherwise the caption
 // stands in, otherwise the heading. A side's `label` is never the whole alt —
@@ -460,7 +582,7 @@ const imageUrl = (src) => IMAGE_ROUTE + src.split('/').map(encodeURIComponent).j
 // not read out identically.
 function altFor(image, entry) {
   if (image.alt) return image.alt;
-  const fallback = entry.alt || entry.caption || entry.heading || '';
+  const fallback = entry.alt || entry.caption || entry.heading || "";
   return image.label ? `${image.label}: ${fallback}` : fallback;
 }
 
@@ -471,23 +593,27 @@ function altFor(image, entry) {
 function renderImages(data, baseDir) {
   for (const decision of data.decisions) {
     for (const entry of decision.evidence || []) {
-      if (entry.type !== 'image') continue;
+      if (entry.type !== "image") continue;
       const sources = Array.isArray(entry.images)
         ? entry.images
         : [{ src: entry.src, alt: entry.alt, label: entry.label }];
-      if (sources.length === 0) fail(`Bildbeleg ohne Bild bei Entscheid "${decision.id}".`);
+      if (sources.length === 0)
+        fail(`Bildbeleg ohne Bild bei Entscheid "${decision.id}".`);
       entry.items = sources.map((image) => {
         const checked = safeImagePath(baseDir, image.src);
-        if (!checked.ok) fail(`Bildbeleg bei Entscheid "${decision.id}": ${checked.reason}`);
+        if (!checked.ok)
+          fail(`Bildbeleg bei Entscheid "${decision.id}": ${checked.reason}`);
         try {
           statSync(checked.full);
         } catch {
-          fail(`Bildbeleg bei Entscheid "${decision.id}": Datei nicht gefunden: ${checked.full}`);
+          fail(
+            `Bildbeleg bei Entscheid "${decision.id}": Datei nicht gefunden: ${checked.full}`,
+          );
         }
         return {
           url: imageUrl(image.src),
-          label: image.label || '',
-          alt: altFor(image, entry)
+          label: image.label || "",
+          alt: altFor(image, entry),
         };
       });
       delete entry.src;
@@ -501,7 +627,7 @@ const page = (data) => `<!doctype html>
 <html lang="de">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Entscheide ${escapeHtml(data.batch ?? '')}</title>
+<title>Entscheide ${escapeHtml(data.batch ?? "")}</title>
 <style>
 :root {
   color-scheme: light dark;
@@ -512,7 +638,7 @@ const page = (data) => `<!doctype html>
   --line: #e2ded8;
   --accent: #7a4f2c;
   --code-bg: #f2efe9;
-${vizCssVars('light')}
+${vizCssVars("light")}
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -523,7 +649,7 @@ ${vizCssVars('light')}
     --line: #35322d;
     --accent: #d7a679;
     --code-bg: #2a2723;
-${vizCssVars('dark')}
+${vizCssVars("dark")}
   }
 }
 * { box-sizing: border-box; }
@@ -744,7 +870,7 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 </style>
 <main id="app"></main>
 <script>
-const DATA = ${JSON.stringify(data).replace(/</g, '\\u003c')};
+const DATA = ${JSON.stringify(data).replace(/</g, "\\u003c")};
 const answers = DATA.decisions.map((d) => ({
   decisionId: d.id,
   optionId: null,
@@ -905,18 +1031,21 @@ render();
 </html>`;
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return String(value).replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+  );
 }
 
 function readBody(request) {
   return new Promise((ok, no) => {
-    let body = '';
-    request.on('data', (chunk) => {
+    let body = "";
+    request.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 2_000_000) no(new Error('Antwort zu gross'));
+      if (body.length > 2_000_000) no(new Error("Antwort zu gross"));
     });
-    request.on('end', () => ok(body));
-    request.on('error', no);
+    request.on("end", () => ok(body));
+    request.on("error", no);
   });
 }
 
@@ -926,34 +1055,41 @@ const imageDir = dirname(file);
 const html = page(renderImages(renderCharts(data), imageDir));
 
 const server = createServer(async (request, response) => {
-  if (request.method === 'POST' && request.url === '/answers') {
+  if (request.method === "POST" && request.url === "/answers") {
     try {
       const body = JSON.parse(await readBody(request));
-      writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
-      response.writeHead(200, { 'content-type': 'application/json' });
+      writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+      response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ ok: true }));
       console.log(`fragebogen: Antworten geschrieben nach ${target}`);
       setTimeout(() => server.close(() => process.exit(0)), SHUTDOWN_DELAY_MS);
     } catch (error) {
-      response.writeHead(500, { 'content-type': 'application/json' });
+      response.writeHead(500, { "content-type": "application/json" });
       response.end(JSON.stringify({ ok: false, error: error.message }));
       console.error(`fragebogen: Speichern fehlgeschlagen — ${error.message}`);
     }
     return;
   }
-  if (request.method === 'GET' && (request.url === '/' || request.url.startsWith('/?'))) {
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+  if (
+    request.method === "GET" &&
+    (request.url === "/" || request.url.startsWith("/?"))
+  ) {
+    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     response.end(html);
     return;
   }
-  if (request.method === 'GET' && request.url.startsWith(IMAGE_ROUTE)) {
+  if (request.method === "GET" && request.url.startsWith(IMAGE_ROUTE)) {
     // Decoded from the path only — a query string is not part of the name, and
     // the check runs again here rather than trusting the URL we wrote ourselves.
     let requested;
     try {
-      requested = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname.slice(IMAGE_ROUTE.length));
+      requested = decodeURIComponent(
+        new URL(request.url, "http://127.0.0.1").pathname.slice(
+          IMAGE_ROUTE.length,
+        ),
+      );
     } catch {
-      requested = '';
+      requested = "";
     }
     const checked = safeImagePath(imageDir, requested);
     let bytes = null;
@@ -965,27 +1101,30 @@ const server = createServer(async (request, response) => {
       }
     }
     if (!bytes) {
-      response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-      response.end('Bild nicht gefunden');
+      response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      response.end("Bild nicht gefunden");
       return;
     }
-    response.writeHead(200, { 'content-type': checked.mime, 'cache-control': 'no-store' });
+    response.writeHead(200, {
+      "content-type": checked.mime,
+      "cache-control": "no-store",
+    });
     response.end(bytes);
     return;
   }
-  if (request.url === '/favicon.ico') {
+  if (request.url === "/favicon.ico") {
     response.writeHead(204);
     response.end();
     return;
   }
-  response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-  response.end('nicht gefunden');
+  response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+  response.end("nicht gefunden");
 });
 
 const port = await listenOnFreePort(server);
 const url = `http://127.0.0.1:${port}/`;
 console.log(`\nfragebogen: ${data.decisions.length} Entscheide aus ${file}`);
 console.log(`fragebogen: ${url}\n`);
-if (process.platform === 'darwin' && !process.env.FRAGEBOGEN_NO_OPEN) {
-  spawn('open', [url], { stdio: 'ignore', detached: true }).unref();
+if (process.platform === "darwin" && !process.env.FRAGEBOGEN_NO_OPEN) {
+  spawn("open", [url], { stdio: "ignore", detached: true }).unref();
 }

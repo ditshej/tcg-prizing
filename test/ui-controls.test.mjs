@@ -1,12 +1,12 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import test from "node:test";
+import assert from "node:assert/strict";
 
-import { resolveSettings } from '../public/core/defaults.mjs';
-import { distribute } from '../public/core/distribute.mjs';
-import { CURVES, DEPTH_STEPS } from '../public/core/rules.mjs';
-import { suggestions } from '../public/core/suggest.mjs';
-import { GAME, TOURNAMENT_TYPES } from '../public/sets/onepiece.mjs';
-import { KEYS } from '../public/link/keys.mjs';
+import { resolveSettings } from "../public/core/defaults.mjs";
+import { distribute } from "../public/core/distribute.mjs";
+import { CURVES, DEPTH_STEPS } from "../public/core/rules.mjs";
+import { suggestions } from "../public/core/suggest.mjs";
+import { GAME, TOURNAMENT_TYPES } from "../public/sets/onepiece.mjs";
+import { KEYS } from "../public/link/keys.mjs";
 import {
   SHEET_KEYS,
   HOT_KEYS,
@@ -23,8 +23,8 @@ import {
   canPlaceWinner,
   typedNumber,
   typedValueAfter,
-} from '../public/ui/controls.mjs';
-import { planApp } from '../public/ui/plan.mjs';
+} from "../public/ui/controls.mjs";
+import { planApp } from "../public/ui/plan.mjs";
 
 /**
  * The stand this file was measured on: the sheets as #21 and #25 decided them
@@ -36,14 +36,18 @@ import { planApp } from '../public/ui/plan.mjs';
  * value set here is still an inherited one and not a hand-set one.
  */
 const MEASURED_ON = {
-  weekly: { players: 32, depthStep: 'top8', curve: 'mild' },
-  weekend: { players: 32, depthStep: 'top8', curve: 'steep' },
+  weekly: { players: 32, depthStep: "top8", curve: "mild" },
+  weekend: { players: 32, depthStep: "top8", curve: "steep" },
   release: { players: 32 },
 };
 
 /** The sheet's own reading of a stand: settings resolved, plan computed. */
 function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
-  const settings = resolveSettings({ game: GAME, type: { ...type, ...MEASURED_ON[type.id] }, pins });
+  const settings = resolveSettings({
+    game: GAME,
+    type: { ...type, ...MEASURED_ON[type.id] },
+    pins,
+  });
   return { settings, plan: distribute(settings) };
 }
 
@@ -55,9 +59,9 @@ function stand(pins = {}, type = TOURNAMENT_TYPES[0]) {
  * outright, and it is inert — nothing in `core/` reads it — but a test that
  * counts the fields has to say so, or the next added field hides behind it.
  */
-const NOT_A_SETTINGS_FIELD = ['id'];
+const NOT_A_SETTINGS_FIELD = ["id"];
 
-test('the sheet carries seventeen controls, and they are exactly the Settings fields minus the two set at the tile', () => {
+test("the sheet carries seventeen controls, and they are exactly the Settings fields minus the two set at the tile", () => {
   assert.equal(SHEET_KEYS.length, 17);
   // The nineteen Settings fields of #46 (`## Input: Settings`), read off a
   // resolved stand rather than retyped, minus `displays` and `manualWinner`:
@@ -66,11 +70,15 @@ test('the sheet carries seventeen controls, and they are exactly the Settings fi
   assert.deepEqual(
     resolved.filter((k) => NOT_A_SETTINGS_FIELD.includes(k)),
     NOT_A_SETTINGS_FIELD,
-    'the Game sheet name rides along, and nothing else does',
+    "the Game sheet name rides along, and nothing else does",
   );
-  const settingsFields = resolved.filter((k) => !NOT_A_SETTINGS_FIELD.includes(k));
+  const settingsFields = resolved.filter(
+    (k) => !NOT_A_SETTINGS_FIELD.includes(k),
+  );
   assert.equal(settingsFields.length, 19);
-  const expected = settingsFields.filter((k) => k !== 'displays' && k !== 'manualWinner');
+  const expected = settingsFields.filter(
+    (k) => k !== "displays" && k !== "manualWinner",
+  );
   assert.deepEqual([...SHEET_KEYS].sort(), expected);
 });
 
@@ -81,43 +89,59 @@ test('the sheet carries seventeen controls, and they are exactly the Settings fi
  * top block, still without a group title, so the sheet's own order is the
  * one it had.
  */
-test('the three hot ones lead the sheet, RankFloor follows them there, and none has a group', () => {
-  assert.deepEqual(HOT_KEYS, ['players', 'depth', 'curve']);
+test("the three hot ones lead the sheet, RankFloor follows them there, and none has a group", () => {
+  assert.deepEqual(HOT_KEYS, ["players", "depth", "curve"]);
   assert.deepEqual(SHEET_KEYS.slice(0, 3), HOT_KEYS);
-  assert.equal(SHEET_KEYS[3], 'rankFloor', 'Min boosters per rank: on Details only, right under the three');
+  assert.equal(
+    SHEET_KEYS[3],
+    "rankFloor",
+    "Min boosters per rank: on Details only, right under the three",
+  );
   // `depthStep` is the fifth field of the top block, but not a control of its
   // own: it is the step grid inside the `Served ranks` control.
-  assert.equal(SHEET_KEYS[4], 'depthStep');
+  assert.equal(SHEET_KEYS[4], "depthStep");
   for (const group of GROUPS) {
-    for (const key of [...HOT_KEYS, 'rankFloor']) assert.ok(!group.keys.includes(key), `${key} is hoisted`);
+    for (const key of [...HOT_KEYS, "rankFloor"])
+      assert.ok(!group.keys.includes(key), `${key} is hoisted`);
   }
 });
 
-test('every group has a title and an explanation, and the groups partition what is left', () => {
+test("every group has a title and an explanation, and the groups partition what is left", () => {
   const grouped = GROUPS.flatMap((g) => g.keys);
   for (const group of GROUPS) {
     assert.ok(group.title.length > 0);
     assert.ok(group.desc.length > 0);
   }
   assert.deepEqual([...grouped].sort(), SHEET_KEYS.slice(5).slice().sort());
-  assert.equal(new Set(grouped).size, grouped.length, 'no control sits in two groups');
+  assert.equal(
+    new Set(grouped).size,
+    grouped.length,
+    "no control sits in two groups",
+  );
 });
 
-test('every sheet control is a SetupLink key, the step grid depthStep included (run 12, K1 on #72)', () => {
+test("every sheet control is a SetupLink key, the step grid depthStep included (run 12, K1 on #72)", () => {
   const wire = new Set(KEYS.map((k) => k.key));
-  for (const key of SHEET_KEYS) assert.ok(wire.has(key), `${key} is a link key`);
+  for (const key of SHEET_KEYS)
+    assert.ok(wire.has(key), `${key} is a link key`);
 });
 
-test('the two stepped controls pick a named rule, and neither they nor the flag have bounds', () => {
-  assert.deepEqual(STEPPED_KEYS.curve, CURVES.map((c) => c.id));
+test("the two stepped controls pick a named rule, and neither they nor the flag have bounds", () => {
+  assert.deepEqual(
+    STEPPED_KEYS.curve,
+    CURVES.map((c) => c.id),
+  );
   assert.deepEqual(STEPPED_KEYS.depthStep, DEPTH_STEPS);
-  assert.equal(boundsFor('curve', stand()), null);
-  assert.equal(boundsFor('depthStep', stand()), null);
-  assert.equal(boundsFor('combinedHandout', stand()), null);
+  assert.equal(boundsFor("curve", stand()), null);
+  assert.equal(boundsFor("depthStep", stand()), null);
+  assert.equal(boundsFor("combinedHandout", stand()), null);
 });
 
-test('every depth step the core knows has a screen word, and no word stands for a step it does not know', () => {
-  assert.deepEqual(Object.keys(DEPTH_STEP_LABELS).sort(), [...DEPTH_STEPS].sort());
+test("every depth step the core knows has a screen word, and no word stands for a step it does not know", () => {
+  assert.deepEqual(
+    Object.keys(DEPTH_STEP_LABELS).sort(),
+    [...DEPTH_STEPS].sort(),
+  );
 });
 
 /**
@@ -144,14 +168,29 @@ test('every depth step the core knows has a screen word, and no word stands for 
  * that finds it does not know the list — it runs the core on every number and
  * asks which ones come back cut (`a number the core cuts silently is a wall`).
  */
-const NUMBER_KEYS = SHEET_KEYS.filter((key) => !(key in STEPPED_KEYS) && key !== 'combinedHandout');
+const NUMBER_KEYS = SHEET_KEYS.filter(
+  (key) => !(key in STEPPED_KEYS) && key !== "combinedHandout",
+);
 
-const WALL_KEYS = ['depth', 'ranked', 'participationBooster', 'participationPack', 'judgeBooster', 'judgeWinner'];
+const WALL_KEYS = [
+  "depth",
+  "ranked",
+  "participationBooster",
+  "participationPack",
+  "judgeBooster",
+  "judgeWinner",
+];
 
 const OPEN_KEYS = NUMBER_KEYS.filter((key) => !WALL_KEYS.includes(key));
 
 /** The decided minima; every number not named here starts at 0. */
-const DECIDED_MIN = { players: 2, displaySize: 1, envelopeSize: 1, envelopeYield: 1, depth: 1 };
+const DECIDED_MIN = {
+  players: 2,
+  displaySize: 1,
+  envelopeSize: 1,
+  envelopeYield: 1,
+  depth: 1,
+};
 
 /**
  * The stops the sliders had, from #46 `## Slider ranges` — kept only as the
@@ -186,8 +225,14 @@ const TOOK = {
   boosterRate: { read: (plan) => plan.pool.booster / plan.players },
   tournamentPacks: { read: (plan) => plan.pool.packs },
   winnerPacks: { read: (plan) => plan.pool.winners },
-  displaySize: { with: () => ({ displays: [1] }), read: (plan) => plan.displayReserved },
-  envelopeSize: { with: (v) => ({ tournamentPacks: v - 1 }), read: (plan) => plan.pool.opened + 1 },
+  displaySize: {
+    with: () => ({ displays: [1] }),
+    read: (plan) => plan.displayReserved,
+  },
+  envelopeSize: {
+    with: (v) => ({ tournamentPacks: v - 1 }),
+    read: (plan) => plan.pool.opened + 1,
+  },
   envelopeYield: { read: (plan) => plan.pool.thresholds.length },
   rankFloor: { read: (plan) => plan.rankFloor },
   depth: { read: (plan) => plan.depth },
@@ -201,7 +246,9 @@ const TOOK = {
 /** What the core takes of `value` for `key`, at a stand. */
 function coreTakes(key, value, s) {
   const { with: shape = () => ({}), read } = TOOK[key];
-  return read(distribute({ ...s.settings, ...shape(value), [key]: value }, s.plan.pinned));
+  return read(
+    distribute({ ...s.settings, ...shape(value), [key]: value }, s.plan.pinned),
+  );
 }
 
 /**
@@ -233,13 +280,19 @@ const SWEEP = (() => {
     { envelopeSize: 4, envelopeYield: 3 },
   ];
   return TOURNAMENT_TYPES.flatMap((type) =>
-    counts.flatMap((players) => variants.map((pins) => stand({ players, ...pins }, type))),
+    counts.flatMap((players) =>
+      variants.map((pins) => stand({ players, ...pins }, type)),
+    ),
   );
 })();
 
-test('the fourteen numbers are the sheet minus its three choices, and each is either open or a wall', () => {
+test("the fourteen numbers are the sheet minus its three choices, and each is either open or a wall", () => {
   assert.equal(NUMBER_KEYS.length, 14);
-  assert.deepEqual(Object.keys(TOOK).sort(), [...NUMBER_KEYS].sort(), 'every number has a reading');
+  assert.deepEqual(
+    Object.keys(TOOK).sort(),
+    [...NUMBER_KEYS].sort(),
+    "every number has a reading",
+  );
   assert.equal(OPEN_KEYS.length, 8);
 });
 
@@ -248,58 +301,94 @@ test('a number the core cuts silently is a wall, and no other number is (#113, "
   const PAST = 300;
   const cut = new Set();
   for (const s of SWEEP) {
-    for (const key of NUMBER_KEYS) if (coreTakes(key, PAST, s) !== PAST) cut.add(key);
+    for (const key of NUMBER_KEYS)
+      if (coreTakes(key, PAST, s) !== PAST) cut.add(key);
   }
   assert.deepEqual([...cut].sort(), [...WALL_KEYS].sort());
 });
 
-test('an open number takes any typed number past its former stop, and its plus is never closed', () => {
-  const stands = [stand(), stand({}, TOURNAMENT_TYPES[2]), stand({ players: 128 }, TOURNAMENT_TYPES[1])];
+test("an open number takes any typed number past its former stop, and its plus is never closed", () => {
+  const stands = [
+    stand(),
+    stand({}, TOURNAMENT_TYPES[2]),
+    stand({ players: 128 }, TOURNAMENT_TYPES[1]),
+  ];
   for (const key of OPEN_KEYS) {
     for (const s of stands) {
       assert.equal(boundsFor(key, s).max, Infinity, `${key} has no roof`);
       for (const typed of [FORMER_STOP[key] + 1, FORMER_STOP[key] * 4 + 3]) {
-        assert.equal(clampToBounds(key, typed, s), typed, `${key} takes ${typed}`);
-        assert.equal(coreTakes(key, typed, s), typed, `and the core computes with ${key} = ${typed}`);
-        assert.ok(reachFor(key, stand({ [key]: typed })).max > typed, `${key} can still go one up from ${typed}`);
+        assert.equal(
+          clampToBounds(key, typed, s),
+          typed,
+          `${key} takes ${typed}`,
+        );
+        assert.equal(
+          coreTakes(key, typed, s),
+          typed,
+          `and the core computes with ${key} = ${typed}`,
+        );
+        assert.ok(
+          reachFor(key, stand({ [key]: typed })).max > typed,
+          `${key} can still go one up from ${typed}`,
+        );
       }
     }
   }
 });
 
-test('the minima stay, and they are where the core stops cutting from below', () => {
+test("the minima stay, and they are where the core stops cutting from below", () => {
   for (const s of [stand(), stand({}, TOURNAMENT_TYPES[2])]) {
     for (const key of NUMBER_KEYS) {
       const min = DECIDED_MIN[key] ?? 0;
       assert.equal(boundsFor(key, s).min, min, `${key} starts at ${min}`);
-      assert.equal(clampToBounds(key, min - 5, s), min, `${key} is held at ${min}`);
-      assert.equal(coreTakes(key, min, s), min, `the core takes ${key} = ${min}`);
+      assert.equal(
+        clampToBounds(key, min - 5, s),
+        min,
+        `${key} is held at ${min}`,
+      );
+      assert.equal(
+        coreTakes(key, min, s),
+        min,
+        `the core takes ${key} = ${min}`,
+      );
     }
   }
 });
 
-test('a wall stands exactly where the core cuts, over every stand of the sweep (#113 AC 6)', () => {
+test("a wall stands exactly where the core cuts, over every stand of the sweep (#113 AC 6)", () => {
   let walls = 0;
   for (const s of SWEEP) {
     for (const key of WALL_KEYS) {
       const { max } = boundsFor(key, s);
       assert.ok(Number.isFinite(max), `${key} is a wall`);
-      const at = JSON.stringify({ type: s.settings.depthStep, players: s.plan.players, pins: s.plan.pinned });
-      assert.equal(coreTakes(key, max, s), max, `${key}: the core takes the wall ${max} itself at ${at}`);
-      assert.equal(coreTakes(key, max + 1, s), max, `${key}: the core cuts one past the wall back to it at ${at}`);
+      const at = JSON.stringify({
+        type: s.settings.depthStep,
+        players: s.plan.players,
+        pins: s.plan.pinned,
+      });
+      assert.equal(
+        coreTakes(key, max, s),
+        max,
+        `${key}: the core takes the wall ${max} itself at ${at}`,
+      );
+      assert.equal(
+        coreTakes(key, max + 1, s),
+        max,
+        `${key}: the core cuts one past the wall back to it at ${at}`,
+      );
       walls += 1;
     }
   }
-  assert.ok(walls >= 1500, 'many stands, not a handful');
+  assert.ok(walls >= 1500, "many stands, not a handful");
 });
 
-test('the judge boosters end at the rest after participation, not at the whole pool (#113, measured)', () => {
+test("the judge boosters end at the rest after participation, not at the whole pool (#113, measured)", () => {
   // One Piece, 128 players, boosterRate 9, participationBooster 6: the pool is
   // 1152, participation takes 768, the core accepts 0 … 384.
   const s = stand({ players: 128, boosterRate: 9, participationBooster: 6 });
   assert.equal(s.plan.pool.booster, 1152);
-  assert.deepEqual(boundsFor('judgeBooster', s), { min: 0, max: 384 });
-  assert.equal(clampToBounds('judgeBooster', 1152, s), 384);
+  assert.deepEqual(boundsFor("judgeBooster", s), { min: 0, max: 384 });
+  assert.equal(clampToBounds("judgeBooster", 1152, s), 384);
 });
 
 /**
@@ -308,32 +397,36 @@ test('the judge boosters end at the rest after participation, not at the whole p
  * writes `settings` in place, so the stand is recognised by content — a cache
  * keyed by the object would hand back the walls of the stand before.
  */
-test('a wall asked again after the stand was written in place is the new stand\'s wall', () => {
+test("a wall asked again after the stand was written in place is the new stand's wall", () => {
   const s = stand({ players: 128, boosterRate: 9, participationBooster: 6 });
-  assert.equal(boundsFor('judgeBooster', s).max, 384);
+  assert.equal(boundsFor("judgeBooster", s).max, 384);
   s.settings.participationBooster = 3;
   s.plan = distribute(s.settings);
-  assert.equal(boundsFor('judgeBooster', s).max, 1152 - 3 * 128);
+  assert.equal(boundsFor("judgeBooster", s).max, 1152 - 3 * 128);
   s.settings.participationBooster = 6;
   s.plan = distribute(s.settings);
-  assert.equal(boundsFor('judgeBooster', s).max, 384);
+  assert.equal(boundsFor("judgeBooster", s).max, 384);
 });
 
-test('the plan on screen follows a stand written in place, and is computed once per stand', () => {
-  const app = planApp({ read: () => '', write: () => {} });
+test("the plan on screen follows a stand written in place, and is computed once per stand", () => {
+  const app = planApp({ read: () => "", write: () => {} });
   const first = app.plan;
-  assert.equal(app.plan, first, 'an unchanged stand reads the same plan');
-  app.setSlider('players', 64);
+  assert.equal(app.plan, first, "an unchanged stand reads the same plan");
+  app.setSlider("players", 64);
   assert.notEqual(app.plan, first);
   assert.equal(app.plan.players, 64);
-  assert.equal(app.plan.pinned.players, 64, 'the pins are part of the stand the plan is remembered for');
+  assert.equal(
+    app.plan.pinned.players,
+    64,
+    "the pins are part of the stand the plan is remembered for",
+  );
 });
 
-test('the search range of rankFloor stays the search\'s, and the control reaches past it', () => {
+test("the search range of rankFloor stays the search's, and the control reaches past it", () => {
   // `suggest.mjs` sweeps 0 … 8; the control is open (#113 AC 8).
   const s = stand();
-  assert.equal(boundsFor('rankFloor', s).max, Infinity);
-  assert.equal(clampToBounds('rankFloor', 9, s), 9);
+  assert.equal(boundsFor("rankFloor", s).max, Infinity);
+  assert.equal(clampToBounds("rankFloor", 9, s), 9);
 });
 
 /**
@@ -363,150 +456,185 @@ const UNFIT_STANDS = [
  */
 const waysOut = (s) => suggestions(s.plan);
 
-test('the stands the reachability check runs on really are unfit, and between them they touch every search range', () => {
+test("the stands the reachability check runs on really are unfit, and between them they touch every search range", () => {
   const offered = new Set();
   for (const s of UNFIT_STANDS) {
     const out = waysOut(s);
-    assert.ok(out.length > 0, 'a stand with no way out tests nothing');
+    assert.ok(out.length > 0, "a stand with no way out tests nothing");
     for (const { key } of out) offered.add(key);
   }
   // Every slider #46 names as a search range, so no range is checked vacuously.
-  assert.deepEqual(
-    [...offered].sort(),
-    ['curve', 'depth', 'displays', 'participationBooster', 'rankFloor'],
-  );
+  assert.deepEqual([...offered].sort(), [
+    "curve",
+    "depth",
+    "displays",
+    "participationBooster",
+    "rankFloor",
+  ]);
 });
 
-test('every way out the core offers is a value its control can actually be set to', () => {
+test("every way out the core offers is a value its control can actually be set to", () => {
   for (const s of UNFIT_STANDS) {
     for (const { key, value } of waysOut(s)) {
       // `displays` is no slider on this sheet: it is set at the tile (#66).
-      if (key === 'displays') continue;
-      assert.ok(SHEET_KEYS.includes(key), `${key} is offered, so it must stand on the sheet`);
-      assert.equal(clampToBounds(key, value, s), value, `${key} → ${value} must be reachable`);
+      if (key === "displays") continue;
+      assert.ok(
+        SHEET_KEYS.includes(key),
+        `${key} is offered, so it must stand on the sheet`,
+      );
+      assert.equal(
+        clampToBounds(key, value, s),
+        value,
+        `${key} → ${value} must be reachable`,
+      );
     }
   }
 });
 
-test('the player count caps every slider that addresses a Rank (CONTEXT.md, RankPoolDepth)', () => {
+test("the player count caps every slider that addresses a Rank (CONTEXT.md, RankPoolDepth)", () => {
   const s = stand({ players: 12 });
-  assert.deepEqual(boundsFor('depth', s), { min: 1, max: 12 });
-  assert.equal(boundsFor('ranked', s).max <= 12, true);
+  assert.deepEqual(boundsFor("depth", s), { min: 1, max: 12 });
+  assert.equal(boundsFor("ranked", s).max <= 12, true);
 });
 
-test('ranked never offers more winner packs than the ranks hold — the overhang is reached by a second slider sinking, not here (#61)', () => {
+test("ranked never offers more winner packs than the ranks hold — the overhang is reached by a second slider sinking, not here (#61)", () => {
   const s = stand();
-  assert.equal(boundsFor('ranked', s).max, Math.min(s.plan.rank.winners, s.plan.players));
+  assert.equal(
+    boundsFor("ranked", s).max,
+    Math.min(s.plan.rank.winners, s.plan.players),
+  );
 });
 
-test('a trailing slider left alone reads its number off the plan, not off the null in Settings', () => {
+test("a trailing slider left alone reads its number off the plan, not off the null in Settings", () => {
   const s = stand();
   assert.equal(s.settings.depth, null);
-  assert.equal(effectiveValue('depth', s), s.plan.depth);
-  assert.equal(effectiveValue('tournamentPacks', s), s.plan.pool.packs);
-  assert.equal(effectiveValue('ranked', s), s.plan.allocation.ranked);
-  assert.equal(effectiveValue('winnerPacks', s), s.plan.pool.winners);
+  assert.equal(effectiveValue("depth", s), s.plan.depth);
+  assert.equal(effectiveValue("tournamentPacks", s), s.plan.pool.packs);
+  assert.equal(effectiveValue("ranked", s), s.plan.allocation.ranked);
+  assert.equal(effectiveValue("winnerPacks", s), s.plan.pool.winners);
 });
 
-test('a pinned trailing slider reads its own number back', () => {
+test("a pinned trailing slider reads its own number back", () => {
   const s = stand({ depth: 5, winnerPacks: 7 });
-  assert.equal(effectiveValue('depth', s), 5);
-  assert.equal(effectiveValue('winnerPacks', s), 7);
+  assert.equal(effectiveValue("depth", s), 5);
+  assert.equal(effectiveValue("winnerPacks", s), 7);
 });
 
-test('a pinned value over its cap is never cut — it is read back whole (ADR 0006)', () => {
+test("a pinned value over its cap is never cut — it is read back whole (ADR 0006)", () => {
   // boosterRate down to 1 puts the cap of participationBooster under the
   // pinned 6; the number the sheet shows stays 6.
   const s = stand({ participationBooster: 6, boosterRate: 1 });
-  assert.equal(boundsFor('participationBooster', s).max, 1);
-  assert.equal(effectiveValue('participationBooster', s), 6);
+  assert.equal(boundsFor("participationBooster", s).max, 1);
+  assert.equal(effectiveValue("participationBooster", s), 6);
 });
 
-test('a cap that sank under a pinned value stops the way out, never the way back', () => {
+test("a cap that sank under a pinned value stops the way out, never the way back", () => {
   const s = stand({ participationBooster: 6, boosterRate: 1 });
   // The cap itself is untouched — it is still what the stand allows.
-  assert.equal(boundsFor('participationBooster', s).max, 1);
+  assert.equal(boundsFor("participationBooster", s).max, 1);
   // What the control is drawn from takes the standing value in, so the thumb
   // shows 6 and the counter's minus is still allowed.
-  assert.deepEqual(reachFor('participationBooster', s), { min: 0, max: 6 });
-  assert.equal(clampToBounds('participationBooster', 5, s), 5, 'one step down is reachable');
-  assert.equal(clampToBounds('participationBooster', 7, s), 6, 'further out is not');
+  assert.deepEqual(reachFor("participationBooster", s), { min: 0, max: 6 });
+  assert.equal(
+    clampToBounds("participationBooster", 5, s),
+    5,
+    "one step down is reachable",
+  );
+  assert.equal(
+    clampToBounds("participationBooster", 7, s),
+    6,
+    "further out is not",
+  );
 });
 
-test('reach is the cap itself wherever the value stands inside it', () => {
+test("reach is the cap itself wherever the value stands inside it", () => {
   const s = stand();
-  assert.deepEqual(reachFor('players', s), boundsFor('players', s));
-  assert.equal(reachFor('curve', s), null);
+  assert.deepEqual(reachFor("players", s), boundsFor("players", s));
+  assert.equal(reachFor("curve", s), null);
 });
 
-test('setting clamps to the same bounds the counter and the typed field are drawn from', () => {
+test("setting clamps to the same bounds the counter and the typed field are drawn from", () => {
   const s = stand();
-  assert.equal(clampToBounds('players', 400, s), 400);
-  assert.equal(clampToBounds('players', 1, s), 2);
-  assert.equal(clampToBounds('rankFloor', -3, s), 0);
-  assert.equal(clampToBounds('curve', 'steep', s), 'steep');
-  assert.equal(clampToBounds('curve', 'nonsense', s), null);
-  assert.equal(clampToBounds('depthStep', 'topHalf', s), 'topHalf');
-  assert.equal(clampToBounds('combinedHandout', true, s), true);
+  assert.equal(clampToBounds("players", 400, s), 400);
+  assert.equal(clampToBounds("players", 1, s), 2);
+  assert.equal(clampToBounds("rankFloor", -3, s), 0);
+  assert.equal(clampToBounds("curve", "steep", s), "steep");
+  assert.equal(clampToBounds("curve", "nonsense", s), null);
+  assert.equal(clampToBounds("depthStep", "topHalf", s), "topHalf");
+  assert.equal(clampToBounds("combinedHandout", true, s), true);
 });
 
 /* ── The typed field (#113) ─────────────────────────────────────────────── */
 
-test('a typed field reads a whole number and nothing else', () => {
-  assert.equal(typedNumber('523'), 523);
-  assert.equal(typedNumber(' 42 '), 42);
-  assert.equal(typedNumber('-3'), -3);
-  assert.equal(typedNumber('+7'), 7);
+test("a typed field reads a whole number and nothing else", () => {
+  assert.equal(typedNumber("523"), 523);
+  assert.equal(typedNumber(" 42 "), 42);
+  assert.equal(typedNumber("-3"), -3);
+  assert.equal(typedNumber("+7"), 7);
   // Not a number: nothing is written, and the field falls back (#113 AC 12).
   // `Number('')` is 0, which is the trap an emptied field would walk into.
-  for (const text of ['', '   ', 'abc', '12x', '1.5', '1e3', '0x10', null, undefined]) {
+  for (const text of [
+    "",
+    "   ",
+    "abc",
+    "12x",
+    "1.5",
+    "1e3",
+    "0x10",
+    null,
+    undefined,
+  ]) {
     assert.equal(typedNumber(text), null, JSON.stringify(text));
   }
 });
 
-test('a typed number past the former stop is what gets written (#113, the measured 523)', () => {
+test("a typed number past the former stop is what gets written (#113, the measured 523)", () => {
   const s = stand({ players: 128, tournamentPacks: 512 }, TOURNAMENT_TYPES[2]);
-  assert.equal(typedValueAfter('tournamentPacks', '523', s), 523);
+  assert.equal(typedValueAfter("tournamentPacks", "523", s), 523);
 });
 
-test('a typed number that changes nothing writes nothing — the stand it shows is the one it would set', () => {
+test("a typed number that changes nothing writes nothing — the stand it shows is the one it would set", () => {
   const s = stand();
   // `tournamentPacks` is `auto` and shows the 32 the core computed: typing 32
   // back is not a handling, so it may not become a pin (#113 AC 11).
   assert.equal(s.settings.tournamentPacks, null);
-  assert.equal(typedValueAfter('tournamentPacks', '32', s), null);
-  assert.equal(typedValueAfter('players', ' 32 ', s), null);
-  assert.equal(typedValueAfter('players', 'abc', s), null);
-  assert.equal(typedValueAfter('players', '', s), null);
-  assert.equal(typedValueAfter('players', '33', s), 33);
+  assert.equal(typedValueAfter("tournamentPacks", "32", s), null);
+  assert.equal(typedValueAfter("players", " 32 ", s), null);
+  assert.equal(typedValueAfter("players", "abc", s), null);
+  assert.equal(typedValueAfter("players", "", s), null);
+  assert.equal(typedValueAfter("players", "33", s), 33);
 });
 
-test('a typed number holds at a wall, and at a minimum', () => {
+test("a typed number holds at a wall, and at a minimum", () => {
   const s = stand({ players: 128, boosterRate: 9, participationBooster: 6 });
-  assert.equal(typedValueAfter('judgeBooster', '2000', s), 384);
-  assert.equal(typedValueAfter('players', '1', s), 2);
-  assert.equal(typedValueAfter('displaySize', '0', s), 1);
+  assert.equal(typedValueAfter("judgeBooster", "2000", s), 384);
+  assert.equal(typedValueAfter("players", "1", s), 2);
+  assert.equal(typedValueAfter("displaySize", "0", s), 1);
 });
 
-test('a pinned value over a wall is never cut by typing at it, and typing down leaves it (ADR 0006)', () => {
+test("a pinned value over a wall is never cut by typing at it, and typing down leaves it (ADR 0006)", () => {
   const s = stand({ participationBooster: 6, boosterRate: 1 });
-  assert.equal(boundsFor('participationBooster', s).max, 1, 'the wall sank under the pin');
-  assert.equal(effectiveValue('participationBooster', s), 6, 'the pin stands');
+  assert.equal(
+    boundsFor("participationBooster", s).max,
+    1,
+    "the wall sank under the pin",
+  );
+  assert.equal(effectiveValue("participationBooster", s), 6, "the pin stands");
   // Further out is held at the value that stands, which writes nothing …
-  assert.equal(typedValueAfter('participationBooster', '9', s), null);
+  assert.equal(typedValueAfter("participationBooster", "9", s), null);
   // … and the way down is open, also past the wall in one go.
-  assert.equal(typedValueAfter('participationBooster', '3', s), 3);
-  assert.equal(typedValueAfter('participationBooster', '0', s), 0);
+  assert.equal(typedValueAfter("participationBooster", "3", s), 3);
+  assert.equal(typedValueAfter("participationBooster", "0", s), 0);
 });
 
-test('a type switch replaces the sheet but carries every pinned value across (#64 AC 7)', () => {
-  const weekly = stand({ curve: 'extreme' }, TOURNAMENT_TYPES[0]);
-  const release = stand({ curve: 'extreme' }, TOURNAMENT_TYPES[2]);
+test("a type switch replaces the sheet but carries every pinned value across (#64 AC 7)", () => {
+  const weekly = stand({ curve: "extreme" }, TOURNAMENT_TYPES[0]);
+  const release = stand({ curve: "extreme" }, TOURNAMENT_TYPES[2]);
   // Release's own sheet says `gentle`; the pin outranks it.
-  assert.equal(effectiveValue('curve', release), 'extreme');
+  assert.equal(effectiveValue("curve", release), "extreme");
   // Everything not pinned does follow the new sheet.
-  assert.equal(effectiveValue('boosterRate', weekly), 3);
-  assert.equal(effectiveValue('boosterRate', release), 9);
+  assert.equal(effectiveValue("boosterRate", weekly), 3);
+  assert.equal(effectiveValue("boosterRate", release), 9);
 });
 
 /* ── The two set at the tile (#66) ──────────────────────────────────────── */
@@ -532,7 +660,8 @@ const vectorOf = (s) => (s.settings.displays ?? []).map((v) => Number(v) || 0);
 /** `d₁ ≥ d₂ ≥ …`, written out here rather than imported: a test that borrows
  *  the predicate under test cannot disagree with it. */
 function rises(vector) {
-  for (let i = 1; i < vector.length; i++) if ((vector[i] ?? 0) > (vector[i - 1] ?? 0)) return true;
+  for (let i = 1; i < vector.length; i++)
+    if ((vector[i] ?? 0) > (vector[i - 1] ?? 0)) return true;
   return false;
 }
 
@@ -544,12 +673,16 @@ function vectorWith(vector, rank, count) {
   return next;
 }
 
-test('the reservation never rises over the ranks — the rank above caps the tile below it', () => {
+test("the reservation never rises over the ranks — the rank above caps the tile below it", () => {
   // displaySize 2 makes a two-display prefix cheap enough to stand, so the
   // monotonicity cap is measured on its own and not through a pool that is
   // empty anyway.
   const s = stand({ displaySize: 2, displays: [2, 2] });
-  assert.equal(s.plan.conflict, null, 'the stand itself has to be a standing one');
+  assert.equal(
+    s.plan.conflict,
+    null,
+    "the stand itself has to be a standing one",
+  );
   // Rank 2 may not pass rank 1 …
   assert.equal(canReserveDisplays(2, 3, s), false);
   // … and rank 1 may not sink under rank 2, which is the same rule read downward.
@@ -558,7 +691,7 @@ test('the reservation never rises over the ranks — the rank above caps the til
   assert.equal(canReserveDisplays(3, 2, s), true);
 });
 
-test('a display the RankPool cannot carry is never offered (maintainer decision on #66, 2026-09-27)', () => {
+test("a display the RankPool cannot carry is never offered (maintainer decision on #66, 2026-09-27)", () => {
   const s = stand();
   // 32 boosters in the RankPool, 24 to a display: one stands, two do not.
   assert.equal(s.plan.rank.booster, 32);
@@ -569,13 +702,16 @@ test('a display the RankPool cannot carry is never offered (maintainer decision 
   assert.equal(reservedDisplaysAfter(1, 2, s), null);
 });
 
-test('a reservation left standing over a sunk cap is never cut, and the way back is never a wall (ADR 0006)', () => {
+test("a reservation left standing over a sunk cap is never cut, and the way back is never a wall (ADR 0006)", () => {
   // The display was reserved at 32 players; the count then fell to 8 and the
   // RankPool with it. ADR 0006 forbids trimming the stored value …
   const s = stand({ displays: [1], players: 8 });
   assert.deepEqual(vectorOf(s), [1]);
   assert.deepEqual(s.plan.displayVector, [1]);
-  assert.ok(s.plan.conflict, 'the stand really is the one a sunk cap leaves behind');
+  assert.ok(
+    s.plan.conflict,
+    "the stand really is the one a sunk cap leaves behind",
+  );
   // … and the cap still does its whole job outward …
   assert.equal(canReserveDisplays(1, 2, s), false);
   // … while the one way back down stays open. A cap that walled this off would
@@ -584,7 +720,7 @@ test('a reservation left standing over a sunk cap is never cut, and the way back
   assert.deepEqual(reservedDisplaysAfter(1, 0, s), []);
 });
 
-test('an overtake stays reachable, over a second slider that follows afterwards (#61, ADR 0002)', () => {
+test("an overtake stays reachable, over a second slider that follows afterwards (#61, ADR 0002)", () => {
   // Reserved at 96 players: it stands, and nothing is overtaken yet.
   const before = stand({ players: 96 });
   assert.deepEqual(reservedDisplaysAfter(1, 1, before), [1]);
@@ -594,12 +730,17 @@ test('an overtake stays reachable, over a second slider that follows afterwards 
   // The second slider follows: at 128 players the curve below rank 1 passes
   // the settled 24, and the plan reports it instead of refusing it.
   const after = stand({ players: 128, displays: [1] });
-  assert.deepEqual(after.plan.overtake, { under: 1, over: 2, has: 24, gets: 28 });
+  assert.deepEqual(after.plan.overtake, {
+    under: 1,
+    over: 2,
+    has: 24,
+    gets: 28,
+  });
   // The reservation that produced it is still one the tile would set today.
   assert.equal(canReserveDisplays(1, 1, stand({ players: 128 })), true);
 });
 
-test('an orphaned reservation stays reachable, over the depth that follows afterwards (#61, ADR 0002)', () => {
+test("an orphaned reservation stays reachable, over the depth that follows afterwards (#61, ADR 0002)", () => {
   const before = stand({ players: 96, displays: [1] });
   assert.equal(before.plan.orphanedReservation, null);
   // Rank 2 takes its display at the tile — offered, because the RankPool
@@ -632,9 +773,13 @@ const TILE_STANDS = [
   stand({ players: 64, displays: [2, 1] }, TOURNAMENT_TYPES[2]),
 ];
 
-test('capped is monotonicity, the rank above and the reservation condition — and nothing else (#66 AC 11)', () => {
+test("capped is monotonicity, the rank above and the reservation condition — and nothing else (#66 AC 11)", () => {
   let refused = 0;
-  const offeredDespite = { overtake: 0, orphanedReservation: 0, unclaimedRemainder: 0 };
+  const offeredDespite = {
+    overtake: 0,
+    orphanedReservation: 0,
+    unclaimedRemainder: 0,
+  };
   for (const s of TILE_STANDS) {
     const vector = vectorOf(s);
     for (let rank = 1; rank <= Math.min(5, s.plan.players); rank++) {
@@ -656,17 +801,27 @@ test('capped is monotonicity, the rank above and the reservation condition — a
         // And the three states ADR 0002 wants reported are never a reason to
         // refuse: they are counted here so a cap that quietly swallowed them
         // would show up as a zero.
-        for (const key of Object.keys(offeredDespite)) if (probe[key]) offeredDespite[key] += 1;
+        for (const key of Object.keys(offeredDespite))
+          if (probe[key]) offeredDespite[key] += 1;
       }
     }
   }
-  assert.ok(refused > 0, 'a sweep that refuses nothing measures no cap at all');
-  assert.ok(offeredDespite.overtake > 0, 'an overtake must stay settable at the tile');
-  assert.ok(offeredDespite.orphanedReservation > 0, 'an orphaned reservation must stay settable');
-  assert.ok(offeredDespite.unclaimedRemainder > 0, 'a reservation over the whole depth must stay settable');
+  assert.ok(refused > 0, "a sweep that refuses nothing measures no cap at all");
+  assert.ok(
+    offeredDespite.overtake > 0,
+    "an overtake must stay settable at the tile",
+  );
+  assert.ok(
+    offeredDespite.orphanedReservation > 0,
+    "an orphaned reservation must stay settable",
+  );
+  assert.ok(
+    offeredDespite.unclaimedRemainder > 0,
+    "a reservation over the whole depth must stay settable",
+  );
 });
 
-test('the tile writes winner packs into the same counters as the rest of the app, and ranked is not among them', () => {
+test("the tile writes winner packs into the same counters as the rest of the app, and ranked is not among them", () => {
   const s = stand();
   // One winner pack is still `open`, so the tile may place it …
   assert.equal(s.plan.allocation.open, 1);
@@ -685,7 +840,7 @@ test('the tile writes winner packs into the same counters as the rest of the app
   assert.deepEqual(manualWinnerAfter(5, 0, placed), {});
 });
 
-test('a rank beyond the player count is addressed by nothing, the tile included (CONTEXT.md, RankPoolDepth)', () => {
+test("a rank beyond the player count is addressed by nothing, the tile included (CONTEXT.md, RankPoolDepth)", () => {
   const s = stand({ players: 8 });
   assert.equal(canReserveDisplays(9, 1, s), false);
   assert.equal(canPlaceWinner(9, 1, s), false);

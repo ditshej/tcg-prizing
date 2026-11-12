@@ -52,8 +52,7 @@ time. Fill the angle brackets, change nothing else:
 > `.agents/skills/`.
 >
 > Read in this order: `AGENTS.md` → `docs/agents/spec-flow.md` →
-> `docs/agents/issue-tracker.md` → ticket #`<n>` **with its comments** → spec
-> #`<spec>` **with its comments** → `CONTEXT.md` → the ADRs that touch your
+> `docs/agents/issue-tracker.md` → ticket #`<n>` **with its comments** → spec #`<spec>` **with its comments** → `CONTEXT.md` → the ADRs that touch your
 > area.
 >
 > Never read a ticket without its comments: `gh issue view <n> --comments`. If

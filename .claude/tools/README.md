@@ -76,7 +76,7 @@ Backticks are the only markup: `title`, `stake`, `note`, `label` and
 ## Ist ein Beleg numerisch, ist die erste Frage die Form
 
 Nicht „wie formatiere ich diese Zahlen", sondern **„welche Form zeigt sie"**. Eine
-Situation soll man *sehen*, nicht aus einer Tabelle rekonstruieren — und genau
+Situation soll man _sehen_, nicht aus einer Tabelle rekonstruieren — und genau
 dafür gibt es diesen Werkzeugteil. Wer eine Zahlenreihe in einen `<pre>`-Block
 schreibt, hat die Frage übersprungen, nicht beantwortet.
 
@@ -93,7 +93,7 @@ Die Reihenfolge, wenn ein Beleg aus Zahlen besteht:
    Messung → kleine Vielfache mit der Zielreihe als Silhouette.
 3. **Erst dann Farbe.** Die Rollen stehen fest (siehe unten); es wird keine neue
    erfunden.
-4. **Ansehen.** Screenshot in hell *und* dunkel, und lesen wie jemand, der die
+4. **Ansehen.** Screenshot in hell _und_ dunkel, und lesen wie jemand, der die
    Sache nicht kennt.
 
 Ist für die Aussage keine Form besser als die Zahlen selbst — zwei Werte, ein
@@ -108,13 +108,13 @@ Build-Schritt (ADR 0004) — das SVG wird von Hand erzeugt.
 
 Gemeinsame Felder:
 
-| Feld | |
-|---|---|
-| `heading` | Überschrift über dem Bild |
-| `chart` | die Spezifikation, `kind` wählt den Typ |
-| `caption` | Fliesstext unter dem Bild, `` `backticks` `` erlaubt — sichtbar |
-| `text` | der Zahlenblock, zugeklappt unter dem Bild |
-| `numbersLabel` | Beschriftung der Klappe (Vorgabe: „Die Zahlen") |
+| Feld           |                                                                 |
+| -------------- | --------------------------------------------------------------- |
+| `heading`      | Überschrift über dem Bild                                       |
+| `chart`        | die Spezifikation, `kind` wählt den Typ                         |
+| `caption`      | Fliesstext unter dem Bild, `` `backticks` `` erlaubt — sichtbar |
+| `text`         | der Zahlenblock, zugeklappt unter dem Bild                      |
+| `numbersLabel` | Beschriftung der Klappe (Vorgabe: „Die Zahlen")                 |
 
 Wie es auf dem Schirm liegt: **das Bild ist aufgeklappt**, der Zahlenblock
 darunter bleibt zu. Die Karte soll ohne Klicken verstanden werden.
@@ -153,7 +153,7 @@ nachrechenbar.
 ```
 
 Zwei Klammern gleicher Breite an verschiedenen Stellen sind das Mittel, um
-„dieses Stück ist genau jenes Stück" zu zeigen. Klammern hängen unter *ihrem*
+„dieses Stück ist genau jenes Stück" zu zeigen. Klammern hängen unter _ihrem_
 Balken (`bar`, Index); unter dem letzten ist Platz dafür reserviert.
 
 `series` weist die Farbslots der Reihe nach zu (1, 2, 3 — die Ordnung ist die
@@ -193,7 +193,7 @@ vermutlich die falsche Form gewählt. Beschriftet wird je Feld nur **ein** Wert 
 der erste Rang, wo die Reihen am weitesten auseinanderlaufen.
 
 **Wie viele Stellen zeigen?** So viele, wie unterscheiden. Für die Kurvenstufen
-sind es 15 von 32 Rängen: ab Rang 16 stehen alle sieben Stufen *und* die Messung
+sind es 15 von 32 Rängen: ab Rang 16 stehen alle sieben Stufen _und_ die Messung
 auf 2, der Rest trüge nichts bei und kostete die Hälfte der Breite. Was
 weggelassen wurde, sagt die `caption` — weglassen ohne Hinweis wäre Unterschlagung.
 
@@ -230,7 +230,7 @@ Ein Bild:
   "src": "51-tabelle.png",
   "alt": "Letzte Spalte leer, darunter 40 nicht vergebene Booster.",
   "caption": "Aufgenommen auf `main`, 32 Leute, 96 Booster.",
-  "text": "die Zahlen dazu, zugeklappt"          // optional, wie beim Diagramm
+  "text": "die Zahlen dazu, zugeklappt", // optional, wie beim Diagramm
 }
 ```
 
@@ -241,10 +241,10 @@ Zwei Bilder nebeneinander — der Hauptfall, „vorher / nachher":
   "type": "image",
   "heading": "Zwei Zustände nebeneinander",
   "images": [
-    { "src": "51-vorher.png",  "label": "heute" },
-    { "src": "51-nachher.png", "label": "mit Option B" }
+    { "src": "51-vorher.png", "label": "heute" },
+    { "src": "51-nachher.png", "label": "mit Option B" },
   ],
-  "caption": "Gleiches Turnier, gleicher Pool — nur die Verteilung ändert sich."
+  "caption": "Gleiches Turnier, gleicher Pool — nur die Verteilung ändert sich.",
 }
 ```
 
@@ -301,11 +301,11 @@ first met:
   "answers": [
     {
       "decisionId": "combined-handout",
-      "optionId": "participation-auf-null",  // null when the answer is free text or unanswered
-      "freeText": "",                        // set only when "anders" was chosen
-      "note": ""
-    }
-  ]
+      "optionId": "participation-auf-null", // null when the answer is free text or unanswered
+      "freeText": "", // set only when "anders" was chosen
+      "note": "",
+    },
+  ],
 }
 ```
 
