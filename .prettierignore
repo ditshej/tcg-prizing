@@ -7,3 +7,10 @@ yarn.lock
 
 # vendored library
 public/vendor/
+
+# read as source text by test/ui-*.test.mjs (regexes depend on the formatting)
+public/ui/plan.css
+public/ui/plan.mjs
+public/ui/app.mjs
+public/ui/theme.mjs
+public/ui/controls.mjs
