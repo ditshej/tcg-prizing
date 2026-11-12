@@ -1,0 +1,27 @@
+#!/bin/sh
+# rig-enforcement base 4. Do not edit; project checks go into
+# .githooks/project/commit-msg/.
+#
+# Requires Conventional Commits in the first line, e.g. "feat(api): add cards".
+# Then runs every executable in .githooks/project/commit-msg/ with the message file.
+set -u
+subject=$(grep -v '^#' "$1" | grep -v '^[[:space:]]*$' | head -n 1)
+
+case "$subject" in
+  "Merge "*|"Revert \""*|"fixup! "*|"squash! "*|"amend! "*) ;;
+  *)
+    if ! printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?!?: [^ ].*'; then
+      printf 'commit-msg (rig-enforcement): not a Conventional Commit: "%s"\n' "$subject" >&2
+      printf 'Use "<type>(<scope>): <description>" with type feat, fix, docs, style, refactor, perf, test, build, ci, chore or revert.\n' >&2
+      exit 1
+    fi
+    ;;
+esac
+
+if [ -d .githooks/project/commit-msg ]; then
+  for hook in .githooks/project/commit-msg/*; do
+    [ -f "$hook" ] && [ -x "$hook" ] || continue
+    "$hook" "$@" || exit 1
+  done
+fi
+exit 0

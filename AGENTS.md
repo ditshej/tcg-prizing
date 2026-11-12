@@ -166,3 +166,9 @@ carries the one command that starts it.
 ### SetupLink encoding
 
 The URL encoding is a versioned public interface. Renaming or removing a slider key, or changing what one means, requires a version bump and a `LinkMigration` in the same commit. See `docs/agents/setup-link.md`.
+
+## Enforcement
+
+- Hooks and CI come from the rig-enforcement skill (base version 4). Do not edit `.claude/settings.json`, `.claude/hooks/base/`, `.githooks/base/` or `docs/ai-review/base.md`; project rules go into the `project/` folders and `docs/ai-review/project.md`.
+- Releases are tags `vX.Y.Z` (semantic versioning). Before tagging, run the AI review from the rig-enforcement skill; the hook blocks the tag without `Status: pass`.
+- After cloning, run `git config core.hooksPath .githooks/base` once; there is no Composer that sets it.

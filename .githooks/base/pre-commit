@@ -1,0 +1,53 @@
+#!/bin/sh
+# rig-enforcement base 4. Do not edit; project checks go into
+# .githooks/project/pre-commit/.
+#
+# Blocks commits on main/master, files under .github/workflows/ and secrets.
+# Then runs every executable in .githooks/project/pre-commit/.
+set -u
+fail() {
+  printf 'pre-commit (rig-enforcement): %s\n' "$1" >&2
+  exit 1
+}
+
+branch=$(git symbolic-ref --short -q HEAD || true)
+case "$branch" in
+  main|master) fail "do not commit on $branch. Create a branch and open a pull request." ;;
+esac
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Workflows are added by the user. RIG_ALLOW_WORKFLOWS=1 is for the user only.
+if [ "${RIG_ALLOW_WORKFLOWS:-}" != 1 ] && printf '%s\n' "$staged" | grep -q '^\.github/workflows/'; then
+  fail "do not commit files under .github/workflows/. Put the workflow into the pull request description."
+fi
+
+# Files that hold secrets.
+bad_files=$(printf '%s\n' "$staged" | grep -E '(^|/)(\.env(\..*)?|auth\.json|id_(rsa|dsa|ecdsa|ed25519)|.*\.(pem|key|p12|pfx))$' | grep -vE '(^|/)\.env(\.[^/]*)?\.example$' || true)
+if [ -n "$bad_files" ]; then
+  fail "do not commit secret files:
+$bad_files"
+fi
+
+# Secrets in added lines. The patterns are written so that this file does not match itself.
+patterns='-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{32,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|xox[abprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}'
+hits=$(printf '%s\n' "$staged" | grep -v '^\.githooks/base/' | while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  git diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' | grep -Eq -e "$patterns" && printf '%s\n' "$f"
+done)
+if [ -n "$hits" ]; then
+  fail "possible secret in the staged changes (values not shown):
+$hits"
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner >&2 || fail "gitleaks found a secret."
+fi
+
+if [ -d .githooks/project/pre-commit ]; then
+  for hook in .githooks/project/pre-commit/*; do
+    [ -f "$hook" ] && [ -x "$hook" ] || continue
+    "$hook" "$@" || fail "$hook failed."
+  done
+fi
+exit 0
