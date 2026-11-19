@@ -1,5 +1,5 @@
 #!/bin/sh
-# rig-enforcement base 5. Do not edit; project rules go into
+# rig-enforcement base 7. Do not edit; project rules go into
 # .claude/hooks/project/post-edit/.
 #
 # Claude Code PostToolUse hook for Edit, MultiEdit and Write. Formats an edited
