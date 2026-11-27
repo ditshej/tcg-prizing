@@ -1,9 +1,9 @@
 #!/bin/sh
-# rig-enforcement base 7. Do not edit; project checks go into
+# rig-enforcement base 8. Do not edit; project checks go into
 # .githooks/project/pre-commit/.
 #
-# Blocks commits on main/master, files under .github/workflows/ and secrets.
-# Then runs every executable in .githooks/project/pre-commit/.
+# Blocks commits on main/master, files under .github/workflows/ (agents only)
+# and secrets. Then runs every executable in .githooks/project/pre-commit/.
 set -u
 fail() {
   printf 'pre-commit (rig-enforcement): %s\n' "$1" >&2
@@ -17,9 +17,10 @@ esac
 
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 
-# Workflows are added by the user. RIG_ALLOW_WORKFLOWS=1 is for the user only.
-if [ "${RIG_ALLOW_WORKFLOWS:-}" != 1 ] && printf '%s\n' "$staged" | grep -q '^\.github/workflows/'; then
-  fail "do not commit files under .github/workflows/. Put the workflow into the pull request description."
+# Workflows are added by the user. Agents run with CLAUDECODE or PAPERCLIP_RUN_ID
+# set; the Claude Code hook blocks removing them.
+if { [ -n "${CLAUDECODE:-}" ] || [ -n "${PAPERCLIP_RUN_ID:-}" ]; } && printf '%s\n' "$staged" | grep -q '^\.github/workflows/'; then
+  fail "agents do not commit files under .github/workflows/. Put the workflow into the pull request description."
 fi
 
 # Files that hold secrets.
