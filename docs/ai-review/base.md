@@ -47,3 +47,17 @@ issues; they do not hold the release.
 The note on the release commit (`refs/notes/ai-review`) has exactly this form.
 The `Status:` line is either `Status: pass` or `Status: blocked`.
 
+```
+AI review <version>
+Commit: <full sha>
+Range: <previous tag or "initial">..<short sha>
+Model: <model id>
+Date: <YYYY-MM-DD>
+Status: pass
+
+Blocking findings:
+- none
+
+Minor findings:
+- <file:line> <finding> (issue: <link>)
+```
