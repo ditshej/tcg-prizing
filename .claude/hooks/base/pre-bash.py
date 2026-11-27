@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# rig-enforcement base 7. Do not edit; project rules go into
+# rig-enforcement base 8. Do not edit; project rules go into
 # .claude/hooks/project/pre-bash/.
 #
 # Claude Code PreToolUse hook for Bash. Blocks (exit 2, reason on stderr):
+# - removing the agent detection (CLAUDECODE, PAPERCLIP_RUN_ID) that the Git
+#   pre-commit hook uses to block workflow files for agents
 # - git identity changes (git config user.*, git -c user.*)
 # - skipping or redirecting the git hooks (--no-verify, core.hooksPath)
 # - commits and pushes while core.hooksPath is not .githooks/base
@@ -24,6 +26,8 @@ HOOKS_PATH = ".githooks/base"
 OPERATORS = {"&&", "||", ";", "|", "&", "\n", "(", ")", ";;", "|&"}
 GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 TAG_OPTS_WITH_VALUE = {"-m", "--message", "-F", "--file", "-u", "--local-user", "--cleanup"}
+AGENT_VARS = {"CLAUDECODE", "PAPERCLIP_RUN_ID"}
+ENV_OPTS_WITH_VALUE = {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"}
 
 
 def block(reason):
@@ -62,6 +66,30 @@ def strip_env(words):
     while words and (re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0]) or words[0] in {"env", "command", "exec", "sudo"}):
         words = words[1:]
     return words
+
+
+def check_agent_detection(words, command):
+    # The Git pre-commit hook blocks workflow files only while one of
+    # AGENT_VARS is set, so agents must not remove or empty them.
+    reason = ("agents must not remove the agent detection (CLAUDECODE, PAPERCLIP_RUN_ID). "
+              "Hand over workflow files as the rule \"GitHub Actions workflows\" says.")
+    for i, word in enumerate(words):
+        if re.match(r"^(%s)=$" % "|".join(AGENT_VARS), word):
+            block(reason)
+        if word == "unset" and AGENT_VARS & set(words[i + 1:]):
+            block(reason)
+        if os.path.basename(word) != "env":
+            continue
+        j = i + 1
+        while j < len(words) and words[j].startswith("-"):
+            opt = words[j]
+            if opt in {"-u", "--unset"} and j + 1 < len(words) and words[j + 1] in AGENT_VARS:
+                block(reason)
+            if opt.removeprefix("--unset=").removeprefix("-u") in AGENT_VARS:
+                block(reason)
+            if (opt in {"-", "--ignore-environment"} or re.match(r"^-[0v]*i", opt)) and "git" in command:
+                block(reason)
+            j += 2 if opt in ENV_OPTS_WITH_VALUE else 1
 
 
 def parse_git(words):
@@ -242,9 +270,8 @@ def main():
     if os.path.isdir(data.get("cwd") or ""):
         os.chdir(data["cwd"])
     command = data.get("tool_input", {}).get("command", "")
-    if "RIG_ALLOW_WORKFLOWS" in command:
-        block("RIG_ALLOW_WORKFLOWS is for the user only. Put workflow changes into the pull request description.")
     for words in split_commands(command):
+        check_agent_detection(words, command)
         words = strip_env(words)
         if not words:
             continue

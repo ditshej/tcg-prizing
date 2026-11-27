@@ -1,4 +1,4 @@
-<!-- rig-enforcement base 7. Do not edit; project points go into docs/ai-review/project.md. -->
+<!-- rig-enforcement base 8. Do not edit; project points go into docs/ai-review/project.md. -->
 
 # AI release review: base checklist
 
@@ -47,17 +47,3 @@ issues; they do not hold the release.
 The note on the release commit (`refs/notes/ai-review`) has exactly this form.
 The `Status:` line is either `Status: pass` or `Status: blocked`.
 
-```
-AI review <version>
-Commit: <full sha>
-Range: <previous tag or "initial">..<short sha>
-Model: <model id>
-Date: <YYYY-MM-DD>
-Status: pass
-
-Blocking findings:
-- none
-
-Minor findings:
-- <file:line> <finding> (issue: <link>)
-```
